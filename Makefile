@@ -4,10 +4,10 @@ OBJS= db.o draw.o xwin.o readfont.o rubber.o opt_parse.o \
        geom_poly.o geom_text.o geom_inst.o \
        rlgetc.o token.o lex.o coords.o \
        com_add.o com_delete.o com_distance.o com_ident.o \
-       com_move.c com_window.o com_point.o com_show.o postscript.o
+       com_copy.c com_move.c com_window.o com_point.o com_show.o postscript.o
 
 TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
-changes com_add.c com_delete.c com_distance.c com_ident.c com_move.c \
+changes com_add.c com_delete.c com_distance.c com_ident.c com_copy.c com_move.c \
 com_point.c com_show.c com_window.c coords.c db.c db.h draw.c \
 eprintf.c eprintf.h eventnames.h geom_circle.c geom_inst.c \
 geom_line.c  geom_poly.c geom_rect.c geom_text.c lex.c lex.h \
@@ -33,6 +33,7 @@ draw.o:        db.h token.h xwin.h
 eprintf.o:     eprintf.h
 com_ident.o:   db.h xwin.h token.h
 com_add.o:     db.h token.h
+com_copy.o:    db.h token.h
 com_delete.o:  db.h token.h
 com_move.o:    db.h token.h
 com_window.o:  db.h xwin.h token.h rubber.h

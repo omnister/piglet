@@ -68,14 +68,12 @@ typedef struct coord_list {
     struct coord_list *prev;
 } COORDS;
 
-
-COORDS *coord_create(NUM x, NUM y);
 COORDS *coord_new(NUM x, NUM y);
+COORDS *coord_copy(COORDS *CP);
 void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP, NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
-
 
 typedef struct xform {
      double r11;
@@ -311,7 +309,7 @@ extern int db_def_archive(
 extern void db_set_nest(int nest); 	/* set global display nest level */
 extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
-void db_unlink(DB_TAB *cell, DB_DEFLIST *p);
+void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
 
 DB_DEFLIST *db_ident(
 		DB_TAB *cell,
@@ -334,6 +332,8 @@ extern int db_render(
 		BOUNDS *bb,
 		int mode
 	    );
+
+DB_DEFLIST *db_copy_component();
 
 extern void db_move_component();
 extern int db_plot();			/* plot the device to a file */

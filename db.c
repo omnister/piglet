@@ -28,7 +28,7 @@ XFORM *global_transform = &unity_transform;  /* global xform matrix */
 void do_arc(),  do_circ(), do_line();
 void do_oval(), do_poly(), do_rect(), do_text();
 
-void db_free(); 		/* recycle memory for component */
+void db_free_component(); 		/* recycle memory for component */
 
 /********************************************************/
 
@@ -176,7 +176,7 @@ char *s;
 	}
 
 	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	    db_free(p->type);
+	    db_free_component(p->type);
 	}
     
 	free(sp);
@@ -199,95 +199,189 @@ char *s;
     }
 }
 
-void db_free(p) 		/* recycle memory for component */
+DB_DEFLIST *db_copy_component(p) 		/* create a copy of a component */
+DB_DEFLIST *p;
+{
+    struct db_deflist *dp;
+
+    if (p==NULL) {
+    	printf("db_cup_component: can't dup a null component\n");
+	return(NULL);
+    }
+
+    dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
+    dp->prev = NULL;
+    dp->type = p->type;
+
+    switch (p->type) {
+    case ARC:  /* arc definition */
+	dp->u.a = (struct db_arc *) emalloc(sizeof(struct db_arc));
+	dp->u.a->layer=p->u.a->layer;
+	dp->u.a->opts=opt_copy(p->u.a->opts);
+	dp->u.a->x1=p->u.a->x1;
+	dp->u.a->y1=p->u.a->y1;
+	dp->u.a->x2=p->u.a->x2;
+	dp->u.a->y2=p->u.a->y2;
+	dp->u.a->x3=p->u.a->x3;
+	dp->u.a->y3=p->u.a->y3;
+	break;
+    case CIRC:  /* circle definition */
+	dp->u.c = (struct db_circ *) emalloc(sizeof(struct db_circ));
+	dp->u.c->layer=p->u.c->layer;
+	dp->u.c->opts=opt_copy(p->u.c->opts);
+	dp->u.c->x1=p->u.c->x1;
+	dp->u.c->y1=p->u.c->y1;
+	dp->u.c->x2=p->u.c->x2;
+	dp->u.c->y2=p->u.c->y2;
+	break;
+    case LINE:  /* line definition */
+	dp->u.l = (struct db_line *) emalloc(sizeof(struct db_line));
+	dp->u.l->layer=p->u.l->layer;
+	dp->u.l->opts=opt_copy(p->u.l->opts);
+	dp->u.l->coords=coord_copy(p->u.l->coords);
+	break;
+    case OVAL:  /* oval definition */
+	dp->u.o = (struct db_oval *) emalloc(sizeof(struct db_oval));
+	dp->u.o->layer=p->u.o->layer;
+	dp->u.o->opts=opt_copy(p->u.o->opts);
+	dp->u.o->x1=p->u.o->x1;		/* first foci */
+	dp->u.o->y1=p->u.o->y1;
+	dp->u.o->x2=p->u.o->x2;		/* second foci */
+	dp->u.o->y2=p->u.o->y2;
+	dp->u.o->x3=p->u.o->x3;		/* point on curve */
+	dp->u.o->y3=p->u.o->y3;
+	break;
+    case POLY:  /* polygon definition */
+	dp->u.p = (struct db_poly *) emalloc(sizeof(struct db_poly));
+	dp->u.p->layer=p->u.p->layer;
+	dp->u.p->opts=opt_copy(p->u.p->opts);
+	dp->u.p->coords=coord_copy(p->u.p->coords);
+	break;
+    case RECT:  /* rectangle definition */
+	dp->u.r = (struct db_rect *) emalloc(sizeof(struct db_rect));
+	dp->u.r->layer=p->u.r->layer;
+	dp->u.r->opts=opt_copy(p->u.r->opts);
+	dp->u.r->x1=p->u.r->x1;
+	dp->u.r->y1=p->u.r->y1;
+	dp->u.r->x2=p->u.r->x2;
+	dp->u.r->y2=p->u.r->y2;
+    	break;
+    case TEXT:  /* text definition */
+	dp->u.t = (struct db_text *) emalloc(sizeof(struct db_text));
+	dp->u.t->layer=p->u.t->layer;
+	dp->u.t->opts=opt_copy(p->u.t->opts);
+	dp->u.t->text=strsave(p->u.t->text);
+	dp->u.t->x=p->u.t->x;
+	dp->u.t->y=p->u.t->y;
+    	break;
+    case INST:  /* instance call */
+	dp->u.i = (struct db_inst *) emalloc(sizeof(struct db_inst));
+	dp->u.i->opts=opt_copy(p->u.i->opts);
+	dp->u.i->name=strsave(p->u.i->name);
+	dp->u.i->x=p->u.i->x;
+	dp->u.i->y=p->u.i->y;
+	break;
+    default:
+    	printf("bad case in db_copy_component\n"); 
+	break;
+    }
+    return (dp);
+}
+
+void db_free_component(p) 		/* recycle memory for component */
 DB_DEFLIST *p;
 {
     int debug=0;
     COORDS *coords;
     COORDS *ncoords;
 
-    switch (p->type) {
+    if (p == NULL) {
+    	printf("db_free_component: can't free a NULL component\n");
+    } else {
+	switch (p->type) {
 
-    case ARC:  /* arc definition */
-	if (debug) printf("db_purge: freeing arc\n");
-	free(p->u.a->opts);
-	free(p->u.a);
-	free(p);
-	break;
+	case ARC:  /* arc definition */
+	    if (debug) printf("db_purge: freeing arc\n");
+	    free(p->u.a->opts);
+	    free(p->u.a);
+	    free(p);
+	    break;
 
-    case CIRC:  /* circle definition */
-	if (debug) printf("db_purge: freeing circle\n");
-	free(p->u.c->opts);
-	free(p->u.c);
-	free(p);
-	break;
+	case CIRC:  /* circle definition */
+	    if (debug) printf("db_purge: freeing circle\n");
+	    free(p->u.c->opts);
+	    free(p->u.c);
+	    free(p);
+	    break;
 
-    case LINE:  /* line definition */
+	case LINE:  /* line definition */
 
-	if (debug) printf("db_purge: freeing line\n");
-	coords = p->u.l->coords;
-	while(coords != NULL) {
-	    ncoords = coords->next;
-	    free(coords);	
-	    coords=ncoords;
+	    if (debug) printf("db_purge: freeing line\n");
+	    coords = p->u.l->coords;
+	    while(coords != NULL) {
+		ncoords = coords->next;
+		free(coords);	
+		coords=ncoords;
+	    }
+	    free(p->u.l->opts);
+	    free(p->u.l);
+	    free(p);
+	    break;
+
+	case OVAL:  /* oval definition */
+
+	    if (debug) printf("db_purge: freeing oval\n");
+	    free(p->u.o->opts);
+	    free(p->u.o);
+	    free(p);
+	    break;
+
+	case POLY:  /* polygon definition */
+
+	    if (debug) printf("db_purge: freeing poly\n");
+	    coords = p->u.p->coords;
+	    while(coords != NULL) {
+		ncoords = coords->next;
+		free(coords);
+		coords=ncoords;
+	    }
+	    free(p->u.p->opts);
+	    free(p->u.p);
+	    free(p);
+	    break;
+
+	case RECT:  /* rectangle definition */
+
+	    if (debug) printf("db_purge: freeing rect\n");
+	    free(p->u.r->opts);
+	    free(p->u.r);
+	    free(p);
+	    break;
+
+	case TEXT:  /* text definition */
+
+	    if (debug) printf("db_purge: freeing text\n");
+	    free(p->u.t->opts);
+	    free(p->u.t->text);
+	    free(p->u.t);
+	    free(p);
+	    break;
+
+	case INST:  /* instance call */
+
+	    if (debug) printf("db_purge: freeing instance call: %s\n",
+		p->u.i->name);
+	    free(p->u.i->name);
+	    free(p->u.i->opts);
+	    free(p->u.i);
+	    free(p);
+	    break;
+
+	default:
+	    eprintf("unknown record type (%d) in db_free_component\n", p->type );
+	    break;
 	}
-	free(p->u.l->opts);
-	free(p->u.l);
-	free(p);
-	break;
-
-    case OVAL:  /* oval definition */
-
-	if (debug) printf("db_purge: freeing oval\n");
-	free(p->u.o->opts);
-	free(p->u.o);
-	free(p);
-	break;
-
-    case POLY:  /* polygon definition */
-
-	if (debug) printf("db_purge: freeing poly\n");
-	coords = p->u.p->coords;
-	while(coords != NULL) {
-	    ncoords = coords->next;
-	    free(coords);
-	    coords=ncoords;
-	}
-	free(p->u.p->opts);
-	free(p->u.p);
-	free(p);
-	break;
-
-    case RECT:  /* rectangle definition */
-
-	if (debug) printf("db_purge: freeing rect\n");
-	free(p->u.r->opts);
-	free(p->u.r);
-	free(p);
-	break;
-
-    case TEXT:  /* text definition */
-
-	if (debug) printf("db_purge: freeing text\n");
-	free(p->u.t->opts);
-	free(p->u.t->text);
-	free(p->u.t);
-	free(p);
-	break;
-
-    case INST:  /* instance call */
-
-	if (debug) printf("db_purge: freeing instance call: %s\n",
-	    p->u.i->name);
-	free(p->u.i->name);
-	free(p->u.i->opts);
-	free(p->u.i);
-	free(p);
-	break;
-
-    default:
-	eprintf("unknown record type (%d) in db_def_print\n", p->type );
-	break;
     }
 }
 
@@ -493,7 +587,7 @@ int mode;
     }
 }
 
-void db_unlink(cell, dp) 
+void db_unlink_component(cell, dp) 
 DB_TAB *cell;
 struct db_deflist *dp;
 {
@@ -514,7 +608,7 @@ struct db_deflist *dp;
     }
 
     if (currep->deleted != NULL) {
-	db_free(currep->deleted);	/* gone for good now! */
+	db_free_component(currep->deleted);	/* gone for good now! */
     } 
     currep->deleted = dp;		/* save for one level of undo */
 }
@@ -562,15 +656,18 @@ double dx, dy;
 	while(coords != NULL) {
 	    coords->coord.x += dx;
 	    coords->coord.y += dy;
+	    coords = coords->next;
 	}
 	break;
     case OVAL:  /* oval definition */
         /* FIXME: Not implemented */
 	break;
     case POLY:  /* polygon definition */
+	coords = p->u.p->coords;
 	while(coords != NULL) {
 	    coords->coord.x += dx;
 	    coords->coord.y += dy;
+	    coords = coords->next;
 	}
 	break;
     case RECT:  /* rectangle definition */
@@ -609,7 +706,6 @@ NUM x1,y1,x2,y2,x3,y3;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.a = ap;
     dp->type = ARC;
@@ -623,6 +719,7 @@ NUM x1,y1,x2,y2,x3,y3;
     ap->x3=x3;
     ap->y3=y3;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -639,7 +736,6 @@ NUM x1,y1,x2,y2;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.c = cp;
     dp->type = CIRC;
@@ -651,6 +747,7 @@ NUM x1,y1,x2,y2;
     cp->x2=x2;
     cp->y2=y2;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -669,15 +766,13 @@ COORDS *coords;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
-
     dp->u.l = lp;
     dp->type = LINE;
-
     lp->layer=layer;
     lp->opts=opts;
     lp->coords=coords;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -696,7 +791,6 @@ NUM x1,y1, x2,y2, x3,y3;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.o = op;
     dp->type = OVAL;
@@ -710,6 +804,7 @@ NUM x1,y1, x2,y2, x3,y3;
     op->x3=x3;		/* point on curve */
     op->y3=y3;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -729,7 +824,6 @@ COORDS *coords;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.p = pp;
     dp->type = POLY;
@@ -739,6 +833,7 @@ COORDS *coords;
     pp->opts=opts;
     pp->coords=coords;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -757,7 +852,6 @@ NUM x1,y1,x2,y2;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.r = rp;
     dp->type = RECT;
@@ -769,6 +863,7 @@ NUM x1,y1,x2,y2;
     rp->y2=y2;
     rp->opts = opts;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -788,7 +883,6 @@ NUM x,y;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.t = tp;
     dp->type = TEXT;
@@ -799,6 +893,7 @@ NUM x,y;
     tp->x=x;
     tp->y=y;
 
+    db_insert_component(cell,dp);
     return(0);
 }
 
@@ -817,7 +912,6 @@ NUM x,y;
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
     dp->prev = NULL;
-    db_insert_component(cell,dp);
 
     dp->u.i = ip;
     dp->type = INST;
@@ -828,6 +922,8 @@ NUM x,y;
     ip->x=x;
     ip->y=y;
     ip->opts=opts;
+    db_insert_component(cell,dp);
+    return(0);
 }
 
 /*

@@ -363,11 +363,8 @@ com_change(LEXER *lp, char *arg) /* change properties of selected components */
     return (0);
 }
 
-com_copy(LEXER *lp, char *arg)	/* copy component  */
-{
-    printf("    com_copy %s\n", arg);
-    return (0);
-}
+/* now in com_copy.c */
+/* com_copy(LEXER *lp, char *arg)	/* copy component  */
 
 com_define(lp, arg)		/* define a macro */
 LEXER *lp;
@@ -611,7 +608,6 @@ char *arg;
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
-		/* FIXME: this needs to purge memory + disk files */
 	        db_purge(lp, word);
 	    	break;      
 	    case EOC:		/* end of command */
@@ -873,6 +869,9 @@ char *arg;
 			    save_rep=currep;
 			    printf ("reading %s from disk\n", buf);
 			    show_set_modify(ALL,0,1);
+			    /* FIXME: here and one other place */
+			    /* create a way to do show_set_save and restore */
+			    /* reading archive files should not affect currep's show set */
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
 			    show_set_modify(ALL,0,0);

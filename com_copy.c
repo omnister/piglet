@@ -11,14 +11,14 @@
 
 static double x1, y1, x2, y2, x3, y3;
 static double xmin, ymin, xmax, ymax;
-void draw_bbox();
+void draw_cbox();
 
 /* 
-    move a component in the current device.
-    MOV <restrictor> { xysel xyref xynewref } ... <EOC>
+    copy a component in the current device.
+    COP <restrictor> { xysel xyref xynewref1 [xynewref2...] } <EOC>
 */
 
-com_move(LEXER *lp, char *arg)		
+com_copy(LEXER *lp, char *arg)		
 {
 
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,END} state = START;
@@ -35,6 +35,7 @@ com_move(LEXER *lp, char *arg)
     int i;
     int flag;
     DB_DEFLIST *p_best;
+    DB_DEFLIST *p_new = NULL;
 
     int my_layer=0; 	/* internal working layer */
 
@@ -42,7 +43,7 @@ com_move(LEXER *lp, char *arg)
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
-	printf("must do \"EDIT <name>\" before MOVE\n");
+	printf("must do \"EDIT <name>\" before COPY\n");
 	token_flush_EOL(lp);
 	return(1);
     }
@@ -69,7 +70,7 @@ com_move(LEXER *lp, char *arg)
 */
 
     rl_saveprompt();
-    rl_setprompt("MOVE> ");
+    rl_setprompt("COPY> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -136,7 +137,7 @@ com_move(LEXER *lp, char *arg)
 		    printf("looks like a descriptor to me: %s\n", word);
 		}
 	    } else {
-		token_err("MOVE", lp, "expected DESC or NUMBER", token);
+		token_err("COPY", lp, "expected DESC or NUMBER", token);
 		state = END;	/* error */
 	    }
 	    break;
@@ -151,7 +152,7 @@ com_move(LEXER *lp, char *arg)
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -163,7 +164,7 @@ com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		state = NUM2;
 	    } else {
-		token_err("MOVE", lp, "expected COMMA", token);
+		token_err("COPY", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -174,8 +175,7 @@ com_move(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep,
-			x1,y1,1,my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,1, my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
 		    xmin=p_best->xmin;
@@ -184,16 +184,16 @@ com_move(LEXER *lp, char *arg)
 		    ymax=p_best->ymax;
 		    state = NUM3;
 		} else {
-		    printf("nothing here to move...\n");
+		    printf("nothing here that is copyable...\n");
 		    state = START;
 		}
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
+		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -208,7 +208,7 @@ com_move(LEXER *lp, char *arg)
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -220,7 +220,7 @@ com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		state = NUM4;
 	    } else {
-		token_err("MOVE", lp, "expected COMMA", token);
+		token_err("COPY", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -229,17 +229,16 @@ com_move(LEXER *lp, char *arg)
 	    if (token == NUMBER) {
 		token_get(lp,word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
-		printf("got %g %g\n", x2, y2);
-		db_highlight(p_best);  		/* unhighlight */
-		rubber_set_callback(draw_bbox);
+		db_highlight(p_best);		/* unhighlight */
+		rubber_set_callback(draw_cbox);
 		state = NUM5;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
+		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -249,12 +248,21 @@ com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		sscanf(word, "%lf", &x3);	/* scan it in */
 		state = COM3;
+	    } else if (token == BACK) {
+		token_get(lp,word); 
+		if (p_new == NULL) {
+			;   /* just ignore it */
+		} else {
+		    db_unlink_component(currep, p_new);
+		    p_new=NULL;
+		    need_redraw++;
+		}
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -266,7 +274,7 @@ com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		state = NUM6;
 	    } else {
-		token_err("MOVE", lp, "expected COMMA", token);
+		token_err("COPY", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -276,17 +284,19 @@ com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		sscanf(word, "%lf", &y3);	/* scan it in */
 		printf("got %g %g\n", x3, y3);
-		rubber_clear_callback();
-		db_move_component(p_best, x3-x2, y3-y2);
+		/* rubber_clear_callback(); */
+		p_new=db_copy_component(p_best);
+		db_move_component(p_new, x3-x2, y3-y2);
+		db_insert_component(currep, p_new);
 		need_redraw++;
-		state = START;
+		state = NUM5;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
+		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
+		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -334,7 +344,8 @@ com_move(LEXER *lp, char *arg)
 */
 
 
-void draw_bbox(x, y, count)
+
+void draw_cbox(x, y, count)
 double x, y;  /* offset */
 int count; /* number of times called */
 {

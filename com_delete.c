@@ -171,7 +171,7 @@ com_delete(LEXER *lp, char *arg)
 			x1,y1,1,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    /* db_highlight(p_best); */	
-		    db_unlink(currep, p_best);
+		    db_unlink_component(currep, p_best);
 		    need_redraw++;
 		} else {
 		    printf("nothing here to delete...\n");

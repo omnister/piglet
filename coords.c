@@ -1,13 +1,14 @@
 #include "db.h"
 
-COORDS *coord_create(NUM x, NUM y);
 COORDS *coord_new(NUM x, NUM y);
+COORDS *coord_copy(COORDS *CP);
 void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
 
-COORDS *coord_create(x,y)
+
+COORDS *coord_new(x,y)
 double x,y;
 {
     COORDS *tmp;
@@ -19,19 +20,13 @@ double x,y;
     return(tmp);
 }
 
-COORDS *coord_new(x,y)
-double x,y;
-{
-    return(coord_create(x,y));
-}
-
 void coord_append(CP, x,y)
 COORDS *CP;
 double x,y;
 {
     COORDS *tmp;
     tmp = CP->prev;	/* save pointer to last coord */
-    tmp->next = coord_create(x,y);
+    tmp->next = coord_new(x,y);
     tmp->next->prev = tmp;
     CP->prev = tmp->next;
 }
@@ -72,11 +67,33 @@ COORDS *CP;
     printf(";\n");
 }		
 
+COORDS *coord_copy(CP)
+COORDS *CP;
+{
+    COORDS *p;
+    COORDS *new_coords; 
+    int i;
+
+    if (CP == NULL) {
+    	printf("coord_copy: can't copy null coordinate list\n");
+    } else {
+	p=CP;
+	new_coords = coord_new(p->coord.x,p->coord.y);
+	p=p->next;
+	while(p != NULL) {
+	    coord_append(new_coords, p->coord.x, p->coord.y);
+	    p=p->next;
+	}
+    }
+    return(new_coords);
+}
+
 /* test harness */
 /*
 main() 
 {
     COORDS *CP;
+    COORDS *NP;
 
     CP = coord_new(1.0,2.0);
     coord_append(CP,3.0, 4.0);
@@ -86,5 +103,6 @@ main()
     coord_print(CP);
     coord_swap_last(CP,9.0, 10.0);
     coord_print(CP);
+    coord_print(coord_copy(CP));
 }
 */
