@@ -168,24 +168,34 @@ command	        :	FILES file_name_list '$' ';'
 		|	PURGE FILE_NAME ';'
 			    {
 				/*  uninstall($1); */
-				printf("# 3) should purge: %s\n",$2);
+			    /* FIXME: printf("# 3) should purge: %s\n",$2); */
+				;
+			    }
+		|	'$''$''$''$' FILE_NAME
+			    {
+				/* FIXME: do nothing for now */
+				/* later on, this is a path */
+				/* to use for fetching this rep */
+				;
 			    }
 		|	EXIT ';'
 		|	error ';' 
-				{
-				    yyerrok;
-				}
+			    {
+			        yyerrok;
+			    }
 		;
 
 file_name_list	:	FILE_NAME
 			    {
 				/*  uninstall($1); */
-				printf("# 1) should purge: %s\n",$1);
+			/* FIXME: printf("# 1) should purge: %s\n",$1); */
+				;
 			    }
 	      	|	file_name_list ',' FILE_NAME
 			    {
 				/*  uninstall($3); */
-				printf("# 2) should purge: %s\n",$3);
+			/* FIXME: printf("# 2) should purge: %s\n",$3); */
+				;
 			    }
 	      	;
 

@@ -301,6 +301,7 @@ NUM x1,y1,x2,y2,x3,y3;
 
     dp->u.a = ap;
     dp->type = ARC;
+    dp->next = (struct db_deflist *) NULL;
 
     ap->layer=layer;
     ap->opts=opts;
@@ -337,6 +338,7 @@ NUM x1,y1,x2,y2;
 
     dp->u.c = cp;
     dp->type = CIRC;
+    dp->next = (struct db_deflist *) NULL;
 
     cp->layer=layer;
     cp->opts=opts;
@@ -371,6 +373,7 @@ COORDS *coords;
 
     dp->u.l = lp;
     dp->type = LINE;
+    dp->next = (struct db_deflist *) NULL;
 
     lp->layer=layer;
     lp->opts=opts;
@@ -403,6 +406,7 @@ NUM x,y;
 
     dp->u.n = np;
     dp->type = NOTE;
+    dp->next = (struct db_deflist *) NULL;
 
     np->layer=layer;
     np->text=string;
@@ -436,6 +440,7 @@ NUM x1,y1, x2,y2, x3,y3;
 
     dp->u.o = op;
     dp->type = OVAL;
+    dp->next = (struct db_deflist *) NULL;
 
     op->layer=layer;
     op->opts=opts;
@@ -472,6 +477,7 @@ COORDS *coords;
 
     dp->u.p = pp;
     dp->type = POLY;
+    dp->next = (struct db_deflist *) NULL;
 
     pp->layer=layer;
     pp->opts=opts;
@@ -503,6 +509,7 @@ NUM x1,y1,x2,y2;
 
     dp->u.r = rp;
     dp->type = RECT;
+    dp->next = (struct db_deflist *) NULL;
 
     rp->layer=layer;
     rp->x1=x1;
@@ -538,6 +545,7 @@ NUM x,y;
 
     dp->u.t = tp;
     dp->type = TEXT;
+    dp->next = (struct db_deflist *) NULL;
 
     tp->layer=layer;
     tp->text=string;
@@ -571,6 +579,7 @@ NUM x,y;
 
     dp->u.i = ip;
     dp->type = INST;
+    dp->next = (struct db_deflist *) NULL;
 
     ip->def=subcell;
     ip->x=x;
@@ -782,6 +791,9 @@ int nest;
 		    sscanf(op->optstring+2, "%lf", &optval);
 		    slant(xp, optval);
 		    break;
+		case 'b':		/* appears in Andrew's pig arcs */
+		case 'B':		
+		    break;		/* FIXME: do nothing for now */
 		default:
 			fprintf(stderr,"unknown option value: %s\n",
 			    op->optstring); 

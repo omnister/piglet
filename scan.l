@@ -106,7 +106,7 @@ I			{
 ^PUR[G]			|
 ^PURG[E]		return token(PURGE);
 
-[.:@]{L}[^ \t\n]+	{
+[.:@]+{L}[^ \t\n]*	{
 			    yylval.name = strsave(yytext); 
 			    return token(OPTION);
 			}
