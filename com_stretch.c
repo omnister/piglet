@@ -2,15 +2,18 @@
 #include "xwin.h"
 #include "token.h"
 #include "lex.h"
+#include "rlgetc.h"
 
-com_stretch(lp, arg)
+int com_stretch(lp, arg)
 LEXER *lp;
 char *arg;
 {
-    int debug=0;
+    int debug=1;
 
     rl_saveprompt();
-    if (debug) printf("    com_stretch\n", arg);
+    rl_setprompt("STR> ");
+    if (debug) printf("    com_stretch (not implemented)\n");
+
     rl_restoreprompt();
 
     return (0);

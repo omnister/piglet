@@ -3,9 +3,9 @@
 #include "lex.h"
 #include "xwin.h"
 #include "rubber.h"
+#include "rlgetc.h"
+#include "opt_parse.h"
 #include <math.h>
-
-static COORDS *CP;
 
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
@@ -24,8 +24,6 @@ int *layer;
 
     int debug=0;
     int done=0;
-    int error=0;
-    int count;
     int nsegs;
     TOKEN token;
     char word[BUFSIZE];
@@ -226,7 +224,6 @@ double x3, y3;
 int count; /* number of times called */
 {
 	static double x3old, y3old;
-	int i;
 	BOUNDS bb;
 
 	bb.init=0;
@@ -255,22 +252,22 @@ int count; /* number of times called */
 	if (debug) {printf("in draw_arc\n");}
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbarc.x3 = x3;
 	    dbarc.y3 = y3;
 	    do_arc(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    dbarc.x3 = x3old;
 	    dbarc.y3 = y3old;
 	    do_arc(&dbdeflist, &bb, D_RUBBER);
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbarc.x3 = x3;
 	    dbarc.y3 = y3;
 	    do_arc(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    dbarc.x3 = x3old;
 	    dbarc.y3 = y3old;
 	    do_arc(&dbdeflist, &bb, D_RUBBER);
@@ -279,6 +276,6 @@ int count; /* number of times called */
 	/* save old values */
 	x3old=x3;
 	y3old=y3;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 
