@@ -1,7 +1,13 @@
 
-OK.  Just type make and you should have a working piglet.
+Compiling and Installing
+-------------------------
 
-Here's some things to try.  Firstly, the drawings that you create
+OK.  Just type "make" and you should have a working piglet.
+
+Getting Started
+---------------
+
+Here are some things to try.  Firstly, the drawings that you create
 will all be in the sub-directory ./cells.  Later on, I plan to
 implement a search path for drawings.
 
@@ -58,17 +64,59 @@ these with potential developers because they provide a blueprint for
 developing the code.  They will not be distributed with the public
 release of PD_piglet.
 
-
------------------ CREATING A CELL  ---------------------
+EDIT
+-----
 
 Once you are happy with the grid spacing and color, try adding some
 primitives to the drawing.  First give your drawing a name with "edi
 mycell".
 
+SHOW
+----
+
+The show command controls what layers are visible and modifiable in the
+drawing.  The default when starting to edit a new file is ALL layers
+visible and ALL layers non-modifiable.  This feature makes it much safer
+to browse critical files with Piglet.  You can't change anything unless
+you unlock the layers with the SHOW command.  The SHOW command syntax
+is:
+
+SHOW {+|-|#}[EACILN0PRT]<layer>
+
+You can control visibility and modifiability with the following characters:
+
+   + : make it visible
+   - : turn it off
+   # : visible and modifiable
+
+You control which kinds of components you are working with by the following
+component designators:
+
+   E : everything
+   A : arc
+   C : circle
+   I : instances
+   L : lines
+   N : notes
+   O : oval
+   P : polygons
+   R : rectangles
+   T : text
+
+The <layer> is either specific layer number, or if omitted, will control all
+layers.
+
+Some examples:
+	
+    SHO #E;       /* ALL layers visible and modifiable */
+    SHO #E -C7;   /* ALL layers vis. and mod. except circles on layer 7*/
+    SHO -E #R3;   /* Nothing editable except Rectangles on layer 3 */
+    SHO #E7 +E5;  /* display layers 7 and 5, only layer 7 is modifiable */
+
 RECTANGLES
 ----------
 
-Now try adding a rectangle by typing "ADD R7" then clicking
+Now try adding a rectangle on layer 7 by typing "ADD R7" then clicking
 the two corners of your rectangle with your left mouse button.  You can
 add as many rectangles as you want by continuing to click pairs.  The
 command can be terminated with a right-click or by typing either a ";"
@@ -77,8 +125,8 @@ by adding R<layer_number>.  The layers cycle mod(8) through the color
 table and then cycle through line types.  For example, "ADD R15" is the
 same color as "ADD R7", but uses a dot-dash line type.   Later on, the plan
 is to implement the PROCESS command which will allows you to to bind 
-outline colors, fill patterns, fill colors and so on to specific layer
-numbers or names.
+layer numbers to specific outline colors, fill patterns, fill colors and so
+on.
 
 As always with piglet, you can either use the mouse to enter coordinates
 or the keyboard.  For example, you can type:
@@ -92,9 +140,10 @@ calculations.
 INPUT
 -----
 
-As a final trick, you can use a program to create lines
-like the above, print them into a file named "./cells/foo", and then read
-them into your current cell using the input command: "INP foo".
+If you don't want to do all your typing at the prompt, you can use a
+program to create lines like the above, print them into a file named
+"./cells/foo", and then read them into your current cell using the input
+command: "INP foo". 
 
 
 COMMAND LINE EDITING
@@ -121,8 +170,13 @@ point by typing "WIN" and then double clicking on any given point.
 Clicking two different points will window in on a region.  You can
 get a zoom in or zoom out by using "WIN :X<factor>".
 
+If you have a very complex drawing with lots of hierarchy, you can
+simplify things by using the ":N<nest_level>" of the WIN command.  "WIN
+:N0" will show all sub-cells as bounding boxes.  "WIN :N1" will show all
+sub-cells of sub-cells as bounding boxes, and so on. 
 
-LINES
+
+ADDING LINES
 -----
 
 You can add lines with "ADD L<layer_number>".  Keep clicking your
@@ -133,7 +187,7 @@ or typing ";" will terminate both the line and the command.
 Lines can have width.  Typing "ADD L7 :W20" will let you enter a line
 with a width of 20.  The default is a width of zero.
 
-CIRCLES
+ADDING CIRCLES
 -------
 
 Circles are added with "ADD C<layer> :R<degrees> XY1 XY2". The ":R" option 
@@ -143,13 +197,16 @@ rotates during rubberband drawing such that the second point, XY2, is always
 on one of the vertices.  "ADD C7 :R90" is a way to add a rotated square.
 "ADD C7 :R120" adds an equilateral triangle.
 
-POLYGONS
+You can add ovals by using the :Y<xyratio> option to "ADD C".  Try "ADD C7 :Y.3"
+to add an oval with a major/minor axis ratio of 0.3.  
+
+ADDING POLYGONS
 --------
 
 Similiar to lines.  The polygons are always closed for you while you are
 drawing.  Double clicking terminates but keeps the command active.
 
-NOTES and TEXT
+ADDING NOTES and TEXT
 --------------
 
 You can add notes (drawn with zero width strokes) with 
@@ -164,7 +221,7 @@ The fontsize is the vertical spacing of the characters that will
 produce single-spaced lines of text.  So, a fontsize of :F20 will
 produce a capital letter with a height of 15 units.
 
-Other fun options are
+Other options are
 
     ":M<x|y|xy>"     mirror the text around x,y, or both xy axes
     ":R<angle>"      rotate text by <angle> in degrees
@@ -176,7 +233,7 @@ changed.  I have quite a few fonts that are derived from the Hershey
 font database.  The format is pretty simple and is documented in
 readfont.c.
 
-INSTANCES
+ADDING INSTANCES
 ---------
 
 You can save your drawing with the "SAVE;" command.  You can then 
@@ -210,6 +267,21 @@ The file is human readable and is a nicely formatted transcript of the
 exact commands that you typed and moused to create the cell in the first
 place.  You can edit this file (carefully) and the textual changes will
 take effect next time you start a new piglet and read in the definition.
+The "<CELLNAME>.d" file only contains the definition of the cell <CELLNAME>.
+If <CELLNAME> includes other cells, they will only be called by name and not
+defined.  In other words, if you mail a friend a ".d" file, they will be
+unable to reconstruct your cell if it has any hierarchy.  If you want
+a full definition of your work, then you should use the "ARCHIVE" command.
+
+ARCHIVE
+-------
+
+When you "ARC" a cell it creates a text file in ./cells/<CELLNAME>_I
+which contains a full hierarchical description of <CELLNAME> including
+all sub-cells.  The "_I" archive file is constructed to have no forward
+references and includes PURGE commands to delete any previously defined
+cells before redefining them. 
+
 
 PURGE
 -----
@@ -217,7 +289,9 @@ PURGE
 If you want to use textual processing to change a cell that's already
 been read into memory, you can "PURGE <cellname>", and then re-edit it.
 The second edit will re-read the disk definition including any changes
-that have been added.
+that have been added.  If you type PURGE interactively, rather than
+input it from a file, you will be asked permission to delete the memory
+copy, and then any disk copies of the cell.
 
 DEMOS
 -----
@@ -228,11 +302,14 @@ Try:
 
     "EDI CDRCFR"   a hybrid substrate for a 2.488 GHz phase locked loop
     "EDI tone"     a schematic for a PBX dial tone generator
-    "EDI fontest"  an example of all the characters
+    "EDI fontest"  an example of all the characters in note and text fonts
     "EDI H20919M1" a 24x36 inch 6-layer Printed Circuit Board design
     "EDI testpen"  a sample of all the line types
     "EDI PLAN2"    the floor plans of the two houses on my lot 
     "EDI slic"     a telephone subscriber line interface circui
+    "EDI pict3"    a 3-D drawing of a high-speed test fixture
+    "EDI RTILE"    a GAAS delay line integrated circuit layout 
+    "EDI RINGOSC"  the layout for the first 3/5 ring oscillator
 
 You can look at the CELL.d files to see the top level definitions or
 you can look at the CELL_I file to see the full hierarchical archive
@@ -240,11 +317,78 @@ which includes all the sub-cell definitions.  The archive file is fully
 self-contained and is suitable for e-mailing a complete design to another
 person.
 
+DUMP
+----
+
+The DUMP command creates a Portable Pix Map copy of the current graphic
+window in the file "./<device_name>.ppm".  You can view/print/convert
+this with xv(1), or convert it to gif format with ppmtogif(1) from the
+pbmtools package. 
+
+PLOT
+----
+
+The PLOT command creates an ASCII dump of the current device
+in the file "./<device_name>.plot.  This is in autoplot(1) format
+which is a simple list of coordinates one per line.  The file starts
+with three lines containing plot directives.  These are "back", which
+is a directive to allow right to left segments to be displayed, "nogrid",
+which turns off autoplots grid display, and "isotropic" which forces x and y
+axes to have the same scale. 
+
+The file then consists of x,y points, one set per line interspersed with
+"pen <pennumber>", "line <linetype>" and "jump" commands.  Points should
+be connected together unless there is an intervening "jump" command. 
+Pen color is changed with lines of the form "pen <pennumber>", where
+<pennumber> is an integer from 1 to 8. Line style is changed with the
+command "line <linetype>", with <linetype> an integer from 1 to 8.
+
+Here is an example plotfile for plotting a unit rectangle centered at the
+origin:
+
+--------- cut here for rectangle.plot ------------
+nogrid
+isotropic
+back
+jump
+pen 1
+line 1
+-0.5 -0.5
+0.5 -0.5
+0.5 0.5
+-0.5 0.5
+-0.5 -0.5
+--------- cut here for rectangle.plot ------------
+
+The basic rendering engine creates output consisting of xy() coordinates
+for defining a drawing path, jump() commands which move to the next
+coordinate without drawing, pen(pen_number) to set colors, and
+line(line_type) to set line style.  These should be trivial to convert to
+either postscript or HPGL output.  
+
+
+IDENTIFY
+--------
+
+The IDEntify command takes a series of xy points and for each point
+highlights the nearest primitive and prints some information about it to the
+screen.
+
+POINT
+-----
+
+The POInt command takes a series of xy points and simply prints their
+coordinates to the screen.  No change is made to the database.
+
+
 MISSING STUFF
 -------------
 
 There are data structures and stubs for OVALS and ARCS.  These and others
-should be an easy project.
+should be an easy project.  I would like to make an option for lines to
+do parametric spline curves.
+
+Support for isometric grids would be nice.
 
 Most conspicuous is the lack of "DELete", "MOVe", "COPy" and "STRetch". 
 This is the next big code push.  I'll start with the "IDEntify" command. 
@@ -278,15 +422,6 @@ is used to pass the mouse clicks into the parser as ascii representations
 of the mouse coordinates.  With such a simple menu in place, the editing
 is quite fast and efficient, requiring the keyboard only for precision 
 coordinate or text string entry.
-
-PRINTING
---------
-
-The basic rendering engine creates output consisting of xy() coordinates
-for defining a drawing path, jump() commands which move to the next
-coordinate without drawing, pen(pen_number) to set colors, and
-line(line_type) to set line style.  These should be trivial to convert to
-either postscript or HPGL output.  
 
 MACROS
 ------

@@ -23,18 +23,17 @@
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
-OPTS   *opts;
 XFORM  unity_transform;
 XFORM  screen_transform;
 XFORM  *xp = &screen_transform;
 
-int quit_now; /* When!=0 ,  means the user is done using this program. */
+int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.1 2004/10/08 12:00:00 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.23 2004/10/13 22:46:24 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
-unsigned int menu_width;	/* menu window pixel size */
+unsigned int menu_width;		/* menu window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
 
 double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
@@ -56,7 +55,6 @@ DISPLAYSTATE display_state = D_ON;	/* ON, OFF */
 int grid_color = 1;	/* 1 through 6 for different colors */ 
 int grid_notified = 0;
 
-int modified=0;
 int need_redraw=0;
 
 #define icon_bitmap_width 20
@@ -984,7 +982,7 @@ double yo;
     extern int grid_yo;
     int debug = 0;
    
-    if (debug) printf("xwin_grid_pts: setting grid, %g %g %g %g %g %g\n",
+    printf("setting grid: xydelta=%g,%g xyskip=%g,%g xyoffset=%g,%g\n",
 	xd, yd, xs, ys, xo, yo);
 
     /* only redraw if something has changed */

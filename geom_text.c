@@ -64,7 +64,7 @@ int font_num;
 		    if (nargs > 1) {
 			rubber_clear_callback();
 		    }
-		    if (opt_parse(word, "MNRYZF", &opts) == -1) {
+		    if (opt_parse(word, TEXT_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;

@@ -11,6 +11,7 @@ int nest=9;		/* default nesting level */
 int bounds=0;		/* default pick boundary display level */
 
 OPTS opts;
+void draw_bounds();
 
 int com_window(lp, arg)
 LEXER *lp;
@@ -254,7 +255,10 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
     	xmin, ymin, xmax, ymax);
 
     if (fit) {
-	db_bounds(&xmin, &ymin, &xmax, &ymax);
+	xmin = currep->minx;
+	ymin = currep->miny;
+	xmax = currep->maxx;
+	ymax = currep->maxy;
     }
 
     if (debug) printf("%g %g %g %g %d\n", xmin, ymin, xmax, ymax, n);

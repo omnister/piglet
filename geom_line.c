@@ -84,7 +84,7 @@ int *layer;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(lp,word); 
-		    if (opt_parse(word, "W", &opts) == -1) {
+		    if (opt_parse(word, LINE_OPTS, &opts) == -1) {
 		    	state = END;
 		    } else {
 			state = START;

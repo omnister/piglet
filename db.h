@@ -16,6 +16,13 @@
 #define TEXT  65536
 #define ALL   87381   /* sum of all bits */
 
+#define CIRC_OPTS "WRY"
+#define LINE_OPTS "W"
+#define POLY_OPTS "W"
+#define RECT_OPTS "W"
+#define TEXT_OPTS "MNRYZF"
+#define INST_OPTS "MRXYZ"
+
 #define MAX_LAYER 1024
 
 int show[MAX_LAYER];
@@ -202,7 +209,7 @@ typedef struct db_text {
    primitives in a cell structure */
 
 typedef struct db_deflist {
-    int   type;
+    int type;
     union {
         DB_ARC  *a;  /* arc definition */
         DB_CIRC *c;  /* circle definition */
@@ -219,12 +226,6 @@ typedef struct db_deflist {
 } DB_DEFLIST;
             
 extern char *strsave( char *string );
-
-extern void append_pair( PAIR p );
-extern void discard_pairs( void );
-extern COORDS *pair_alloc( PAIR p );
-extern COORDS *first_pair, *last_pair; 
-
 
 extern DB_TAB *db_lookup( char *cellname );
 extern DB_TAB *db_install( char *cellname ); 
@@ -332,8 +333,6 @@ extern int db_plot();			/* plot the device to a file */
 
 extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);
 extern void jump(void);
-
-extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);
 
 extern void show_set_visible(int comp, int layer, int state);
 extern void show_set_modify(int comp, int layer, int state);

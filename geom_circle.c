@@ -45,7 +45,7 @@ int *layer;
 		if (token == OPT ) {
 		    token_get(lp, word); /* ignore for now */
 		    /* FIXME: do bound checking on opts */
-		    if (opt_parse(word, "WRY", &opts) == -1) {
+		    if (opt_parse(word, CIRC_OPTS, &opts) == -1) {
 		    	state = END;
 		    } else {
 			state = START;

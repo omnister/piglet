@@ -20,27 +20,25 @@
 static DB_TAB *HEAD = 0;
 static DB_TAB *TAIL = 0;
 
-COORDS *first_pair, *last_pair; 
-OPTS   *first_opt, *last_opt;
-
 /* global drawing variables */
 XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
-NUM xmax, ymax; 	   /* globals for finding bounding boxes */
-NUM xmin, ymin;
+
+/* global variables that need to eventually be on a stack for nested edits */
 int layer;
-int bounds_valid=1;
-double max(), min();
 int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
-int boundslevel=0;
+int boundslevel=3;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line();
 void do_oval(), do_poly(), do_rect(), do_text();
+
+/* support routines */
+double max(), min();
 
 /* matrix routines */
 XFORM *compose();
@@ -382,7 +380,7 @@ int mode;
     if (mode == ARCHIVE) {
 	fprintf(fp, "PURGE %s;\n", dp->name); 
 	fprintf(fp, "EDIT %s;\n", dp->name);
-	fprintf(fp, "SHO #E;\n");
+	fprintf(fp, "SHOW #E;\n");
     }
 
     fprintf(fp, "LOCK %g;\n", dp->lock_angle);
@@ -404,7 +402,7 @@ int mode;
         case CIRC:  /* circle definition */
 
 	    fprintf(fp, "ADD C%d ", p->u.c->layer);
-	    db_print_opts(fp, p->u.c->opts, "WRY");
+	    db_print_opts(fp, p->u.c->opts, CIRC_OPTS);
 
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.c->x1,
@@ -415,9 +413,8 @@ int mode;
 	    break;
 
         case LINE:  /* line definition */
-
 	    fprintf(fp, "ADD L%d ", p->u.l->layer);
-	    db_print_opts(fp, p->u.l->opts, "W");
+	    db_print_opts(fp, p->u.l->opts, LINE_OPTS);
 
 	    i=1;
 	    coords = p->u.l->coords;
@@ -439,7 +436,7 @@ int mode;
         case POLY:  /* polygon definition */
 
 	    fprintf(fp, "ADD P%d", p->u.p->layer);
-	    db_print_opts(fp, p->u.p->opts, "W");
+	    db_print_opts(fp, p->u.p->opts, POLY_OPTS);
 
 	    i=1;
 	    coords = p->u.p->coords;
@@ -456,7 +453,7 @@ int mode;
 	case RECT:  /* rectangle definition */
 
 	    fprintf(fp, "ADD R%d ", p->u.r->layer);
-	    db_print_opts(fp, p->u.r->opts, "W");
+	    db_print_opts(fp, p->u.r->opts, RECT_OPTS);
 
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
@@ -470,11 +467,10 @@ int mode;
 
 	    if (p->u.t->opts->font_num%2) {
 		fprintf(fp, "ADD T%d ", p->u.t->layer); 	/* 1,3,5.. = text */
-		db_print_opts(fp, p->u.t->opts, "MNRYZF");
 	    } else {
 		fprintf(fp, "ADD N%d ", p->u.t->layer); 	/* 0,2,4.. = note */
-		db_print_opts(fp, p->u.t->opts, "MNRYZF");
 	    }
+	    db_print_opts(fp, p->u.t->opts, TEXT_OPTS);
 
 	    fprintf(fp, "\"%s\" %g,%g;\n",
 		p->u.t->text,
@@ -485,7 +481,7 @@ int mode;
 
         case INST:  /* instance call */
 	    fprintf(fp, "ADD %s ", p->u.i->name);
-	    db_print_opts(fp, p->u.i->opts, "MRXYZ");
+	    db_print_opts(fp, p->u.i->opts, INST_OPTS);
 	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
 		p->u.i->y
@@ -505,6 +501,22 @@ int mode;
     }
 }
 
+void db_insert_component(cell,dp) 
+DB_TAB *cell;
+struct db_deflist *dp;
+{
+    /* add definition at *end* of list */
+    if (cell->dbhead == NULL) {
+	cell->dbhead = cell->dbtail = dp;
+    } else {
+	dp->prev = cell->dbtail; 	/* doubly linked list */
+	if (cell->dbtail != NULL) {
+	    cell->dbtail->next = dp;
+	}
+	cell->dbtail = dp;
+    }
+}
+
 
 int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
 DB_TAB *cell;
@@ -520,14 +532,8 @@ NUM x1,y1,x2,y2,x3,y3;
     ap = (struct db_arc *) emalloc(sizeof(struct db_arc));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.a = ap;
     dp->type = ARC;
@@ -556,14 +562,8 @@ NUM x1,y1,x2,y2;
     cp = (struct db_circ *) emalloc(sizeof(struct db_circ));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.c = cp;
     dp->type = CIRC;
@@ -592,14 +592,8 @@ COORDS *coords;
     lp = (struct db_line *) emalloc(sizeof(struct db_line));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.l = lp;
     dp->type = LINE;
@@ -625,14 +619,8 @@ NUM x1,y1, x2,y2, x3,y3;
     op = (struct db_oval *) emalloc(sizeof(struct db_oval));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.o = op;
     dp->type = OVAL;
@@ -664,14 +652,8 @@ COORDS *coords;
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.p = pp;
     dp->type = POLY;
@@ -698,14 +680,8 @@ NUM x1,y1,x2,y2;
     rp = (struct db_rect *) emalloc(sizeof(struct db_rect));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.r = rp;
     dp->type = RECT;
@@ -735,14 +711,8 @@ NUM x,y;
     tp = (struct db_text *) emalloc(sizeof(struct db_text));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.t = tp;
     dp->type = TEXT;
@@ -770,14 +740,8 @@ NUM x,y;
     ip = (struct db_inst *) emalloc(sizeof(struct db_inst));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
+    dp->prev = NULL;
+    db_insert_component(cell,dp);
 
     dp->u.i = ip;
     dp->type = INST;
@@ -806,37 +770,6 @@ main () {
     db_print();
 }
 */
-
-
-COORDS *pair_alloc(p)
-PAIR p;
-{	
-    COORDS *temp;
-    temp = (COORDS *) emalloc(sizeof(COORDS));
-    temp->coord = p;
-    temp->next = NULL;
-    return(temp);
-}
-
-
-void append_pair(p)
-PAIR p;
-{
-    last_pair->next = pair_alloc(p);
-    last_pair = last_pair->next;
-}
-
-void discard_pairs()
-{	
-    COORDS *temp;
-
-    while(first_pair != NULL) {
-	temp = first_pair;
-	first_pair = first_pair->next;
-	free((char *)temp);
-    }
-    last_pair = NULL;
-}		
 
 OPTS *opt_copy(OPTS *opts)
 {
@@ -971,22 +904,9 @@ char *s;
 }
 
 /********************************************************/
-/* rendering routine */
+/* rendering routines
 /* db_render() sets globals xmax, ymax, xmin, ymin;
-/* db_bounds() accesses them for use in com_win();
 /********************************************************/
-
-void db_bounds(xxmin, yymin, xxmax, yymax)
-NUM *xxmin;
-NUM *yymin;
-NUM *xxmax;
-NUM *yymax;
-{
-    *xxmin = xmin;
-    *yymin = ymin;
-    *xxmax = xmax;
-    *yymax = ymax;
-}
 
 void db_set_nest(nest) 
 int nest;
@@ -1024,85 +944,341 @@ BOUNDS *childbb;
     return;
 }
 
+/* a fast approximation to euclidian distance */
+/* with no sqrt() and about 5% accuracy */
+
+double dist(dx,dy) 
+double dx,dy;
+{
+    dx = dx<0?-dx:dx; /* absolute value */
+    dy = dy<0?-dy:dy;
+
+    if (dx > dy) {
+	return(dx + 0.3333*dy);
+    } else {
+	return(dy + 0.3333*dx);
+    }
+}
+
+
+/* called with pick point x,y and bounding box in p return zero if xy */
+/* inside bb, otherwise return a number  between zero and 1 */
+/* monotonically related to inverse distance of xy from bounding box */
+
+double bb_distance(x, y, p, fuzz)
+double x,y;
+DB_DEFLIST *p;
+double fuzz;
+{
+    int outcode;
+    double retval;
+    outcode = 0;
+
+    /*  9 8 10
+	1 0 2
+	5 4 6 */
+
+    /* FIXME - this check can eventually go away for speed */
+    if (p->xmin >= p->xmax) { printf("bad!\n"); }
+    if (p->ymin >= p->ymax) { printf("bad!\n"); }
+
+    if (x <= p->xmin-fuzz)  outcode += 1; 
+    if (x >  p->xmax+fuzz)  outcode += 2;
+    if (y <= p->ymin-fuzz)  outcode += 4;
+    if (y >  p->ymax+fuzz)  outcode += 8;
+
+    switch (outcode) {
+	case 0:		/* p is inside BB */
+	    retval = -1.0; 	
+	    break;
+	case 1:		/* p is West */
+	    retval = 1.0/(1.0 + (p->xmin-x));
+	    break;
+	case 2:		/* p is East */
+	    retval = 1.0/(1.0 + (x-p->xmax));
+	    break;
+	case 4:		/* p is South */
+	    retval = 1.0/(1.0 + (p->ymin-y));	
+	    break;
+	case 5:		/* p is SouthWest */
+	    retval = 1.0/(1.0 + dist(p->ymin-y,p->xmin-x));
+	    break;
+	case 6:		/* p is SouthEast */
+	    retval = 1.0/(1.0 + dist(p->ymin-y,x-p->xmax));
+	    break;
+	case 8:		/* p is North */
+	    retval = 1.0/(1.0 + (y-p->ymax));	
+	    break;
+	case 9:		/* p is NorthWest */
+	    retval = 1.0/(1.0 + dist(y-p->ymax, p->xmin-x));
+	    break;
+	case 10:	/* p is NorthEast */
+	    retval = 1.0/(1.0 + dist(y-p->ymax, x-p->xmax));
+	    break;
+	default:
+	    printf("bad case in bb_distance %d\n", outcode);
+	    exit(1);
+	    break;
+    }
+    /* printf("%g %g %g %g %g %d\n", p->xmin, p->ymin, p->xmax, p->ymax, retval, outcode); */
+    return (retval);
+}
+
+
+/* 
+ * db_ident() takes a pick point (x,y) and renders through 
+ * the database to find the best candidate near the point.
+ *
+ * Run through all components in the device and
+ * give each a score.  The component with the best score is 
+ * returned as the final pick.
+ * 
+ * three different scores:
+ *    CASE 1: ; pick point is outside of BB, higher score the 
+ *      closer to BB
+ *	(0<  score < 1)	
+ *	score is 1/(1+distance to cell BB)
+ *    CASE 2: ; pick inside of BB, doesn't touch any rendered lines
+ *	(1<= score < 2)
+ *	score is 1+1/(1+min_dimension_of cell BB)
+ *	score is weighted so that smaller BBs get better score
+ *	This allows picking the inner of nested rectangles
+ *    CASE 3: ; pick inside of BB, touches a rendered line
+ *	(2<= score < 3)
+ *	score is 2+1/(1+min_dimension_of line BB)
+ *
+ *    CASE 1 serves as a crude selector in the case that the
+ *    pick point is not inside any bounding box.  It also serves
+ *    as a crude screening to avoid having to test all the components
+ *    in detail. 
+ * 
+ *    CASE 2 is for picks that fall inside a bounding box. It has a
+ *    higher score than anything in CASE 1 so it will take priority
+ *    Smaller bounding boxes get higher ranking.
+ *
+ *    CASE 3 overrides CASE 1 and CASE 2.  It comes into play when
+ *    the pick point is near an actual drawn segment of a component.
+ *
+ */
+
 int db_ident(cell, x, y)
-DB_TAB *cell;
-double x, y;
+DB_TAB *cell;			/* device being edited */
+double x, y;	 		/* pick point */
 {
     DB_DEFLIST *p;
+    DB_DEFLIST *p_best;
     int debug=0;
     BOUNDS childbb;
+    double pick_score;
+    double pick_best=0.0;
+    int outcode;
+    double fuzz;
+    double xmin, ymin, xmax, ymax;
 
     if (cell == NULL) {
     	printf("no cell currently being edited!\n");
 	return(0);
     }
 
+    /* pick fuzz should be a fraction of total window size */
+    xwin_window_get(&xmin, &ymin, &xmax, &ymax);
+    fuzz = max((xmax-xmin),(ymax-ymin))/100.0;
+
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
 	childbb.init=0;
 
-	if (p->xmin <= x && p->xmax >= x && p->ymin <= y && p->ymax >= y) {
+	/* screen components by crude bounding boxes then */
+	/* render each one in D_PICK mode for detailed test */
+
+	if ((pick_score=bb_distance(x,y,p,fuzz)) < 0.0) { 		/* inside BB */
+
+	    /* pick point simply being inside BB gives a score ranging from */
+	    /* 1.0 to 2.0, with smaller BB's getting higher score */
+	    pick_score= 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin), fabs(p->ymax-p->ymin)));
+
+	    /* a bit of a hack, but we overload the childbb structure to */
+	    /* pass the pick point into the draw routine.  If there is a hit, */
+	    /* then childbb.xmax is set to 1.0 */
+	    childbb.xmin = x;
+	    childbb.ymin = y;
+	    childbb.xmax = 0.0;
+
 	    switch (p->type) {
 	    case ARC:  /* arc definition */
-		printf(" arc: %g %g %g %g\n",
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_arc(p, &childbb, D_PICK); 
+		if (debug) printf("in arc %g\n", childbb.xmax);
 		break;
 	    case CIRC:  /* circle definition */
-		do_circ(p, &childbb, D_RUBBER);
-		printf("circ: %g %g %g %g\n",
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_circ(p, &childbb, D_PICK); 
+		if (debug) printf("in circ %g\n", childbb.xmax);
 		break;
 	    case LINE:  /* line definition */
-		do_line(p, &childbb, D_RUBBER);
-		printf("line: %g %g %g %g\n", 
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_line(p, &childbb, D_PICK); 
+		if (debug) printf("in line %g\n", childbb.xmax);
 		break;
 	    case OVAL:  /* oval definition */
-		do_oval(p, &childbb, D_RUBBER);
-		printf("oval: %g %g %g %g\n",
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_oval(p, &childbb, D_PICK);
+		if (debug) printf("in oval %g\n", childbb.xmax);
 		break;
 	    case POLY:  /* polygon definition */
-		do_poly(p, &childbb, D_RUBBER);
-		printf("poly: %g %g %g %g\n", 
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_poly(p, &childbb, D_PICK);
+		if (debug) printf("in poly %g\n", childbb.xmax);
 		break;
 	    case RECT:  /* rectangle definition */
-		do_rect(p, &childbb, D_RUBBER);
-		printf("rect: %g %g %g %g\n", 
-			p->xmin, p->ymin, p->xmax, p->ymax);
+		do_rect(p, &childbb, D_PICK);
+		if (debug) printf("in rect %g\n", childbb.xmax);
 		break;
 	    case TEXT:  /* text and note definition */
+		do_text(p, &childbb, D_PICK); 
+		if (debug) printf("in text %g\n", childbb.xmax);
+		break;
 	    case INST:  /* recursive instance call */
-		if (p->type == TEXT) {
-		    printf("text: %g %g %g %g: \"%s\"\n", 
-			p->xmin, p->ymin, p->xmax, p->ymax, p->u.t->text);
-		} else if (p->type == INST) {
-		    printf("%s: %g %g %g %g\n", 
-			p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
-		}
-		set_layer(0,0);
-		jump();
-		    /* a square bounding box outline in white */
-		    draw(p->xmax, p->ymax, &childbb, D_RUBBER); 
-		    draw(p->xmax, p->ymin, &childbb, D_RUBBER);
-		    draw(p->xmin, p->ymin, &childbb, D_RUBBER);
-		    draw(p->xmin, p->ymax, &childbb, D_RUBBER);
-		    draw(p->xmax, p->ymax, &childbb, D_RUBBER);
-		jump();
-		    /* and diagonal lines from corner to corner */
-		    draw(p->xmax, p->ymax, &childbb, D_RUBBER);
-		    draw(p->xmin, p->ymin, &childbb, D_RUBBER);
-		jump() ;
-		    draw(p->xmin, p->ymax, &childbb, D_RUBBER);
-		    draw(p->xmax, p->ymin, &childbb, D_RUBBER);
+		if (debug) printf("in inst %g\n", childbb.xmax);
 		break;
 	    default:
 		eprintf("unknown record type: %d in db_ident\n", p->type);
 		return(1);
 		break;
 	    }
+
+	    pick_score += childbb.xmax*3.0;
 	}
+
+	/* keep track of the best of the lot */
+	if (pick_score > pick_best) {
+	    pick_best=pick_score;
+	    p_best = p;
+	}
+    }
+
+    db_notate(p_best);		/* print out identifying information */
+    db_highlight(p_best);	
+}
+
+db_drawbounds(p)
+DB_DEFLIST *p;
+{
+    BOUNDS childbb;
+    childbb.init=0;
+    set_layer(0,0);
+
+    jump();
+	/* a square bounding box outline in white */
+	draw(p->xmax, p->ymax, &childbb, D_RUBBER); 
+	draw(p->xmax, p->ymin, &childbb, D_RUBBER);
+	draw(p->xmin, p->ymin, &childbb, D_RUBBER);
+	draw(p->xmin, p->ymax, &childbb, D_RUBBER);
+	draw(p->xmax, p->ymax, &childbb, D_RUBBER);
+    jump();
+	/* and diagonal lines from corner to corner */
+	draw(p->xmax, p->ymax, &childbb, D_RUBBER);
+	draw(p->xmin, p->ymin, &childbb, D_RUBBER);
+    jump() ;
+	draw(p->xmin, p->ymax, &childbb, D_RUBBER);
+	draw(p->xmax, p->ymin, &childbb, D_RUBBER);
+}
+
+int db_notate(p)
+DB_DEFLIST *p;			/* print out identifying information */
+{
+
+    if (p == NULL) {
+    	printf("no component!\n");
+	return(0);
+    }
+
+    switch (p->type) {
+    case ARC:  /* arc definition */
+	break;
+    case CIRC:  /* circle definition */
+	printf("Circ %d LL=%g,%g UR=%g,%g ", p->u.c->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
+	printf("\n");
+	break;
+    case LINE:  /* line definition */
+	printf("Line %d LL=%g,%g UR=%g,%g ", p->u.l->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
+	printf("\n");
+	break;
+    case OVAL:  /* oval definition */
+	break;
+    case POLY:  /* polygon definition */
+	printf("Poly %d LL=%g,%g UR=%g,%g ", p->u.p->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.p->opts, POLY_OPTS);
+	printf("\n");
+	break;
+    case RECT:  /* rectangle definition */
+	printf("Rect %d LL=%g,%g UR=%g,%g ", p->u.r->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
+	printf("\n");
+	break;
+    case TEXT:  /* text and note definition */
+	printf("Text %d LL=%g,%g UR=%g,%g ", p->u.t->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
+	printf(" \"%s\"\n", p->u.t->text);
+	break;
+    case INST:  /* instance call */
+	printf("Inst %s LL=%g,%g UR=%g,%g ", p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.i->opts, INST_OPTS);
+	printf("\n");
+	break;
+    default:
+	eprintf("unknown record type: %d in db_notate\n", p->type);
+	return(1);
+	break;
+    }
+}
+
+int db_highlight(p)
+DB_DEFLIST *p;			/* component to display */
+{
+    BOUNDS childbb;
+    childbb.init=0;
+
+    if (p == NULL) {
+    	printf("no component!\n");
+	return(0);
+    }
+
+    childbb.init=0;
+
+    switch (p->type) {
+    case ARC:  /* arc definition */
+	db_drawbounds(p);
+	do_arc(p, &childbb, D_RUBBER);
+	break;
+    case CIRC:  /* circle definition */
+	db_drawbounds(p);
+	do_circ(p, &childbb, D_RUBBER);
+	break;
+    case LINE:  /* line definition */
+	db_drawbounds(p);
+	do_line(p, &childbb, D_RUBBER);
+	break;
+    case OVAL:  /* oval definition */
+	db_drawbounds(p);
+	do_oval(p, &childbb, D_RUBBER);
+	break;
+    case POLY:  /* polygon definition */
+	db_drawbounds(p);
+	do_poly(p, &childbb, D_RUBBER);
+	break;
+    case RECT:  /* rectangle definition */
+	db_drawbounds(p);
+	do_rect(p, &childbb, D_RUBBER);
+	break;
+    case TEXT:  /* text and note definition */
+	db_drawbounds(p);
+	do_text(p, &childbb, D_RUBBER);
+	break;
+    case INST:  /* instance call */
+	db_drawbounds(p);
+	break;
+    default:
+	eprintf("unknown record type: %d in db_highlight\n", p->type);
+	return(1);
+	break;
     }
 }
 
@@ -1177,11 +1353,13 @@ int nest;	/* nesting level */
 BOUNDS *bb;
 int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 {
-    DB_DEFLIST *p;
-    OPTS *op;
-    XFORM *xp, *xa;
+
     extern XFORM *global_transform;
     extern XFORM unity_transform;
+
+    DB_DEFLIST *p;
+    OPTS *op;
+    XFORM *xp;
     XFORM *save_transform;
     extern int nestlevel;
     double optval;
@@ -1371,10 +1549,10 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	draw(bb->xmin, bb->ymax, &mybb, D_BB);
 
 	/* update cell and globals for db_bounds() */
-	cell->minx = xmin = bb->xmin;
-	cell->maxx = xmax = bb->xmax;
-	cell->miny = ymin = bb->ymin;
-	cell->maxy = ymax = bb->ymax;
+	cell->minx =  bb->xmin;
+	cell->maxx =  bb->xmax;
+	cell->miny =  bb->ymin;
+	cell->maxy =  bb->ymax;
 
     } 
 
@@ -1762,8 +1940,7 @@ BOUNDS *bb;
 int mode;
 {
 
-    extern XFORM *transform;
-    XFORM *xp, *xf;
+    XFORM *xp;
     NUM x,y;
     OPTS  *op;
     double optval;
@@ -1923,7 +2100,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     NUM xx, yy;
     static NUM xxold, yyold;
     int debug=0;
-    double x1, y1, x2, y2;
+    double x1, y1, x2, y2, xp, yp;
 
     if (mode == D_BB) {	
 	/* skip screen transform to draw bounding */
@@ -1939,18 +2116,25 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	    y*global_transform->r21 + global_transform->dx;
 	yy = x*global_transform->r12 + 
 	    y*global_transform->r22 + global_transform->dy;
-
-	/* merge bounding boxes */
-	if(bb->init == 0) {
-	    bb->xmin=bb->xmax=xx;
-	    bb->ymin=bb->ymax=yy;
-	    bb->init++;
-	} else {
-	    bb->xmax = max(xx,bb->xmax);
-	    bb->xmin = min(xx,bb->xmin);
-	    bb->ymax = max(yy,bb->ymax);
-	    bb->ymin = min(yy,bb->ymin);
+	if (mode == D_PICK) {
+	    /* transform the pick point into screen coords */
+	    xp = bb->xmin;
+	    yp = bb->ymin;
+	    R_to_V(&xp, &yp);
 	}
+	if (mode == D_NORM) {
+	    /* merge bounding boxes */
+	    if(bb->init == 0) {
+		bb->xmin=bb->xmax=xx;
+		bb->ymin=bb->ymax=yy;
+		bb->init++;
+	    } else {
+		bb->xmax = max(xx,bb->xmax);
+		bb->xmin = min(xx,bb->xmin);
+		bb->ymax = max(yy,bb->ymax);
+		bb->ymin = min(yy,bb->ymin);
+	    }
+	} 
     } else {
     	printf("bad mode: %d in draw() function\n", mode);
 	exit(1);
@@ -1966,11 +2150,15 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     /* range of an unsigned int (RCW) */
 
     if (X) {
+
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
+
 	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
 	    if (mode == D_PICK) {   /* no drawing just pick checking */
-	        /* idea is to overlay bb with pick point */
-		/* hit=check_pick(x1, y1, x2, y2, bb, boundslevel); */
+		/* a bit of a hack, but we overload the bb structure */
+		/* to transmit the pick points ... pick comes in on */
+		/* xmin, ymin and a boolean 0,1 goes back on xmax */
+		bb->xmax += (double) pickcheck(xxold, yyold, xx, yy, xp, yp, 3.0);
 	    } else if (mode == D_RUBBER) { /* xor rubber band drawing */
 		if (showon && drawon) {
 		    xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
@@ -1978,9 +2166,11 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	    } else {		/* regular drawing */
 		if (showon && drawon) {
 		    xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
+		    /*
 		    if (boundslevel) {
 			draw_pick_bound(x1, y1, x2, y2, boundslevel);
 		    }
+		    */
  		}
 	    }
 	}
@@ -1991,6 +2181,44 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	/* autoplot output */
 	if (showon && drawon) fprintf(PLOT_FD, "%4.6g %4.6g\n", xx,yy);	
     }
+}
+
+/* pickcheck(): called with a line segment L=(x1,y1),
+ * (x2, y2) a point (x3, y3) and a fuzz factor eps, returns 1 if p3 is
+ * within a rectangular bounding box eps larger than L, 0 otherwise. 
+ *
+ * ...a bit of a hack, but we overload the bb structure to transmit the
+ * pick points x3,y3 ...  pick comes in on x3=bb->xmin, y3=bb->ymin and
+ * a boolean 0,1 goes back on bb->xmax
+ */
+
+int pickcheck(x1,y1,x2,y2,x3,y3,eps)
+double x1,y1,x2,y2,x3,y3;
+double eps;
+{
+    double xn,yn, xp,yp, xr,yr;
+    double d,s,c;
+
+    /* normalize everything to x1,y1 */
+    xn = x2-x1; yn = y2-y1;
+    xp = x3-x1; yp = y3-y1;
+
+    /* rotate pick point to vertical */
+    d = sqrt(xn*xn+yn*yn);
+    s = xn/d;		/* sin() */
+    c = yn/d;		/* cos() */
+    xr = xp*c - yp*s;
+
+    /* test against a rectangle */
+    if (xr >= -eps && xr <= eps) {
+	/* save some time by computing */
+	/* yr only after testing x */
+	yr = yp*c + xp*s;
+	if (yr >= -eps  && yr <= d+eps) {
+	    return(1);
+	}
+    }
+    return(0);
 }
 
 /* Cohen-Sutherland 2-D Clipping Algorithm */

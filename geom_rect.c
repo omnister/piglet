@@ -15,6 +15,8 @@
  *                       +-(:FILL)----+
  */
 
+/* FIXME: this version does not yet parse any options */
+
 static double x1, y1;
 
 OPTS opts;

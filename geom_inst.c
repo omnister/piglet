@@ -84,7 +84,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
 		    token_get(lp, word); 
-		    if (opt_parse(word, "MRXYZ", &opts) == -1) {
+		    if (opt_parse(word, INST_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;

@@ -593,13 +593,9 @@ char *arg;
     return (0);
 }
 
-com_distance(lp, arg)	/* measure the distance between two points */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_distance %s\n", arg);
-    return (0);
-}
+/* now in com_distance.c */
+/* com_distance(lp, arg)  measure the distance between two points */
+
 
 com_dump(lp, arg)	/* measure the distance between two points */
 LEXER *lp;
