@@ -1,0 +1,763 @@
+   0  $accept : archive $end
+
+   1  archive : files_command command_list
+
+   2  files_command : FILES file_name_list '$' ';'
+
+   3  file_name_list : FILE_NAME
+   4                 | file_name_list ',' FILE_NAME
+
+   5  option_list :
+   6              | OPTION
+   7              | option_list OPTION
+
+   8  command_list : command
+   9               | command_list command
+
+  10  command : EDIT FILE_NAME ';'
+  11          | SHOW ALL ';'
+  12          | LOCK NUMBER ';'
+  13          | GRID NUMBER ',' NUMBER NUMBER ',' NUMBER ';'
+  14          | LEVEL NUMBER ';'
+  15          | WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER ';'
+  16          | ADD POLYGON option_list coord_list ';'
+  17          | ADD TEXT option_list QUOTED coord ';'
+  18          | ADD NOTE option_list QUOTED coord ';'
+  19          | ADD RECTANGLE option_list coord coord ';'
+  20          | ADD CIRCLE option_list coord coord ';'
+  21          | ADD LINE option_list coord_list ';'
+  22          | ADD FILE_NAME option_list coord ';'
+  23          | ADD FILE_NAME option_list coord_list ';'
+  24          | SAVE ';'
+  25          | EXIT ';'
+
+  26  coord : NUMBER ',' NUMBER
+
+  27  coord_list : coord coord
+  28             | coord_list coord
+
+state 0
+	$accept : . archive $end  (0)
+
+	FILES  shift 1
+	.  error
+
+	archive  goto 2
+	files_command  goto 3
+
+
+state 1
+	files_command : FILES . file_name_list '$' ';'  (2)
+
+	FILE_NAME  shift 4
+	.  error
+
+	file_name_list  goto 5
+
+
+state 2
+	$accept : archive . $end  (0)
+
+	$end  accept
+
+
+state 3
+	archive : files_command . command_list  (1)
+
+	EDIT  shift 6
+	SHOW  shift 7
+	LOCK  shift 8
+	GRID  shift 9
+	LEVEL  shift 10
+	WINDOW  shift 11
+	ADD  shift 12
+	SAVE  shift 13
+	EXIT  shift 14
+	.  error
+
+	command_list  goto 15
+	command  goto 16
+
+
+state 4
+	file_name_list : FILE_NAME .  (3)
+
+	.  reduce 3
+
+
+state 5
+	files_command : FILES file_name_list . '$' ';'  (2)
+	file_name_list : file_name_list . ',' FILE_NAME  (4)
+
+	'$'  shift 17
+	','  shift 18
+	.  error
+
+
+state 6
+	command : EDIT . FILE_NAME ';'  (10)
+
+	FILE_NAME  shift 19
+	.  error
+
+
+state 7
+	command : SHOW . ALL ';'  (11)
+
+	ALL  shift 20
+	.  error
+
+
+state 8
+	command : LOCK . NUMBER ';'  (12)
+
+	NUMBER  shift 21
+	.  error
+
+
+state 9
+	command : GRID . NUMBER ',' NUMBER NUMBER ',' NUMBER ';'  (13)
+
+	NUMBER  shift 22
+	.  error
+
+
+state 10
+	command : LEVEL . NUMBER ';'  (14)
+
+	NUMBER  shift 23
+	.  error
+
+
+state 11
+	command : WINDOW . NUMBER ',' NUMBER NUMBER ',' NUMBER ';'  (15)
+
+	NUMBER  shift 24
+	.  error
+
+
+state 12
+	command : ADD . POLYGON option_list coord_list ';'  (16)
+	command : ADD . TEXT option_list QUOTED coord ';'  (17)
+	command : ADD . NOTE option_list QUOTED coord ';'  (18)
+	command : ADD . RECTANGLE option_list coord coord ';'  (19)
+	command : ADD . CIRCLE option_list coord coord ';'  (20)
+	command : ADD . LINE option_list coord_list ';'  (21)
+	command : ADD . FILE_NAME option_list coord ';'  (22)
+	command : ADD . FILE_NAME option_list coord_list ';'  (23)
+
+	FILE_NAME  shift 25
+	LINE  shift 26
+	RECTANGLE  shift 27
+	POLYGON  shift 28
+	CIRCLE  shift 29
+	TEXT  shift 30
+	NOTE  shift 31
+	.  error
+
+
+state 13
+	command : SAVE . ';'  (24)
+
+	';'  shift 32
+	.  error
+
+
+state 14
+	command : EXIT . ';'  (25)
+
+	';'  shift 33
+	.  error
+
+
+state 15
+	archive : files_command command_list .  (1)
+	command_list : command_list . command  (9)
+
+	EDIT  shift 6
+	SHOW  shift 7
+	LOCK  shift 8
+	GRID  shift 9
+	LEVEL  shift 10
+	WINDOW  shift 11
+	ADD  shift 12
+	SAVE  shift 13
+	EXIT  shift 14
+	$end  reduce 1
+
+	command  goto 34
+
+
+state 16
+	command_list : command .  (8)
+
+	.  reduce 8
+
+
+state 17
+	files_command : FILES file_name_list '$' . ';'  (2)
+
+	';'  shift 35
+	.  error
+
+
+state 18
+	file_name_list : file_name_list ',' . FILE_NAME  (4)
+
+	FILE_NAME  shift 36
+	.  error
+
+
+state 19
+	command : EDIT FILE_NAME . ';'  (10)
+
+	';'  shift 37
+	.  error
+
+
+state 20
+	command : SHOW ALL . ';'  (11)
+
+	';'  shift 38
+	.  error
+
+
+state 21
+	command : LOCK NUMBER . ';'  (12)
+
+	';'  shift 39
+	.  error
+
+
+state 22
+	command : GRID NUMBER . ',' NUMBER NUMBER ',' NUMBER ';'  (13)
+
+	','  shift 40
+	.  error
+
+
+state 23
+	command : LEVEL NUMBER . ';'  (14)
+
+	';'  shift 41
+	.  error
+
+
+state 24
+	command : WINDOW NUMBER . ',' NUMBER NUMBER ',' NUMBER ';'  (15)
+
+	','  shift 42
+	.  error
+
+
+25: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 25
+	command : ADD FILE_NAME . option_list coord ';'  (22)
+	command : ADD FILE_NAME . option_list coord_list ';'  (23)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	NUMBER  reduce 5
+
+	option_list  goto 44
+
+
+26: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 26
+	command : ADD LINE . option_list coord_list ';'  (21)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	NUMBER  reduce 5
+
+	option_list  goto 45
+
+
+27: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 27
+	command : ADD RECTANGLE . option_list coord coord ';'  (19)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	NUMBER  reduce 5
+
+	option_list  goto 46
+
+
+28: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 28
+	command : ADD POLYGON . option_list coord_list ';'  (16)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	NUMBER  reduce 5
+
+	option_list  goto 47
+
+
+29: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 29
+	command : ADD CIRCLE . option_list coord coord ';'  (20)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	NUMBER  reduce 5
+
+	option_list  goto 48
+
+
+30: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 30
+	command : ADD TEXT . option_list QUOTED coord ';'  (17)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	QUOTED  reduce 5
+
+	option_list  goto 49
+
+
+31: shift/reduce conflict (shift 43, reduce 5) on OPTION
+state 31
+	command : ADD NOTE . option_list QUOTED coord ';'  (18)
+	option_list : .  (5)
+
+	OPTION  shift 43
+	QUOTED  reduce 5
+
+	option_list  goto 50
+
+
+state 32
+	command : SAVE ';' .  (24)
+
+	.  reduce 24
+
+
+state 33
+	command : EXIT ';' .  (25)
+
+	.  reduce 25
+
+
+state 34
+	command_list : command_list command .  (9)
+
+	.  reduce 9
+
+
+state 35
+	files_command : FILES file_name_list '$' ';' .  (2)
+
+	.  reduce 2
+
+
+state 36
+	file_name_list : file_name_list ',' FILE_NAME .  (4)
+
+	.  reduce 4
+
+
+state 37
+	command : EDIT FILE_NAME ';' .  (10)
+
+	.  reduce 10
+
+
+state 38
+	command : SHOW ALL ';' .  (11)
+
+	.  reduce 11
+
+
+state 39
+	command : LOCK NUMBER ';' .  (12)
+
+	.  reduce 12
+
+
+state 40
+	command : GRID NUMBER ',' . NUMBER NUMBER ',' NUMBER ';'  (13)
+
+	NUMBER  shift 51
+	.  error
+
+
+state 41
+	command : LEVEL NUMBER ';' .  (14)
+
+	.  reduce 14
+
+
+state 42
+	command : WINDOW NUMBER ',' . NUMBER NUMBER ',' NUMBER ';'  (15)
+
+	NUMBER  shift 52
+	.  error
+
+
+state 43
+	option_list : OPTION .  (6)
+
+	.  reduce 6
+
+
+state 44
+	option_list : option_list . OPTION  (7)
+	command : ADD FILE_NAME option_list . coord ';'  (22)
+	command : ADD FILE_NAME option_list . coord_list ';'  (23)
+
+	NUMBER  shift 53
+	OPTION  shift 54
+	.  error
+
+	coord  goto 55
+	coord_list  goto 56
+
+
+state 45
+	option_list : option_list . OPTION  (7)
+	command : ADD LINE option_list . coord_list ';'  (21)
+
+	NUMBER  shift 53
+	OPTION  shift 54
+	.  error
+
+	coord  goto 57
+	coord_list  goto 58
+
+
+state 46
+	option_list : option_list . OPTION  (7)
+	command : ADD RECTANGLE option_list . coord coord ';'  (19)
+
+	NUMBER  shift 53
+	OPTION  shift 54
+	.  error
+
+	coord  goto 59
+
+
+state 47
+	option_list : option_list . OPTION  (7)
+	command : ADD POLYGON option_list . coord_list ';'  (16)
+
+	NUMBER  shift 53
+	OPTION  shift 54
+	.  error
+
+	coord  goto 57
+	coord_list  goto 60
+
+
+state 48
+	option_list : option_list . OPTION  (7)
+	command : ADD CIRCLE option_list . coord coord ';'  (20)
+
+	NUMBER  shift 53
+	OPTION  shift 54
+	.  error
+
+	coord  goto 61
+
+
+state 49
+	option_list : option_list . OPTION  (7)
+	command : ADD TEXT option_list . QUOTED coord ';'  (17)
+
+	QUOTED  shift 62
+	OPTION  shift 54
+	.  error
+
+
+state 50
+	option_list : option_list . OPTION  (7)
+	command : ADD NOTE option_list . QUOTED coord ';'  (18)
+
+	QUOTED  shift 63
+	OPTION  shift 54
+	.  error
+
+
+state 51
+	command : GRID NUMBER ',' NUMBER . NUMBER ',' NUMBER ';'  (13)
+
+	NUMBER  shift 64
+	.  error
+
+
+state 52
+	command : WINDOW NUMBER ',' NUMBER . NUMBER ',' NUMBER ';'  (15)
+
+	NUMBER  shift 65
+	.  error
+
+
+state 53
+	coord : NUMBER . ',' NUMBER  (26)
+
+	','  shift 66
+	.  error
+
+
+state 54
+	option_list : option_list OPTION .  (7)
+
+	.  reduce 7
+
+
+state 55
+	command : ADD FILE_NAME option_list coord . ';'  (22)
+	coord_list : coord . coord  (27)
+
+	NUMBER  shift 53
+	';'  shift 67
+	.  error
+
+	coord  goto 68
+
+
+state 56
+	command : ADD FILE_NAME option_list coord_list . ';'  (23)
+	coord_list : coord_list . coord  (28)
+
+	NUMBER  shift 53
+	';'  shift 69
+	.  error
+
+	coord  goto 70
+
+
+state 57
+	coord_list : coord . coord  (27)
+
+	NUMBER  shift 53
+	.  error
+
+	coord  goto 68
+
+
+state 58
+	command : ADD LINE option_list coord_list . ';'  (21)
+	coord_list : coord_list . coord  (28)
+
+	NUMBER  shift 53
+	';'  shift 71
+	.  error
+
+	coord  goto 70
+
+
+state 59
+	command : ADD RECTANGLE option_list coord . coord ';'  (19)
+
+	NUMBER  shift 53
+	.  error
+
+	coord  goto 72
+
+
+state 60
+	command : ADD POLYGON option_list coord_list . ';'  (16)
+	coord_list : coord_list . coord  (28)
+
+	NUMBER  shift 53
+	';'  shift 73
+	.  error
+
+	coord  goto 70
+
+
+state 61
+	command : ADD CIRCLE option_list coord . coord ';'  (20)
+
+	NUMBER  shift 53
+	.  error
+
+	coord  goto 74
+
+
+state 62
+	command : ADD TEXT option_list QUOTED . coord ';'  (17)
+
+	NUMBER  shift 53
+	.  error
+
+	coord  goto 75
+
+
+state 63
+	command : ADD NOTE option_list QUOTED . coord ';'  (18)
+
+	NUMBER  shift 53
+	.  error
+
+	coord  goto 76
+
+
+state 64
+	command : GRID NUMBER ',' NUMBER NUMBER . ',' NUMBER ';'  (13)
+
+	','  shift 77
+	.  error
+
+
+state 65
+	command : WINDOW NUMBER ',' NUMBER NUMBER . ',' NUMBER ';'  (15)
+
+	','  shift 78
+	.  error
+
+
+state 66
+	coord : NUMBER ',' . NUMBER  (26)
+
+	NUMBER  shift 79
+	.  error
+
+
+state 67
+	command : ADD FILE_NAME option_list coord ';' .  (22)
+
+	.  reduce 22
+
+
+state 68
+	coord_list : coord coord .  (27)
+
+	.  reduce 27
+
+
+state 69
+	command : ADD FILE_NAME option_list coord_list ';' .  (23)
+
+	.  reduce 23
+
+
+state 70
+	coord_list : coord_list coord .  (28)
+
+	.  reduce 28
+
+
+state 71
+	command : ADD LINE option_list coord_list ';' .  (21)
+
+	.  reduce 21
+
+
+state 72
+	command : ADD RECTANGLE option_list coord coord . ';'  (19)
+
+	';'  shift 80
+	.  error
+
+
+state 73
+	command : ADD POLYGON option_list coord_list ';' .  (16)
+
+	.  reduce 16
+
+
+state 74
+	command : ADD CIRCLE option_list coord coord . ';'  (20)
+
+	';'  shift 81
+	.  error
+
+
+state 75
+	command : ADD TEXT option_list QUOTED coord . ';'  (17)
+
+	';'  shift 82
+	.  error
+
+
+state 76
+	command : ADD NOTE option_list QUOTED coord . ';'  (18)
+
+	';'  shift 83
+	.  error
+
+
+state 77
+	command : GRID NUMBER ',' NUMBER NUMBER ',' . NUMBER ';'  (13)
+
+	NUMBER  shift 84
+	.  error
+
+
+state 78
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' . NUMBER ';'  (15)
+
+	NUMBER  shift 85
+	.  error
+
+
+state 79
+	coord : NUMBER ',' NUMBER .  (26)
+
+	.  reduce 26
+
+
+state 80
+	command : ADD RECTANGLE option_list coord coord ';' .  (19)
+
+	.  reduce 19
+
+
+state 81
+	command : ADD CIRCLE option_list coord coord ';' .  (20)
+
+	.  reduce 20
+
+
+state 82
+	command : ADD TEXT option_list QUOTED coord ';' .  (17)
+
+	.  reduce 17
+
+
+state 83
+	command : ADD NOTE option_list QUOTED coord ';' .  (18)
+
+	.  reduce 18
+
+
+state 84
+	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER . ';'  (13)
+
+	';'  shift 86
+	.  error
+
+
+state 85
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER . ';'  (15)
+
+	';'  shift 87
+	.  error
+
+
+state 86
+	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER ';' .  (13)
+
+	.  reduce 13
+
+
+state 87
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER ';' .  (15)
+
+	.  reduce 15
+
+
+State 25 contains 1 shift/reduce conflict.
+State 26 contains 1 shift/reduce conflict.
+State 27 contains 1 shift/reduce conflict.
+State 28 contains 1 shift/reduce conflict.
+State 29 contains 1 shift/reduce conflict.
+State 30 contains 1 shift/reduce conflict.
+State 31 contains 1 shift/reduce conflict.
+
+
+27 terminals, 9 nonterminals
+29 grammar rules, 88 states
