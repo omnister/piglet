@@ -25,31 +25,9 @@ void xwin_clear_rubber_callback();
  */
 
 /* globals for interacting with db.c */
+
 extern DB_TAB *currep;
-extern DB_TAB *newrep;			/* scratch pointer for new rep */
-extern XFORM  screen_transform;
-extern XFORM  *xp;
-
-/* When non-zero, this global means the user is done using this program. */
-extern int quit_now;
-
-extern unsigned int width, height;	/* window pixel size */
-
-extern double vp_xmin;     		/* world coordinates of viewport */ 
-extern double vp_ymin;
-extern double vp_xmax;
-extern double vp_ymax;	
-extern double scale;			/* xform factors from real->viewport */
-extern double xoffset;
-extern double yoffset;
-
-extern int grid_xd;			/* grid delta */
-extern int grid_yd;
-extern int grid_xs;			/* how often to display grid ticks */
-extern int grid_ys;
-extern int grid_xo; 			/* starting offset */
-extern int grid_yo;
-
+extern int quit_now; 		/* set to 1 when done using this program. */
 extern int modified;
 extern int need_redraw;
 

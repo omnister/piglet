@@ -310,8 +310,3 @@ extern void jump(void);
 extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);
 
 /********************************************************/
-/* keep track of current rep */
-/* extern DB_TAB *currep; */
-
-/* scratch pointer for new rep */
-/* extern DB_TAB *newrep; */

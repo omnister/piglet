@@ -832,8 +832,8 @@ NUM *yymax;
     *yymin = ymin;
     *xxmax = xmax;
     *yymax = ymax;
-    snapxy(xxmin, yymin);
-    snapxy(xxmax, yymax);
+    /* snapxy(xxmin, yymin); */
+    /* snapxy(xxmax, yymax); */
 
 }
 
@@ -937,10 +937,10 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 
 	    /* create transformation matrix from options */
 
-	    mat_rotate(xp, p->u.i->opts->rotation);
-	    mat_scale(xp, p->u.i->opts->scale, p->u.i->opts->scale); 
-	    mat_scale(xp, 1.0, p->u.i->opts->aspect_ratio); 
-	    mat_slant(xp,  p->u.i->opts->slant); 
+	    /* NOTE: To work properly, these transformations have to */
+	    /* occur in the proper order, for example, rotation must come */
+	    /* after slant transformation or else it wont work properly */
+
 	    switch (p->u.i->opts->mirror) {
 	    	case MIRROR_OFF:
 		    break;
@@ -955,6 +955,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		    xp->r22 *= -1.0;
 		    break;
 	    }
+
+	    mat_scale(xp, p->u.i->opts->scale, p->u.i->opts->scale); 
+	    mat_scale(xp, 1.0, p->u.i->opts->aspect_ratio); 
+	    mat_slant(xp,  p->u.i->opts->slant); 
+	    mat_rotate(xp, p->u.i->opts->rotation);
 
 	    xp->dx += p->u.i->x;
 	    xp->dy += p->u.i->y;
@@ -1010,14 +1015,43 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		    draw(xmax,ymin,mode);
 	    }
 
+
+    xmin=min(xminsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
+    xmin=min(xminsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
+    xmin=min(xminsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
+    xmin=min(xminsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
+
+    xmax=max(xmaxsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
+    xmax=max(xmaxsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
+    xmax=max(xmaxsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
+    xmax=max(xmaxsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
+
+
+    ymin=min(yminsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
+    ymin=min(yminsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
+    ymin=min(yminsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
+    ymin=min(yminsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
+
+    ymax=max(ymaxsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
+    ymax=max(ymaxsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
+    ymax=max(ymaxsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
+    ymax=max(ymaxsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
+
+
 	    free(global_transform); free(xp);	
 	    global_transform = save_transform;	/* set transform back */
 
 	    /* now pass bounding box back */
+
+		/*
+
 	    xmin=min(xminsave, xmin+p->u.i->x);
 	    xmax=max(xmaxsave, xmax+p->u.i->x);
 	    ymin=min(yminsave, ymin+p->u.i->y);
 	    ymax=max(ymaxsave, ymax+p->u.i->y);
+
+		*/
+
 
 	    break;
 	default:
@@ -1028,10 +1062,21 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     }
 
 
-    snapxy(&xmin, &ymin);
-    snapxy(&xmax, &ymax);
+    /* snapxy(&xmin, &ymin); */
+    /* snapxy(&xmax, &ymax); */
 
-    if (debug) printf("setting bounds %g %g %g %g\n", xmin, xmax, ymin, ymax);
+    if (1) printf("setting bounds %g %g %g %g\n",
+    	xmin, xmax, ymin, ymax);
+
+    if (nest == 0) {
+	jump();
+	set_pen(12);
+	draw(xmin,ymax,mode);
+	draw(xmax,ymax,mode);
+	draw(xmax,ymin,mode);
+	draw(xmin,ymin,mode);
+	draw(xmin,ymax,mode);
+    }
     
     cell->minx = xmin;
     cell->maxx = xmax;
@@ -1321,10 +1366,6 @@ int mode;
     /* occur in the proper order, for example, rotation must come */
     /* after slant transformation or else it wont work properly */
 
-    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
-    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
-    mat_slant(xp, def->u.n->opts->slant);
-    mat_rotate(xp, def->u.n->opts->rotation);
     switch (def->u.n->opts->mirror) {
 	case MIRROR_OFF:
 	    break;
@@ -1340,12 +1381,17 @@ int mode;
 	    break;
     }
 
+    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
+    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
+    mat_slant(xp, def->u.n->opts->slant);
+    mat_rotate(xp, def->u.n->opts->rotation);
+
     jump(); set_pen(def->u.n->layer);
 
     xp->dx += def->u.n->x;
     xp->dy += def->u.n->y;
 
-    writestring(def->u.n->text, xp);
+    writestring(def->u.n->text, xp,0);
 
     free(xp);
 }
@@ -1479,10 +1525,6 @@ int mode;
     /* occur in the proper order, for example, rotation must come */
     /* after slant transformation or else it wont work properly */
 
-    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
-    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
-    mat_slant(xp, def->u.n->opts->slant);
-    mat_rotate(xp, def->u.n->opts->rotation);
     switch (def->u.n->opts->mirror) {
 	case MIRROR_OFF:
 	    break;
@@ -1498,12 +1540,17 @@ int mode;
 	    break;
     }
 
+    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
+    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
+    mat_slant(xp, def->u.n->opts->slant);
+    mat_rotate(xp, def->u.n->opts->rotation);
+
     jump(); set_pen(def->u.t->layer);
 
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
 
-    writestring(def->u.t->text, xp);
+    writestring(def->u.t->text, xp,1);
 
     free(xp);
 }
@@ -1631,10 +1678,10 @@ int mode;
 
     /* globals for computing bounding boxes */
     /* NOTE: This must be done prior to conversion into screen space */
-    xmax = max(x,xmax);
-    xmin = min(x,xmin);
-    ymax = max(y,ymax);
-    ymin = min(y,ymin);
+    xmax = max(xx,xmax);
+    xmin = min(xx,xmin);
+    ymax = max(yy,ymax);
+    ymin = min(yy,ymin);
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 

@@ -26,18 +26,9 @@ XFORM  unity_transform;
 XFORM  screen_transform;
 XFORM  *xp = &screen_transform;
 
-/*
-$Log: xwin.c,v $
-Revision 1.9  2004/01/05 23:05:27  walker
-testing rcs functions
-
-Revision 1.8  2004/01/05 23:03:30  walker
-added rcs comments and eliminating unnecessary globals
-*/
-
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.9 2004/01/05 23:05:27 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.10 2004/01/08 05:04:19 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */

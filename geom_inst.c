@@ -9,7 +9,7 @@
 
 static double x1, y1;
 
-/* :Mmirror :Rrot :Xscale :Yyxratio :Z */
+/* :Mmirror :Rrot :Xscale :Yyxratio :Zslant */
 
 int add_inst(inst_name)
 char *inst_name;

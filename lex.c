@@ -123,7 +123,9 @@ char **argv;
 
     initX();
 
-    loadfont("NOTEDATA.F");
+    /* FIXME: find out why these two lines fail when in the opposite order */
+    loadfont("TEXTDATA.F",1);
+    loadfont("NOTEDATA.F",0);
 
     initialize_readline();
     rl_pending_input='\n';
@@ -146,6 +148,7 @@ char **argv;
 		rl_setprompt("MACRO> ");
 		break;
 	    case EDI:
+		/* GLOBAL currep */
 		if (currep != NULL) {
 		    sprintf(buf, "EDIT %s> ", currep->name);
 		    rl_setprompt(buf);
@@ -170,6 +173,7 @@ char **argv;
 		}
 		break;
 	    case EOL:
+	    case END:
 	    case EOC:
 		break;
 	    default:

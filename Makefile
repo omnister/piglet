@@ -16,7 +16,7 @@ pig: $(OBJS)
 #-------------- dependencies ----------------------------------
 
 coords.o:      db.h
-db.o:          db.h token.h
+db.o:          db.h token.h xwin.h
 eprintf.o:     eprintf.h
 geom_circle.c: db.h xwin.h token.h rubber.h
 geom_inst.c:   db.h xwin.h token.h rubber.h opt_parse.h

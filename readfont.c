@@ -7,47 +7,34 @@
 
 int line=1;
 
-int dx;		/* size of font cell */
-int dy;		/* size of font cell */	
-int fonttab[256];
-int xdef[5000];
-int ydef[5000];
+int dx[2];		/* size of font cell */
+int dy[2];		/* size of font cell */	
+int fonttab[2][256];
+int xdef[2][5000];
+int ydef[2][5000];
 
 
-/*
-main()
-{
-    loadfont("NOTEDATA.F");
-    writestring("Now is the time",0,0,scale);
-    writestring("for all good men",0,-1*(int) scale,scale);
-    writestring("to come to the",0,-2*(int) scale,scale);
-    writestring("ABCDEFGHIJKLMNOP",0,-3*(int) scale,scale);
-    writestring("QRSTUVWXYZabcdef",0,-4*(int) scale,scale);
-    writestring("ghijklmnopqrstuv",0,-5*(int) scale,scale);
-    writestring("wxyz0123456789~!",0,-6*(int) scale,scale);
-    writestring("#$%^&*()_+=-';:",0,-7*(int) scale,scale);
-    writestring("][}{.,></?|",0,-8*(int) scale,scale);
-}
-*/
-
-writestring(s,xf)
+writestring(s,xf,id)
 char *s;
 XFORM *xf;
+int id; 	/* font id */
 {
     double offset=0.0;
 
     while(*s != 0) {
-	writechar(*s,(((double)dx)*0.80*offset)/((double) dy),0.0,xf);
+	writechar(*s,
+		(((double)(dx[id]))*0.80*offset)/((double)(dy[id])),0.0,xf,id);
 	offset+=1.0;
 	++s;
     }
 }
 
-writechar(c,x,y,xf)
+writechar(c,x,y,xf,id)
 int c;
 double x;
 double y;
 XFORM *xf;
+int id;			/* font id */
 {
     int i;
     double xp,yp,xt,yt;
@@ -58,14 +45,14 @@ XFORM *xf;
 	return(0);
     }
 
-    i = fonttab[c];
+    i = fonttab[id][c];
 
     jump();
-    while (xdef[i] != -64 || ydef[i] != -64) {
-	if (xdef[i] != -64) {
+    while (xdef[id][i] != -64 || ydef[id][i] != -64) {
+	if (xdef[id][i] != -64) {
 
-	    xp = x+ (0.8 * (double) xdef[i]) / ((double) dy);
-	    yp = y+ (0.8 * (double) ydef[i]) / ((double) dy);
+	    xp = x + (0.8 * ( (double) xdef[id][i] / (double) dy[id]));
+	    yp = y + (0.8 * ( (double) ydef[id][i] / (double) dy[id]));
 
 	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
 	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
@@ -80,8 +67,9 @@ XFORM *xf;
     }
 }
 
-loadfont(file)
+loadfont(file, id)
 char *file;
+int id;
 {
     FILE *fp;
     int i;
@@ -91,15 +79,14 @@ char *file;
     int next;
     int lit;
     extern int line;
-    extern int dx,dy;
     int index=0;	/* index into font table */
 
     /* initialize font table */
     for (i=0; i<=5000; i++) {
-	xdef[i] = ydef[i] = -64;
+	xdef[id][i] = ydef[id][i] = -64;
     }
     for (i=0; i<=255; i++) {
-	fonttab[i]=-1;
+	fonttab[id][i]=-1;
     }
 
     if((fp=fopen(file,"r")) == NULL) {
@@ -111,7 +98,7 @@ char *file;
     done=0;
 
     /* note reversed order of arguments */
-    next=getxy(fp,&dy,&dx);
+    next=getxy(fp,&dy[id],&dx[id]);
 
     /* printf("got %d, %d next=%c\n", x,y,next); */
 
@@ -129,7 +116,7 @@ char *file;
 		if ((lit=eatwhite(fp)) != EOF) {
 		    /* printf("lit=%c\n",lit); */
 		    getc(fp);
-		    fonttab[(int) lit] = index;
+		    fonttab[id][(int) lit] = index;
 		} else {
 		    done++;
 		}
@@ -141,9 +128,9 @@ char *file;
 
 	if (!done) {
 	    next=getxy(fp,&x,&y);
-	    /* printf("line %d: got %d, %d next=%c\n", line, x,y,next); */
-	    xdef[index] = x;
-	    ydef[index] = y;
+	    /* printf("line %d: got %d, %d next=%c\n", line, x,y,next);  */
+	    xdef[id][index] = x;
+	    ydef[id][index] = y;
 	    index++;
 	}
     }
