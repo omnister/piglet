@@ -1,29 +1,17 @@
-
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
+#include <ctype.h>		/* for toupper */
 
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
 
 #include "rlgetc.h"
 #include "db.h"
-
+#include "token.h"
 #include "xwin.h" 	
+#include "lex.h"
 
-typedef enum {
-    IDENT, 	/* identifier */
-    CMD,	/* command */
-    QUOTE, 	/* quoted string */
-    NUMBER, 	/* number */
-    OPT,	/* option */
-    EOL,	/* newline or carriage return */
-    EOC,	/* end of command */
-    COMMA,	/* comma */
-    END		/* end of file */
-} TOKEN;
 
-static TOKEN gettoken();
-static int ungettoken(TOKEN token, char *word);
 char prompt[128];
 
 /* The names of functions that actually do the manipulation. */
@@ -114,6 +102,7 @@ COMMAND commands[] =
     {(char *) NULL, (Function *) NULL, (char *) NULL}
 };
 
+
 main(argc,argv)
 int argc;
 char **argv;
@@ -137,7 +126,7 @@ char **argv;
     rl_pending_input='\n';
     rl_setprompt("INIT> ");
     
-    while((token=gettoken(word)) != EOF) {
+    while((token=token_get(word)) != EOF) {
 	switch (mode) {
 	    case MAIN:
 		rl_setprompt("MAIN> ");
@@ -165,188 +154,24 @@ char **argv;
 	}                           
 
 	switch(token) {
-	    case IDENT: /* identifier */
-		printf("	IDENT: %s\n", word);
-		break;
-	    case CMD:	/* command */
-		/* printf("	CMD: %s\n", word); */
+	    case CMD:	/* find and call the command */
 		command = find_command(word);
-
-		/* Call the function. */
-		retcode = ((*(command->func)) (""));
-
+		if (command == NULL) {
+		    printf(" bad command\n");
+		    token_flush();
+		} else {
+		    retcode = ((*(command->func)) (""));
+		}
 		break;
-	    case QUOTE: /* quoted string */
-		printf("	QUOTE: %s\n", word);
+	    case EOL:
+	    case EOC:
 		break;
-	    case NUMBER: /* number */
-		printf("	NUMBER: %s\n", word);
-		break;
-	    case OPT:	/* option */
-		printf("	OPT: %s\n", word);
-		break;
-	    case COMMA:	/* comma */
-		printf("	COMMA: %s\n", word);
-		break;
-	    case EOL:	/* newline or carriage return */
-		printf("	EOL:\n");
-		break;
-	    case EOC:	/* end of command */
-		printf("	EOC: %s\n", word);
-		break;
-	    case END:	/* end of file */
-		printf("	IDENT: %s\n", word);
+	    default:
+		printf(" expected COMMAND\n");
+		token_flush();
 		break;
 	}
     }
-}
-
-#define BUFSIZE 100
-struct savetok {
-    char *word;
-    TOKEN tok;
-} tokbuf[BUFSIZE];
-
-int bufp = 0;		/* next free position in buf */
-
-/* stuff back a token */
-static int ungettoken(TOKEN token, char *word) 
-{
-    if (bufp >= BUFSIZE) {
-	eprintf("ungettoken: too many characters");
-	return(-1);
-    } else {
-	tokbuf[bufp].word = (char *) estrdup(word);
-	tokbuf[bufp++].tok = token;
-	return(0);
-    }
-}
-
-static TOKEN gettoken(word) /* collect and classify token */
-char *word;
-{
-    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM} state = NEUTRAL;
-    int c;
-    char *w;
-    
-    if (bufp > 0) {
-	strcpy(word, tokbuf[--bufp].word);
-	free(tokbuf[bufp].word);
-	tokbuf[bufp].word = (char *) NULL;
-	return(tokbuf[bufp].tok);
-    }
-
-    w=word;
-    while((c=rlgetc(stdin)) != EOF) {
-	switch(state) {
-	    case NEUTRAL:
-		switch(c) {
-		    case ' ':
-		    case '\t':
-			continue;
-		    case '\n':
-		    case '\r':
-			*w++ = c;
-			*w = '\0';
-			return(EOL);
-		    case ',':
-			*w++ = c;
-			*w = '\0';
-			return(COMMA);
-		    case '"':
-			state = INQUOTE;
-			continue;
-		    case ':':
-			state = INOPT;
-			*w++ = c;
-			continue;
-		    case ';':
-			*w++ = c;
-			*w = '\0';
-			return(EOC);
-		    case '0':
-		    case '1':
-		    case '2':
-		    case '3':
-		    case '4':
-		    case '5':
-		    case '6':
-		    case '7':
-		    case '8':
-		    case '9':
-		    case '+':
-		    case '-':
-			state = INNUM;
-			*w++ = c;
-			continue;
-		    case '.':
-			*w++ = c;
-			c = rlgetc(stdin);
-			if (isdigit(c)) {
-			    rl_ungetc(c,stdin);
-			    state = INNUM;
-			} else {
-			    rl_ungetc(c,stdin);
-			    state = INOPT;
-			}
-			continue;	
-		    default:
-			state = INWORD;
-			*w++ = c;
-			continue;
-		}
-	    case INNUM:
-		if (isdigit(c) || c=='.') {
-		    *w++ = c;
-		    continue;
-		} else {
-		    rl_ungetc(c,stdin);
-		    *w = '\0';
-		    return(NUMBER);
-		}
-	    case INOPT:
-		if (isalnum(c)) {
-		    *w++ = c;
-		    continue;
-		} else if (strchr("+-.",c) != NULL) {
-		    *w++ = c;
-		    continue;
-		} else {
-		    rl_ungetc(c,stdin);
-		    *w = '\0';
-		    return(OPT);
-		}
-	    case INQUOTE:
-		switch(c) {
-		    case '\\':
-			*w++ = rlgetc(stdin);
-			continue;
-		    case '"':
-			*w = '\0';
-			return(QUOTE);
-		    default:
-			*w++ = c;
-			continue;
-		}
-	    case INWORD:
-		if (!isalnum(c)) {
-		    rl_ungetc(c,stdin);
-		    *w = '\0';
-		    if (lookup_command(word)) {
-			return(CMD);
-		    } else {
-			return(IDENT);
-		    }
-		}
-		*w++ = c;
-		continue;
-	    default:
-		fprintf(stderr,"pig: error in lex loop\n");
-		exit(1);
-		break;
-	} /* switch state */
-    } /* while loop */
-    return(EOF);
 }
 
 /* Look up NAME as the name of a command, and return a pointer to that
@@ -390,34 +215,173 @@ char *name;
 /*                                                                  */
 /* **************************************************************** */
 
-com_add(arg)		/* add a component to the current device */
-char *arg;
+/* 
+    Add a component to the current device.
+    This routine checks for <component[layer]> or <instance_name>
+    and dispatches control the the appropriate add_<comp> subroutine
+*/
+
+com_add(arg)		
+char *arg;	/* currently unused */
 {
     char *line;
+    TOKEN token;
+    char word[BUFSIZE];
+    char buf[BUFSIZE];
+    int done=0;
+    int nnum=0;
+    int state;
+    int retval;
+
+    int layer;
+    int comp;
     double x1,y1,x2,y2;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
 	printf("must do \"EDIT <name>\" before ADD\n");
+	token_flush();
 	return(1);
     }
 
-    /* check args */
-    if (sscanf(arg, "%lf,%lf %lf,%lf", &x1, &y1, &x2, &y2) != 4) {
-	printf("need two coordinates\n");
-	return(1);
+    rl_setprompt("ADD> ");
+
+/* 
+    To dispatch to the proper add_<comp> routine, we look 
+    here for either a primitive indicator
+    concatenated with an optional layer number:
+
+	A[layer_num] ;(arc)
+	C[layer_num] ;(circle)
+	L[layer_num] ;(line)
+	N[layer_num] ;(note)
+	O[layer_num] ;(oval)
+	P[layer_num] ;(poly)
+	R[layer_num] ;(rectangle)
+	T[layer_num] ;(text)
+
+    or a instance name.  Instance names can be quoted, which
+    allows the user to have instances which overlap the primitive
+    namespace.  For example:  N7 is a note on layer seven, but
+    "N7" is an instance call.
+
+*/
+
+    while(!done) {
+	token = token_get(word);
+	if (token == IDENT) { 	
+	    /* check to see if is a valid comp descriptor */
+  	    comp = toupper(word[0]);
+	    retval = sscanf(&word[1], "%d", &layer);
+	    printf("layer=%d\n",layer);
+
+	    if (index("ACLNOPRT", comp) && retval)  {
+
+		switch (comp) {
+		    case 'A':
+			add_arc(&layer);
+			break;
+		    case 'C':
+			add_circ(&layer);
+			break;
+		    case 'L':
+			add_line(&layer);
+			break;
+		    case 'N':
+			add_note(&layer);
+			break;
+		    case 'O':
+			add_oval(&layer);
+			break;
+		    case 'P':
+			add_poly(&layer);
+			break;
+		    case 'R':
+			add_rect(&layer);
+			break;
+		    case 'T':
+			add_text(&layer);
+			break;
+		    default:
+			printf("invalid comp name\n");
+			break;
+		}
+	    } else {  /* must be a identifier */
+		add_inst(word);
+	    }
+	} else if (token == QUOTE) {
+		add_inst(word);
+	} else if (token == CMD) { /* return control back to top */
+	    token_unget(token, word);
+	    done++;
+	} else if (token == EOL) {
+	    ; /* ignore */
+	} else if (token == EOC) {
+	    done++;
+	} else {
+	    printf("expected COMP/LAYER or INST name\n");
+	    token_flush();
+	    done++;
+	}
     }
+}
 
-    printf("adding rect to currep, layer 1, no opts %g %g %g %g\n",x1,y1,x2,y2);
-    db_add_rect(currep, 1, (OPTS *) NULL, x1, y1, x2, y2);
+int add_arc(int *layer)
+{
+    rl_setprompt("ADD_ARC> ");
+    printf("in add_arc (unimplemented)\n");
+    token_flush();
+    return(1);
+}
 
-    /* line = readline("coords: "); */
-    /* free(line); */
+int add_circ(int *layer)
+{
+    rl_setprompt("ADD_CIRC> ");
+    printf("in add_circle (unimplemented)\n");
+    token_flush();
+    return(1);
+}
 
-    modified = 1;
-    need_redraw++;
 
-    return (0);
+int add_note(int *layer)
+{
+    rl_setprompt("ADD_NOTE> ");
+    printf("in add_note (unimplemented)\n");
+    token_flush();
+    return(1);
+}
+
+int add_oval(int *layer)
+{
+    rl_setprompt("ADD_OVAL> ");
+    printf("in add_oval (unimplemented)\n");
+    token_flush();
+    return(1);
+}
+
+int add_poly(int *layer)
+{
+    rl_setprompt("ADD_POLY> ");
+    printf("in add_poly (unimplemented)\n");
+    token_flush();
+    return(1);
+}
+
+
+int add_text(int *layer)
+{
+    rl_setprompt("ADD_TEXT> ");
+    printf("in add_text (unimplemented)\n");
+    token_flush();
+    return(1);
+}
+
+int add_inst()
+{
+    rl_setprompt("ADD_INST> ");
+    printf("in add_inst (unimplemented)\n");
+    token_flush();
+    return(1);
 }
 
 com_archive(arg)	/* create an archive file of the specified device */
@@ -448,7 +412,7 @@ char *arg;
     /* The user wishes to quit using this program */
     /* Just set DONE non-zero. */
 
-    if (currep != NULL) {
+    if (currep != NULL && modified) {
 	printf("    you have an unsaved instance (%s)!\n", currep->name);
     } else {
 	done = 1;
@@ -514,7 +478,7 @@ char *arg;
     if (mode == MAIN) {
 
 	/* check for a name provided */
-	if (token=gettoken(name) != IDENT) {
+	if (token=token_get(name) != IDENT) {
 	    printf("    1must provide a name: EDIT <name>\n");
 	    return (0);
 	} 
@@ -586,7 +550,7 @@ char *arg;
     printf("    com_grid %s\n", arg);
 
     buf[0]='\0';
-    while(!done && (token=gettoken(word)) != EOF) {
+    while(!done && (token=token_get(word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 	    case QUOTE: 	/* quoted string */
@@ -594,7 +558,7 @@ char *arg;
 	    case END:		/* end of file */
 		break;
 	    case CMD:		/* command */
-		/* ungettoken(token, word); */
+		/* token_unget(token, word); */
 		break;
 	    case NUMBER: 	/* number */
 		strcat(buf,word);
@@ -739,15 +703,16 @@ char *arg;
     return (0);
 }
 
-com_save(arg)		/* save the current file or device to disk */
-char *arg;
+com_save()		/* save the current file or device to disk */
 {
     need_redraw++; 
-
-    printf("    com_save\n", arg);
+    int err;
 
     if (currep != NULL) {
-	db_save(currep);
+	if (db_save(currep)) {
+	    printf("unable to save %s\n", currep->name);
+	};
+	printf("    saved %s\n", currep->name);
 	modified = 0;
     } else {
 	printf("error: not currently editing a cell\n");
@@ -878,7 +843,7 @@ char *arg;
     printf("    com_window\n", arg);
 
     buf[0]='\0';
-    while(!done && (token=gettoken(word)) != EOF) {
+    while(!done && (token=token_get(word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 	    case QUOTE: 	/* quoted string */
@@ -886,7 +851,7 @@ char *arg;
 	    case END:		/* end of file */
 		break;
 	    case CMD:		/* command */
-		/* ungettoken(token, word); */
+		/* token_unget(token, word); */
 		break;
 	    case NUMBER: 	/* number */
 		strcat(buf,word);
@@ -976,3 +941,5 @@ char *caller, *arg;
     }
     return (1);
 }
+
+

@@ -1,30 +1,26 @@
 
-SRC = scan.l gram.y 
-OBJ = scan.o gram.o
+SRC = eprintf.c
+OBJ = eprintf.o
+TARS = Makefile NOTEDATA.F token.c token.h lex.c xwin.c db.c db.h readfont.c readfont.h \
+rlgetc.h eprintf.c rlgetc.c eprintf.h eventnames.h xwin.h  y.tab.h
+CC=cc -ggdb
 
-pig: gram.o scan.o db.o readfont.o 
-	cc -pg gram.o scan.o db.o readfont.o -o pig -lfl -lm
+pig: geom_rect.o geom_line.o rlgetc.o token.o lex.o eprintf.o db.o xwin.o \
+readfont.o rubber.o
+	cc -ggdb geom_rect.o geom_line.o rlgetc.o eprintf.o xwin.o db.o \
+	readfont.o token.o lex.o rubber.o  \
+	-o pig -lreadline -lX11 -L/usr/X11R6/lib -lm -lcurses
 
-lexer: scan.o
-	lex -il scan.l
-	cc -pg -DDEBUG lex.yy.c -o lexer -lfl
-	rm lex.yy.c
+db.o: db.h  y.tab.h
+
+readfont.o: readfont.h
+
+token.o: token.h
+
+eprintf.o: eprintf.h
 
 clean: 
-	rm -f y.tab.c y.output *.o lex.yy.c pig lexer
+	rm -f *.o pig
 
-y.tab.h: gram.o
-
-scan.o: scan.l y.tab.h 
-	lex -il scan.l
-	#cc -DYYDEBUG -c lex.yy.c 
-	cc -pg -c lex.yy.c 
-	rm lex.yy.c
-	mv lex.yy.o scan.o
-
-gram.o: gram.y
-	yacc  -dv gram.y
-	#cc -DYYDEBUG -c y.tab.c
-	cc -pg -c y.tab.c
-	rm y.tab.c
-	mv y.tab.o gram.o
+pig.tar: $(TARS)
+	tar cvf - $(TARS) > pig.tar

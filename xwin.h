@@ -1,13 +1,20 @@
+
+
 extern int initX();
 extern int procXevent();
 extern int need_redraw;
 void xwin_draw_line(int x1, int y1, int x2, int y2);
+void xwin_xor_line(int x1, int y1, int x2, int y2);
 void xwin_set_pen(int pen);
 
 /* to set up rubber band routine */
 
 void xwin_set_rubber_callback();
 void xwin_clear_rubber_callback();
+
+/* rubber band callbacks */
+extern void draw_line();
+extern void draw_box();
 
 /* 
  * rubber band function receives current location back as arguments 

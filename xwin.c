@@ -16,6 +16,7 @@
 #include "db.h"
 #include "xwin.h"
 #include "eprintf.h"
+#include "rubber.h"
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
@@ -23,12 +24,12 @@ DB_TAB *newrep = NULL;		/* scratch pointer for new rep */
 OPTS   *opts;
 XFORM  transform;
 XFORM  *xp = &transform;
-/* When non-zero, this global means the user is done using this program. */
-int done;
 
-char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.2 2003/12/12 04:31:12 walker Exp $"; 
+int done; /* When non-zero, this global means the user is done using this program. */
 
-unsigned int width, height;	/* window pixel size */
+char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.3 2003/12/13 17:02:34 walker Exp $"; 
+
+unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
 
 double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
@@ -107,20 +108,6 @@ GC gcx;
 #define MAX_COLORS 8
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 #define MAX_LINETYPE 5
-
-int draw_box();
-Function * xwin_rubber_callback = NULL;
-
-void xwin_set_rubber_callback(func) 
-Function * func;
-{
-    xwin_rubber_callback = func;
-}
-
-void xwin_clear_rubber_callback() 
-{
-    xwin_rubber_callback = (Function *) NULL;
-}
 
 int initX()
 {
@@ -242,6 +229,7 @@ int initX()
 	(unsigned int) STIPW, (unsigned int) STIPH);
     XSetStipple(dpy, gcx, stipple);
     XSetFillStyle(dpy, gcx, FillStippled);
+    XSetFunction(dpy, gcx, GXxor);
 
     /* dpy window */
     XMapWindow(dpy, win);
@@ -256,8 +244,6 @@ int initX()
     xwin_window(4, -100.0,-100.0, 100.0, 100.0);
     sprintf(buf,"");
 
-    /* xwin_set_rubber_callback(draw_box); */
-
     return(0);
 }
 
@@ -265,11 +251,7 @@ int procXevent(fp)
 FILE *fp;
 {
 
-    static int xold = 0;
-    static int yold = 0;
-    static int xstart, ystart;
     static int button_down=0;
-    static int new = 0;
     XEvent xe;
     static int i = 0;
 
@@ -278,6 +260,7 @@ FILE *fp;
     static char *t = NULL;
     static double x,y;
     static double xu,yu;
+    static double xold,yold;
     extern double vp_xmax, vp_xmin, vp_ymax, vp_ymin;
 
     static int charcount;
@@ -307,8 +290,7 @@ FILE *fp;
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
 	    if (currep != NULL ) {
-		/* render the current rep */
-		db_render(currep,xp,0);
+		db_render(currep,xp,0,0); /* render the current rep */
 	    }
 	    draw_grid(win, gcx, grid_xo, grid_yo,
 		grid_xd, grid_yd, grid_xs, grid_ys);
@@ -338,11 +320,8 @@ FILE *fp;
 		switch (xe.type) {
 		case MotionNotify:
 		    debug("got Motion",dbug);
-		    if(button_down) {
-			if (xwin_rubber_callback != NULL) {
-			    (*(xwin_rubber_callback)) (win,
-				gcx,xstart, ystart, (int)x,(int)y);
-			}
+		    /* if(button_down) { */
+		    if(1) {
 
 			x = (double) xe.xmotion.x;
 			y = (double) xe.xmotion.y;
@@ -352,19 +331,14 @@ FILE *fp;
 			    (int) xu,(int) yu, (int) x, (int) y,
 			    (int) x- (int) xu, (int) y - (int)yu);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-			R_to_V(&x,&y);
 
-			if (xwin_rubber_callback != NULL) {
-			    (*(xwin_rubber_callback)) (win,
-				gcx,xstart, ystart, (int)x,(int)y);
-			}
+			if (xold != x || yold != y) {
+			    rubber_draw(x, y);
+			    xold=x;
+			    yold=y;
+			} 
 
 		    } else {		/* must be button up */
-
-			if (xwin_rubber_callback != NULL) {
-			    (*(xwin_rubber_callback)) (win,
-				gcx,xstart, ystart, (int)xu,(int)yu);
-			}
 
 			xu = (double) xe.xmotion.x;
 			yu = (double) xe.xmotion.y;
@@ -374,11 +348,8 @@ FILE *fp;
 			    (int) xu,(int) yu, (int) x, (int) y,
 			    (int) x- (int) xu, (int) y - (int)yu);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-			R_to_V(&xu,&yu);
-			if (xwin_rubber_callback != NULL) {
-			    (*(xwin_rubber_callback)) (win,
-				gcx,xstart, ystart, (int)xu,(int)yu);
-			}
+			
+			rubber_draw(xu, yu);
 		    }
 		    break;
 		case Expose:
@@ -403,15 +374,11 @@ FILE *fp;
 		    break;
 		case ButtonRelease:
 		    button_down=0;
-		    if (xwin_rubber_callback != NULL) {
-			(*(xwin_rubber_callback)) (win,
-			    gcx,xstart, ystart, (int)x,(int)y);
-		    }
-		    x = (double) xe.xmotion.x;
-		    y = (double) xe.xmotion.y;
-		    V_to_R(&x,&y);
-		    snapxy(&x,&y);
-		    /* R_to_V(&x,&y); */ 	/* leave in Real coords */
+		    /* x = (double) xe.xmotion.x;
+		     * y = (double) xe.xmotion.y;
+		     * V_to_R(&x,&y);
+		     * snapxy(&x,&y);
+		     */
 		    debug("got ButtonRelease",dbug);
 		    break;
 		case ButtonPress:
@@ -420,22 +387,13 @@ FILE *fp;
 			    button_down=1;
 			    x = (double) xe.xmotion.x;
 			    y = (double) xe.xmotion.y;
-				/* printf("got mouse %g, %g\n",x,y); */
 			    V_to_R(&x,&y);
-				/* printf("real coords: %g, %g\n",x,y); */
 			    snapxy(&x,&y);
-				/* printf("(%g, %g) ",x,y); */
 
 			    /* returning mouse loc as a string */
 			    sprintf(buf," %d, %d\n", (int) x, (int) y);
 			    s = buf;
 
-			    R_to_V(&x,&y);
-				/* printf("back to display: %g, %g\n",x,y); */
-			    xstart = (int) x;
-			    ystart = (int) y;
-			    new = 1;
-				/* printf("ints: %d, %d\n",xstart,ystart); */
 			    debug("got ButtonPress",dbug);
 			    break;
 			case 2:	/* middle button */
@@ -525,32 +483,13 @@ XFontStruct **font_info;
     }
 }
 
-draw_box(win, gc, x1, y1, x2, y2)
-Window win;
-GC gc;
-int x1,y1;
-int x2,y2;
+/* this routine is used for doing the rubber band drawing during interactive */
+/* point selection.  It is identical to xwin_draw_line() but uses an xor style */
+
+void xwin_xor_line(x1, y1, x2, y2)
+int x1,y1,x2,y2;
 {
-    int ux,uy,lx,ly;
-
-    ux = (x1>x2) ? x1 : x2;
-    uy = (y1>y2) ? y1 : y2;
-    lx = (x1>x2) ? x2 : x1;
-    ly = (y1>y2) ? y2 : y1;
-
-    /* Logical function is XOR, so that double drawing erases box
-    on both color and monochrome screens */
-
-    /* to make Fill version entirely interior, x++, y++, width--, height--  */
-
-    XSetFunction(dpy, gc, GXxor);
-
-    XDrawLine(dpy, win, gc, lx, ly, lx, uy);
-    XDrawLine(dpy, win, gc, lx, uy, ux, uy);
-    XDrawLine(dpy, win, gc, ux, uy, ux, ly);
-    XDrawLine(dpy, win, gc, ux, ly, lx, ly);
-    XDrawLine(dpy, win, gc, ux, uy, lx, ly);
-    XDrawLine(dpy, win, gc, ux, ly, lx, uy);
+	XDrawLine(dpy, win, gcx, x1, y1, x2, y2);
 }
 
 void xwin_draw_line(x1, y1, x2, y2)
@@ -914,14 +853,6 @@ double x1,y1,x2,y2;
     ** printf("ymax -> %d\n", (int) (yoffset - vp_ymax*scale));
     */
     
-    /* draw_box(win, gc, 
-	(int) (xoffset + vp_xmin*scale),
-	(int) (yoffset - vp_ymin*scale),
-	(int) (xoffset + vp_xmax*scale),
-	(int) (yoffset - vp_ymax*scale)
-    );
-    */
-
     xp->r11 = scale;
     xp->r12 = 0.0;
     xp->r21 = 0.0;

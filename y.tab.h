@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define FILES 257
 #define FILE_NAME 258
 #define EDIT 259
@@ -27,11 +23,3 @@
 #define POLY 279
 #define RECT 280
 #define TEXT 281
-typedef union {
-	double num;
-	PAIR pair;
-	COORDS *pairs;
-	OPTS *opts;
-	char *name;
-	} YYSTYPE;
-extern YYSTYPE yylval;
