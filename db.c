@@ -174,7 +174,7 @@ DB_TAB *dp;
 
 	    fprintf(fp, "ADD C%d ", p->u.c->layer);
 
-	    db_print_opts(fp, p->u.c->opts);
+	    db_print_opts(fp, p->u.c->opts, "WR");
 
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.c->x1,
@@ -188,7 +188,7 @@ DB_TAB *dp;
 
 	    fprintf(fp, "ADD L%d ", p->u.l->layer);
 
-	    db_print_opts(fp, p->u.l->opts);
+	    db_print_opts(fp, p->u.l->opts, "W");
 
 	    i=1;
 	    coords = p->u.l->coords;
@@ -206,7 +206,7 @@ DB_TAB *dp;
 
 	    fprintf(fp, "ADD N%d ", p->u.n->layer); 
 
-	    db_print_opts(fp, p->u.n->opts);
+	    db_print_opts(fp, p->u.n->opts, "MRYZF");
 
 	    fprintf(fp, "\"%s\" %g,%g;\n",
 		p->u.n->text,
@@ -222,7 +222,7 @@ DB_TAB *dp;
         case POLY:  /* polygon definition */
 	    fprintf(fp, "ADD P%d", p->u.p->layer);
 	    
-	    db_print_opts(fp, p->u.p->opts);
+	    db_print_opts(fp, p->u.p->opts, "W");
 
 	    i=1;
 	    coords = p->u.p->coords;
@@ -238,7 +238,7 @@ DB_TAB *dp;
 
 	case RECT:  /* rectangle definition */
 	    fprintf(fp, "ADD R%d ", p->u.r->layer);
-	    db_print_opts(fp, p->u.r->opts);
+	    db_print_opts(fp, p->u.r->opts, "W");
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
 		p->u.r->y1,
@@ -249,7 +249,7 @@ DB_TAB *dp;
 
         case TEXT:  /* text definition */
 	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
-	    db_print_opts(fp, p->u.t->opts);
+	    db_print_opts(fp, p->u.t->opts, "MRYZF");
 	    fprintf(fp, "%s %g,%g;\n",
 		p->u.t->text,
 		p->u.t->x,
@@ -259,7 +259,7 @@ DB_TAB *dp;
 
         case INST:  /* instance call */
 	    fprintf(fp, "ADD %s ", p->u.i->def->name);
-	    db_print_opts(fp, p->u.i->opts);
+	    db_print_opts(fp, p->u.i->opts, "MRXYZ");
 	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
 		p->u.i->y
@@ -276,17 +276,71 @@ DB_TAB *dp;
     fprintf(fp, "EXIT;\n\n");
 }
 
-int db_print_opts(fp, opts)           	/* print options */
-FILE *fp;
-OPTS *opts;
-{
-    OPTS  *op;
 
-    for (op=opts; op!=(OPTS *)0; op=op->next) {
-        fprintf(fp, "%s ",op->optstring);
+int db_print_opts(fp, popt, validopts) /* print options */
+FILE *fp;
+OPTS *popt;
+/* validopts is a string which sets which options are printed out */
+/* an example for a line is "W", a note uses "MRYZF" */
+char *validopts;
+{
+    char *p;
+
+    for (p=validopts; *p != '\0'; p++) {
+    	switch(toupper(*p)) {
+	    case 'F':
+		fprintf(fp, ":F%g ", popt->font_size);
+	    	break;
+	    case 'M':
+		switch(popt->mirror) {
+		    case MIRROR_OFF:
+		    	break;
+		    case MIRROR_X:
+	    		fprintf(fp, ":MX ");
+			break;
+		    case MIRROR_Y:
+	    		fprintf(fp, ":MY ");
+			break;
+		    case MIRROR_XY:
+	    		fprintf(fp, ":MXY ");
+			break;
+		    default:
+	    		weprintf("invalid mirror case\n");
+		    	break;	
+		}
+	    	break;
+	    case 'R':
+		if (popt->rotation != 0.0) {
+		    fprintf(fp, ":R%g ", popt->rotation);
+		}
+	    	break;
+	    case 'W':
+		if (popt->width != 0.0) {
+		    fprintf(fp, ":W%g ", popt->width);
+		}
+	    	break;
+	    case 'X':
+		if (popt->scale != 1.0) {
+		    fprintf(fp, ":X%g ", popt->scale);
+		}
+	    	break;
+	    case 'Y':
+		if (popt->aspect_ratio != 1.0) {
+		    fprintf(fp, ":Y%g ", popt->aspect_ratio);
+		}
+	    	break;
+	    case 'Z':
+		if (popt->slant != 0.0) {
+		    fprintf(fp, ":Z%g ", popt->slant);
+		}
+	    	break;
+	    default:
+		weprintf("invalid option %c\n", *p); 
+	    	break;
+	}
     }
-    return 0;
 }
+
 
 int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
 DB_TAB *cell;
@@ -637,43 +691,23 @@ void discard_pairs()
     last_pair = NULL;
 }		
 
-OPTS *opt_create(s)
-char *s;
+OPTS *opt_create()
 {
     OPTS *tmp;
     tmp = (OPTS *) emalloc(sizeof(OPTS));
-    tmp->optstring = s;
-    tmp->next = NULL;
+    
+    /* set defaults */
+    tmp->font_size = 10.0;       /* :F<font_size> */
+    tmp->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
+    tmp->rotation = 0.0;         /* :R<rotation,resolution> */
+    tmp->width = 0.0;            /* :W<width> */
+    tmp->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
+    tmp->scale=1.0;              /* :X<scale> */
+    tmp->slant=0.0;              /* :Z<slant_degrees> */
+
     return(tmp);
 }     
 
-void opt_new(s)
-char *s;
-{
-    OPTS *tmp;
-    first_opt = last_opt = opt_create(s);
-}
-
-void opt_append(s)
-char *s;
-{
-    last_opt = last_opt->next = opt_create(s);
-    last_opt = last_opt->next;
-}
-
-/* not necessarily working yet 
-void discard_opts()
-{
-    OPTS *temp;
-
-    while(first_opt != NULL) {
-      temp = first_opt;
-      first_opt = first_opt->next;
-      free((char *)temp);
-    }
-    last_opt = NULL;
-}             
-*/
 
 char *strsave(s)   /* save string s somewhere */
 char *s;
@@ -755,48 +789,25 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	     *	   [{:F0 | :F1}romfile] coord   
 	     */
 
-    	    for (op=p->u.i->opts; op!=(OPTS *)0; op=op->next) {
-		switch (op->optstring[1]) {
-		case 'r':
-		case 'R':
-		    sscanf(op->optstring+2, "%lf", &optval);
-		    /* fprintf(stderr,"got rotation %g\n", optval); */
-		    mat_rotate(xp, optval);
+	    /* create transformation matrix from options */
+
+	    mat_rotate(xp, p->u.i->opts->rotation);
+	    mat_scale(xp, p->u.i->opts->scale, p->u.i->opts->scale); 
+	    mat_scale(xp, 1.0, p->u.i->opts->aspect_ratio); 
+	    mat_slant(xp,  p->u.i->opts->slant); 
+	    switch (p->u.i->opts->mirror) {
+	    	case MIRROR_OFF:
 		    break;
-		case 'x':
-		case 'X':
-		    sscanf(op->optstring+2, "%lf", &optval);
-		    /* fprintf(stderr,"got scale %g\n", optval); */
-		    mat_scale(xp, optval, optval);
+	    	case MIRROR_X:
+		    xp->r22 *= -1.0;
 		    break;
-		case 'y':
-		case 'Y':
-		    sscanf(op->optstring+2, "%lf", &optval);
-		    /* fprintf(stderr,"got scale %g\n", optval); */
-		    mat_scale(xp, 1.0, optval);
+	    	case MIRROR_Y:
+		    xp->r11 *= -1.0;
 		    break;
-		case 'm':
-		case 'M':
-		    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-			xp->r11 *= -1.0;
-			xp->r22 *= -1.0;
-		    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-			xp->r22 *= -1.0;
-		    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-			xp->r11 *= -1.0;
-		    } else {
-			weprintf("unknown mirror option %s\n", op->optstring); 
-		    }
+	    	case MIRROR_XY:
+		    xp->r11 *= -1.0;
+		    xp->r22 *= -1.0;
 		    break;
-		case 'z':		
-		case 'Z':		/* slant +/-45 */
-		    sscanf(op->optstring+2, "%lf", &optval);
-		    mat_slant(xp, optval);
-		    break;
-		default:
-			weprintf("unknown option value: %s\n", op->optstring); 
-		    break;
-		}
 	    }
 
 	    xp->dx += p->u.i->x;
@@ -922,24 +933,7 @@ int mode; 	/* drawing mode */
     double width=0.0;
     int segment;
 
-    for (op=def->u.l->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'w':
-	case 'W':
-	    sscanf(op->optstring+2, "%lf", &width);
-	    /* fprintf(stderr,"got width %g\n", width); */
-	    break;
-	default:
-	    if (op->optstring[0] == '.') {
-		/* fprintf(stderr,"in do_line: named primitive ignored: %s\n",
-		op->optstring); */
-	    } else {
-		eprintf("in do_line: bad option: %s\n", op->optstring);
-	    }
-	    break;
-	}
-    }
-
+    width = def->u.l->opts->width;
 
     /* there are four cases for rendering lines with miters 
      *
@@ -1115,8 +1109,9 @@ int mode; 	/* drawing mode */
     } while(temp != NULL);
 }
 
-/* ADD Nmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
-    [:Zslant] [:Ffontsize] "string" coord    */
+
+/* ADD Nmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] 
+[:Ffontsize] "string" coord    */
 
 void do_note(def,mode)
 DB_DEFLIST *def;
@@ -1130,62 +1125,32 @@ int mode;
     double optval;
 
     /* create a unit xform matrix */
-
     xp = (XFORM *) emalloc(sizeof(XFORM));  
-    xp->r11 = 1.0;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = 1.0;
-    xp->dx  = 0.0;
-    xp->dy  = 0.0;
+    xp->r11 = 1.0; xp->r12 = 0.0;
+    xp->r21 = 0.0; xp->r22 = 1.0;
+    xp->dx  = 0.0; xp->dy  = 0.0;
 
-    /* FIXME: */
-    /* these eventually have to be changed to not be computed in */
-    /* place.  To work properly, these transformations have to */
+    /* NOTE: To work properly, these transformations have to */
     /* occur in the proper order, for example, rotation must come */
     /* after slant transformation or else it wont work properly */
 
-    for (op=def->u.n->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'f':		
-	case 'F':		/* fontsize */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, optval, optval);
+    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
+    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
+    mat_slant(xp, def->u.n->opts->slant);
+    mat_rotate(xp, def->u.n->opts->rotation);
+    switch (def->u.n->opts->mirror) {
+	case MIRROR_OFF:
 	    break;
-	case 'r':	
-	case 'R':		/* rotation angle +/- 180 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got rotation %g\n", optval); */
-	    mat_rotate(xp, optval);
+	case MIRROR_X:
+	    xp->r22 *= -1.0;
 	    break;
-	case 'y':
-	case 'Y':		/* yx ratio */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, 1.0, optval);
+	case MIRROR_Y:
+	    xp->r11 *= -1.0;
 	    break;
-	case 'm':
-	case 'M':		/* mirror X,Y,XY */
-	    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-		xp->r11 *= -1.0;
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-		xp->r11 *= -1.0;
-	    } else {
-		weprintf("unknown mirror option %s\n", op->optstring); 
-	    }
+	case MIRROR_XY:
+	    xp->r11 *= -1.0;
+	    xp->r22 *= -1.0;
 	    break;
-	case 'z':
-	case 'Z':		/* slant +/-45 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    mat_slant(xp, optval);
-	    break;
-	default:
-	    break;
-	}
     }
 
     jump(); set_pen(def->u.n->layer);
@@ -1197,6 +1162,7 @@ int mode;
 
     free(xp);
 }
+
 
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
 
@@ -1245,6 +1211,7 @@ int mode;
     }
 }
 
+
 /* ADD Rmask [.cname] [@sname] [:Wwidth] coord coord  */
 
 void do_rect(def, mode)
@@ -1267,6 +1234,7 @@ int mode;	/* drawing mode */
     draw(x2, y2, mode); draw(x2, y1, mode);
     draw(x1, y1, mode);
 }
+
 
 
 /* ADD Tmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
@@ -1296,47 +1264,27 @@ int mode;
     xp->dx  = 0.0;
     xp->dy  = 0.0;
 
-    for (op=def->u.t->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'f':
-	case 'F':		/* fontsize */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, optval, optval);
+    /* NOTE: To work properly, these transformations have to */
+    /* occur in the proper order, for example, rotation must come */
+    /* after slant transformation or else it wont work properly */
+
+    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
+    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
+    mat_slant(xp, def->u.n->opts->slant);
+    mat_rotate(xp, def->u.n->opts->rotation);
+    switch (def->u.n->opts->mirror) {
+	case MIRROR_OFF:
 	    break;
-	case 'r':
-	case 'R':		/* rotation angle +/- 180 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got rotation %g\n", optval); */
-	    mat_rotate(xp, optval);
+	case MIRROR_X:
+	    xp->r22 *= -1.0;
 	    break;
-	case 'y':
-	case 'Y':		/* yx ratio */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, 1.0, optval);
+	case MIRROR_Y:
+	    xp->r11 *= -1.0;
 	    break;
-	case 'm':
-	case 'M':		/* mirror X,Y,XY */
-	    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-		xp->r11 *= -1.0;
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-		xp->r11 *= -1.0;
-	    } else {
-		weprintf("unknown mirror option %s\n", op->optstring); 
-	    }
+	case MIRROR_XY:
+	    xp->r11 *= -1.0;
+	    xp->r22 *= -1.0;
 	    break;
-	case 'z':
-	case 'Z':		/* slant +/-90 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    mat_slant(xp, optval);
-	    break;
-	default:
-	    break;
-	}
     }
 
     jump(); set_pen(def->u.t->layer);
@@ -1520,5 +1468,4 @@ double a, b;
 {
     return(a<=b?a:b);
 }
-
 

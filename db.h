@@ -43,9 +43,21 @@
 typedef double NUM;
 
 typedef struct opt_list {
-    char *optstring;
-    struct opt_list *next;
+    double font_size;       /* :F<font_size> */
+    int mirror;             /* :M<x,xy,y>    */
+    double rotation;        /* :R<rotation,resolution> */
+    double width;           /* :W<width> */
+    double scale; 	    /* :X<scale> */
+    double aspect_ratio;    /* :Y<aspect_ratio> */
+    double slant;           /* :Z<slant> */
 } OPTS;
+
+#define MIRROR_OFF 0
+#define MIRROR_X   1
+#define MIRROR_Y   2
+#define MIRROR_XY  3
+
+OPTS *opt_create();
 
 typedef struct coord_pair {
     NUM x,y;

@@ -8,7 +8,6 @@
 
 PAIR tmp_pair;
 static COORDS *first_pair, *last_pair; 
-static OPTS *first_opt, *last_opt; 
 
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
@@ -101,6 +100,7 @@ int add_line(int *layer)
     char word[BUFSIZE];
     double x2,y2;
     static double xold, yold;
+    OPTS *opts;
 
 /*
  *   (this chain from HEAD is the cell definition symbol table)
@@ -125,6 +125,8 @@ int add_line(int *layer)
  *
  */
 
+    opts = opt_create();
+    opts->width = 10.0;
 
     if (debug) {printf("layer %d\n",*layer);}
     rl_setprompt("ADD_LINE> ");
@@ -248,7 +250,7 @@ int add_line(int *layer)
 			printf("error: a line must have finite length\n");
 			state = START;
 		    } else if (x2==xold && y2==yold) {
-			db_add_line(currep, *layer, (OPTS *) NULL, first_pair);
+			db_add_line(currep, *layer, opts, first_pair);
 			modified = 1;
 			need_redraw++;
 			rubber_clear_callback();
@@ -267,7 +269,7 @@ int add_line(int *layer)
 	    default:
 		if (debug) printf("in end\n");
 		if (token == EOC) {
-			db_add_line(currep, *layer, (OPTS *) NULL, first_pair);
+			db_add_line(currep, *layer, opts, first_pair);
 			modified = 1;
 			need_redraw++;
 		    	; /* add geom */
@@ -297,13 +299,6 @@ int count; /* number of times called */
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_LINE dbline; */
 
-	/*
-	typedef struct opt_list {
-	    char *optstring;
-	    struct opt_list *next;
-	} OPTS;
-	*/
-
 
         dbtab.dbhead = &dbdeflist;
         dbtab.dbtail = &dbdeflist;
@@ -314,7 +309,7 @@ int count; /* number of times called */
         dbdeflist.type = LINE;
 
         dbline.layer=1;
-        dbline.opts=(OPTS *)NULL;
+        dbline.opts=opt_create();
         dbline.coords=first_pair;
 	
 	if (debug) {printf("in draw_line\n");}
