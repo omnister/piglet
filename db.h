@@ -307,7 +307,7 @@ extern int db_def_archive(
 extern void db_set_nest(int nest); 	/* set global display nest level */
 extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
-extern int db_ident(
+DB_DEFLIST *db_ident(
 		DB_TAB *cell,
 		NUM x,
 		NUM y

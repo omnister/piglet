@@ -255,10 +255,17 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
     	xmin, ymin, xmax, ymax);
 
     if (fit) {
-	xmin = currep->minx;
-	ymin = currep->miny;
-	xmax = currep->maxx;
-	ymax = currep->maxy;
+	if (currep != NULL ) {
+	    xmin = currep->minx;
+	    ymin = currep->miny;
+	    xmax = currep->maxx;
+	    ymax = currep->maxy;
+	} else {
+	    xmin = -10.0;
+	    ymin = -10.0;
+	    xmax = 10.0;
+	    ymax = 10.0;
+	}
     }
 
     if (debug) printf("%g %g %g %g %d\n", xmin, ymin, xmax, ymax, n);

@@ -25,6 +25,7 @@ int *layer;
     char word[BUFSIZE];
     double x2,y2;
     int debug=0;
+    DB_DEFLIST *p_best;
 
     if (debug) printf("layer %d\n",*layer);
     rl_setprompt("IDENT> ");
@@ -81,8 +82,12 @@ int *layer;
 	    if (token == NUMBER) {
 		token_get(lp,word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
-		db_ident(currep, x1, y1);
-		/* xwin_draw_point(x1, y1); */
+
+		if ((p_best=db_ident(currep, x1, y1)) != NULL) {
+		    db_notate(p_best);		/* print out identifying information */
+		    db_highlight(p_best);	
+		}
+
 		state = NUM1;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */

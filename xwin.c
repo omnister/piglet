@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.24 2004/10/15 16:59:37 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.25 2004/10/23 00:47:34 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -393,6 +393,12 @@ FILE *fp;
 	    if (currep != NULL ) {
 	        bb.init=0;
 		db_render(currep,0,&bb,0); /* render the current rep */
+		grid_xd = currep->grid_xd;
+		grid_yd = currep->grid_yd;
+		grid_xs = currep->grid_xs;
+		grid_ys = currep->grid_ys;
+		grid_xo = currep->grid_xo;
+		grid_yo = currep->grid_yo;
 	    }
 	    draw_grid(win, gcx, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);

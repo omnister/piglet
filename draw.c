@@ -169,12 +169,20 @@ double fuzz;
  *
  */
 
-int db_ident(cell, x, y)
+/* DB_DEFLIST *db_ident(cell, x, y, layer, comp, name) */
+/* DB_TAB *cell;			/* device being edited */
+/* double x, y;	 		/* pick point */
+/* int layer; */
+/* char *comp; */
+/* char *name; */  \
+
+
+DB_DEFLIST *db_ident(cell, x, y)
 DB_TAB *cell;			/* device being edited */
 double x, y;	 		/* pick point */
 {
     DB_DEFLIST *p;
-    DB_DEFLIST *p_best;
+    DB_DEFLIST *p_best = 0;
     int debug=0;
     BOUNDS childbb;
     double pick_score;
@@ -280,7 +288,7 @@ double x, y;	 		/* pick point */
 		    break;
 		default:
 		    eprintf("unknown record type: %d in db_ident\n", p->type);
-		    return(1);
+		    return(0);
 		    break;
 		}
 
@@ -295,8 +303,7 @@ double x, y;	 		/* pick point */
 	}
     }
 
-    db_notate(p_best);		/* print out identifying information */
-    db_highlight(p_best);	
+    return(p_best);
 }
 
 db_drawbounds(p)
