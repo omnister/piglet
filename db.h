@@ -271,7 +271,8 @@ extern int db_add_text(
 	    );
 
 extern int db_save(
-		DB_TAB *sp
+		DB_TAB *sp,
+		char *name
 	    );
 
 extern int db_def_print(

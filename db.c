@@ -1,4 +1,3 @@
-
 #include "db.h"		/* hierarchical database routines */
 #include "eprintf.h"	/* error reporting functions */
 
@@ -242,8 +241,9 @@ char *s;
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
 
-int db_save(sp)           	/* print db */
+int db_save(sp, name)           	/* print db */
 DB_TAB *sp;
+char *name;
 {
 
     FILE *fp;
@@ -251,7 +251,7 @@ DB_TAB *sp;
     int err=0;
 
     mkdir("./cells", 0777);
-    snprintf(buf, MAXFILENAME, "./cells/%s.d", sp->name);
+    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
     err+=((fp = fopen(buf, "w+")) == 0); 
 
     db_def_print(fp, sp, CELL); 

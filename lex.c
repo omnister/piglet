@@ -1137,18 +1137,6 @@ char *arg;
        ; /* FIXME: a syntax error */
     }
     return (0);
-
-    if (currep != NULL) {
-	if (currep->modified) {
-	    if (db_save(currep)) {
-		printf("unable to save %s\n", currep->name);
-	    }
-	    printf("saved %s\n", currep->name);
-	    currep->modified = 0;
-        } else {
-	    ; /* silently refuse to write non-modified cell */
-	}
-   }
 }
 
 com_macro(lp, arg)		/* enter the MACRO subsystem */
@@ -1263,39 +1251,75 @@ char *arg;
     need_redraw++; 
     int err;
 
-    if (currep != NULL) {
-	if (currep->modified) {
-	    if (db_save(currep)) {
-		printf("unable to save %s\n", currep->name);
-	    };
-	    printf("saved %s\n", currep->name);
-	    currep->modified = 0;
-        } else {
-	    ; /* silently refuse to write non-modified cell */
+    TOKEN token;
+    int done=0;
+    char word[128];
+    char name[128];
+    char buf[128];
+    int error=0;
+    int debug=0;
+    int nfiles=0;
+    FILE *fp;
+    LEXER *my_lp;
+    DB_TAB *save_rep;  
+   
+    if (debug) printf("    com_save <%s>\n", arg); 
+
+    name[0]=0;
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		if (nfiles == 0) {
+		    strncpy(name, word, 128);
+		    nfiles++;
+		} else {
+		    printf("SAVE: wrong number of args\n");
+		    return(-1);
+		}
+	    	break;
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case COMMA:		/* comma */
+		printf("SAVE: expected IDENT: got %s\n", tok2str(token));
+	    	break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case CMD:		/* command */
+	    	token_unget(lp, token, word);
+		done++;
+		break;
+	    default:
+		eprintf("bad case in com_save");
+		break;
 	}
+    }
+
+    if (currep != NULL) {
+	if (nfiles == 0) {	/* save current cell */
+	    if (currep->modified) {
+		if (db_save(currep, currep->name)) {
+		    printf("unable to save %s\n", currep->name);
+		}
+		printf("saved %s\n", currep->name);
+		currep->modified = 0;
+	    } else {
+		printf("SAVE: cell not modified - no save done\n");
+	    }
+	} else {		/* save copy to a different name */
+	    if (db_save(currep, name)) {
+		printf("unable to save %s\n", name);
+	    }
+	    printf("saved %s as %s\n", currep->name, name);
+	}
+
     } else {
 	printf("error: not currently editing a cell\n");
     }    	
-
-    /*
-	if(<name> != curr_name() && name != NULL) {
-	    if (exists_on_disk(name)) {
-		if_ask("do you want to overwrite?",name)
-		    writedb(currdev, name);
-		    mark_unmodified(name);
-	    } else {
-	    	writedb(currdev,name)
-		mark_unmodified(name);
-	    }
-	} else {
-	    if (currrname == NULL) {
-		prompt for new name or break
-	    }
-	    writedb(currdev, currname);
-	    mark_unmodified(name);
-	}
-    */
-
     return (0);
 }
 
