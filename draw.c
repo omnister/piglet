@@ -1,6 +1,11 @@
 #include "db.h"
 #include "rubber.h"
 #include "xwin.h"
+#include "postscript.h"
+
+#define FUZZBAND 0.01	/* how big the fuzz around lines are */
+                        /* compared to minimum window dimension */
+			/* for the purpose of picking objects */
 
 /* global variables that need to eventually be on a stack for nested edits */
 int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
@@ -77,8 +82,8 @@ double fuzz;
 	5 4 6 */
 
     /* FIXME - this check can eventually go away for speed */
-    if (p->xmin >= p->xmax) { printf("bad!\n"); }
-    if (p->ymin >= p->ymax) { printf("bad!\n"); }
+    if (p->xmin > p->xmax) { printf("bad!\n"); }
+    if (p->ymin > p->ymax) { printf("bad!\n"); }
 
     if (x <= p->xmin-fuzz)  outcode += 1; 
     if (x >  p->xmax+fuzz)  outcode += 2;
@@ -160,17 +165,14 @@ double fuzz;
  *
  */
 
-/* DB_DEFLIST *db_ident(cell, x, y, layer, comp, name) */
-/* DB_TAB *cell;			/* device being edited */
-/* double x, y;	 		/* pick point */
-/* int layer; */
-/* char *comp; */
-/* char *name; */  \
 
-
-DB_DEFLIST *db_ident(cell, x, y)
+DB_DEFLIST *db_ident(cell, x, y, mode, pick_layer, comp, name)
 DB_TAB *cell;			/* device being edited */
 double x, y;	 		/* pick point */
+int mode; 			/* 0=ident, 1=pick */
+int pick_layer;			/* layer restriction, or 0=all */
+int comp;			/* comp restriction */
+char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
     DB_DEFLIST *p_best = 0;
@@ -182,15 +184,21 @@ double x, y;	 		/* pick point */
     double fuzz;
     double xmin, ymin, xmax, ymax;
     int layer;
+    int bad_comp;
 
     if (cell == NULL) {
     	printf("no cell currently being edited!\n");
 	return(0);
     }
 
+    if (mode) {		/* pick rather than ident mode */
+    	printf("db_ident: called with layer %d, comp %d, name %s\n", 
+		pick_layer, comp, name);
+    }
+
     /* pick fuzz should be a fraction of total window size */
     xwin_window_get(&xmin, &ymin, &xmax, &ymax);
-    fuzz = max((xmax-xmin),(ymax-ymin))/100.0;
+    fuzz = max((xmax-xmin),(ymax-ymin))*FUZZBAND;
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
@@ -229,18 +237,30 @@ double x, y;	 		/* pick point */
 	    break;
 	}
 
-	if (show_check_visible(p->type, layer)) {
+	/* check all the restrictions on picking something */
 
+	bad_comp=0;
+	if (pick_layer != 0 && layer != pick_layer ||
+	    comp != 0 && comp != ALL && p->type != comp  ||
+	    mode == 0 && !show_check_visible(p->type, layer) ||
+	    mode == 1 && !show_check_modifiable(p->type, layer)) {
+		bad_comp++;
+	}
+
+	if (!bad_comp) {
 	    if ((pick_score=bb_distance(x,y,p,fuzz)) < 0.0) { 	/* inside BB */
 
-		/* pick point simply being inside BB gives a score ranging from */
+		/* pick point inside BB gives a score ranging from */
 		/* 1.0 to 2.0, with smaller BB's getting higher score */
 		pick_score= 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin),
 		    fabs(p->ymax-p->ymin)));
 
-		/* a bit of a hack, but we overload the childbb structure to */
-		/* pass the pick point into the draw routine.  If there is a hit, */
-		/* then childbb.xmax is set to 1.0 */
+		/* a bit of a hack, but we overload the childbb */
+		/* structure to pass the point into the draw routine. */
+		/* If a hit, then childbb.xmax is set to 1.0 */
+		/* seemed cleaner than more arguments, or */
+		/* yet another global variable */
+
 		childbb.xmin = x;
 		childbb.ymin = y;
 		childbb.xmax = 0.0;
@@ -325,7 +345,7 @@ DB_DEFLIST *p;			/* print out identifying information */
 {
 
     if (p == NULL) {
-    	printf("no component!\n");
+    	printf("db_notate: no component!\n");
 	return(0);
     }
 
@@ -384,7 +404,7 @@ DB_DEFLIST *p;			/* component to display */
     childbb.init=0;
 
     if (p == NULL) {
-    	printf("no component!\n");
+    	printf("db_highlight: no component!\n");
 	return(0);
     }
 
@@ -460,17 +480,21 @@ int db_plot() {
 	return(0);
     }
 
-    snprintf(buf, MAXFILENAME, "%s.plot", currep->name);
-    printf("plotting to %s\n", buf);
+    snprintf(buf, MAXFILENAME, "%s.ps", currep->name);
+    printf("plotting postcript to %s\n", buf);
     fflush(stdout);
 
     if((PLOT_FD=fopen(buf, "w+")) == 0) {
     	printf("db_plot: can't open plotfile: \"%s\"\n", buf);
-    } else {
-	X=0;				    /* turn X display off */
-	db_render(currep, 0, &bb, D_NORM);  /* dump plot */
-	X=1;				    /* turn X back on*/
-    }
+	return(0);
+    } 
+
+    X=0;				    /* turn X display off */
+    ps_preamble(PLOT_FD, currep->name, "piglet version 0.5",
+	8.5, 11.0, currep->minx, currep->miny, currep->maxx, currep->maxy);
+    db_render(currep, 0, &bb, D_NORM);  /* dump plot */
+    ps_postamble(PLOT_FD);
+    X=1;				    /* turn X back on*/
 }
 
 
@@ -480,7 +504,6 @@ int nest;	/* nesting level */
 BOUNDS *bb;
 int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 {
-
     extern XFORM *global_transform;
     extern XFORM unity_transform;
 
@@ -511,9 +534,11 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     }
 
     if (!X && (nest == 0)) {	/* autoplot output */
+	/*
 	fprintf(PLOT_FD, "nogrid\n");
 	fprintf(PLOT_FD, "isotropic\n");
 	fprintf(PLOT_FD, "back\n");
+	*/
     }
 
     if (nest == 0) {
@@ -765,7 +790,6 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     /* range of an unsigned int (RCW) */
 
     if (X) {
-
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 
 	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
@@ -784,13 +808,19 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
  		}
 	    }
 	}
-	xxold=xx;
-	yyold=yy;
-	nseg++;
     } else {
-	/* autoplot output */
-	if (showon && drawon) fprintf(PLOT_FD, "%4.6g %4.6g\n", xx,yy);	
+	if (nseg) {
+	    /* autoplot output */
+	    /* if (showon && drawon) fprintf(PLOT_FD, 
+	   	 "%4.6g %4.6g\n", xx,yy);*/	
+	    if (showon && drawon) ps_continue_line(PLOT_FD, xx, yy);
+	} else {
+	    if (showon && drawon) ps_start_line(PLOT_FD, xx, yy);
+	}
     }
+    xxold=xx;
+    yyold=yy;
+    nseg++;
 }
 
 /* pickcheck(): called with a line segment L=(x1,y1),
@@ -917,10 +947,9 @@ double *xc1, *yc1, *xc2, *yc2;
 
 void jump(void) 
 {
-    if (X) {
-	nseg=0;  		/* for X */
-    } else {
-	if (drawon) fprintf(PLOT_FD, "jump\n");  	/* autoplot */
+    nseg=0;  
+    if (!X) {
+	/* if (drawon) fprintf(PLOT_FD, "jump\n");  	/* autoplot */
     }
 }
 
@@ -939,7 +968,8 @@ int comp;	/* component type */
     if (X) {
 	xwin_set_pen((lnum%8));		/* for X */
     } else {
-	if (drawon) fprintf(PLOT_FD, "pen %d\n", (lnum%8));	/* autoplot */
+        ps_set_pen(lnum%8);
+	/* if (drawon) fprintf(PLOT_FD, "pen %d\n", (lnum%8));	/* autoplot */
     }
     set_line((((int)(lnum/8))%5));
 }
@@ -950,7 +980,8 @@ int lnum;
     if (X) {
 	xwin_set_line((lnum%5));		/* for X */
     } else {
-	if (drawon) fprintf(PLOT_FD, "line %d\n", (lnum%5)+1);	/* autoplot */
+        ps_set_line((lnum%5)+1);
+	/* if (drawon) fprintf(PLOT_FD, "line %d\n", (lnum%5)+1);/* autoplot */
     }
 }
 

@@ -112,15 +112,19 @@ typedef struct db_tab {
     double grid_ys;
     double grid_xo;
     double grid_yo;
-    int    grid_color;		/* FIXME: not used yet */
+    int    grid_color;	
 
     int logical_level;
     double lock_angle;
 
     int modified;		/* for EXIT/SAVE and bounding box usage */
     int flag;			/* bookingkeeping flag for db_def_archive() */
+
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
+
+    struct db_deflist *deleted; 	/* most recently deleted comp */
+
     struct db_tab *next;    	/* to link to next */
     struct db_tab *prev;    	/* link to previous */
 } DB_TAB;
@@ -307,10 +311,16 @@ extern int db_def_archive(
 extern void db_set_nest(int nest); 	/* set global display nest level */
 extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
+void db_unlink(DB_TAB *cell, DB_DEFLIST *p);
+
 DB_DEFLIST *db_ident(
 		DB_TAB *cell,
 		NUM x,
-		NUM y
+		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
 	    );
 
 extern int db_list(
@@ -325,6 +335,7 @@ extern int db_render(
 		int mode
 	    );
 
+extern void db_move_component();
 extern int db_plot();			/* plot the device to a file */
 
 extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
-#include <ctype.h>		/* for toupper */
+#include <ctype.h>		/* for toupper() */
 
 #include "rlgetc.h"
 #include "db.h"
@@ -132,7 +132,7 @@ com_delete(LEXER *lp, char *arg)
 		    printf("looks like a descriptor to me: %s\n", word);
 		}
 	    } else {
-		token_err("IDENT", lp, "expected DESC or NUMBER", token);
+		token_err("DEL", lp, "expected DESC or NUMBER", token);
 		state = END;	/* error */
 	    }
 	    break;
@@ -146,7 +146,7 @@ com_delete(LEXER *lp, char *arg)
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
-		token_err("IDENT", lp, "expected NUMBER", token);
+		token_err("DEL", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -157,7 +157,7 @@ com_delete(LEXER *lp, char *arg)
 		token_get(lp,word);
 		state = NUM2;
 	    } else {
-		token_err("IDENT", lp, "expected COMMA", token);
+		token_err("DEL", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -167,18 +167,23 @@ com_delete(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep, x1, y1)) != NULL) {
-		    db_notate(p_best);		/* print out identifying information */
-		    db_highlight(p_best);	
+		if ((p_best=db_ident(currep,
+			x1,y1,1,my_layer, comp, 0)) != NULL) {
+		    db_notate(p_best);	    /* print out id information */
+		    /* db_highlight(p_best); */	
+		    db_unlink(currep, p_best);
+		    need_redraw++;
+		} else {
+		    printf("nothing here to delete...\n");
 		}
 		state = START;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("IDENT: cancelling POINT\n");
+		printf("DEL: cancelling POINT\n");
 	        state = END;
 	    } else {
-		token_err("IDENT", lp, "expected NUMBER", token);
+		token_err("DEL", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -195,6 +200,29 @@ com_delete(LEXER *lp, char *arg)
     }
     rl_restoreprompt();
     return(1);
+}
+
+
+com_undo(LEXER *lp, char *arg)		
+{
+    /* check that we are editing a rep */
+    printf("in UNDO\n");
+    if (currep == NULL) {
+	printf("UNDO: must do \"EDIT <name>\" before UNDO\n");
+	token_flush_EOL(lp);
+	return(1);
+    }
+
+    if (currep->deleted == NULL) {
+	printf("UNDO: nothing left to UNDO\n");
+	token_flush_EOL(lp);
+	return(1);
+    } else {
+	db_insert_component(currep,currep->deleted);
+	currep->deleted=NULL;
+	need_redraw++;
+    }
+    return(0);
 }
 
 
@@ -223,4 +251,5 @@ com_delete(LEXER *lp, char *arg)
     } else {
 	;
 */
+
 

@@ -83,8 +83,8 @@ int *layer;
 		token_get(lp,word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
-		if ((p_best=db_ident(currep, x1, y1)) != NULL) {
-		    db_notate(p_best);		/* print out identifying information */
+		if ((p_best=db_ident(currep, x1, y1, 0, 0, 0, 0)) != NULL) {
+		    db_notate(p_best);		/* print information */
 		    db_highlight(p_best);	
 		}
 

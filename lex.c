@@ -1123,13 +1123,8 @@ char *arg;
     return (0);
 }
 
-com_move(lp, arg)	/* move a component from one location to another */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_move\n", arg);
-    return (0);
-}
+/* now in com_move.c */
+/* com_move(lp, arg)	/* move a component from one location to another */
 
 com_plot(lp, arg)		/* make a plot of the current device */
 LEXER *lp;
@@ -1426,13 +1421,8 @@ char *arg;
     return (0);
 }
 
-com_undo(lp, arg)		/* undo the last command */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_undo\n", arg);
-    return (0);
-}
+/* now in com_delete.c */
+/* com_undo(lp, arg)		/* undo the last command */
 
 com_units(lp, arg)	/* set editor resolution and user unit type */
 LEXER *lp;

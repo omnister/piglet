@@ -28,6 +28,8 @@ XFORM *global_transform = &unity_transform;  /* global xform matrix */
 void do_arc(),  do_circ(), do_line();
 void do_oval(), do_poly(), do_rect(), do_text();
 
+void db_free(); 		/* recycle memory for component */
+
 /********************************************************/
 
 DB_TAB *db_lookup(char *name)           /* find name in db */
@@ -65,6 +67,7 @@ char *s;
     sp->prev   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
+    sp->deleted = (struct db_deflist *) 0; 
 
     sp->minx = 0.0; 
     sp->miny = 0.0; 
@@ -132,14 +135,13 @@ char    *s;
     }
 }
 
+
 int db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
 char *s;
 {
     DB_TAB *sp;
     DB_DEFLIST *p;
-    COORDS *coords;
-    COORDS *ncoords;
     int debug=0;
     char buf[MAXFILENAME];
     char buf2[MAXFILENAME];
@@ -174,89 +176,7 @@ char *s;
 	}
 
 	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	    switch (p->type) {
-
-	    case ARC:  /* arc definition */
-		if (debug) printf("db_purge: freeing arc\n");
-		free(p->u.a->opts);
-		free(p->u.a);
-		free(p);
-		break;
-
-	    case CIRC:  /* circle definition */
-		if (debug) printf("db_purge: freeing circle\n");
-		free(p->u.c->opts);
-		free(p->u.c);
-		free(p);
-		break;
-
-	    case LINE:  /* line definition */
-
-		if (debug) printf("db_purge: freeing line\n");
-		coords = p->u.l->coords;
-		while(coords != NULL) {
-		    ncoords = coords->next;
-		    free(coords);	
-		    coords=ncoords;
-		}
-		free(p->u.l->opts);
-		free(p->u.l);
-		free(p);
-		break;
-
-	    case OVAL:  /* oval definition */
-
-		if (debug) printf("db_purge: freeing oval\n");
-		free(p->u.o->opts);
-		free(p->u.o);
-		free(p);
-		break;
-
-	    case POLY:  /* polygon definition */
-
-		if (debug) printf("db_purge: freeing poly\n");
-		coords = p->u.p->coords;
-		while(coords != NULL) {
-		    ncoords = coords->next;
-		    free(coords);
-		    coords=ncoords;
-		}
-		free(p->u.p->opts);
-		free(p->u.p);
-		free(p);
-		break;
-
-	    case RECT:  /* rectangle definition */
-
-		if (debug) printf("db_purge: freeing rect\n");
-		free(p->u.r->opts);
-		free(p->u.r);
-		free(p);
-		break;
-
-	    case TEXT:  /* text definition */
-
-		if (debug) printf("db_purge: freeing text\n");
-		free(p->u.t->opts);
-		free(p->u.t->text);
-		free(p->u.t);
-		free(p);
-		break;
-
-	    case INST:  /* instance call */
-
-		if (debug) printf("db_purge: freeing instance call: %s\n",
-		    p->u.i->name);
-		free(p->u.i->name);
-		free(p->u.i->opts);
-		free(p->u.i);
-		free(p);
-		break;
-
-	    default:
-		eprintf("unknown record type (%d) in db_def_print\n", p->type );
-		break;
-	    }
+	    db_free(p->type);
 	}
     
 	free(sp);
@@ -276,6 +196,98 @@ char *s;
 	    if (debug) printf("removing %s\n", buf);
 	    remove(buf);
 	}
+    }
+}
+
+void db_free(p) 		/* recycle memory for component */
+DB_DEFLIST *p;
+{
+    int debug=0;
+    COORDS *coords;
+    COORDS *ncoords;
+
+    switch (p->type) {
+
+    case ARC:  /* arc definition */
+	if (debug) printf("db_purge: freeing arc\n");
+	free(p->u.a->opts);
+	free(p->u.a);
+	free(p);
+	break;
+
+    case CIRC:  /* circle definition */
+	if (debug) printf("db_purge: freeing circle\n");
+	free(p->u.c->opts);
+	free(p->u.c);
+	free(p);
+	break;
+
+    case LINE:  /* line definition */
+
+	if (debug) printf("db_purge: freeing line\n");
+	coords = p->u.l->coords;
+	while(coords != NULL) {
+	    ncoords = coords->next;
+	    free(coords);	
+	    coords=ncoords;
+	}
+	free(p->u.l->opts);
+	free(p->u.l);
+	free(p);
+	break;
+
+    case OVAL:  /* oval definition */
+
+	if (debug) printf("db_purge: freeing oval\n");
+	free(p->u.o->opts);
+	free(p->u.o);
+	free(p);
+	break;
+
+    case POLY:  /* polygon definition */
+
+	if (debug) printf("db_purge: freeing poly\n");
+	coords = p->u.p->coords;
+	while(coords != NULL) {
+	    ncoords = coords->next;
+	    free(coords);
+	    coords=ncoords;
+	}
+	free(p->u.p->opts);
+	free(p->u.p);
+	free(p);
+	break;
+
+    case RECT:  /* rectangle definition */
+
+	if (debug) printf("db_purge: freeing rect\n");
+	free(p->u.r->opts);
+	free(p->u.r);
+	free(p);
+	break;
+
+    case TEXT:  /* text definition */
+
+	if (debug) printf("db_purge: freeing text\n");
+	free(p->u.t->opts);
+	free(p->u.t->text);
+	free(p->u.t);
+	free(p);
+	break;
+
+    case INST:  /* instance call */
+
+	if (debug) printf("db_purge: freeing instance call: %s\n",
+	    p->u.i->name);
+	free(p->u.i->name);
+	free(p->u.i->opts);
+	free(p->u.i);
+	free(p);
+	break;
+
+    default:
+	eprintf("unknown record type (%d) in db_def_print\n", p->type );
+	break;
     }
 }
 
@@ -410,7 +422,7 @@ int mode;
 
         case OVAL:  /* oval definition */
 
-	    fprintf(fp, "#add OVAL not inplemented yet\n");
+	    fprintf(fp, "#add OVAL not implemented yet\n");
 	    break;
 
         case POLY:  /* polygon definition */
@@ -481,10 +493,42 @@ int mode;
     }
 }
 
+void db_unlink(cell, dp) 
+DB_TAB *cell;
+struct db_deflist *dp;
+{
+
+    if(dp == NULL) {
+    	printf("can't delete a null instance\n");
+    }else if(dp->prev == NULL ) {		/* first one the list */
+	cell->dbhead = dp->next;
+	if (dp->next != NULL) {
+	    dp->next->prev = dp->prev;
+	}
+    } else if(dp->next == NULL ) {	/* last in the list */
+	dp->prev->next = dp->next;
+	cell->dbtail = dp->prev;
+    } else {				/* somewhere in the chain */
+	dp->prev->next = dp->next;
+	dp->next->prev = dp->prev;
+    }
+
+    if (currep->deleted != NULL) {
+	db_free(currep->deleted);	/* gone for good now! */
+    } 
+    currep->deleted = dp;		/* save for one level of undo */
+}
+
 void db_insert_component(cell,dp) 
 DB_TAB *cell;
 struct db_deflist *dp;
 {
+    /* this may be a recycled cell pointer */
+    /* from a delete, so clean it up */
+
+    dp->prev = NULL;
+    dp->next = NULL;
+
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
 	cell->dbhead = cell->dbtail = dp;
@@ -497,6 +541,58 @@ struct db_deflist *dp;
     }
 }
 
+void db_move_component(p, dx, dy) /* move any component by dx, dy */
+struct db_deflist *p;
+double dx, dy;
+{
+    COORDS *coords;
+
+    switch (p->type) {
+    case ARC:  /* arc definition */
+        /* FIXME: Not implemented */
+	break;
+    case CIRC:  /* circle definition */
+	p->u.c->x1 += dx;
+	p->u.c->y1 += dy;
+	p->u.c->x2 += dx;
+	p->u.c->y2 += dy;
+	break;
+    case LINE:  /* line definition */
+	coords = p->u.l->coords;
+	while(coords != NULL) {
+	    coords->coord.x += dx;
+	    coords->coord.y += dy;
+	}
+	break;
+    case OVAL:  /* oval definition */
+        /* FIXME: Not implemented */
+	break;
+    case POLY:  /* polygon definition */
+	while(coords != NULL) {
+	    coords->coord.x += dx;
+	    coords->coord.y += dy;
+	}
+	break;
+    case RECT:  /* rectangle definition */
+	p->u.r->x1 += dx;
+	p->u.r->y1 += dy;
+	p->u.r->x2 += dx;
+	p->u.r->y2 += dy;
+	break;
+    case TEXT:  /* text and note definition */
+	p->u.t->x += dx;
+	p->u.t->y += dy;
+	break;
+    case INST:  /* instance call */
+	p->u.i->x += dx;
+	p->u.i->y += dy;
+	break;
+
+    default:
+	eprintf("unknown record type (%d) in db_move_component\n", p->type );
+	break;
+    }
+}
 
 int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
 DB_TAB *cell;
