@@ -21,6 +21,9 @@
  *
  */
 
+
+#define MAXFILENAME 128
+
 /* typedef NUM int; */
 typedef double NUM;
 
@@ -51,6 +54,7 @@ typedef struct xform {
 
 typedef struct db_tab {
     char *name;             	/* cell name */
+    int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
     struct db_tab *next;    	/* to link to another */
@@ -162,6 +166,7 @@ extern int db_add_text();
 
 extern int db_print();
 extern int db_def_print();
+extern int db_def_archive();
 extern int db_render();
 
 /********************************************************/

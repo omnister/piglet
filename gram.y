@@ -64,7 +64,9 @@ archive		:	files_command command_list
 				/* when done, print all definitions */
 				    /* db_print(); */
 				/* or render the last rep */
-				    db_render(currep,xp); 
+				    /* db_render(currep,xp,0); */
+
+				db_def_archive(currep); 
 			    }
 		;
 

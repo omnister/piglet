@@ -11,6 +11,8 @@ static struct db_tab *TAIL = 0;
 COORDS *first_pair, *last_pair; 
 OPTS   *first_opt, *last_opt;
 
+XFORM *transform;	/* global xform matrix */
+
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line(), do_note();
 void do_oval(), do_poly(), do_rect(), do_text();
@@ -88,7 +90,67 @@ int db_print()           	/* print db */
     return 0;
 }
 
-int db_def_print(dp) 
+
+int db_def_archive(sp) 
+struct db_tab *sp;
+{
+    FILE *fp;
+    char buf[MAXFILENAME];
+
+    snprintf(buf, MAXFILENAME, "%s_I", sp->name);
+    fp = fopen(buf, "w+"); 
+
+    db_def_arch_recurse(fp,sp);
+
+    /* perhaps better form here would be to pass db_def_print */
+    /* sp rather than sp->dbhead... then it could do all this */
+    /* edit; purge; save; business autonomously ... */
+
+    fprintf(fp, "purge %s;\n", sp->name);
+    fprintf(fp, "edit ");
+    fprintf(fp, "%s;\n",sp->name);
+    db_def_print(fp, sp->dbhead);
+    fprintf(fp, "save;\n");
+    fprintf(fp, "exit;\n\n");
+
+    fclose(fp); 
+}
+
+int db_def_arch_recurse(fp,sp) 
+FILE *fp;
+struct db_tab *sp;
+{
+    struct db_tab *dp;
+    COORDS *coords;
+    DB_DEFLIST *p; 
+
+    /* clear out all flag bits in cell definition headers */
+    for (dp=HEAD; dp!=(struct db_tab *)0; dp=dp->next) {
+	sp->flag=0;
+    }
+
+    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+
+	if (p->type == INST && !(p->u.i->def->flag)) {
+
+	     db_def_arch_recurse(fp, p->u.i->def); 	/* recurse */
+	     (p->u.i->def->flag)++;
+
+	     fprintf(fp, "purge %s;\n", p->u.i->def->name);
+	     fprintf(fp, "edit ");
+             fprintf(fp, "%s;\n",p->u.i->def->name);
+	     db_def_print(fp, p->u.i->def->dbhead);
+	     fprintf(fp, "save;\n");
+	     fprintf(fp, "exit;\n\n");
+	}
+    }
+
+    return(0); 	
+}
+
+
+int db_def_print(fp, dp) 
+FILE *fp;
 DB_DEFLIST *dp;
 {
     COORDS *coords;
@@ -96,49 +158,69 @@ DB_DEFLIST *dp;
     for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
 	switch (p->type) {
         case ARC:  /* arc definition */
-	    printf("#add ARC not inplemented yet\n");
+	    fprintf(fp, "#add ARC not inplemented yet\n");
 	    break;
+
         case CIRC:  /* circle definition */
-	    printf("add c%d %g,%g %g,%g;\n",
-		p->u.c->layer,
+
+	    fprintf(fp, "add c%d ", p->u.c->layer);
+
+	    db_print_opts(fp, p->u.c->opts);
+
+	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.c->x1,
 		p->u.c->y1,
 		p->u.c->x2,
 		p->u.c->y2
 	    );
 	    break;
+
         case LINE:  /* line definition */
 
-	    printf("add l%d", p->u.l->layer);
+	    fprintf(fp, "add l%d", p->u.l->layer);
 
 	    coords = p->u.l->coords;
 	    while(coords != NULL) {
-		printf(" %g,%g", coords->coord.x, coords->coord.y);
+		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
 		coords = coords->next;
 	    }
-	    printf(";\n");
+	    fprintf(fp, ";\n");
 
 	    break;
+
         case NOTE:  /* note definition */
-	    printf("#add NOTE not inplemented yet\n");
+
+	    fprintf(fp, "add n%d ", p->u.n->layer); 
+
+	    db_print_opts(fp, p->u.n->opts);
+
+	    fprintf(fp, "%s %g,%g;\n",
+		p->u.n->text,
+		p->u.n->x,
+		p->u.n->y
+	    );
 	    break;
+
         case OVAL:  /* oval definition */
-	    printf("#add OVAL not inplemented yet\n");
+	    fprintf(fp, "#add OVAL not inplemented yet\n");
 	    break;
         case POLY:  /* polygon definition */
-	    printf("add p%d", p->u.p->layer);
+	    fprintf(fp, "add p%d", p->u.p->layer);
+	    
+	    db_print_opts(fp, p->u.p->opts);
 
 	    coords = p->u.p->coords;
 	    while(coords != NULL) {
-		printf(" %g,%g", coords->coord.x, coords->coord.y);
+		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
 		coords = coords->next;
 	    }
-	    printf(";\n");
+	    fprintf(fp, ";\n");
 
 	    break;
 	case RECT:  /* rectangle definition */
-	    printf("add r%d %g,%g %g,%g;\n",
-		p->u.r->layer,
+	    fprintf(fp, "add r%d ", p->u.r->layer);
+	    db_print_opts(fp, p->u.r->opts);
+	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
 		p->u.r->y1,
 		p->u.r->x2,
@@ -146,12 +228,18 @@ DB_DEFLIST *dp;
 	    );
 	    break;
         case TEXT:  /* text definition */
-	    printf("#add TEXT not inplemented yet\n");
+	    fprintf(fp, "add t%d ", p->u.t->layer); 
+	    db_print_opts(fp, p->u.t->opts);
+	    fprintf(fp, "%s %g,%g;\n",
+		p->u.t->text,
+		p->u.t->x,
+		p->u.t->y
+	    );
 	    break;
         case INST:  /* instance call */
-	    printf("add %s ", p->u.i->def->name);
-	    db_print_opts(p->u.i->opts);
-	    printf("%g,%g;\n",
+	    fprintf(fp, "add %s ", p->u.i->def->name);
+	    db_print_opts(fp, p->u.i->opts);
+	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
 		p->u.i->y
 	    );
@@ -164,13 +252,14 @@ DB_DEFLIST *dp;
     }
 }
 
-int db_print_opts(opts)           	/* print options */
+int db_print_opts(fp, opts)           	/* print options */
+FILE *fp;
 OPTS *opts;
 {
     OPTS  *op;
 
     for (op=opts; op!=(OPTS *)0; op=op->next) {
-        printf("%s ",op->optstring);
+        fprintf(fp, "%s ",op->optstring);
     }
     return 0;
 }
@@ -564,18 +653,24 @@ char *s;
 /* rendering routines */
 /********************************************************/
 
-int db_render(cell,xf)
+int db_render(cell,xf, nest)
 DB_TAB *cell;
 XFORM *xf; 	/* coordinate transform matrix */
+int nest;
 {
     DB_DEFLIST *p;
     OPTS *op;
     XFORM *xp, *xa;
+    extern XFORM *transform;
     double optval;
 
-    printf("nogrid\n");
-    printf("isotropic\n");
-    printf("back\n");
+    if (nest == 0) {
+	printf("nogrid\n");
+	printf("isotropic\n");
+	printf("back\n");
+    }
+
+    transform = xf; 	/* set global transform */
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 	switch (p->type) {
@@ -625,9 +720,16 @@ XFORM *xf; 	/* coordinate transform matrix */
 		case 'X':
 		    sscanf(op->optstring+2, "%lf", &optval);
 		    /* fprintf(stderr,"got scale %g\n", optval); */
-		    scale(xp, optval);
+		    scale(xp, optval, optval);
+		    break;
+		case 'Y':
+		    sscanf(op->optstring+2, "%lf", &optval);
+		    /* fprintf(stderr,"got scale %g\n", optval); */
+		    scale(xp, 1.0, optval);
 		    break;
 		case 'M':
+		    /* for now assume mirror about X axis */
+		    /* will eventually have to handle :MX, :MY & :MXY */
 		    xp->r11 *= -1.0;
 		    break;
 		default:
@@ -638,11 +740,13 @@ XFORM *xf; 	/* coordinate transform matrix */
 	    xp->dx += p->u.i->x;
 	    xp->dy += p->u.i->y;
 
-	    xa = compose(xf,xp);
+	    transform = compose(xp,xf);		/* set global transform */
 
-	    db_render(p->u.i->def, xa);
-	    free(xa);
+	    db_render(p->u.i->def, transform, ++nest);
+	    free(transform);
 	    free(xp);
+
+	    transform = xf;		/* set transform back */
 
 	    break;
 	default:
@@ -657,9 +761,8 @@ XFORM *xf; 	/* coordinate transform matrix */
 
 /******************** plot geometries *********************/
 
-void do_arc(def,xf)
+void do_arc(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     NUM x1,y1,x2,y2,x3,y3;
 
@@ -675,9 +778,8 @@ XFORM *xf;
     y3=def->u.a->y3;
 }
 
-void do_circ(def, xf)
+void do_circ(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     int i;
     double r,theta,x,y,x1,y1,x2,y2;
@@ -700,13 +802,12 @@ XFORM *xf;
 	theta = ((double) i)*2.0*3.1415926/16.0;
 	x = r*sin(theta);
 	y = r*cos(theta);
-	draw(x1+x, y1+y, xf);
+	draw(x1+x, y1+y);
     }
 }
 
-void do_line(def, xf)
+void do_line(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     COORDS *temp;
 
@@ -718,21 +819,19 @@ XFORM *xf;
 
     temp = def->u.l->coords;
     while(temp != NULL) {
-	    draw(temp->coord.x, temp->coord.y, xf);
+	    draw(temp->coord.x, temp->coord.y);
 	    temp = temp->next;
     }
 }
 
-void do_note(def,xf)
+void do_note(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     printf("# rendering note (not implemented)\n");
 }
 
-void do_oval(def,xf)
+void do_oval(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     NUM x1,y1,x2,y2,x3,y3;
 
@@ -749,9 +848,8 @@ XFORM *xf;
 
 }
 
-void do_poly(def, xf)
+void do_poly(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     COORDS *temp;
     
@@ -763,14 +861,13 @@ XFORM *xf;
     temp = def->u.p->coords;
     /* should eventually check for closure */
     while(temp != NULL) {
-	    draw(temp->coord.x, temp->coord.y, xf);
+	    draw(temp->coord.x, temp->coord.y);
 	    temp = temp->next;
     }
 }
 
-void do_rect(def, xf)
+void do_rect(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     double x1,y1,x2,y2;
 
@@ -784,14 +881,13 @@ XFORM *xf;
     jump();
     set_pen(def->u.c->layer);
 
-    draw(x1, y1, xf); draw(x1, y2, xf);
-    draw(x2, y2, xf); draw(x2, y1, xf);
-    draw(x1, y1, xf);
+    draw(x1, y1); draw(x1, y2);
+    draw(x2, y2); draw(x2, y1);
+    draw(x1, y1);
 }
 
-void do_text(def,xf)
+void do_text(def)
 DB_DEFLIST *def;
-XFORM *xf;
 {
     printf("# rendering text (not implemented)\n");
 }
@@ -823,16 +919,16 @@ double theta;
     s=sin(2.0*M_PI*theta/360.0);
     c=cos(2.0*M_PI*theta/360.0);
 
-    t = c*xp->r11 + s*xp->r12;
-    xp->r12 = c*xp->r12 - s*xp->r11;
+    t = c*xp->r11 - s*xp->r12;
+    xp->r12 = c*xp->r12 + s*xp->r11;
     xp->r11 = t;
 
-    t = c*xp->r21 + s*xp->r22;
-    xp->r22 = c*xp->r22 - s*xp->r21;
+    t = c*xp->r21 - s*xp->r22;
+    xp->r22 = c*xp->r22 + s*xp->r21;
     xp->r21 = t;
 
-    t = c*xp->dx + s*xp->dx;
-    xp->dy = c*xp->dy - s*xp->dx;
+    t = c*xp->dx - s*xp->dx;
+    xp->dy = c*xp->dy + s*xp->dx;
     xp->dx = t;
 }
 
@@ -867,27 +963,299 @@ double sx, sy;
      * 7.76s real    7.56s user    0.02s system  
     */
 
-void draw(x, y, xf)	/* draw x,y transformed by xf */
+void drawx(x, y)	/* draw x,y transformed by extern global xf */
 NUM x,y;
-XFORM *xf;
 {
-
+    extern XFORM *transform;
     NUM xx, yy;
 
-    xx = x*xf->r11 + y*xf->r21 + xf->dx;
-    yy = x*xf->r12 + y*xf->r22 + xf->dy;
+    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+    yy = x*transform->r12 + y*transform->r22 + transform->dy;
 
     printf("%4.6f %4.6f\n",xx,yy);
 }
 
-void xdraw(x, y, xf)	/* draw x,y transformed by xf */
+void draw(x, y)	/* draw x,y transformed by extern global xf */
 NUM x,y;
-XFORM *xf;
 {
 
+    extern XFORM *transform;
     NUM xx, yy;
-    xx = x*xf->r11 + y*xf->r21 + xf->dx;
-    yy = x*xf->r12 + y*xf->r22 + xf->dy;
+
+    int i=0;
+
+    /* generate a description of sparseness of array */
+
+    if (transform->r11 != 1.0) {i+=1;};
+    if (transform->r12 != 0.0) {i+=2;};
+    if (transform->r21 != 0.0) {i+=4;};
+    if (transform->r22 != 1.0) {i+=8;};
+    if (transform->dx  != 0.0) {i+=16;};
+    if (transform->dy  != 0.0) {i+=32;};
+
+    switch (i) {
+	case 0: 	/* r11=1, r12=0, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x;
+	    yy = y;
+	    break;
+	case 1:		/* r11=x, r12=0, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11;
+	    yy = y;
+	    break;
+	case 2:		/* r11=1, r12=x, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 3:		/* r11=x, r12=x, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 ;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 4: 	/* r11=1, r12=0, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = y;
+	    break;
+	case 5:		/* r11=x, r12=0, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y;
+	    break;
+	case 6:		/* r11=1, r12=x, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 7:		/* r11=x, r12=x, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 8: 	/* r11=1, r12=0, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x;
+	    yy = y*transform->r22;
+	    break;
+	case 9:		/* r11=x, r12=0, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 10:	/* r11=1, r12=x, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 11:	/* r11=x, r12=x, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 12: 	/* r11=1, r12=0, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = y*transform->r22;
+	    break;
+	case 13:	/* r11=x, r12=0, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y*transform->r22;
+	    break;
+	case 14:	/* r11=1, r12=x, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 15:	/* r11=x, r12=x, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 16: 	/* r11=1, r12=0, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = y;
+	    break;
+	case 17:	/* r11=x, r12=0, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y;
+	    break;
+	case 18:	/* r11=1, r12=x, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 19:	/* r11=x, r12=x, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 20: 	/* r11=1, r12=0, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y;
+	    break;
+	case 21:	/* r11=x, r12=0, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y;
+	    break;
+	case 22:	/* r11=1, r12=x, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 23:	/* r11=x, r12=x, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 24: 	/* r11=1, r12=0, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 25:	/* r11=x, r12=0, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 26:	/* r11=1, r12=x, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 27:	/* r11=x, r12=x, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 28: 	/* r11=1, r12=0, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 29:	/* r11=x, r12=0, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 30:	/* r11=1, r12=x, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 31:	/* r11=x, r12=x, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 32: 	/* r11=1, r12=0, r21=0, r22=1, dx=0, dy=x */
+	    xx = x;
+	    yy = y + transform->dy;
+	    break;
+	case 33:	/* r11=x, r12=0, r21=0, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = y + transform->dy;
+	    break;
+	case 34:	/* r11=1, r12=x, r21=0, r22=1, dx=0, dy=x */
+	    xx = x;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 35:	/* r11=x, r12=x, r21=0, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 36: 	/* r11=1, r12=0, r21=x, r22=1, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = y + transform->dy;
+	    break;
+	case 37:	/* r11=x, r12=0, r21=x, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y + transform->dy;
+	    break;
+	case 38:	/* r11=1, r12=x, r21=x, r22=1, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 39:	/* r11=x, r12=x, r21=x, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 40: 	/* r11=1, r12=0, r21=0, r22=x, dx=0, dy=x */
+	    xx = x;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 41:	/* r11=x, r12=0, r21=0, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 42:	/* r11=1, r12=x, r21=0, r22=x, dx=0, dy=x */
+	    xx = x;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 43:	/* r11=x, r12=x, r21=0, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 44: 	/* r11=1, r12=0, r21=x, r22=x, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 45:	/* r11=x, r12=0, r21=x, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 46:	/* r11=1, r12=x, r21=x, r22=x, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 47:	/* r11=x, r12=x, r21=x, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 48: 	/* r11=1, r12=0, r21=0, r22=1, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 49:	/* r11=x, r12=0, r21=0, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 50:	/* r11=1, r12=x, r21=0, r22=1, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 51:	/* r11=x, r12=x, r21=0, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 52: 	/* r11=1, r12=0, r21=x, r22=1, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 53:	/* r11=x, r12=0, r21=x, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 54:	/* r11=1, r12=x, r21=x, r22=1, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 55:	/* r11=x, r12=x, r21=x, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 56: 	/* r11=1, r12=0, r21=0, r22=x, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 57:	/* r11=x, r12=0, r21=0, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 58:	/* r11=1, r12=x, r21=0, r22=x, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 59:	/* r11=x, r12=x, r21=0, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 60: 	/* r11=1, r12=0, r21=x, r22=x, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 61:	/* r11=x, r12=0, r21=x, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 62:	/* r11=1, r12=x, r21=x, r22=x, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 63:	/* r11=x, r12=x, r21=x, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	default:
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+    }
+
     printf("%4.6f %4.6f\n",xx,yy);
 }
 
@@ -899,5 +1267,6 @@ void jump()
 void set_pen(lnum)
 int lnum;
 {
+    /* printf("line %d\n", ((lnum/5)%5)+1); */
     printf("pen %d\n", (lnum%5)+1);
 }
