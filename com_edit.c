@@ -29,46 +29,14 @@ char *arg;
     DB_TAB *save_rep;  
     DB_TAB *new_rep;  
     DB_TAB *old_rep = NULL;  
-    double x1, y1;
-    DB_DEFLIST *p_best;
-    double xmin, ymin, xmax, ymax;
-
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
-
-/* an edi parse loop that will allow picking of instances for EIP */
-
-/* current thinking is to add flag bits in the db_deflist so that the picking */
-/* is managed in the rendering routine in-situ.  Setting and clearing the flags */
-/* may also be able to manage EIP'ing in and out in a stack-like fashion */
-/* need to make EDI <coord> do a pick on instances only to select EIP rep */
+   
 
     if (debug) printf("    com_edit <%s>\n", arg); 
 
     name[0]=0;
-
-    rl_saveprompt();
-    rl_setprompt("EDIT> ");
-
-    while(!done) {
-	token = token_look(lp,word);
-	if (debug) printf("got %s: %s\n", tok2str(token), word);
-	if (token==CMD) {
-	    state=END;
-	} 
-	switch(state) {	
-	case START:		/* get cellname or xy pick point */
-	    if (debug) printf("in START\n");
-	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
-		state = START;
-	    } else if (token == NUMBER) {
-		state = NUM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
-		state = START;
-	    } else if (token == EOC || token == CMD) {
-		state = END;
-	    } else if (token == IDENT) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
 		if (nfiles == 0) {
 		    strncpy(name, word, 128);
 		    nfiles++;
@@ -76,83 +44,28 @@ char *arg;
 		    printf("EDIT: wrong number of args\n");
 		    return(-1);
 		}
-		state = END;
-	    } else {
-		token_err("EDIT", lp, "expected DESC or NUMBER", token);
-		state = END;	/* error */
-	    }
-	    break;
-	case NUM1:		/* get pair of xy coordinates */
-	    if (debug) printf("in NUM1\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("EDIT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("EDIT", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (debug) printf("in NUM2\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
-		if ((p_best=db_ident(currep, x1,y1,1, 0, INST, 0)) != NULL) {
-		    db_notate(p_best);	    /* print out id information */
-		    db_highlight(p_best);
-		    xmin=p_best->xmin;
-		    xmax=p_best->xmax;
-		    ymin=p_best->ymin;
-		    ymax=p_best->ymax;
-		    printf("sorry, edit in place is not yet implemented...\n");
-		    printf("best I can do is highlight the component that I would\n");
-		    printf("have edited\n");
-		    state = END;
-		} else {
-		    printf("nothing here to EDIT... try SHO command?\n");
-		    state = START;
-		}
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("EDIT: cancelling EDIT\n");
-	        state = END;
-	    } else {
-		token_err("EDIT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case END:
-	default:
-	    if (token == EOC || token == CMD) {
-		;
-	    } else {
-		token_flush_EOL(lp);
-	    }
-	    done++;
-	    break;
+	    	break;
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case COMMA:		/* comma */
+		printf("EDIT: expected IDENT: got %s\n", tok2str(token));
+	    	break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case CMD:		/* command */
+	    	token_unget(lp, token, word);
+		done++;
+		break;
+	    default:
+		eprintf("bad case in com_edi");
+		break;
 	}
     }
-
-/****************************************************************************/
 
     if (lp->mode == MAIN || currep == NULL  || lp->mode == EDI) {
 
@@ -257,8 +170,6 @@ char *arg;
 	printf("    must EXIT before entering EDIT subsystem\n");
     }
     if (debug) printf("leaving  com_edit <%s>\n", arg); 
-
-    rl_restoreprompt();
-    return(1);
+    return (0);
 }
 

@@ -173,7 +173,7 @@ double x, y;	 		/* pick point */
 int mode; 			/* 0=ident, 1=pick */
 int pick_layer;			/* layer restriction, or 0=all */
 int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL (not used)*/
+char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
     DB_DEFLIST *p_best = 0;
