@@ -11,7 +11,6 @@ W		[\t ]*
 %{
 #include <stdio.h>
 #include "db.h"
-#include "xwin.h"
 
 #ifdef DEBUG	/* debugging version - if assert ok */
 #include <assert.h>
@@ -33,18 +32,6 @@ W		[\t ]*
 #endif DEBUG
 
 int layer=0;	/* default layer storage */
-
-/*  redefine lex input stream */
-#undef YY_INPUT
-#define YY_INPUT(b, r, ms) (r = my_yyinput(b,ms))
-
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <string.h>
-
-char *lineread = (char *) NULL;
-int pushback = (char) NULL;
-char    *rl_gets(); 
 
 %}
 
@@ -190,142 +177,3 @@ yywrap()
 	return(1);
 }
 
-/* simple version.  truncates long input strings to size of lex buffer */
-
-int yymin(a,b)
-int a,b;
-{
-   return((a<b)?a:b);
-}
-
-int my_yyinput(buf, maxsize)
-char *buf;
-int maxsize;
-{
-       char *s;
-       int k,n;
-
-       /* s = rl_gets(""); */
-       /* s = fgets(buf,maxsize,stdin); */
-
-       /* bad form because buf sizes are not carefully considered... */
-       s = procXevent();
-    
-       if (s==0) return (0);
-
-       k = strlen(s);
-       n = yymin(maxsize, k);
-
-       /* printf("maxsize=%d, s=%s n=%d\n",maxsize, s, n); */
-
-       if (n>0) {
-	    memcpy(buf,s,n);
-       }
-       return n;
-}
-
-/* *************************************************** */
-/* some routines to implement command line history ... */
-/* *************************************************** */
-
-
-/* expand and duplicate a string with malloc */
-
-char * expdupstr(s,n)
-int s, n;
-{
-    char *r;
-
-    r = (char *) xmalloc(strlen( (char *) s) + n);
-    strcpy(r, (char *) s);
-    return (r);
-}
-
-rl_ungetc(c,fd) 
-int c;
-FILE *fd;
-{
-    /* printf("ungetting %2.2x %c\n",c,c); */
-
-    if (fd != stdin) {
-	return(ungetc(c,fd));
-    } else {
-	pushback=c;
-	return(1);
-    }
-}
-
-
-/* Read a string, and return a pointer to it.  Returns NULL on EOF. */
-char * rl_gets (prompt)
-char *prompt;
-{
-
-    char *s;
-
-    /* If the buffer has already been allocated, return the memory
-       to the free pool. */
-
-    if (lineread) {
-        free (lineread);
-        lineread = (char *) NULL;
-    }
-
-    /* Get a line from the user. */
-    /* printf("entering readline\n"); */
-    lineread = readline (prompt);
-    if (lineread == NULL) {
-	/* printf("got a NULL\n"); */
-	return(NULL);
-    }
-    fflush(stdout);
-
-    /* If the line has any text in it, save it on the history. */
-    if (lineread && *lineread)
-	add_history (lineread);
-    
-    /* add a newline to return string */
-
-    s = expdupstr(lineread,2);
-    strcat(s,"\n");
-    free (lineread);
-    lineread = s;
-
-    return (lineread);
-}
-
-initialize_readline()
-{
-    /* Allow conditional parsing of the ~/.inputrc file. */
-    rl_readline_name = ".pigrc";
-}
-
-
-rlgetc(fd)
-FILE *fd;
-{
-    int c;
-    static char *lp = NULL;
-
-    if (fd != stdin) {
-	c=getc(fd);
-    } else {
-	if (pushback != (char) NULL) {
-	    c=pushback;
-	    pushback=(char) NULL;
-	} else if(lp != NULL && *lp != '\0') {
-	    c=*(lp++);
-	} else {
-	    lineread=rl_gets(":");
-	    if (lineread == NULL) {
-		c=EOF;
-	    } else {
-		lp = lineread;
-		c=*(lp++);
-	    }
-	}
-    }
-
-    /* printf("->%2.2x %c\n",c,c); */
-    return (c);
-}

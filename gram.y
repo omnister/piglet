@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 #include "db.h"
-#include "xwin.h"
 #include "readfont.h"
 
 #define  MAX_FILE_NAME 256
@@ -13,12 +12,9 @@
 #define NO  0
 
 DB_TAB *currep = (DB_TAB *) NULL;	/* keep track of current rep */
-DB_TAB *newrep;			        /* scratch pointer for new rep */
-
+DB_TAB *newrep;				        /* scratch pointer for new rep */
 OPTS   *opts;
 XFORM  *xp;
-
-char buf[128];
 
 %}
 
@@ -75,13 +71,11 @@ archive         :   command_list {
 
 
 command_list    :   command 
-                |   command_list ';' command
                 |   command_list command
-                |   command_list command ';'
                 ;
 
-command         :   FILES file_name_list '$'
-                |   EDIT FILE_NAME {
+command         :   FILES file_name_list '$' EOC
+                |   EDIT FILE_NAME EOC {
                         /*
                         if (currep = lookup(FILE_NAME) {
                             display();
@@ -95,52 +89,38 @@ command         :   FILES file_name_list '$'
                         currep = db_install($2);
                         printf("#got edit file: %s\n",$2);
                     }
-                |   SHOW ALL
-                |   LOCK NUMBER 
-                |   GRID NUMBER NUMBER {
-			sprintf(buf,"%g %g", $2, $3);
-			xwin_grid(buf);
-		    }
-                |   GRID NUMBER NUMBER NUMBER ',' NUMBER {
-			sprintf(buf,"%g %g %g %g", $2, $3, $4, $6);
-			xwin_grid(buf);
-		    }
-                |   GRID NUMBER ',' NUMBER NUMBER ',' NUMBER {
-			sprintf(buf,"%g %g %g %g", $2, $4, $5, $7);
-			xwin_grid(buf);
-		    }
-                |   LEVEL NUMBER 
-                |   WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER {
-
-			xwin_window((double) $2, (double) $4, 
-			    (double) $5, (double) $7);
-		    }
-                |   ADD ARC option_list coord coord coord {
+                |   SHOW ALL EOC
+                |   LOCK NUMBER EOC
+                |   GRID NUMBER NUMBER NUMBER ',' NUMBER EOC
+                |   GRID NUMBER ',' NUMBER NUMBER ',' NUMBER EOC
+                |   LEVEL NUMBER EOC
+                |   WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER EOC
+                |   ADD ARC option_list coord coord coord EOC {
                         db_add_arc(currep,
                         (int) $2, $3, $4.x, $4.y,
                         $5.x, $5.y, $6.x,$6.y);
                     }
-                |   ADD CIRC option_list coord coord {
+                |   ADD CIRC option_list coord coord EOC {
                         db_add_circ(currep, 
                         (int) $2, $3, $4.x, $4.y, $5.x, $5.y);
                     }
-                |   ADD LINE option_list coord_list {
+                |   ADD LINE option_list coord_list EOC {
                         db_add_line(currep, (int) $2, $3, $4);
                     }
-                |   ADD NOTE option_list QUOTED coord {
+                |   ADD NOTE option_list QUOTED coord EOC {
                         db_add_note(currep, (int) $2, $3,
                         $4, $5.x, $5.y);
                     }
-                |   ADD OVAL option_list coord coord coord {
+                |   ADD OVAL option_list coord coord coord EOC {
                         db_add_oval(currep,
                         (int) $2, $3, $4.x, $4.y,
                         $5.x, $5.y, $6.x,$6.y);
                     }
-                |   ADD POLY option_list coord_list {
+                |   ADD POLY option_list coord_list EOC {
                         db_add_poly(currep, 
                         (int) $2, $3, $4);
                     }
-                |   ADD RECT option_list coord coord {
+                |   ADD RECT option_list coord coord EOC {
                         if (currep != NULL) {
                             db_add_rect(currep, (int) $2,
                             $3, $4.x, $4.y, $5.x, $5.y);
@@ -148,38 +128,37 @@ command         :   FILES file_name_list '$'
                             printf("error: not currently editing a cell\n");
                         }
                     }
-                |   ADD TEXT option_list QUOTED coord {
+                |   ADD TEXT option_list QUOTED coord EOC {
                         db_add_text(currep, (int) $2, $3,
                         $4, $5.x, $5.y);
                     }
-                |   ADD INST FILE_NAME option_list coord {
+                |   ADD INST FILE_NAME option_list coord EOC {
                         if ((newrep=db_lookup($3)) == 0) {
                             printf("can't add non-existant cell\n");
                         } else {
                             db_add_inst(currep, newrep, $4, $5.x, $5.y);
                         }
                     }   
-                |   ADD FILE_NAME option_list coord {
+                |   ADD FILE_NAME option_list coord EOC {
                         if ((newrep=db_lookup($2)) == 0) {
                             printf("can't add non-existant cell\n");
                         } else {
                             db_add_inst(currep, newrep, $3, $4.x, $4.y);
                         }
                     }   
-                |   SAVE {
-			need_redraw++;
+                |   SAVE EOC {
                         if (currep != NULL) {   
-                            db_save(currep);
+                            db_print(currep);
                         } else {
                             printf("error: not currently editing a cell\n");
                         }
                     }
-                |   PURGE FILE_NAME {
+                |   PURGE FILE_NAME EOC {
                         /*  uninstall($1); */
                         printf("# 3) should purge: %s\n",$2);
                     }
-                |   EXIT 
-                |   error ';' {
+                |   EXIT EOC 
+                |   error EOC {
                         yyerrok;
                     }
                 ;
@@ -226,26 +205,26 @@ coord_list      :   coord  coord {
                     }
                 ;
 
+EOC		:  
+		| ';'
+		;
+
 %%
 
 FILE *yyerfp;  /* error stream */
 
-main(argc,argv) 
-int argc;
-char **argv;
-{
-
+main() {
 #ifdef YYDEBUG
     extern int yydebug;
+
     yydebug = 1;
 #endif
-
     yyerfp = stdout;
 
     loadfont("NOTEDATA.F");
-    initX();
     printf("# yyparse() == %d\n", yyparse());
 }
+
 
 /* yywhere() -- custom input position for yyparse()
  * yymark()  -- get information from '# line file'

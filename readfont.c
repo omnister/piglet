@@ -13,30 +13,15 @@ int fonttab[256];
 int xdef[5000];
 int ydef[5000];
 
-
-/*
-main()
-{
-    loadfont("NOTEDATA.F");
-    writestring("Now is the time",0,0,scale);
-    writestring("for all good men",0,-1*(int) scale,scale);
-    writestring("to come to the",0,-2*(int) scale,scale);
-    writestring("ABCDEFGHIJKLMNOP",0,-3*(int) scale,scale);
-    writestring("QRSTUVWXYZabcdef",0,-4*(int) scale,scale);
-    writestring("ghijklmnopqrstuv",0,-5*(int) scale,scale);
-    writestring("wxyz0123456789~!",0,-6*(int) scale,scale);
-    writestring("#$%^&*()_+=-';:",0,-7*(int) scale,scale);
-    writestring("][}{.,></?|",0,-8*(int) scale,scale);
-}
-*/
-
 writestring(s,xf)
 char *s;
 XFORM *xf;
 {
     double offset=0.0;
 
+    printf("pen 1\n");
     while(*s != 0) {
+	if (*s == '|') printf("pen\n");
 	writechar(*s,(((double)dx)*0.80*offset)/((double) dy),0.0,xf);
 	offset+=1.0;
 	++s;
@@ -60,10 +45,9 @@ XFORM *xf;
 
     i = fonttab[c];
 
-    jump();
+    printf("jump\n");
     while (xdef[i] != -64 || ydef[i] != -64) {
 	if (xdef[i] != -64) {
-
 	    xp = x+ (0.8 * (double) xdef[i]) / ((double) dy);
 	    yp = y+ (0.8 * (double) ydef[i]) / ((double) dy);
 
@@ -71,9 +55,7 @@ XFORM *xf;
 	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
 
 	    draw(xt,yt); 
-
 	} else {
-	    
 	    jump();
 	}
 	i++;

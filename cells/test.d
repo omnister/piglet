@@ -1,0 +1,16 @@
+PURGE test;
+EDIT test;
+ADD N1 "EDI|" 0,0;
+SAVE;
+EXIT;
+
+ DIODE2 0,5;
+ADD RESV 0,0;
+ADD RESV :R90 0,0;
+ADD L9  10,10 5,5;
+ADD L9 :w0.5  12,12 5,5;
+ADD L9 :w0.5  1,1 5,1;
+ADD L9 :w0.0  1,1 5,1;
+SAVE;
+EXIT;
+

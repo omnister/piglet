@@ -1,0 +1,31 @@
+purge foo;
+edit foo;
+add r1 0,0 1,1;
+save;
+exit;
+
+ormal test" 0,0;
+add n2 :F10 :R45 ".  45 degree rotated test" 0,0;
+add n3 :F10 :R90 ".  90 degree rotated test" 0,0;
+add n4 :F10 :R135 ".  135 degree rotated test" 0,0;
+add n5 :F10 :R180 ".  180 degree rotated test" 0,0;
+add n6 :F10 :R225 ".  225 degree rotated test" 0,0;
+add n7 :F10 :R270 ".  270 degree rotated test" 0,0;
+add n8 :F10 :R315 ".  315 degree rotated test" 0,0;
+save;
+exit;
+
+purge BLAH;
+edit BLAH;
+add BLOK 0,0;
+add BLOK :R22.5 :X0.5 0,0;
+save;
+exit;
+
+purge FOO;
+edit FOO;
+add BLAH 0,0;
+add BLAH :X0.1 :R45 100,100;
+save;
+exit;
+

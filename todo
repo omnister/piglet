@@ -1,0 +1,15 @@
+
+Now handles fonts somewhat;
+    Needs $FONTPATH
+    Doesn't yet pass options to font rendering code
+	40point size, pen 1, no rotation, wired in as constants
+	options are currently ignored in "gram.y"
+    
+
+Add support for [^\$\$.*$] comments in archive
+
+ADD, EDIT, etc need to be case insensitive along with l,r,c,n,t component id's
+
+all drawing must go through draw() so that levels can be handled properly.
+currently, fonts have their own mechanism and are not properly blocked out
+when setting nesting levels.

@@ -1,0 +1,8 @@
+PURGE ONE;
+EDIT ONE;
+ADD L1 :W1  0,0 10,1 4,4
+ 3,2;
+ADD N3 :F2 "1" 0,0;
+SAVE;
+EXIT;
+
