@@ -884,8 +884,10 @@ DB_DEFLIST *def;
 	    break;
 	default:
 	    if (op->optstring[0] == '.') {
+		/* 
 		fprintf(stderr,"in do_line: named primitive ignored: %s\n",
 		op->optstring);
+		*/
 	    } else {
 		fprintf(stderr,"in do_line: bad option: %s\n", op->optstring);
 		exit(1);
@@ -938,129 +940,126 @@ DB_DEFLIST *def;
 	    draw(x2,y2);
 	    jump();
 
-	    if (segment == 0) {
-		/* printf("# in 1\n"); */
-		dx = x2-x1; 
-		dy = y2-y1;
-		a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
-		dx *= a; 
-		dy *= a;
-	    } else {
-		/* printf("# in 2\n"); */
-		dx=dxn;
-		dy=dyn;
-
-		/* xa = xb; */
-		/* ya = yb; */
-		/* xd = xc; */
-		/* yd = yc; */
-	    }
-
-	    if ( temp->next != NULL) {
-		/* printf("# in 3\n"); */
-		x3=temp->next->coord.x;
-		y3=temp->next->coord.y;
-		dxn = x3-x2; 
-		dyn = y3-y2;
-		a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
-		dxn *= a; 
-		dyn *= a;
-	    }
-	    
-	    if ( temp->next == NULL && segment == 0) {
-
-		/* printf("# in 4\n"); */
-		xa = x1+dy*width; ya = y1-dx*width;
-		xb = x2+dy*width; yb = y2-dx*width;
-		xc = x2-dy*width; yc = y2+dx*width;
-		xd = x1-dy*width; yd = y1+dx*width;
-
-	    } else if (temp->next != NULL && segment == 0) {  
-
-		/* printf("# in 5\n"); */
-		xa = x1+dy*width; ya = y1-dx*width;
-		xd = x1-dy*width; yd = y1+dx*width;
-
-		if (fabs(dx+dxn) < EPS) {
-		    /* printf("# in 6\n"); */
-		    k = (dx - dxn)/(dyn + dy); 
+	    if (width != 0) {
+		if (segment == 0) {
+		    /* printf("# in 1\n"); */
+		    dx = x2-x1; 
+		    dy = y2-y1;
+		    a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
+		    dx *= a; 
+		    dy *= a;
 		} else {
-		    /* printf("# in 7\n"); */
-		    k = (dyn - dy)/(dx + dxn);
+		    /* printf("# in 2\n"); */
+		    dx=dxn;
+		    dy=dyn;
+
+		    /* xa = xb; */
+		    /* ya = yb; */
+		    /* xd = xc; */
+		    /* yd = yc; */
 		}
 
-		/* if (fabs(dx*dyn-dxn*dy)<EPS || fabs(dx*dyn+dxn*dy)<EPS) { */
-	    
-		/* check for co-linearity of segments */
-		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    /* printf("# in 8\n"); */
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-		} else { 
-		    /* printf("# in 19\n"); */
-		    xb = x2+dy*width + k*dx*width;
-		    yb = y2-dx*width + k*dy*width;
-		    xc = x2-dy*width - k*dx*width; 
-		    yc = y2+dx*width - k*dy*width;
+		if ( temp->next != NULL) {
+		    /* printf("# in 3\n"); */
+		    x3=temp->next->coord.x;
+		    y3=temp->next->coord.y;
+		    dxn = x3-x2; 
+		    dyn = y3-y2;
+		    a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
+		    dxn *= a; 
+		    dyn *= a;
 		}
-
-	    } else if (temp->next == NULL && segment >= 0) {
-
-		/* printf("# in 10\n"); */
-		xb = x2+dy*width; yb = y2-dx*width;
-		xc = x2-dy*width; yc = y2+dx*width;
-
 		
-	    } else if (temp->next != NULL && segment >= 0) {  
+		if ( temp->next == NULL && segment == 0) {
 
-		/* printf("# in 11\n"); */
-		if (fabs(dx+dxn) < EPS) {
-		    /* printf("# in 12\n"); */
-		    k = (dx - dxn)/(dyn + dy); 
-		} else {
-		    /* printf("# in 13\n"); */
-		    k = (dyn - dy)/(dx + dxn);
-		}
-
-		/* check for co-linearity of segments */
-		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    /* printf("# in 8\n"); */
+		    /* printf("# in 4\n"); */
+		    xa = x1+dy*width; ya = y1-dx*width;
 		    xb = x2+dy*width; yb = y2-dx*width;
 		    xc = x2-dy*width; yc = y2+dx*width;
-		} else { 
-		    /* printf("# in 9\n"); */
-		    xb = x2+dy*width + k*dx*width;
-		    yb = y2-dx*width + k*dy*width;
-		    xc = x2-dy*width - k*dx*width; 
-		    yc = y2+dx*width - k*dy*width;
+		    xd = x1-dy*width; yd = y1+dx*width;
+
+		} else if (temp->next != NULL && segment == 0) {  
+
+		    /* printf("# in 5\n"); */
+		    xa = x1+dy*width; ya = y1-dx*width;
+		    xd = x1-dy*width; yd = y1+dx*width;
+
+		    if (fabs(dx+dxn) < EPS) {
+			/* printf("# in 6\n"); */
+			k = (dx - dxn)/(dyn + dy); 
+		    } else {
+			/* printf("# in 7\n"); */
+			k = (dyn - dy)/(dx + dxn);
+		    }
+
+		    /* check for co-linearity of segments */
+		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+			/* printf("# in 8\n"); */
+			xb = x2+dy*width; yb = y2-dx*width;
+			xc = x2-dy*width; yc = y2+dx*width;
+		    } else { 
+			/* printf("# in 19\n"); */
+			xb = x2+dy*width + k*dx*width;
+			yb = y2-dx*width + k*dy*width;
+			xc = x2-dy*width - k*dx*width; 
+			yc = y2+dx*width - k*dy*width;
+		    }
+
+		} else if (temp->next == NULL && segment >= 0) {
+
+		    /* printf("# in 10\n"); */
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+
+			
+	    	} else if (temp->next != NULL && segment >= 0) {  
+
+		    /* printf("# in 11\n"); */
+		    if (fabs(dx+dxn) < EPS) {
+			/* printf("# in 12\n"); */
+			k = (dx - dxn)/(dyn + dy); 
+		    } else {
+			/* printf("# in 13\n"); */
+			k = (dyn - dy)/(dx + dxn);
+		    }
+
+		    /* check for co-linearity of segments */
+		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+			/* printf("# in 8\n"); */
+			xb = x2+dy*width; yb = y2-dx*width;
+			xc = x2-dy*width; yc = y2+dx*width;
+		    } else { 
+			/* printf("# in 9\n"); */
+			xb = x2+dy*width + k*dx*width;
+			yb = y2-dx*width + k*dy*width;
+			xc = x2-dy*width - k*dx*width; 
+			yc = y2+dx*width - k*dy*width;
+		    }
 		}
-	    }
 
-	    jump();
+		jump();
 
-	    draw(xa, ya);
-	    draw(xb, yb);
-
- 	    if( width != 0) {
+		draw(xa, ya);
+		draw(xb, yb);
 		draw(xc, yc);
 		draw(xd, yd);
 		draw(xa, ya);
-	    }
 
-	    /* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
-	    /* check for co-linear reversal of path */
-	    if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		/* printf("# in 20\n"); */
-		xa = xc; ya = yc;
-		xd = xb; yd = yb;
-	    } else {
-		/* printf("# in 21\n"); */
-		xa = xb; ya = yb;
-		xd = xc; yd = yc;
-	    }
+		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
+		/* check for co-linear reversal of path */
+		if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		    /* printf("# in 20\n"); */
+		    xa = xc; ya = yc;
+		    xd = xb; yd = yb;
+		} else {
+		    /* printf("# in 21\n"); */
+		    xa = xb; ya = yb;
+		    xd = xc; yd = yc;
+		}
 
+	    }
 	    temp = temp->next;
 	    segment++;
 

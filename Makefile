@@ -3,12 +3,17 @@ SRC = scan.l gram.y
 OBJ = scan.o gram.o
 
 pig: gram.o scan.o db.o readfont.o
-	cc -g gram.o scan.o db.o readfont.o -o pig -lfl -lm
+	cc -g gram.o scan.o db.o readfont.o -o pig -ll -lm 
 
-lexer: scan.o
-	lex -il scan.l
-	cc  -g -DDEBUG lex.yy.c -o lexer -lfl
-	rm lex.yy.c
+test: pig
+	#
+	# "you can plot any of the archives in the testblock directory"
+	# "like this:"
+	#
+	#pig < testblocks/CDRCFR_I | ap
+	#pig < testblocks/H20919M2_I | ap
+	pig < testblocks/SLIC_I	| ap
+
 
 clean: 
 	rm -f y.tab.c y.output *.o lex.yy.c pig lexer
@@ -16,7 +21,9 @@ clean:
 y.tab.h: gram.o
 
 scan.o: scan.l y.tab.h 
-	lex -il scan.l
+	# use -il for flex under linux
+	# lex -il scan.l
+	lex scan.l
 	#cc -DYYDEBUG -c lex.yy.c 
 	cc -g -c lex.yy.c 
 	rm lex.yy.c

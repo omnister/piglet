@@ -69,7 +69,7 @@ archive		:	command_list
 				/* or render the last rep */
 				db_render(currep,xp,0);
 
-				db_def_archive(currep); 
+				/* db_def_archive(currep); */
 			    }
 		;
 
