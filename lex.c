@@ -998,13 +998,8 @@ char *arg;
 }
 
 
-com_identify(lp, arg)	/* identify named instances or components */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_identify\n", arg);
-    return (0);
-}
+/* now in com_ident.c */
+/* com_identify(lp, arg)	identify named instances or components */
 
 com_input(lp, arg)		/* take command input from a file */
 LEXER *lp;
@@ -1161,6 +1156,10 @@ LEXER *lp;
 char *arg;
 {
     printf("    com_list\n", arg);
+    if (currep != NULL) 
+	db_list(currep);
+    else 
+    	printf("no current rep to list!\n");
     return (0);
 }
 

@@ -379,6 +379,7 @@ int mode;
     if (mode == ARCHIVE) {
 	fprintf(fp, "PURGE %s;\n", dp->name); 
 	fprintf(fp, "EDIT %s;\n", dp->name);
+	fprintf(fp, "SHO #E;\n");
     }
 
     fprintf(fp, "LOCK %g;\n", dp->lock_angle);
@@ -1020,6 +1021,99 @@ BOUNDS *childbb;
     return;
 }
 
+int db_ident(cell, x, y)
+DB_TAB *cell;
+double x, y;
+{
+    DB_DEFLIST *p;
+    int debug=0;
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	if (p->xmin <= x && p->xmax >= x && p->ymin <= y && p->ymax >= y) {
+	    switch (p->type) {
+	    case ARC:  /* arc definition */
+		printf(" arc: %g %g %g %g\n",
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case CIRC:  /* circle definition */
+		printf("circ: %g %g %g %g\n",
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case LINE:  /* line definition */
+		printf("line: %g %g %g %g\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case OVAL:  /* oval definition */
+		printf("oval: %g %g %g %g\n",
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case POLY:  /* polygon definition */
+		printf("poly: %g %g %g %g\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case RECT:  /* rectangle definition */
+		printf("rect: %g %g %g %g\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    case TEXT:  /* text and note definition */
+		printf("text: %g %g %g %g: \"%s\"\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax, p->u.t->text);
+		break;
+	    case INST:  /* recursive instance call */
+		printf("%s: %g %g %g %g\n", 
+			p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+		break;
+	    default:
+		eprintf("unknown record type: %d in db_ident\n", p->type);
+		return(1);
+		break;
+	    }
+	}
+    }
+}
+
+int db_list(cell)
+DB_TAB *cell;
+{
+    DB_DEFLIST *p;
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	switch (p->type) {
+        case ARC:  /* arc definition */
+	    printf(" arc: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+        case CIRC:  /* circle definition */
+	    printf("circ: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+        case LINE:  /* line definition */
+	    printf("line: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+        case OVAL:  /* oval definition */
+	    printf("oval: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+        case POLY:  /* polygon definition */
+	    printf("poly: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+	case RECT:  /* rectangle definition */
+	    printf("rect: %g %g %g %g\n", p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+        case TEXT:  /* text and note definition */
+	    printf("text: %g %g %g %g: \"%s\"\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax, p->u.t->text);
+	    break;
+        case INST:  /* recursive instance call */
+	    printf("%s: %g %g %g %g\n", p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+	    break;
+	default:
+	    eprintf("unknown record type: %d in db_list\n", p->type);
+	    return(1);
+	    break;
+	}
+    }
+}
+
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
 int nest;	/* nesting level */
@@ -1199,6 +1293,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    break;
 	}
 
+	p->xmin = childbb.xmin;
+	p->xmax = childbb.xmax;
+	p->ymin = childbb.ymin;
+	p->ymax = childbb.ymax;
+
 	/* now pass bounding box back */
 	db_bounds_update(&mybb, &childbb);
     }
@@ -1246,6 +1345,7 @@ int mode;
 
     x3=def->u.a->x3;	/* point on curve */
     y3=def->u.a->y3;
+
 }
 
 /* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
