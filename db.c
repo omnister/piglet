@@ -1,28 +1,17 @@
 
-#include "db.h"		/* hierarchical database routines */
-#include "eprintf.h"	/* error reporting functions */
-
+#include "db.h"
 #include <stdio.h>
 #include <math.h>
 #include "y.tab.h"
 
-#define EPS 1e-6
-
 /* master symbol table pointers */
-static DB_TAB *HEAD = 0;
-static DB_TAB *TAIL = 0;
+static struct db_tab *HEAD = 0;
+static struct db_tab *TAIL = 0;
 
 COORDS *first_pair, *last_pair; 
 OPTS   *first_opt, *last_opt;
 
-/* global drawing variables */
 XFORM *transform;	/* global xform matrix */
-NUM xmax, ymax; 	/* globals for finding bounding boxes */
-NUM xmin, ymin;
-double max(), min();;
-int drawon=1;		/* 0 = dont draw, 1 = draw */
-int nestlevel=9;
-int X=1;		/* 1 = draw to X, 0 = emit autoplot commands */
 
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line(), do_note();
@@ -30,24 +19,22 @@ void do_oval(), do_poly(), do_rect(), do_text();
 
 /* matrix routines */
 XFORM *compose();
-void mat_rotate();
-void mat_scale();
-void mat_slant();
+void rotate();
+void scale();
 
-/* primitives for outputting autoplot,X primitives */
+/* primitives for outputting autoplot commands */
 void draw();
 void jump();
 void set_pen();
-void set_line();
 
 /********************************************************/
 
 DB_TAB *db_lookup(s)           /* find s in db */
 char *s;
 {
-    DB_TAB *sp;
+    struct db_tab *sp;
 
-    for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next)
+    for (sp=HEAD; sp!=(struct db_tab *)0; sp=sp->next)
         if (strcmp(sp->name, s)==0)
             return sp;
     return 0;               	/* 0 ==> not found */
@@ -56,23 +43,22 @@ char *s;
 DB_TAB *db_install(s)		/* install s in db */
 char *s;
 {
-    DB_TAB *sp;
+    struct db_tab *sp;
+    char *emalloc();
 
     /* this is written to ensure that a db_print is */
     /* not in reversed order...  New structures are */
     /* added at the end of the list using TAIL      */
 
-    sp = (DB_TAB *) emalloc(sizeof(struct db_tab));
+    sp = (struct db_tab *) emalloc(sizeof(struct db_tab));
     sp->name = emalloc(strlen(s)+1); /* +1 for '\0' */
     strcpy(sp->name, s);
 
-    sp->next   = (DB_TAB *) 0; 
+    sp->next   = (struct db_tab *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
-    sp->maxx = 0.0; 
-    sp->maxy = 0.0; 
 
-    if (HEAD ==(DB_TAB *) 0) {	/* first element */
+    if (HEAD ==(struct db_tab *) 0) {	/* first element */
 	HEAD = TAIL = sp;
     } else {
 	TAIL->next = sp;		/* current tail points to new */
@@ -88,28 +74,25 @@ char *s;
     /* not yet implemented */
 }
 
-/* save a non-recursive archive of single cell to a file called "cell.d" */
-
-int db_save(sp)           	/* print db */
-DB_TAB *sp;
+int db_print()           	/* print db */
 {
+    struct db_tab *sp;
 
-    FILE *fp;
-    char buf[MAXFILENAME];
-
-    mkdir("./cells", 0777);
-    snprintf(buf, MAXFILENAME, "./cells/%s.d", sp->name);
-    fp = fopen(buf, "w+"); 
-
-    db_def_print(fp, sp); 
-    fclose(fp);
-
+    for (sp=HEAD; sp!=(struct db_tab *)0; sp=sp->next) {
+        printf("edit ");
+        printf("%s;\n",sp->name);
+	if (sp->dbhead != (struct db_deflist *) 0) {
+	    db_def_print(sp->dbhead); 
+	}
+        printf("save;\n");
+        printf("exit;\n\n");
+    }
     return 0;
 }
 
 
 int db_def_archive(sp) 
-DB_TAB *sp;
+struct db_tab *sp;
 {
     FILE *fp;
     char buf[MAXFILENAME];
@@ -118,6 +101,11 @@ DB_TAB *sp;
     fp = fopen(buf, "w+"); 
 
     db_def_arch_recurse(fp,sp);
+
+    /* perhaps better form here would be to pass db_def_print */
+    /* sp rather than sp->dbhead... then it could do all this */
+    /* edit; purge; save; business autonomously ... */
+
     db_def_print(fp, sp);
 
     fclose(fp); 
@@ -125,14 +113,14 @@ DB_TAB *sp;
 
 int db_def_arch_recurse(fp,sp) 
 FILE *fp;
-DB_TAB *sp;
+struct db_tab *sp;
 {
-    DB_TAB *dp;
+    struct db_tab *dp;
     COORDS *coords;
     DB_DEFLIST *p; 
 
     /* clear out all flag bits in cell definition headers */
-    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+    for (dp=HEAD; dp!=(struct db_tab *)0; dp=dp->next) {
 	sp->flag=0;
     }
 
@@ -153,14 +141,13 @@ DB_TAB *sp;
 
 int db_def_print(fp, dp) 
 FILE *fp;
-DB_TAB *dp;
+struct db_tab *dp;
 {
     COORDS *coords;
     DB_DEFLIST *p; 
-    int i;
 
-    fprintf(fp, "PURGE %s;\n", dp->name);
-    fprintf(fp, "EDIT ");
+    fprintf(fp, "purge %s;\n", dp->name);
+    fprintf(fp, "edit ");
     fprintf(fp, "%s;\n",dp->name);
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
@@ -171,7 +158,7 @@ DB_TAB *dp;
 
         case CIRC:  /* circle definition */
 
-	    fprintf(fp, "ADD C%d ", p->u.c->layer);
+	    fprintf(fp, "add c%d ", p->u.c->layer);
 
 	    db_print_opts(fp, p->u.c->opts);
 
@@ -185,17 +172,12 @@ DB_TAB *dp;
 
         case LINE:  /* line definition */
 
-	    fprintf(fp, "ADD L%d ", p->u.l->layer);
+	    fprintf(fp, "add l%d", p->u.l->layer);
 
-	    db_print_opts(fp, p->u.l->opts);
-
-	    i=1;
 	    coords = p->u.l->coords;
 	    while(coords != NULL) {
 		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%4 == 0) {
-		    fprintf(fp,"\n");
-		}
+		coords = coords->next;
 	    }
 	    fprintf(fp, ";\n");
 
@@ -203,11 +185,11 @@ DB_TAB *dp;
 
         case NOTE:  /* note definition */
 
-	    fprintf(fp, "ADD N%d ", p->u.n->layer); 
+	    fprintf(fp, "add n%d ", p->u.n->layer); 
 
 	    db_print_opts(fp, p->u.n->opts);
 
-	    fprintf(fp, "\"%s\" %g,%g;\n",
+	    fprintf(fp, "%s %g,%g;\n",
 		p->u.n->text,
 		p->u.n->x,
 		p->u.n->y
@@ -217,26 +199,21 @@ DB_TAB *dp;
         case OVAL:  /* oval definition */
 	    fprintf(fp, "#add OVAL not inplemented yet\n");
 	    break;
-
         case POLY:  /* polygon definition */
-	    fprintf(fp, "ADD P%d", p->u.p->layer);
+	    fprintf(fp, "add p%d", p->u.p->layer);
 	    
 	    db_print_opts(fp, p->u.p->opts);
 
-	    i=1;
 	    coords = p->u.p->coords;
 	    while(coords != NULL) {
 		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%4 == 0) {
-		    fprintf(fp,"\n");
-		}
+		coords = coords->next;
 	    }
 	    fprintf(fp, ";\n");
 
 	    break;
-
 	case RECT:  /* rectangle definition */
-	    fprintf(fp, "ADD R%d ", p->u.r->layer);
+	    fprintf(fp, "add r%d ", p->u.r->layer);
 	    db_print_opts(fp, p->u.r->opts);
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
@@ -245,9 +222,8 @@ DB_TAB *dp;
 		p->u.r->y2
 	    );
 	    break;
-
         case TEXT:  /* text definition */
-	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
+	    fprintf(fp, "add t%d ", p->u.t->layer); 
 	    db_print_opts(fp, p->u.t->opts);
 	    fprintf(fp, "%s %g,%g;\n",
 		p->u.t->text,
@@ -255,24 +231,23 @@ DB_TAB *dp;
 		p->u.t->y
 	    );
 	    break;
-
         case INST:  /* instance call */
-	    fprintf(fp, "ADD %s ", p->u.i->def->name);
+	    fprintf(fp, "add %s ", p->u.i->def->name);
 	    db_print_opts(fp, p->u.i->opts);
 	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
 		p->u.i->y
 	    );
 	    break;
-
 	default:
-	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
+	    fprintf(stderr, "unknown record type in db_def_print\n");
+	    exit(1);
 	    break;
 	}
     }
 
-    fprintf(fp, "SAVE;\n");
-    fprintf(fp, "EXIT;\n\n");
+    fprintf(fp, "save;\n");
+    fprintf(fp, "exit;\n\n");
 }
 
 int db_print_opts(fp, opts)           	/* print options */
@@ -287,18 +262,17 @@ OPTS *opts;
     return 0;
 }
 
-int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-DB_TAB *cell;
+int db_add_arc(cell, layer, x1,y1,x2,y2,x3,y3) 
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 NUM x1,y1,x2,y2,x3,y3;
 {
     struct db_arc *ap;
     struct db_deflist *dp;
+    char *emalloc();
  
     ap = (struct db_arc *) emalloc(sizeof(struct db_arc));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -312,7 +286,6 @@ NUM x1,y1,x2,y2,x3,y3;
     dp->type = ARC;
 
     ap->layer=layer;
-    ap->opts=opts;
     ap->x1=x1;
     ap->y1=y1;
     ap->x2=x2;
@@ -323,18 +296,17 @@ NUM x1,y1,x2,y2,x3,y3;
     return(0);
 }
 
-int db_add_circ(cell, layer, opts, x1,y1,x2,y2)
-DB_TAB *cell;
+int db_add_circ(cell, layer,x1,y1,x2,y2)
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 NUM x1,y1,x2,y2;
 {
     struct db_circ *cp;
     struct db_deflist *dp;
+    char *emalloc();
  
     cp = (struct db_circ *) emalloc(sizeof(struct db_circ));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -348,7 +320,6 @@ NUM x1,y1,x2,y2;
     dp->type = CIRC;
 
     cp->layer=layer;
-    cp->opts=opts;
     cp->x1=x1;
     cp->y1=y1;
     cp->x2=x2;
@@ -357,18 +328,17 @@ NUM x1,y1,x2,y2;
     return(0);
 }
 
-int db_add_line(cell, layer, opts, coords)
-DB_TAB *cell;
+int db_add_line(cell, layer, coords)
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 COORDS *coords;
 {
     struct db_line *lp;
     struct db_deflist *dp;
+    char *emalloc();
  
     lp = (struct db_line *) emalloc(sizeof(struct db_line));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -382,25 +352,23 @@ COORDS *coords;
     dp->type = LINE;
 
     lp->layer=layer;
-    lp->opts=opts;
     lp->coords=coords;
 
     return(0);
 }
 
-int db_add_note(cell, layer, opts, string ,x,y) 
-DB_TAB *cell;
+int db_add_note(cell, layer, string ,x,y) 
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 char *string;
 NUM x,y;
 {
     struct db_note *np;
     struct db_deflist *dp;
+    char *emalloc();
  
     np = (struct db_note *) emalloc(sizeof(struct db_note));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -415,25 +383,23 @@ NUM x,y;
 
     np->layer=layer;
     np->text=string;
-    np->opts=opts;
     np->x=x;
     np->y=y;
 
     return(0);
 }
 
-int db_add_oval(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-DB_TAB *cell;
+int db_add_oval(cell, layer, x1,y1,x2,y2,x3,y3) 
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 NUM x1,y1, x2,y2, x3,y3;
 {
     struct db_oval *op;
     struct db_deflist *dp;
+    char *emalloc();
  
     op = (struct db_oval *) emalloc(sizeof(struct db_oval));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -447,7 +413,6 @@ NUM x1,y1, x2,y2, x3,y3;
     dp->type = OVAL;
 
     op->layer=layer;
-    op->opts=opts;
     op->x1=x1;
     op->y1=y1;
     op->x2=x2;
@@ -458,18 +423,17 @@ NUM x1,y1, x2,y2, x3,y3;
     return(0);
 }
 
-int db_add_poly(cell, layer, opts, coords)
-DB_TAB *cell;
+int db_add_poly(cell, layer, coords)
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 COORDS *coords;
 {
     struct db_poly *pp;
     struct db_deflist *dp;
+    char *emalloc();
  
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -483,24 +447,23 @@ COORDS *coords;
     dp->type = POLY;
 
     pp->layer=layer;
-    pp->opts=opts;
     pp->coords=coords;
 
     return(0);
 }
 
 int db_add_rect(cell, layer, opts, x1,y1,x2,y2)
-DB_TAB *cell;
+struct db_tab *cell;
 int layer;
 OPTS *opts;
 NUM x1,y1,x2,y2;
 {
     struct db_rect *rp;
     struct db_deflist *dp;
+    char *emalloc();
  
     rp = (struct db_rect *) emalloc(sizeof(struct db_rect));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -523,19 +486,18 @@ NUM x1,y1,x2,y2;
     return(0);
 }
 
-int db_add_text(cell, layer, opts, string ,x,y) 
-DB_TAB *cell;
+int db_add_text(cell, layer, string ,x,y) 
+struct db_tab *cell;
 int layer;
-OPTS *opts;
 char *string;
 NUM x,y;
 {
     struct db_text *tp;
     struct db_deflist *dp;
+    char *emalloc();
  
     tp = (struct db_text *) emalloc(sizeof(struct db_text));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -550,7 +512,6 @@ NUM x,y;
 
     tp->layer=layer;
     tp->text=string;
-    tp->opts=opts;
     tp->x=x;
     tp->y=y;
 
@@ -558,17 +519,17 @@ NUM x,y;
 }
 
 int db_add_inst(cell, subcell, opts, x, y)
-DB_TAB *cell;
-DB_TAB *subcell;
+struct db_tab *cell;
+struct db_tab *subcell;
 OPTS *opts;
 NUM x,y;
 {
     struct db_inst *ip;
     struct db_deflist *dp;
+    char *emalloc();
  
     ip = (struct db_inst *) emalloc(sizeof(struct db_inst));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -587,9 +548,20 @@ NUM x,y;
     ip->opts=opts;
 }
 
-/* a simple test harness */
+char *emalloc(n)    /* check return from malloc */
+unsigned n;
+{
+    char *p; 
+    void *malloc();
+
+    p = malloc(n);
+    if (p == 0)
+        fprintf(stderr, "out of memory", (char *) 0);
+    return p;
+}   
+
 /*
-main () { 	
+main () {
 
     DB_TAB *currep, *oldrep;
 
@@ -610,7 +582,7 @@ COORDS *pair_alloc(p)
 PAIR p;
 {	
     COORDS *temp;
-    temp = (COORDS *) emalloc(sizeof(COORDS));
+    temp = (COORDS *) malloc(sizeof(COORDS));
     temp->coord = p;
     temp->next = NULL;
     return(temp);
@@ -640,7 +612,7 @@ OPTS *opt_alloc(s)
 char *s;
 {
     OPTS *temp;
-    temp = (OPTS *) emalloc(sizeof(OPTS));
+    temp = (OPTS *) malloc(sizeof(OPTS));
     temp->optstring = s;
     temp->next = NULL;
     return(temp);
@@ -670,7 +642,7 @@ char *s;
 {
     char *p;
 
-    if ((p = (char *) emalloc(strlen(s)+1)) != NULL)
+    if ((p = (char *) malloc(strlen(s)+1)) != NULL)
 	strcpy(p,s);
     return(p);
 }
@@ -679,21 +651,19 @@ char *s;
 /* rendering routines */
 /********************************************************/
 
-int db_render(cell,xf, nest)
+int db_render(cell,xf, nest, drawmode)
 DB_TAB *cell;
 XFORM *xf; 	/* coordinate transform matrix */
-int nest;
+int nest;	/* nesting level */
+int drawmode;	/* 0=normal rendering, 1=xor rubberband drawing */
 {
     DB_DEFLIST *p;
     OPTS *op;
     XFORM *xp, *xa;
     extern XFORM *transform;
-    extern int nestlevel;
     double optval;
 
-    /* printf ("# entering in db_render at level %d\n", nest); */
-
-    if (!X & nest == 0) {	/* autoplot output */
+    if (nest == 0) {
 	printf("nogrid\n");
 	printf("isotropic\n");
 	printf("back\n");
@@ -704,34 +674,34 @@ int nest;
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 	switch (p->type) {
         case ARC:  /* arc definition */
-	    do_arc(p);
+	    do_arc(p,xf);
 	    break;
         case CIRC:  /* circle definition */
-	    do_circ(p);
+	    do_circ(p,xf);
 	    break;
         case LINE:  /* line definition */
-	    do_line(p);
+	    do_line(p,xf);
 	    break;
         case NOTE:  /* note definition */
-	    do_note(p);
+	    do_note(p,xf);
 	    break;
         case OVAL:  /* oval definition */
-	    do_oval(p);
+	    do_oval(p,xf);
 	    break;
         case POLY:  /* polygon definition */
-	    do_poly(p);
+	    do_poly(p,xf);
 	    break;
 	case RECT:  /* rectangle definition */
-	    do_rect(p);
+	    do_rect(p,xf);
 	    break;
         case TEXT:  /* text definition */
-	    do_text(p);
+	    do_text(p,xf);
 	    break;
         case INST:  /* recursive instance call */
 
 	    /* create a unit xform matrix */
 
-	    xp = (XFORM *) emalloc(sizeof(XFORM));  
+	    xp = (XFORM *) malloc(sizeof(XFORM));  
 	    xp->r11 = 1.0;
 	    xp->r12 = 0.0;
 	    xp->r21 = 0.0;
@@ -739,51 +709,29 @@ int nest;
 	    xp->dx  = 0.0;
 	    xp->dy  = 0.0;
 
-	    /* ADD [I] devicename [.cname] [:Mmirror] [:Rrot] [:Xscl]
-	     *	   [:Yyxratio] [:Zslant] [:Snx ny xstep ystep]
-	     *	   [{:F0 | :F1}romfile] coord   
-	     */
-
     	    for (op=p->u.i->opts; op!=(OPTS *)0; op=op->next) {
 		switch (op->optstring[1]) {
-		case 'r':
 		case 'R':
 		    sscanf(op->optstring+2, "%lf", &optval);
 		    /* fprintf(stderr,"got rotation %g\n", optval); */
-		    mat_rotate(xp, optval);
+		    rotate(xp, optval);
 		    break;
-		case 'x':
 		case 'X':
 		    sscanf(op->optstring+2, "%lf", &optval);
 		    /* fprintf(stderr,"got scale %g\n", optval); */
-		    mat_scale(xp, optval, optval);
+		    scale(xp, optval, optval);
 		    break;
-		case 'y':
 		case 'Y':
 		    sscanf(op->optstring+2, "%lf", &optval);
 		    /* fprintf(stderr,"got scale %g\n", optval); */
-		    mat_scale(xp, 1.0, optval);
+		    scale(xp, 1.0, optval);
 		    break;
-		case 'm':
 		case 'M':
-		    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-			xp->r11 *= -1.0;
-			xp->r22 *= -1.0;
-		    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-			xp->r22 *= -1.0;
-		    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-			xp->r11 *= -1.0;
-		    } else {
-			weprintf("unknown mirror option %s\n", op->optstring); 
-		    }
-		    break;
-		case 'z':		
-		case 'Z':		/* slant +/-45 */
-		    sscanf(op->optstring+2, "%lf", &optval);
-		    mat_slant(xp, optval);
+		    /* for now assume mirror about X axis */
+		    /* will eventually have to handle :MX, :MY & :MXY */
+		    xp->r11 *= -1.0;
 		    break;
 		default:
-			weprintf("unknown option value: %s\n", op->optstring); 
 		    break;
 		}
 	    }
@@ -793,48 +741,16 @@ int nest;
 
 	    transform = compose(xp,xf);		/* set global transform */
 
-	    xmax=transform->dx;
-	    xmin=transform->dx;
-	    ymax=transform->dy;
-	    ymin=transform->dy;
+	    db_render(p->u.i->def, transform, ++nest, 0);
+	    free(transform);
+	    free(xp);
 
-	    if (nest >= nestlevel) { 
-		drawon = 0;
-	    } else {
-		drawon = 1;
-	    }
-
-	    db_render(p->u.i->def, transform, nest+1);
-	    /* printf ("# in db_render at level %d\n", nest); */
-
-	    if (nest > nestlevel) { 
-		drawon = 0;
-	    } else {
-		drawon = 1;
-	    }
-
-	    if (nest == nestlevel) { 
-		set_pen(1);
-		jump();
-		    /* a square bounding box outline in white */
-		    draw(xmax,ymax); draw(xmax,ymin);
-		    draw(xmin,ymin); draw(xmin,ymax);
-		    draw(xmax,ymax);
-		jump();
-		    /* and two diagonal lines from corner to corner */
-		    draw(xmax,ymax);
-		    draw(xmin,ymin);
-		jump();
-		    draw(xmin,ymax);
-		    draw(xmax,ymin);
-	    }
-
-	    free(transform); free(xp);
 	    transform = xf;		/* set transform back */
 
 	    break;
 	default:
-	    eprintf("unknown record type: %d in db_render\n", p->type);
+	    fprintf(stderr, 
+		"unknown record type: %d in db_render\n", p->type);
 	    exit(1);
 	    break;
 	}
@@ -844,13 +760,12 @@ int nest;
 
 /******************** plot geometries *********************/
 
-/* ADD Emask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord */ 
 void do_arc(def)
 DB_DEFLIST *def;
 {
     NUM x1,y1,x2,y2,x3,y3;
 
-    /* printf("# rendering arc  (not implemented)\n"); */
+    printf("# rendering arc  (not implemented)\n");
 
     x1=def->u.a->x1;	/* #1 end point */
     y1=def->u.a->y1;
@@ -862,14 +777,13 @@ DB_DEFLIST *def;
     y3=def->u.a->y3;
 }
 
-/* ADD Cmask [.cname] [@sname] [:Wwidth] [:Rres] coord coord */
 void do_circ(def)
 DB_DEFLIST *def;
 {
     int i;
     double r,theta,x,y,x1,y1,x2,y2;
 
-    /* printf("# rendering circle\n"); */
+    printf("# rendering circle\n");
 
     x1 = (double) def->u.c->x1; 	/* center point */
     y1 = (double) def->u.c->y1;
@@ -891,303 +805,53 @@ DB_DEFLIST *def;
     }
 }
 
-/* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
-  
-
 void do_line(def)
 DB_DEFLIST *def;
 {
     COORDS *temp;
-    OPTS *op;
 
-    double x1,y1,x2,y2,x3,y3,dx,dy,d,a;
-    double xa,ya,xb,yb,xc,yc,xd,yd;
-    double k,dxn,dyn;
-    double width=0.0;
-    int segment;
-
-    for (op=def->u.l->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'w':
-	case 'W':
-	    sscanf(op->optstring+2, "%lf", &width);
-	    /* fprintf(stderr,"got width %g\n", width); */
-	    break;
-	default:
-	    if (op->optstring[0] == '.') {
-		/* fprintf(stderr,"in do_line: named primitive ignored: %s\n",
-		op->optstring); */
-	    } else {
-		eprintf("in do_line: bad option: %s\n", op->optstring);
-	    }
-	    break;
-	}
-    }
-
-    /* there are four cases for rendering lines with miters 
-     *
-     * "===" is rendered segment, "|" is a square end,
-     * "/" is a mitered end, "----" is a non-rendered segment.
-     * 
-     * 1) single segment: 
-     *      (temp->next == NULL)
-     * 
-     *	    |=====|
-     *
-     * 2) first segment, but more than one
-     *      (temp->next != NULL)
-     *
-     *	    |=====/-----/...
-     *
-     * 3) middle segment bracketed by active segments:
-     *      (temp->next != NULL)
-     *
-     *      -----/======/-----
-     *
-     * 4) final segment, preceeded by an active segment:
-     *      (temp->next == NULL)
-     *      -----/======|
-     */
-
-    /* printf("# rendering line\n"); */
+    printf("# rendering line\n");
+    
+    jump();
     set_pen(def->u.l->layer);
 
+
     temp = def->u.l->coords;
-    x2=temp->coord.x;
-    y2=temp->coord.y;
-    temp = temp->next;
-
-    segment = 0;
-    do {
-	    x1=x2; x2=temp->coord.x;
-	    y1=y2; y2=temp->coord.y;
-
-	    if (width != 0) {
-		if (segment == 0) {
-		    /* printf("# in 1\n"); */
-		    dx = x2-x1; 
-		    dy = y2-y1;
-		    a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
-		    dx *= a; 
-		    dy *= a;
-		} else {
-		    /* printf("# in 2\n"); */
-		    dx=dxn;
-		    dy=dyn;
-
-		    /* xa = xb; */
-		    /* ya = yb; */
-		    /* xd = xc; */
-		    /* yd = yc; */
-		}
-
-		if ( temp->next != NULL) {
-		    /* printf("# in 3\n"); */
-		    x3=temp->next->coord.x;
-		    y3=temp->next->coord.y;
-		    dxn = x3-x2; 
-		    dyn = y3-y2;
-		    a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
-		    dxn *= a; 
-		    dyn *= a;
-		}
-		
-		if ( temp->next == NULL && segment == 0) {
-
-		    /* printf("# in 4\n"); */
-		    xa = x1+dy*width; ya = y1-dx*width;
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-		    xd = x1-dy*width; yd = y1+dx*width;
-
-		} else if (temp->next != NULL && segment == 0) {  
-
-		    /* printf("# in 5\n"); */
-		    xa = x1+dy*width; ya = y1-dx*width;
-		    xd = x1-dy*width; yd = y1+dx*width;
-
-		    if (fabs(dx+dxn) < EPS) {
-			/* printf("# in 6\n"); */
-			k = (dx - dxn)/(dyn + dy); 
-		    } else {
-			/* printf("# in 7\n"); */
-			k = (dyn - dy)/(dx + dxn);
-		    }
-
-		    /* if (fabs(dx*dyn-dxn*dy)<EPS || fabs(dx*dyn+dxn*dy)<EPS) { */
-		
-		    /* check for co-linearity of segments */
-		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-			/* printf("# in 8\n"); */
-			xb = x2+dy*width; yb = y2-dx*width;
-			xc = x2-dy*width; yc = y2+dx*width;
-		    } else { 
-			/* printf("# in 19\n"); */
-			xb = x2+dy*width + k*dx*width;
-			yb = y2-dx*width + k*dy*width;
-			xc = x2-dy*width - k*dx*width; 
-			yc = y2+dx*width - k*dy*width;
-		    }
-
-		} else if (temp->next == NULL && segment >= 0) {
-
-		    /* printf("# in 10\n"); */
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-
-		    
-		} else if (temp->next != NULL && segment >= 0) {  
-
-		    /* printf("# in 11\n"); */
-		    if (fabs(dx+dxn) < EPS) {
-			/* printf("# in 12\n"); */
-			k = (dx - dxn)/(dyn + dy); 
-		    } else {
-			/* printf("# in 13\n"); */
-			k = (dyn - dy)/(dx + dxn);
-		    }
-
-		    /* check for co-linearity of segments */
-		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-			/* printf("# in 8\n"); */
-			xb = x2+dy*width; yb = y2-dx*width;
-			xc = x2-dy*width; yc = y2+dx*width;
-		    } else { 
-			/* printf("# in 9\n"); */
-			xb = x2+dy*width + k*dx*width;
-			yb = y2-dx*width + k*dy*width;
-			xc = x2-dy*width - k*dx*width; 
-			yc = y2+dx*width - k*dy*width;
-		    }
-		}
-
-		jump();
-
-		draw(xa, ya);
-		draw(xb, yb);
-
-		if( width != 0) {
-		    draw(xc, yc);
-		    draw(xd, yd);
-		    draw(xa, ya);
-		}
-
-		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
-		/* check for co-linear reversal of path */
-		if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    /* printf("# in 20\n"); */
-		    xa = xc; ya = yc;
-		    xd = xb; yd = yb;
-		} else {
-		    /* printf("# in 21\n"); */
-		    xa = xb; ya = yb;
-		    xd = xc; yd = yc;
-		}
-	    } else {		/* width == 0 */
-		jump();
-		draw(x1,y1);
-		draw(x2,y2);
-		jump();
-	    }
-
+    while(temp != NULL) {
+	    draw(temp->coord.x, temp->coord.y);
 	    temp = temp->next;
-	    segment++;
-
-    } while(temp != NULL);
+    }
 }
-
-/* ADD Nmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
-    [:Zslant] [:Ffontsize] "string" coord    */
 
 void do_note(def)
 DB_DEFLIST *def;
 {
 
     extern XFORM *transform;
-    XFORM *xp, *xf;
     NUM x,y;
-    OPTS  *op;
-    double optval;
 
-    /* create a unit xform matrix */
+    x=def->u.n->x;
+    y=def->u.n->y;
 
-    xp = (XFORM *) emalloc(sizeof(XFORM));  
-    xp->r11 = 1.0;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = 1.0;
-    xp->dx  = 0.0;
-    xp->dy  = 0.0;
+    /* def->u.n->layer */
+    /* db_print_opts(def->u.n->opts); */
+    /* printf("\"%s\" %g,%g;\n", */
 
-    /* FIXME: */
-    /* these eventually have to be changed to not be computed in */
-    /* place.  To work properly, these transformations have to */
-    /* occur in the proper order, for example, rotation must come */
-    /* after slant transformation or else it wont work properly */
+    writestring(def->u.n->text,x,y,40.0,transform);
 
-    for (op=def->u.n->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'f':		
-	case 'F':		/* fontsize */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, optval, optval);
-	    break;
-	case 'r':	
-	case 'R':		/* rotation angle +/- 180 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got rotation %g\n", optval); */
-	    mat_rotate(xp, optval);
-	    break;
-	case 'y':
-	case 'Y':		/* yx ratio */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, 1.0, optval);
-	    break;
-	case 'm':
-	case 'M':		/* mirror X,Y,XY */
-	    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-		xp->r11 *= -1.0;
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-		xp->r11 *= -1.0;
-	    } else {
-		weprintf("unknown mirror option %s\n", op->optstring); 
-	    }
-	    break;
-	case 'z':
-	case 'Z':		/* slant +/-45 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    mat_slant(xp, optval);
-	    break;
-	default:
-	    break;
-	}
-    }
-
-    jump(); set_pen(def->u.n->layer);
-
-    xp->dx += def->u.n->x;
-    xp->dy += def->u.n->y;
-
-    writestring(def->u.n->text, xp);
-
-    free(xp);
+    /* printf("label %g %g %s\n",
+	x*transform->r11 + y*transform->r21 + transform->dx,
+	x*transform->r12 + y*transform->r22 + transform->dy,
+	def->u.n->text
+    ); */
 }
-
-/* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
 
 void do_oval(def)
 DB_DEFLIST *def;
 {
     NUM x1,y1,x2,y2,x3,y3;
 
-    /* printf("# rendering oval (not implemented)\n"); */
+    printf("# rendering oval (not implemented)\n");
 
     x1=def->u.o->x1;	/* focii #1 */
     y1=def->u.o->y1;
@@ -1200,39 +864,30 @@ DB_DEFLIST *def;
 
 }
 
-/* ADD Pmask [.cname] [@sname] [:Wwidth] coord coord coord [coord ...]  */ 
-
 void do_poly(def)
 DB_DEFLIST *def;
 {
     COORDS *temp;
     
-    /* printf("# rendering polygon\n"); */
+    printf("# rendering polygon\n");
     
     jump();
     set_pen(def->u.p->layer);
 
     temp = def->u.p->coords;
-    
-    /* FIXME: should eventually check for closure here and probably */
-    /* at initial entry of points into db.  If last point != first */
-    /* point, then the polygon should be closed automatically and an */
-    /* error message generated */
-
+    /* should eventually check for closure */
     while(temp != NULL) {
 	    draw(temp->coord.x, temp->coord.y);
 	    temp = temp->next;
     }
 }
 
-/* ADD Rmask [.cname] [@sname] [:Wwidth] coord coord  */
-
 void do_rect(def)
 DB_DEFLIST *def;
 {
     double x1,y1,x2,y2;
 
-    /* printf("# rendering rectangle\n"); */
+    printf("# rendering rectangle\n");
 
     x1 = (double) def->u.r->x1;
     y1 = (double) def->u.r->y1;
@@ -1247,84 +902,10 @@ DB_DEFLIST *def;
     draw(x1, y1);
 }
 
-
-/* ADD Tmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
- *             [:Zslant] [:Ffontsize] "string" coord  
- */
-
 void do_text(def)
 DB_DEFLIST *def;
 {
-
-    extern XFORM *transform;
-    XFORM *xp, *xf;
-    NUM x,y;
-    OPTS  *op;
-    double optval;
-
-    /* printf("# rendering text as a note (not fully implemented)\n"); */
-
-    /* create a unit xform matrix */
-
-    xp = (XFORM *) emalloc(sizeof(XFORM));  
-    xp->r11 = 1.0;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = 1.0;
-    xp->dx  = 0.0;
-    xp->dy  = 0.0;
-
-    for (op=def->u.t->opts; op!=(OPTS *)0; op=op->next) {
-	switch (op->optstring[1]) {
-	case 'f':
-	case 'F':		/* fontsize */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, optval, optval);
-	    break;
-	case 'r':
-	case 'R':		/* rotation angle +/- 180 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got rotation %g\n", optval); */
-	    mat_rotate(xp, optval);
-	    break;
-	case 'y':
-	case 'Y':		/* yx ratio */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    /* fprintf(stderr,"got scale %g\n", optval); */
-	    mat_scale(xp, 1.0, optval);
-	    break;
-	case 'm':
-	case 'M':		/* mirror X,Y,XY */
-	    if (strncasecmp(op->optstring+1,"MXY",3) == 0) {
-		xp->r11 *= -1.0;
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MX",2) == 0) {
-		xp->r22 *= -1.0;
-	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
-		xp->r11 *= -1.0;
-	    } else {
-		weprintf("unknown mirror option %s\n", op->optstring); 
-	    }
-	    break;
-	case 'z':
-	case 'Z':		/* slant +/-90 */
-	    sscanf(op->optstring+2, "%lf", &optval);
-	    mat_slant(xp, optval);
-	    break;
-	default:
-	    break;
-	}
-    }
-
-    jump(); set_pen(def->u.t->layer);
-
-    xp->dx += def->u.t->x;
-    xp->dy += def->u.t->y;
-
-    writestring(def->u.t->text, xp);
-
-    free(xp);
+    printf("# rendering text (not implemented)\n");
 }
 
 /***************** coordinate transformation utilities ************/
@@ -1333,7 +914,7 @@ XFORM *compose(xf1, xf2)
 XFORM *xf1, *xf2;
 {
      XFORM *xp;
-     xp = (XFORM *) emalloc(sizeof(XFORM)); 
+     xp = (XFORM *) malloc(sizeof(XFORM)); 
 
      xp->r11 = (xf1->r11 * xf2->r11) + (xf1->r12 * xf2->r21);
      xp->r12 = (xf1->r11 * xf2->r12) + (xf1->r12 * xf2->r22);
@@ -1346,7 +927,7 @@ XFORM *xf1, *xf2;
 }
 
 /* in-place rotate a transform matrix by theta degrees */
-void mat_rotate(xp, theta)
+void rotate(xp, theta)
 XFORM *xp;
 double theta;
 {
@@ -1367,8 +948,17 @@ double theta;
     xp->dx = t;
 }
 
+void printmat(xa)
+XFORM *xa;
+{
+     printf("\n");
+     printf("\t%g\t%g\t%g\n", xa->r11, xa->r12, 0.0);
+     printf("\t%g\t%g\t%g\n", xa->r21, xa->r22, 0.0);
+     printf("\t%g\t%g\t%g\n", xa->dx, xa->dy, 1.0);
+}   
+
 /* in-place scale transform */
-void mat_scale(xp, sx, sy) 
+void scale(xp, sx, sy) 
 XFORM *xp;
 double sx, sy;
 {
@@ -1382,115 +972,317 @@ double sx, sy;
     xp->dy  *= sy;
 }
 
-/* in-place slant transform (for italics) */
-void mat_slant(xp, theta) 
-XFORM *xp;
-double theta;
-{
-    double s,c,t;
-    s=sin(2.0*M_PI*theta/360.0);
-    c=cos(2.0*M_PI*theta/360.0);
+/***************** low level autoplot primitives ******************/
 
-    xp->r21 += s/c;
-}
-
-void printmat(xa)
-XFORM *xa;
-{
-     printf("\n");
-     printf("\t%g\t%g\t%g\n", xa->r11, xa->r12, 0.0);
-     printf("\t%g\t%g\t%g\n", xa->r21, xa->r22, 0.0);
-     printf("\t%g\t%g\t%g\n", xa->dx, xa->dy, 1.0);
-}   
-
-/***************** low-level X, autoplot primitives ******************/
-
-/* The "nseg" variable is used to convert draw(x,y) calls into 
- * x1,y1,x2,y2 line segments.  The rule is: jump() sets nseg to zero, and
- * draw() calls XDrawLine with the xold,yold,x,y only if nseg>0.  "nseg" is
- * declared global because it must be shared by both draw() and jump().
- * An alternative would have been to make all lines with a function like
- * drawline(x1,y1,x2,y2), but that would have been nearly 2x more 
- * inefficient when  drawing lines with more than two nodes (all shared nodes
- * get sent twice).  By using jump() and sending the points serially, we
- * have the option of building a linked list and using XDrawLines() rather
- * than XDrawLine().  In addition, the draw()/jump() paradigm is used by
- * autoplot, so has a long history.
- */
-
-static int nseg=0;
+    /* 
+     * time pig < ../../regress/cdrcfr3_I   > /dev/null
+     * 7.76s real    7.56s user    0.02s system  
+    */
 
 void draw(x, y)	/* draw x,y transformed by extern global xf */
-NUM x,y;	/* location in real coordinate space */
+NUM x,y;
 {
-    extern XFORM *transform;	/* global for efficiency */
+    extern XFORM *transform;
     NUM xx, yy;
-    static NUM xxold, yyold;
 
-    /* compute coordinates in screen space */
     xx = x*transform->r11 + y*transform->r21 + transform->dx;
     yy = x*transform->r12 + y*transform->r22 + transform->dy;
 
-    if (X) {
-	if (nseg) {
-	    xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
-	}
-	xxold=xx;
-	yyold=yy;
-	nseg++;
-    } else {
-	if (drawon) {
-	    printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
-	}
-    }
-
-    /* globals for computing bounding boxes */
-    xmax = max(xx,xmax);
-    xmin = min(xx,xmin);
-    ymax = max(yy,ymax);
-    ymin = min(yy,ymin);
+    printf("%4.6f %4.6f\n",xx,yy);
 }
 
-void jump(void) 
+void drawx(x, y)	/* draw x,y transformed by extern global xf */
+NUM x,y;
 {
-    if (X) {
-	nseg=0;  		/* for X */
-    } else {
-	printf("jump\n");  	/* autoplot */
+
+    extern XFORM *transform;
+    NUM xx, yy;
+
+    int i=0;
+
+    /* generate a description of sparseness of array */
+
+    if (transform->r11 != 1.0) {i+=1;};
+    if (transform->r12 != 0.0) {i+=2;};
+    if (transform->r21 != 0.0) {i+=4;};
+    if (transform->r22 != 1.0) {i+=8;};
+    if (transform->dx  != 0.0) {i+=16;};
+    if (transform->dy  != 0.0) {i+=32;};
+
+    switch (i) {
+	case 0: 	/* r11=1, r12=0, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x;
+	    yy = y;
+	    break;
+	case 1:		/* r11=x, r12=0, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11;
+	    yy = y;
+	    break;
+	case 2:		/* r11=1, r12=x, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 3:		/* r11=x, r12=x, r21=0, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 ;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 4: 	/* r11=1, r12=0, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = y;
+	    break;
+	case 5:		/* r11=x, r12=0, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y;
+	    break;
+	case 6:		/* r11=1, r12=x, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 7:		/* r11=x, r12=x, r21=x, r22=1, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 8: 	/* r11=1, r12=0, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x;
+	    yy = y*transform->r22;
+	    break;
+	case 9:		/* r11=x, r12=0, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 10:	/* r11=1, r12=x, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 11:	/* r11=x, r12=x, r21=0, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 12: 	/* r11=1, r12=0, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = y*transform->r22;
+	    break;
+	case 13:	/* r11=x, r12=0, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y*transform->r22;
+	    break;
+	case 14:	/* r11=1, r12=x, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 15:	/* r11=x, r12=x, r21=x, r22=x, dx=0, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 16: 	/* r11=1, r12=0, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = y;
+	    break;
+	case 17:	/* r11=x, r12=0, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y;
+	    break;
+	case 18:	/* r11=1, r12=x, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 19:	/* r11=x, r12=x, r21=0, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 20: 	/* r11=1, r12=0, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y;
+	    break;
+	case 21:	/* r11=x, r12=0, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y;
+	    break;
+	case 22:	/* r11=1, r12=x, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 23:	/* r11=x, r12=x, r21=x, r22=1, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y;
+	    break;
+	case 24: 	/* r11=1, r12=0, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 25:	/* r11=x, r12=0, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 26:	/* r11=1, r12=x, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 27:	/* r11=x, r12=x, r21=0, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 28: 	/* r11=1, r12=0, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 29:	/* r11=x, r12=0, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22;
+	    break;
+	case 30:	/* r11=1, r12=x, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 31:	/* r11=x, r12=x, r21=x, r22=x, dx=x, dy=0 */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22;
+	    break;
+	case 32: 	/* r11=1, r12=0, r21=0, r22=1, dx=0, dy=x */
+	    xx = x;
+	    yy = y + transform->dy;
+	    break;
+	case 33:	/* r11=x, r12=0, r21=0, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = y + transform->dy;
+	    break;
+	case 34:	/* r11=1, r12=x, r21=0, r22=1, dx=0, dy=x */
+	    xx = x;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 35:	/* r11=x, r12=x, r21=0, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 36: 	/* r11=1, r12=0, r21=x, r22=1, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = y + transform->dy;
+	    break;
+	case 37:	/* r11=x, r12=0, r21=x, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y + transform->dy;
+	    break;
+	case 38:	/* r11=1, r12=x, r21=x, r22=1, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 39:	/* r11=x, r12=x, r21=x, r22=1, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 40: 	/* r11=1, r12=0, r21=0, r22=x, dx=0, dy=x */
+	    xx = x;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 41:	/* r11=x, r12=0, r21=0, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 42:	/* r11=1, r12=x, r21=0, r22=x, dx=0, dy=x */
+	    xx = x;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 43:	/* r11=x, r12=x, r21=0, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 44: 	/* r11=1, r12=0, r21=x, r22=x, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 45:	/* r11=x, r12=0, r21=x, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 46:	/* r11=1, r12=x, r21=x, r22=x, dx=0, dy=x */
+	    xx = x + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 47:	/* r11=x, r12=x, r21=x, r22=x, dx=0, dy=x */
+	    xx = x*transform->r11 + y*transform->r21;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 48: 	/* r11=1, r12=0, r21=0, r22=1, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 49:	/* r11=x, r12=0, r21=0, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 50:	/* r11=1, r12=x, r21=0, r22=1, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 51:	/* r11=x, r12=x, r21=0, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 52: 	/* r11=1, r12=0, r21=x, r22=1, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 53:	/* r11=x, r12=0, r21=x, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y + transform->dy;
+	    break;
+	case 54:	/* r11=1, r12=x, r21=x, r22=1, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 55:	/* r11=x, r12=x, r21=x, r22=1, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y + transform->dy;
+	    break;
+	case 56: 	/* r11=1, r12=0, r21=0, r22=x, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 57:	/* r11=x, r12=0, r21=0, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 58:	/* r11=1, r12=x, r21=0, r22=x, dx=x, dy=x */
+	    xx = x + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 59:	/* r11=x, r12=x, r21=0, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 60: 	/* r11=1, r12=0, r21=x, r22=x, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 61:	/* r11=x, r12=0, r21=x, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = y*transform->r22 + transform->dy;
+	    break;
+	case 62:	/* r11=1, r12=x, r21=x, r22=x, dx=x, dy=x */
+	    xx = x + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	case 63:	/* r11=x, r12=x, r21=x, r22=x, dx=x, dy=x */
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
+	default:
+	    xx = x*transform->r11 + y*transform->r21 + transform->dx;
+	    yy = x*transform->r12 + y*transform->r22 + transform->dy;
+	    break;
     }
+
+    printf("%4.6f %4.6f\n",xx,yy);
 }
 
-void set_pen(pnum)
-int pnum;
+void jump() 
 {
-    if (X) {
-	xwin_set_pen((pnum%6)+1);		/* for X */
-    } else {
-	printf("pen %d\n", (pnum%6)+1);		/* autoplot */
-    }
-    set_line((((int)(pnum/6))%5)+1);
+    printf("jump\n");
 }
 
-void set_line(lnum)
+void set_pen(lnum)
 int lnum;
 {
-    if (X) {
-	xwin_set_line((lnum%5));		/* for X */
-    } else {
-	printf("line %d\n", (lnum%5));	/* autoplot */
-    }
+    /* printf("line %d\n", ((lnum/5)%5)+1); */
+    printf("pen %d\n", (lnum%5)+1);
 }
-
-double max(a,b) 
-double a, b;
-{
-    return(a>=b?a:b);
-}
-
-double min(a,b) 
-double a, b;
-{
-    return(a<=b?a:b);
-}
-
-

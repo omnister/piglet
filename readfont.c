@@ -30,29 +30,33 @@ main()
 }
 */
 
-writestring(s,xf)
+writestring(s,x,y,scale,xform)
 char *s;
-XFORM *xf;
+double x,y;
+double scale;
+XFORM *xform;
 {
     double offset=0.0;
 
     while(*s != 0) {
-	writechar(*s,(((double)dx)*0.80*offset)/((double) dy),0.0,xf);
+	writechar(*s,((double) x)+(((double) dx)*scale*offset)/((double) dy),
+	    ((double)y),scale,xform);
 	offset+=1.0;
 	++s;
     }
 }
 
-writechar(c,x,y,xf)
+writechar(c,x,y,scale,xform)
 int c;
 double x;
 double y;
-XFORM *xf;
+double scale;
+XFORM *xform;
 {
     int i;
     double xp,yp,xt,yt;
 
-    /* printf("# %c %d\n",c); */
+    printf("# %c %d\n",c,c);
     
     if (c==' ') {
 	return(0);
@@ -60,21 +64,20 @@ XFORM *xf;
 
     i = fonttab[c];
 
-    jump();
+
+    printf("jump\n");
     while (xdef[i] != -64 || ydef[i] != -64) {
 	if (xdef[i] != -64) {
 
-	    xp = x+ (0.8 * (double) xdef[i]) / ((double) dy);
-	    yp = y+ (0.8 * (double) ydef[i]) / ((double) dy);
+	    xp = x+ ((double) xdef[i]) * scale/((double) dy);
+	    yp = y+ ((double) ydef[i]) * scale/((double) dy);
 
-	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
-	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
+	    xt = xp*xform->r11 + yp*xform->r21 + xform->dx;
+	    yt = xp*xform->r12 + yp*xform->r22 + xform->dy; 
 
-	    draw(xt,yt); 
-
+	    printf("%g %g\n", xt, yt);
 	} else {
-	    
-	    jump();
+	    printf("jump\n");
 	}
 	i++;
     }

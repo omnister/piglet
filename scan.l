@@ -38,16 +38,7 @@ W		[\t ]*
 [ \t\n]+		;
 
 \"[^"]*\"		{
-			    /* strsave(yytext); */
-			    /* remove open and close quotes */
-			    yylval.name = (char *) strdup(yytext+1);
-			    if (yylval.name[yyleng-2] != '"') {
-				fprintf(stderr, 
-				    "unterminated character string",
-				    (char *) 0);
-			    } else {
-				yylval.name[yyleng-2] = '\0';
-			    }
+			    yylval.name = strsave(yytext); 
 			    return token(QUOTED);
 			}    
 
@@ -103,10 +94,7 @@ I			{
 #A			return token(ALL);
 ^EXI[T]			return token(EXIT);
 
-^PUR[G]			|
-^PURG[E]		return token(PURGE);
-
-[.:@]+{L}[^ \t\n]*	{
+[.:@]{L}[^ \t\n]+	{
 			    yylval.name = strsave(yytext); 
 			    return token(OPTION);
 			}

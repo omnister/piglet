@@ -1,5 +1,4 @@
 %{
-
 #include <stdio.h>
 #include <math.h>
 #include "db.h"
@@ -20,7 +19,7 @@ XFORM  *xp;
 
 %start archive
 %token FILES FILE_NAME EDIT SHOW LOCK GRID LEVEL WINDOW ADD SAVE QUOTED
-%token ALL NUMBER EXIT OPTION UNKNOWN PURGE
+%token ALL NUMBER EXIT OPTION UNKNOWN
 %token ARC CIRC INST LINE NOTE OVAL POLY RECT TEXT 
 
 
@@ -35,7 +34,7 @@ XFORM  *xp;
 %type <num> archive command_list 
 %type <num> FILES command 
 %type <num> EDIT SHOW LOCK GRID LEVEL WINDOW ADD
-%type <num> SAVE ALL LINE NUMBER EXIT PURGE
+%type <num> SAVE ALL LINE NUMBER EXIT
 %type <num> ARC CIRC INST LINE NOTE OVAL POLY RECT TEXT
 %type <pair> coord 
 %type <pairs> coord_list
@@ -69,7 +68,7 @@ archive		:	command_list
 				/* or render the last rep */
 				db_render(currep,xp,0);
 
-				/* db_def_archive(currep); */
+				db_def_archive(currep); 
 			    }
 		;
 
@@ -103,33 +102,32 @@ command	        :	FILES file_name_list '$' ';'
 		|	ADD ARC option_list coord coord coord ';'
 				{
 				    db_add_arc(currep,
-					(int) $2, $3, $4.x, $4.y,
+					(int) $2, $4.x, $4.y,
 					$5.x, $5.y, $6.x,$6.y);
 				}
 		|	ADD CIRC option_list coord coord ';'
 				{
 				    db_add_circ(currep, 
-					(int) $2, $3, $4.x, $4.y, $5.x, $5.y);
+					(int) $2, $4.x, $4.y, $5.x, $5.y);
 				}
 		|	ADD LINE option_list coord_list ';'
 				{
-				    db_add_line(currep, (int) $2, $3, $4);
+				    db_add_line(currep, (int) $2, $4);
 				}
 		|	ADD NOTE option_list QUOTED coord ';'
 				{
-				    db_add_note(currep, (int) $2, $3,
+				    db_add_note(currep, (int) $2,
 					$4, $5.x, $5.y);
 				}
 		|	ADD OVAL option_list coord coord coord ';'
 				{
 				    db_add_oval(currep,
-					(int) $2, $3, $4.x, $4.y,
+					(int) $2, $4.x, $4.y,
 					$5.x, $5.y, $6.x,$6.y);
 				}
 		|	ADD POLY option_list coord_list ';'
 				{
-				    db_add_poly(currep, 
-					(int) $2, $3, $4);
+				    db_add_poly(currep, (int) $2, $4);
 				}
 		|	ADD RECT option_list coord coord ';'
 				{
@@ -138,7 +136,7 @@ command	        :	FILES file_name_list '$' ';'
 				}
 		|	ADD TEXT option_list QUOTED coord ';'
 				{
-				    db_add_text(currep, (int) $2, $3,
+				    db_add_text(currep, (int) $2,
 					$4, $5.x, $5.y);
 				}
 		|	ADD INST FILE_NAME option_list coord ';'
@@ -161,41 +159,26 @@ command	        :	FILES file_name_list '$' ';'
 				    if currep != NULL) {   
 					write_db(currep);
 				    } else {
-					notify that there is no name yet
+					notify user that there is no name yet
 				    }
 				}
 				*/
-		|	PURGE FILE_NAME ';'
-			    {
-				/*  uninstall($1); */
-			    /* FIXME: printf("# 3) should purge: %s\n",$2); */
-				;
-			    }
-		|	'$''$''$''$' FILE_NAME
-			    {
-				/* FIXME: do nothing for now */
-				/* later on, this is a path */
-				/* to use for fetching this rep */
-				;
-			    }
 		|	EXIT ';'
 		|	error ';' 
-			    {
-			        yyerrok;
-			    }
+				{
+				    yyerrok;
+				}
 		;
 
 file_name_list	:	FILE_NAME
 			    {
 				/*  uninstall($1); */
-			/* FIXME: printf("# 1) should purge: %s\n",$1); */
-				;
+				printf("# 1) should purge: %s\n",$1);
 			    }
 	      	|	file_name_list ',' FILE_NAME
 			    {
 				/*  uninstall($3); */
-			/* FIXME: printf("# 2) should purge: %s\n",$3); */
-				;
+				printf("# 2) should purge: %s\n",$3);
 			    }
 	      	;
 
@@ -320,7 +303,7 @@ register char *s;
 	/* but there is a bug in /usr/lib/yacpar that doesn't */
 	/* increment the yynerrs variable on syntax errors    */
 
-	fprintf(yyerfp, "# [error %d] ", ++yynerrs);
+	fprintf(yyerfp, "[error %d] ", ++yynerrs);
 	yywhere();
 	fputs(s,yyerfp);
 	putc('\n', yyerfp);

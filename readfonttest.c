@@ -2,110 +2,273 @@
 #include "db.h"
 #include <stdio.h>
 
+    /* int getc(FILE *stream); */
+    /* int ungetc(int c, FILE *stream); */
+
+int line=1;
+
+int dx;		/* size of font cell */
+int dy;		/* size of font cell */	
+int fonttab[256];
+int xdef[5000];
+int ydef[5000];
+
+
 main()
 {
-    XFORM *xp;
+    double scale=1.0;
+    XFORM xf;
 
-    xp = (XFORM *) malloc(sizeof(XFORM)); /* create a unit xform matrix */
-    xp->r11 = 1.0;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = 1.0;
-    xp->dx  = 0.0;
-    xp->dy  = 0.0;
-
+    xf.r11=1.0;
+    xf.r12=0.0;
+    xf.r21=0.0;
+    xf.r22=1.0;
+    xf.dx=0.0;
+    xf.dy=0.0;
 
     loadfont("NOTEDATA.F");
-    printf("back\nisotropic\nnogrid\n");
-
-/*    writestring("Now is the time",xp);  xp->dy--;
-    writestring("for all good men",xp); xp->dy--;
-    writestring("to come to the",xp);   xp->dy--;
-    writestring("ABCDEFGHIJKLMNOP",xp); xp->dy--;
-    writestring("QRSTUVWXYZabcdef",xp); xp->dy--;
-    writestring("ghijklmnopqrstuv",xp); xp->dy--;
-    writestring("wxyz0123456789~!",xp); xp->dy--;
-    writestring("#$%^&*()_+=-';:",xp);  xp->dy--;
-    writestring("][}{.,></?|",xp);      xp->dy--;
-*/
-
-/*
-ww	|      |       |
-yy	|PAN   |MINGRD |
-ww	|      |       |
-yyyyyy	|ADD |R|P|L|N|T|
-aagga	|SHO#A;|A|+|-|I|
-aayggg	|SHO |#|^|1|2|3|
-yyyggg	|WIN |;|!|4|5|6|
-yyyggg	|:F|:V|:Z|7|8|9|
-yyyggg	|:D|:S|:V|,|0|.|
-yayyp	|:W|:M|:N|:O|:R|
-yaapp	|  |X|Y|+90|-90|
-ww	|      |       |
-aaa	|WRA |SMA |GRO |
-aaa	|MOV |COP |STR |
-ypy	|IDE |DEC |DIS |
-ayyy	|SEA |:X|:C|500|
-ww	|      |       |
-rrr	|UND |POI |DEL |
-yyg	|PLO | :C | :X |
-yyr	|SAV |EDI |EXI |
-*/
-
-	writestring("|      |       |",xp); xp->dy--;
-	writestring("|PAN   |MINGRD |",xp); xp->dy--;
-	writestring("|      |       |",xp); xp->dy--;
-	writestring("|ADD |R|P|L|N|T|",xp); xp->dy--;
-	writestring("|SHO#A;|A|+|-|I|",xp); xp->dy--;
-	writestring("|SHO |#|^|1|2|3|",xp); xp->dy--;
-	writestring("|WIN |;|!|4|5|6|",xp); xp->dy--;
-	writestring("|:F|:V|:Z|7|8|9|",xp); xp->dy--;
-	writestring("|:D|:S|:V|,|0|.|",xp); xp->dy--;
-	writestring("|:W|:M|:N|:O|:R|",xp); xp->dy--;
-	writestring("|  |X|Y|+90|-90|",xp); xp->dy--;
-	writestring("|      |       |",xp); xp->dy--;
-	writestring("|WRA |SMA |GRO |",xp); xp->dy--;
-	writestring("|MOV |COP |STR |",xp); xp->dy--;
-	writestring("|IDE |DEC |DIS |",xp); xp->dy--;
-	writestring("|SEA |:X|:C|500|",xp); xp->dy--;
-	writestring("|      |       |",xp); xp->dy--;
-	writestring("|UND |POI |DEL |",xp); xp->dy--;
-	writestring("|PLO | :C | :X |",xp); xp->dy--;
-	writestring("|SAV |EDI |EXI |",xp); xp->dy--;
-
-    writestring("|;       | A|       |0|",xp); xp->dy--;
-    writestring("|ADD     | R|       |1|",xp); xp->dy--;
-    writestring("|MOVe    | P|       |2|",xp); xp->dy--;
-    writestring("|COPy    | L| Wid=  |3|",xp); xp->dy--;
-    writestring("|DELete  | C| Res=  |4|",xp); xp->dy--;
-    writestring("|STRetch | N| Rot=  |5|",xp); xp->dy--;
-    writestring("|GROup   | T| Font= |6|",xp); xp->dy--;
-    writestring("|WRAp    | I| Xscl= |7|",xp); xp->dy--;
-    writestring("|SMAsh   | ;| Mir=X |8|",xp); xp->dy--;
-    writestring("|STEp S= | ,| Mir=Y |9|",xp); xp->dy--;
-    writestring("|UNDo    | +|      |11|",xp); xp->dy--;
-    writestring("|SHOw    | #| #A;  |12|",xp); xp->dy--;
-    writestring("|IDEntify| .| ;    |13|",xp); xp->dy--;
-    writestring("|TRAce   | @| ;    |14|",xp); xp->dy--;
-    writestring("|WINdow  |:F| Vprt=|15|",xp); xp->dy--;
-    writestring("|WIN V=2 |:N| Nest=|16|",xp); xp->dy--;
-    writestring("|GRId    |:O| Zoom=|17|",xp); xp->dy--;
-    writestring("|LOCk    |:P| Xabs=|18|",xp); xp->dy--;
-    writestring("|DUMp    | %| Detl=|19|",xp); xp->dy--;
-    writestring("|POInt   | \\| Symb=|20|",xp); xp->dy--;
-    writestring("|DIStance|  | Boun=|21|",xp); xp->dy--;
-    writestring("|AREa    |  | Intc=|22|",xp); xp->dy--;
-    writestring("|EDIt    |  |HELp  |23|",xp); xp->dy--;
-    writestring("|SAVe    | ;|EXIt; |24|",xp); xp->dy--;
+    writestring("Now is the time",0.0, 0.0, scale, &xf);
+    writestring("for all good men",0.0, -1.0*scale,scale, &xf);
+    writestring("to come to the",0.0, -2.0*scale,scale, &xf);
+    writestring("ABCDEFGHIJKLMNOP",0.0, -3.0*scale,scale, &xf);
+    writestring("QRSTUVWXYZabcdef",0.0,-4.0*scale,scale, &xf);
+    writestring("ghijklmnopqrstuv",0.0,-5.0*scale,scale, &xf);
+    writestring("wxyz0123456789~!",0.0,-6.0*scale,scale, &xf);
+    writestring("#$%^&*()_+=-';:",0.0,-7.0*scale,scale, &xf);
+    writestring("][}{.,></?|",0.0,-8.0*scale,scale, &xf);
 }
 
-void draw(x,y) 
+writestring(s,x,y,scale,xform)
+char *s;
 double x,y;
+double scale;
+XFORM *xform;
 {
-    printf("%g %g\n",x,y);
+    double offset=0.0;
+
+    while(*s != 0) {
+	writechar(*s,((double) x)+(((double) dx)*scale*offset)/((double) dy),
+	    ((double)y),scale,xform);
+	offset+=1.0;
+	++s;
+    }
 }
 
-void jump() 
+writechar(c,x,y,scale,xform)
+int c;
+double x;
+double y;
+double scale;
+XFORM *xform;
 {
+    int i;
+    double xp,yp,xt,yt;
+
+    printf("# %c %d\n",c,c);
+    
+    if (c==' ') {
+	return(0);
+    }
+
+    i = fonttab[c];
+
+
     printf("jump\n");
+    while (xdef[i] != -64 || ydef[i] != -64) {
+	if (xdef[i] != -64) {
+
+	    xp = x+ ((double) xdef[i]) * scale/((double) dy);
+	    yp = y+ ((double) ydef[i]) * scale/((double) dy);
+
+	    xt = xp*xform->r11 + yp*xform->r21 + xform->dx;
+	    yt = xp*xform->r12 + yp*xform->r22 + xform->dy; 
+
+	    printf("%g %g\n", xt, yt);
+	} else {
+	    printf("jump\n");
+	}
+	i++;
+    }
 }
+
+loadfont(file)
+char *file;
+{
+    FILE *fp;
+    int i;
+    int x;
+    int y;
+    int done;
+    int next;
+    int lit;
+    extern int line;
+    extern int dx,dy;
+    int index=0;	/* index into font table */
+
+    /* initialize font table */
+    for (i=0; i<=5000; i++) {
+	xdef[i] = ydef[i] = -64;
+    }
+    for (i=0; i<=255; i++) {
+	fonttab[i]=-1;
+    }
+
+    if((fp=fopen(file,"r")) == NULL) {
+	fprintf(stderr, "error: fopen call failed\n");
+	exit(1);
+    }
+
+    line=0;
+    done=0;
+
+    /* note reversed order of arguments */
+    next=getxy(fp,&dy,&dx);
+
+    /* printf("got %d, %d next=%c\n", x,y,next); */
+
+    /* make first line look properly terminated */
+    x=-64;
+    y=-64;
+
+    while (!done) {
+
+	if (next == '\n') {
+	    line++;
+	    getc(fp);
+
+	    if (x==-64 && y==-64) {
+		if ((lit=eatwhite(fp)) != EOF) {
+		    /* printf("lit=%c\n",lit); */
+		    getc(fp);
+		    fonttab[(int) lit] = index;
+		} else {
+		    done++;
+		}
+	    }
+
+	} else if (next == EOF) {
+	    done++;
+	}
+
+	if (!done) {
+	    next=getxy(fp,&x,&y);
+	    /* printf("line %d: got %d, %d next=%c\n", line, x,y,next); */
+	    xdef[index] = x;
+	    ydef[index] = y;
+	    index++;
+	}
+    }
+}
+
+
+getxy(fp,px,py)
+FILE *fp;
+int *px;
+int *py;
+{
+    int c;
+    extern int line;
+
+    c=eatwhite(fp);
+    /* printf("eating white, next=%c\n",c); */
+    if(getint(fp,px) != 1) {
+	fprintf(stderr,"error at line %d: expected a digit\n", line);
+	exit(3);
+    };		
+
+    eatwhite(fp);
+    if ((c=getc(fp)) != ',') {
+	fprintf(stderr,"error at line %d: expected a comma\n", line);
+	exit(2);
+    }
+
+    eatwhite(fp);
+    if(getint(fp,py) != 1) {
+	fprintf(stderr,"error at line %d: expected a digit\n", line);
+	exit(3);
+    };		
+
+    return(eatwhite(fp));
+}
+
+eatwhite(fp)
+FILE *fp;
+{
+    int c;
+    int done=0;
+
+    while (!done) {
+	c=getc(fp);
+	if (c != ' ' && c != '\t') {
+	    done++;
+	}
+    }
+    ungetc(c,fp);
+    return(c);
+}
+
+/* parse an input of the form [+-][0-9]* */
+/* using just getc(fp) and ungetc(c,fp) */
+/* returns 0 if no digit found, 1 if successful */
+
+int getint(fp,pi) 	
+FILE *fp;
+int *pi;
+{
+    int c;
+    int state=0;
+    int done=0;
+    int sign=1;
+    int val=0;
+    int err=0;
+    
+    state=0;
+
+    while (!done) {
+	c = getc(fp);
+	switch (state) {
+	    case 0:	/* exponent sign */
+		if (c=='+') {
+		    state=1;
+		} else if (c=='-') {
+		    sign=-1;
+		    state=1;
+		} else if (isdigit(c)) {
+		    ungetc(c,fp);
+		    state=1;
+		} else {
+		    err++;
+		    ungetc(c,fp);
+		    done++;
+		}
+		break;
+	    case 1:	/* first digit */
+		if (isdigit(c)) {
+		    val=10*val+(int) (c-'0');	
+		    state=2;
+		} else {
+		    err++;
+		    ungetc(c,fp);
+		    done++;
+		}
+		break;
+	    case 2:	/* remaining digits */
+		if (isdigit(c)) {
+		    val=10*val+(int) (c-'0');	
+		} else {
+		    ungetc(c,fp);
+		    done++;
+		}
+		break;
+	}
+    }
+
+    if (err) {
+	return(0);
+    } 
+
+    *pi = val*sign;
+    return(1);
+}
+
+

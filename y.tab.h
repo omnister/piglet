@@ -1,3 +1,7 @@
+#ifndef YYERRCODE
+#define YYERRCODE 256
+#endif
+
 #define FILES 257
 #define FILE_NAME 258
 #define EDIT 259
