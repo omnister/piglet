@@ -6,6 +6,8 @@
 #include "token.h"
 #include "xwin.h"       /* for snapxy() */
 
+#include "unistd.h"     /* for access() */
+
 #define EPS 1e-6
 
 #define CELL 0		/* modes for db_def_print() */
@@ -117,7 +119,40 @@ char *s;
     return (sp);
 }
 
-int db_purge(s)			/* remove all definitions for s */
+int ask(lp, s) /* ask a y/n question */
+LEXER *lp;
+char    *s;
+{
+    char c;
+    TOKEN token;
+    char word[128];
+    int done=0;
+
+    printf("%s: (y/n)?\n", s);
+
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		if (strncasecmp(word, "Y", 1) == 0) {
+		    return(1);
+		} else if (strncasecmp(word, "N", 1) == 0) {
+		    return(0);
+		} else {
+	    	     printf("please answer by typing \"yes\" or \"no\": ");
+		} 
+		break;
+	    case EOL:
+	    case EOC:
+	    	break; 
+	    default:		/* command */
+		 printf("please answer by typing \"yes\" or \"no\": ");
+		 break;
+        }
+    }
+}
+
+int db_purge(lp, s)			/* remove all definitions for s */
+LEXER *lp;
 char *s;
 {
     DB_TAB *sp;
@@ -125,120 +160,142 @@ char *s;
     COORDS *coords;
     COORDS *ncoords;
     int debug=0;
+    char buf[MAXFILENAME];
+    char buf2[MAXFILENAME];
+    FILE *fp;
 
-    if ((sp=db_lookup(s)) == 0) { 	/* not in memory */
-    	return(1);
-    } else {				/* unlink s */
-        if (debug) printf("db_purge: unlinking %s from db\n", s);
+    if ((sp=db_lookup(s))) { 	/* in memory */
 
-        if (currep == sp) {
-	    currep = NULL;
-	    need_redraw++;
-	}
+        snprintf(buf, MAXFILENAME, "delete %s from memory", s);
+        if (strcmp(lp->name, "STDIN") !=0 || ask(lp, buf)) {
 
-	if (HEAD==sp) {
-	    HEAD=sp->next;
-	}
+	    if (debug) printf("db_purge: unlinking %s from db\n", s);
 
-	if (TAIL==sp) {
-	    TAIL=sp->prev;
-	}
-
-	if (sp->prev != (DB_TAB *) 0) {
-	    sp->prev->next = sp->next;
-        }
-	if (sp->next != (DB_TAB *) 0) {
-	    sp->next->prev = sp->prev;
-	}
-    }
-
-    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	switch (p->type) {
-
-        case ARC:  /* arc definition */
-	    if (debug) printf("db_purge: freeing arc\n");
-	    free(p->u.a->opts);
-	    free(p->u.a);
-	    free(p);
-	    break;
-
-        case CIRC:  /* circle definition */
-	    if (debug) printf("db_purge: freeing circle\n");
-	    free(p->u.c->opts);
-	    free(p->u.c);
-	    free(p);
-	    break;
-
-        case LINE:  /* line definition */
-
-	    if (debug) printf("db_purge: freeing line\n");
-	    coords = p->u.l->coords;
-	    while(coords != NULL) {
-		ncoords = coords->next;
-		free(coords);	
-		coords=ncoords;
+	    if (currep == sp) {
+		currep = NULL;
+		need_redraw++;
 	    }
-	    free(p->u.l->opts);
-	    free(p->u.l);
-	    free(p);
-	    break;
 
-        case OVAL:  /* oval definition */
-
-	    if (debug) printf("db_purge: freeing oval\n");
-	    free(p->u.o->opts);
-	    free(p->u.o);
-	    free(p);
-	    break;
-
-        case POLY:  /* polygon definition */
-
-	    if (debug) printf("db_purge: freeing poly\n");
-	    coords = p->u.p->coords;
-	    while(coords != NULL) {
-		ncoords = coords->next;
-		free(coords);
-		coords=ncoords;
+	    if (HEAD==sp) {
+		HEAD=sp->next;
 	    }
-	    free(p->u.p->opts);
-	    free(p->u.p);
-	    free(p);
-	    break;
 
-	case RECT:  /* rectangle definition */
+	    if (TAIL==sp) {
+		TAIL=sp->prev;
+	    }
 
-	    if (debug) printf("db_purge: freeing rect\n");
-	    free(p->u.r->opts);
-	    free(p->u.r);
-	    free(p);
-	    break;
-
-        case TEXT:  /* text definition */
-
-	    if (debug) printf("db_purge: freeing text\n");
-	    free(p->u.t->opts);
-	    free(p->u.t->text);
-	    free(p->u.t);
-	    free(p);
-	    break;
-
-        case INST:  /* instance call */
-
-	    if (debug) printf("db_purge: freeing instance call: %s\n",
-	    	p->u.i->name);
-	    free(p->u.i->name);
-	    free(p->u.i->opts);
-	    free(p->u.i);
-	    free(p);
-	    break;
-
-	default:
-	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
-	    break;
+	    if (sp->prev != (DB_TAB *) 0) {
+		sp->prev->next = sp->next;
+	    }
+	    if (sp->next != (DB_TAB *) 0) {
+		sp->next->prev = sp->prev;
+	    }
 	}
-    }
+
+	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+	    switch (p->type) {
+
+	    case ARC:  /* arc definition */
+		if (debug) printf("db_purge: freeing arc\n");
+		free(p->u.a->opts);
+		free(p->u.a);
+		free(p);
+		break;
+
+	    case CIRC:  /* circle definition */
+		if (debug) printf("db_purge: freeing circle\n");
+		free(p->u.c->opts);
+		free(p->u.c);
+		free(p);
+		break;
+
+	    case LINE:  /* line definition */
+
+		if (debug) printf("db_purge: freeing line\n");
+		coords = p->u.l->coords;
+		while(coords != NULL) {
+		    ncoords = coords->next;
+		    free(coords);	
+		    coords=ncoords;
+		}
+		free(p->u.l->opts);
+		free(p->u.l);
+		free(p);
+		break;
+
+	    case OVAL:  /* oval definition */
+
+		if (debug) printf("db_purge: freeing oval\n");
+		free(p->u.o->opts);
+		free(p->u.o);
+		free(p);
+		break;
+
+	    case POLY:  /* polygon definition */
+
+		if (debug) printf("db_purge: freeing poly\n");
+		coords = p->u.p->coords;
+		while(coords != NULL) {
+		    ncoords = coords->next;
+		    free(coords);
+		    coords=ncoords;
+		}
+		free(p->u.p->opts);
+		free(p->u.p);
+		free(p);
+		break;
+
+	    case RECT:  /* rectangle definition */
+
+		if (debug) printf("db_purge: freeing rect\n");
+		free(p->u.r->opts);
+		free(p->u.r);
+		free(p);
+		break;
+
+	    case TEXT:  /* text definition */
+
+		if (debug) printf("db_purge: freeing text\n");
+		free(p->u.t->opts);
+		free(p->u.t->text);
+		free(p->u.t);
+		free(p);
+		break;
+
+	    case INST:  /* instance call */
+
+		if (debug) printf("db_purge: freeing instance call: %s\n",
+		    p->u.i->name);
+		free(p->u.i->name);
+		free(p->u.i->opts);
+		free(p->u.i);
+		free(p);
+		break;
+
+	    default:
+		eprintf("unknown record type (%d) in db_def_print\n", p->type );
+		break;
+	    }
+	}
     
-    free(sp);
+	free(sp);
+    } 
+
+    /* FIXME: later on this will get extended to include a search */
+    /* path  instead of just a hard-wired "cells" subdirectory */
+
+    /* now delete copy on disk */
+
+    snprintf(buf, MAXFILENAME, "./cells/%s.d", s);
+    if ((access(buf,F_OK)) == 0)  {	/* exists? */
+        if (debug) printf("inside exists\n");
+        sprintf(buf2, "delete %s from disk\n", buf);
+        if (debug) printf("lexer name = %s", lp->name);
+        if (strcmp(lp->name, "STDIN") !=0 || ask(lp, buf2)) {
+	    if (debug) printf("removing %s\n", buf);
+	    remove(buf);
+	}
+    }
 }
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
@@ -1722,6 +1779,7 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
     NUM xx, yy;
     static NUM xxold, yyold;
     int debug=0;
+    double x1, y1, x2, y2;
 
     if (mode == 2) {	/* skip transform */
 	if (debug) printf("in draw, mode=%d\n", mode);
@@ -1749,19 +1807,24 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	}
     }
 
+    /* FIXME: there is a problem with extreme zooming where */
+    /* the transformed points are bigger than the range of */
+    /* an unsigned int.  In this case, you get garbage aliased */
+    /* back onto the screen... need to check for range here and */
+    /* clip accordingly */
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
-	if (nseg) {
+	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
 	    if (mode == 1) { 	/* rubber band drawing */
 		if (drawon) {
-		    xwin_xor_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+		    xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
                 }
 	    } else {		/* regular drawing */
 		if (drawon) {
-		    xwin_draw_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+		    xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
 		    if (boundslevel) {
-			draw_pick_bound(xxold, yyold, xx, yy, boundslevel);
+			draw_pick_bound(x1, y1, x2, y2, boundslevel);
 		    }
  		}
 	    }
@@ -1773,6 +1836,88 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	if (drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
     }
 }
+
+/* Cohen-Sutherland 2-D Clipping Algorithm */
+/* See: Foley & Van Dam, p146-148 */
+
+int clip(x1, y1, x2, y2, xc1, yc1, xc2, yc2)
+double x1, y1, x2, y2;
+double *xc1, *yc1, *xc2, *yc2;
+{
+
+    double vp_xmin=0;
+    double vp_ymin=0;
+    double vp_xmax=3.0*(double) width;
+    double vp_ymax=3.0*(double) height;
+    int debug=0;
+    int done=0;
+    int accept=0;
+    int code1=0;
+    int code2=0;
+    double tmp;
+
+    if (debug) printf("canonicalized: %g,%g %g,%g\n", x1, y1, x2, y2);
+
+    while (!done) {
+        /* compute "outcodes" */
+	code1=0;
+	if((vp_ymax-y1) < 0) code1 += 1;
+	if((y1-vp_ymin) < 0) code1 += 2;
+	if((vp_xmax-x1) < 0) code1 += 4;
+	if((x1-vp_xmin) < 0) code1 += 8;
+
+	code2=0;
+	if((vp_ymax-y2) < 0) code2 += 1;
+	if((y2-vp_ymin) < 0) code2 += 2;
+	if((vp_xmax-x2) < 0) code2 += 4;
+	if((x2-vp_xmin) < 0) code2 += 8;
+
+	if (debug) printf("code1: %d, code2: %d\n", code1, code2);
+
+    	if (code1 & code2) {
+	    if (debug) printf("trivial reject\n");
+	    done++;	/* trivial reject */
+	} else { 
+	    if (accept = !((code1 | code2))) {
+		if (debug) printf("trivial accept\n");
+	    	done++;
+	    } else {
+	        if (!code1) { /* x1,y1 inside box, so SWAP */
+		    if (debug) printf("swapping\n");
+		    tmp=y1; y1=y2; y2=tmp;
+		    tmp=x1; x1=x2; x2=tmp;
+		    tmp=code1; code1=code2; code2=tmp;
+		}
+
+		if (debug) printf("preclip: %g,%g %g,%g\n", x1, y1, x2, y2);
+		if (code1 & 1) {		/* divide line at top */
+			x1 = x1 + (x2-x1)*(vp_ymax-y1)/(y2-y1);
+                        y1 = vp_ymax;
+		} else if (code1 & 2) {	/* divide line at bot */
+			x1 = x1 + (x2-x1)*(vp_ymin-y1)/(y2-y1);
+                        y1 = vp_ymin;
+		} else if (code1 & 4) {	/* divide line at right */
+			y1 = y1 + (y2-y1)*(vp_xmax-x1)/(x2-x1);
+                        x1 = vp_xmax;
+		} else if (code1 & 8) {	/* divide line at left */
+			y1 = y1 + (y2-y1)*(vp_xmin-x1)/(x2-x1);
+                        x1 = vp_xmin;
+                }
+		if (debug) printf("after: %g,%g %g,%g\n", x1, y1, x2, y2);
+	    }
+	}
+    }
+
+    if (accept) {
+    	*xc1 = x1;
+    	*yc1 = y1;
+    	*xc2 = x2;
+    	*yc2 = y2;
+	return(1);
+    }
+    return(0);
+}
+
 
 int draw_pick_bound(NUM x1, NUM y1, NUM x2, NUM y2, int boundslevel) {
     NUM tmp;

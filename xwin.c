@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.19 2004/02/01 08:54:50 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.20 2004/02/05 03:47:26 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -227,15 +227,19 @@ int initX()
 
     x=y=0.0;
     border_width=1;
+    width=top_width-menu_width;
+    height=top_height;
 
     /* Create opaque window for graphics */
     win = XCreateSimpleWindow(dpy, topwin,
-        (int) x,(int) y,top_width-menu_width, top_height, border_width, 
+        (int) x,(int) y, width, height, border_width, 
 	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
+
+    width=top_width-menu_width;
 
     /* Create opaque window for menu */
     menuwin = XCreateSimpleWindow(dpy, topwin,
-        (top_width-menu_width)+1, (int) y, menu_width-2, top_height,
+        (width)+1, (int) y, menu_width-2, height,
 	border_width, WhitePixel(dpy,scr), BlackPixel(dpy,scr));
 
     /* Create the menu boxes */
@@ -1011,10 +1015,12 @@ double x1,y1,x2,y2;
     extern int grid_notified;
     double dratio,wratio;
     double tmp;
+    int debug=0;
 
     grid_notified=0;	/* never yet evaluated the grid visibility */ 
 
-    /* printf("xwin_window_set called with %f %f %f %f\n",x1,y1,x2,y2); */
+    if (debug) printf("xwin_window_set called with %f %f %f %f\n",
+    	x1,y1,x2,y2); 
 
     if (x2 < x1) {		/* canonicalize the selection rectangle */
 	tmp = x2; x2 = x1; x1 = tmp;
@@ -1031,10 +1037,11 @@ double x1,y1,x2,y2;
 	/* currep->modified++; */
     }
 
-    /* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
+    if (debug) printf("setting world window bounds to %g,%g %g,%g\n",
+    	x1,y1,x2,y2);
     vp_xmin=x1;
-    vp_xmax=x2;
     vp_ymin=y1;
+    vp_xmax=x2;
     vp_ymax=y2;
 
     dratio = (double) height/ (double)width;
@@ -1049,18 +1056,20 @@ double x1,y1,x2,y2;
     xoffset = (((double) width)/2.0) -  ((vp_xmin+vp_xmax)/2.0)*scale;
     yoffset = (((double) height)/2.0) + ((vp_ymin+vp_ymax)/2.0)*scale;
 
-    /* printf("screen width = %d\n",width);
-    ** printf("screen height = %d\n",height);
-    ** printf("scale = %g, xoffset=%g, yoffset=%g\n", scale, xoffset, yoffset);
-    ** printf("\n");
-    ** printf("dx = xoffset + rx*scale;\n");
-    ** printf("dy = yoffset - ry*scale;\n");
-    ** printf("rx = (dx - xoffset)/scale;\n");
-    ** printf("ry = (yoffset - dy)/scale;\n");
-    ** printf("xmin -> %d\n", (int) (xoffset + vp_xmin*scale));
-    ** printf("ymin -> %d\n", (int) (yoffset - vp_ymin*scale));
-    ** printf("xmax -> %d\n", (int) (xoffset + vp_xmax*scale));
-    ** printf("ymax -> %d\n", (int) (yoffset - vp_ymax*scale));
+    if (debug) printf("screen width = %d, height=%d\n",width, height);
+    if (debug)  printf("scale = %g, xoffset=%g, yoffset=%g\n",
+    	scale, xoffset, yoffset);
+
+    /*
+    if (debug)  printf("\n");
+    if (debug)  printf("dx = xoffset + rx*scale;\n");
+    if (debug)  printf("dy = yoffset - ry*scale;\n");
+    if (debug)  printf("rx = (dx - xoffset)/scale;\n");
+    if (debug)  printf("ry = (yoffset - dy)/scale;\n");
+    if (debug)  printf("xmin -> %d\n", (int) (xoffset + vp_xmin*scale));
+    if (debug)  printf("ymin -> %d\n", (int) (yoffset - vp_ymin*scale));
+    if (debug)  printf("xmax -> %d\n", (int) (xoffset + vp_xmax*scale));
+    if (debug)  printf("ymax -> %d\n", (int) (yoffset - vp_ymax*scale));
     */
     
     xp->r11 = scale;

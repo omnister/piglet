@@ -1,4 +1,6 @@
 
+extern unsigned int width, height;
+
 extern void V_to_R();
 extern void R_to_V(); 
 extern void snapxy();

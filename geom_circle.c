@@ -197,7 +197,7 @@ int count; /* number of times called */
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
-	    do_circ(&dbdeflist, 1);
+	    do_circ(&dbdeflist, &bb, 1);
 	    jump(); /* draw new shape */
 	    dbcirc.x2 = x2; dbcirc.y2 = y2;
 	    do_circ(&dbdeflist, &bb, 1);

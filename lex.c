@@ -621,6 +621,8 @@ char *arg;
 	if ((currep=db_lookup(name)) == NULL) {
 
 	    currep = db_install(name);  	/* create blank stub */
+	    do_win(4, -100.0, -100.0, 100.0, 100.0, 1.0);
+	    need_redraw++;
 
 	    /* now check if on disk */
 	    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
@@ -646,6 +648,7 @@ char *arg;
 		
 		currep=save_rep;
 		xwin_display_set_state(D_ON);
+		need_redraw++;
 		if ((currep=db_lookup(name)) == NULL) {
 		    printf("error in reading in %s\n", name);
 		}
@@ -712,7 +715,7 @@ char *arg;
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		/* FIXME: this needs to purge memory + disk files */
-	        db_purge(word);
+	        db_purge(lp, word);
 	    	break;      
 	    case EOC:		/* end of command */
 		done++;
@@ -1217,10 +1220,12 @@ char *arg;
     double tmp;
     int debug=0;
 
+    rl_setprompt("PURGE> ");
+
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
-	        db_purge(word);
+	        db_purge(lp, word);
 	    	break;
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
@@ -1247,8 +1252,68 @@ com_retrieve(lp, arg)	/* read commands from an ARCHIVE file */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_retrieve\n", arg);
-    return (0);
+    TOKEN token;
+    char buf[MAXFILENAME];
+    char word[MAXFILENAME];
+    int debug=1;
+    FILE *fp;
+    int err=0;
+    int done=0;
+    int nfiles=0;
+    LEXER *my_lp;
+    DB_TAB *save_rep;
+
+    if (debug) printf("in com_retrieve\n");
+    rl_setprompt("RET> ");
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	if (debug) printf("COM_RETRIEVE: got %s: %s\n",
+			tok2str(token), word);
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		if (nfiles == 0) {
+		    snprintf(buf, MAXFILENAME, "./cells/%s_I", word);
+		    nfiles++;
+		    if (nfiles == 1) {
+			if((fp = fopen(buf, "r")) == 0) {
+			    printf("COM_RET: could not open %s\n", buf);
+			    return(1);
+			} else {
+			    xwin_display_set_state(D_OFF);
+			    my_lp = token_stream_open(fp, buf);
+			    save_rep=currep;
+			    printf ("reading %s from disk\n", buf);
+			    parse(my_lp);
+			    token_stream_close(my_lp); 
+			    currep=save_rep;
+			    xwin_display_set_state(D_ON);
+			}
+		    } else {
+			printf("RET: wrong number of args\n");
+			return(-1);
+		    }
+		} 
+		break;
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+	    	break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case CMD:		/* command */
+	    	token_unget(lp, token,word);
+		done++;
+		break;
+	    default:
+		eprintf("bad case in com_retrieve");
+		break;
+	}
+    }
 }
 
 com_save(lp, arg)	/* save the current file or device to disk */
