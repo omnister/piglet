@@ -216,7 +216,7 @@ main() {
  * yymark()  -- get ingoramtiaon from '# line file'
  */
 
-FILE *yyerfp = 1;	/* error (1=stdout) stream */
+FILE *yyerfp = stdout;	/* error stream */
 extern char yytext[];	/* current token */
 extern int yyleng;		/* and its length */
 extern int yylineno;	/* current input line number */
