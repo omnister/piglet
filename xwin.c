@@ -29,9 +29,11 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.15 2004/01/19 21:59:15 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.17 2004/01/26 03:06:36 walker Exp $";
 
-unsigned int width, height;		/* window pixel size */
+unsigned int top_width, top_height;	/* main window pixel size */
+unsigned int width, height;		/* graphic window pixel size */
+unsigned int menu_width;	/* menu window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
 
 double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
@@ -101,9 +103,36 @@ extern int errno;
 
 #define BUF_SIZE 128
 
+Window topwin;
 Window win;
+Window menuwin;
 GC gca, gcb;
 GC gcx;
+
+/* Menu definitions */
+
+#define NONE 100
+#define BLACK 1
+#define WHITE 0
+
+static char *menu_label[] = {
+   "EDI  ",
+   "ADD  ",
+   "MOV  ",
+   "COPY ",
+   "DEL  ",
+   "IDEN ",
+   "GRID ",
+   "LOCK ",
+   "SAVE ",
+   "EXIT "
+};
+#define MAX_CHOICE 9
+
+Window inverted_pane = NONE;
+Window panes[MAX_CHOICE];
+
+XFontStruct *font_info;
 
 #define MAX_COLORS 8
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
@@ -128,7 +157,6 @@ int initX()
     XTextProperty windowName, iconName;
     XSetWindowAttributes attr;
     int icount;
-    XFontStruct *font_info;
     char *dpy_name = NULL;
     int window_size = 0;    /* either BIG_ENOUGH or
                     TOO_SMALL to display contents */
@@ -137,6 +165,16 @@ int initX()
     int i;
     int c;
     char *s;
+
+    /* menu stuff */
+    char *string;
+    int char_count;
+    int direction, ascent, descent;
+    int pane_height;
+    int menu_height;
+    XCharStruct overall;
+    int winindex;
+
 
     if (!(size_hints = XAllocSizeHints())) {
 	eprintf("failure allocating SizeHints memory");
@@ -166,17 +204,57 @@ int initX()
     x=y=2*border_width;
 
     /* Size window */
-    width = dpy_width/2, height = dpy_height/2;
+    top_width = dpy_width/2, top_height = dpy_height/2;
 
-    /* Create opaque window */
-    win = XCreateSimpleWindow(dpy, RootWindow(dpy,scr),
-        (int) x,(int) y,width, height, border_width, WhitePixel(dpy,scr),
-        BlackPixel(dpy,scr));
+    /* figure out menu sizes */
+    string = menu_label[6];
+    char_count = strlen(string);
+
+    load_font(&font_info);
+
+    /* Determine the extent of each menu pane based on font size */
+    XTextExtents(font_info, string, char_count, &direction, &ascent,
+        &descent, &overall);
+
+    menu_width = overall.width + 4;
+    pane_height = overall.ascent + overall.descent + 4;
+    menu_height = pane_height * MAX_CHOICE;
+
+    /* create top level window for packing graphic and menu windows */
+    topwin = XCreateSimpleWindow(dpy, RootWindow(dpy,scr),
+        (int) x,(int) y, top_width, top_height, border_width,
+	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
+
+    x=y=0.0;
+    border_width=1;
+
+    /* Create opaque window for graphics */
+    win = XCreateSimpleWindow(dpy, topwin,
+        (int) x,(int) y,top_width-menu_width, top_height, border_width, 
+	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
+
+    /* Create opaque window for menu */
+    menuwin = XCreateSimpleWindow(dpy, topwin,
+        (top_width-menu_width)+1, (int) y, menu_width-2, top_height,
+	border_width, WhitePixel(dpy,scr), BlackPixel(dpy,scr));
+
+    /* Create the menu boxes */
+    for (winindex = 0; winindex < MAX_CHOICE; winindex++) {
+        panes[winindex] = XCreateSimpleWindow(dpy, menuwin, 0,
+	    menu_height/MAX_CHOICE*winindex, menu_width,
+	    pane_height, border_width = 1,
+	    WhitePixel(dpy,scr),
+	    BlackPixel(dpy,scr));
+	XSelectInput(dpy, panes[winindex], ButtonPressMask |
+	    ButtonReleaseMask | ExposureMask);
+    }
+
+    XMapSubwindows(dpy, menuwin);
 
     /* Get available icon sizes from window manager */
 
     if (XGetIconSizes(dpy, RootWindow(dpy, scr), &size_list, &icount) == 0)
-        if (debug) weprintf("Window manager didn't set icon sizes - using default.");
+        if (debug) weprintf("WM didn't set icon sizes - using default.");
     else {
         /* should eventually create a pixmap here */
         ;
@@ -207,17 +285,22 @@ int initX()
     class_hints->res_name = estrdup(progname());
     class_hints->res_class = class_hints->res_name;
 
-    XSetWMProperties(dpy, win, &windowName, &iconName,
+    XSetWMProperties(dpy, topwin, &windowName, &iconName,
         (char **) NULL, (int) NULL, size_hints, wm_hints, class_hints);
 
         /* argv, argc, size_hints, wm_hints, class_hints); */
 
     /* Select event types wanted */
-    XSelectInput(dpy, win, ExposureMask | KeyPressMask |
+    XSelectInput(dpy, topwin, ExposureMask | KeyPressMask |
         ButtonPressMask | ButtonReleaseMask | StructureNotifyMask | 
 	Button1MotionMask | PointerMotionMask );
+    XSelectInput(dpy, win, ExposureMask | KeyPressMask |
+        ButtonPressMask | ButtonReleaseMask | 
+	Button1MotionMask | PointerMotionMask );
+    XSelectInput(dpy, menuwin, ExposureMask | KeyPressMask |
+        ButtonPressMask | ButtonReleaseMask | 
+	Button1MotionMask | PointerMotionMask );
 
-    load_font(&font_info);
 
     init_colors();
 
@@ -232,8 +315,10 @@ int initX()
     XSetFillStyle(dpy, gcx, FillStippled);
     XSetFunction(dpy, gcx, GXxor);
 
-    /* dpy window */
+    /* dpy windows */
+    XMapWindow(dpy, topwin);
     XMapWindow(dpy, win);
+    XMapWindow(dpy, menuwin);
 
     /* turn on backing store */
     attr.backing_store = Always;
@@ -338,7 +423,7 @@ FILE *fp;
 		    y = (double) xe.xmotion.y;
 		    V_to_R(&x,&y);
 		    snapxy(&x,&y);
-		    sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
+		    sprintf(buf,"(%5d,%5d)", (int) x, (int) y);
 		    if (display_state == D_ON) {
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
 		    }
@@ -362,13 +447,21 @@ FILE *fp;
 		    if (xe.xexpose.window == win) {
 			draw_grid(win, gcx, grid_xd, grid_yd,
 			    grid_xs, grid_ys, grid_xo, grid_yo);
-		    } 
+		    }  
+
+		    /* paint_pane(xe.xexpose.window,
+		    	panes, gca, gcb, WHITE); */
+
 		    break;
 
 		case ConfigureNotify:
 		    if (debug) printf("EVENT LOOP: got Config Notify\n");
-		    width = xe.xconfigure.width;
-		    height = xe.xconfigure.height;
+		    top_width = xe.xconfigure.width;
+		    height=top_height = xe.xconfigure.height;
+		    width=top_width-menu_width;
+		    XMoveWindow(dpy, menuwin, top_width-menu_width, 0);
+		    XResizeWindow(dpy, menuwin, menu_width, height);
+		    XResizeWindow(dpy, win, top_width-menu_width, height);
 		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 		    break;
 		case ButtonRelease:
@@ -884,7 +977,7 @@ double yo;
 	    currep->grid_ys=ys;
 	    currep->grid_xo=xo;
 	    currep->grid_yo=yo;
-	    currep->modified++;
+	    /* currep->modified++; */
 	}
     }
 }
@@ -933,7 +1026,7 @@ double x1,y1,x2,y2;
 	currep->miny=y1;
 	currep->maxx=x2;
 	currep->maxy=y2;
-	currep->modified++;
+	/* currep->modified++; */
     }
 
     /* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
@@ -1093,3 +1186,44 @@ init_colors()
     /* printf("%s: allocated %d read-only color cells\n", progname, ncolors); */
     return(1);
 }
+
+
+/* following routine originally from Xlib Programming Manual Vol I., */
+/* O'Reilly & associates, page 533.  */
+
+paint_pane(window, panes, ngc, rgc, mode) 
+Window window;
+Window panes[];
+GC ngc, rgc;
+int mode;
+{
+    int win;
+    int x = 2, y;
+    GC gc;
+
+    if (mode == BLACK) {
+    	XSetWindowBackground(dpy, window, 
+	    BlackPixel(dpy, scr));
+	gc = rgc;
+    } else {
+    	XSetWindowBackground(dpy, window, 
+	    WhitePixel(dpy, scr));
+	gc = ngc;
+    }
+
+    /* Clearing repaints the background */
+    XClearWindow(dpy, window);
+
+    /* Find out winndex of window for label text */
+    for (win=0; window != panes[win]; win++) {
+    	;
+    }
+
+    y = font_info->max_bounds.ascent;
+
+    /* The string length is necessary because strings 
+     * for XDrawString may not be null terminated */
+    XDrawString(dpy, window, gc, x, y, menu_label[win],
+        strlen(menu_label[win]));
+}
+

@@ -635,13 +635,13 @@ char *arg;
 		parse(my_lp);
 		token_stream_close(my_lp); 
 		if (currep != NULL) {
-		    currep->modified = 0;
 		    xwin_window_set(
 		    	currep->minx, 
 		    	currep->miny,
 			currep->maxx,
 			currep->maxy
 		    );
+		    currep->modified = 0;
 		}
 		
 		currep=save_rep;
@@ -650,9 +650,17 @@ char *arg;
 		    printf("error in reading in %s\n", name);
 		}
 	    }
-	}
-
-	need_redraw++;
+	} else {
+	    if (currep != NULL) {
+		xwin_window_set(
+		    currep->minx, 
+		    currep->miny,
+		    currep->maxx,
+		    currep->maxy
+		);
+		currep->modified = 0;
+	    }
+        }	
 
     } else if (lp->mode == EDI) {
 	printf("    must SAVE current device before new EDIT\n");

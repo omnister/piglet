@@ -23,6 +23,7 @@ XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 NUM xmax, ymax; 	   /* globals for finding bounding boxes */
 NUM xmin, ymin;
+int bounds_valid=1;
 double max(), min();
 int drawon=1;		  /* 0 = dont draw, 1 = draw */
 int nestlevel=9;
@@ -983,7 +984,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     XFORM *save_transform;
     extern int nestlevel;
     double optval;
-    int debug=0;
+    int debug=1;
     double xminsave;
     double xmaxsave;
     double yminsave;
@@ -1063,12 +1064,6 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* occur in the proper order, for example, rotation must come */
 	    /* after slant transformation or else it wont work properly */
 
-	    /* FIXME: inst calls should be by name, not by pointer */
-	    /* it is possible to PURGE a cell in memory and then try */
-	    /* to reference a bad pointer, causing a crash... For this */
-	    /* reason, instances are called by name, and the pointer */
-	    /* is always accessed with a db_lookup() call */
-
 	    switch (p->u.i->opts->mirror) {
 	    	case MIRROR_OFF:
 		    break;
@@ -1103,17 +1098,21 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    ymaxsave=ymax;
 
 	    /* find bounding box on screen for instance */
-
-	    xmax=0.0;		/* initialize globals to 0,0 location*/
-	    xmin=0.0;		/* draw() routine will modify these */
-	    ymax=0.0;
-	    ymin=0.0;
+	    /* setting bounds_valid=0 forces first call to */
+	    /* draw(x,y) to set xmin/max = x, ymin/max = y */
+	    bounds_valid=0;
 
 	    if (nest >= nestlevel) { 
 		drawon = 0;
 	    } else {
 		drawon = 1;
 	    }
+
+	    /* instances are called by name, not by pointer */
+	    /* otherwise, it is possible to PURGE a cell in */
+	    /* memory and then reference a bad pointer, causing */
+	    /* a crash... instances are always accessed */
+	    /* with a db_lookup() call */
 
 	    /* render instance */
 	    if (debug) printf("rendering %s, %d\n",
@@ -1132,55 +1131,41 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* running through same transformations */
 	    /* as original draw */
 
+	    if (debug) printf("back from draw bound = %g %g %g %g\n",
+	        xmin, ymin, xmax, ymax);
+
 	    if (nest == nestlevel) { 
 		set_pen(0);
 		jump();
 		    /* a square bounding box outline in white */
-		    draw(xmax,ymax,mode); draw(xmax,ymin,mode);
-		    draw(xmin,ymin,mode); draw(xmin,ymax,mode);
-		    draw(xmax,ymax,mode);
+		    draw(xmax,ymax,2); draw(xmax,ymin,2);
+		    draw(xmin,ymin,2); draw(xmin,ymax,2);
+		    draw(xmax,ymax,2);
 		jump();
 		    /* and diagonal lines from corner to corner */
-		    draw(xmax,ymax,mode);
-		    draw(xmin,ymin,mode);
+		    draw(xmax,ymax,2);
+		    draw(xmin,ymin,2);
 		jump();
-		    draw(xmin,ymax,mode);
-		    draw(xmax,ymin,mode);
+		    draw(xmin,ymax,2);
+		    draw(xmax,ymin,2);
 	    }
 
-
-/*
-	xmin=min(xminsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
-	xmin=min(xminsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
-	xmin=min(xminsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
-	xmin=min(xminsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
-
-	xmax=max(xmaxsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
-	xmax=max(xmaxsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
-	xmax=max(xmaxsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
-	xmax=max(xmaxsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
-
-	ymin=min(yminsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
-	ymin=min(yminsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
-	ymin=min(yminsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
-	ymin=min(yminsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
-
-	ymax=max(ymaxsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
-	ymax=max(ymaxsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
-	ymax=max(ymaxsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
-	ymax=max(ymaxsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
-
-*/
 
 	    free(global_transform); free(xp);	
 	    global_transform = save_transform;	/* set transform back */
 
 	    /* now pass bounding box back */
 
-	    xmin=min(xminsave, xmin+p->u.i->x);
-	    xmax=max(xmaxsave, xmax+p->u.i->x);
-	    ymin=min(yminsave, ymin+p->u.i->y);
-	    ymax=max(ymaxsave, ymax+p->u.i->y);
+	    if (debug) printf("saved bounds = %g %g %g %g\n",
+	    	xminsave, yminsave, xmaxsave, ymaxsave);
+
+	    xmin=min(xminsave, xmin);
+	    xmax=max(xmaxsave, xmax);
+	    ymin=min(yminsave, ymin);
+	    ymax=max(ymaxsave, ymax);
+
+	    if (debug) printf("compositing bounds = %g %g %g %g\n",
+	        xmin, ymin, xmax, ymax);
 
 	    break;
 	default:
@@ -1197,14 +1182,14 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     if (debug) printf("setting bounds %g %g %g %g\n",
     	xmin, xmax, ymin, ymax);
 
-    if (nest == 0) {
+    if (nest == 0) { 
 	jump();
 	set_pen(12);
-	draw(xmin,ymax,mode);
-	draw(xmax,ymax,mode);
-	draw(xmax,ymin,mode);
-	draw(xmin,ymin,mode);
-	draw(xmin,ymax,mode);
+	draw(xmin,ymax,2);
+	draw(xmax,ymax,2);
+	draw(xmax,ymin,2);
+	draw(xmin,ymin,2);
+	draw(xmin,ymax,2);
     }
 
     cell->minx = xmin;
@@ -1738,38 +1723,50 @@ static int nseg=0;
 
 void draw(x, y, mode)	/* draw x,y transformed by extern global xf */
 NUM x,y;		/* location in real coordinate space */
-int mode;
+int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
 {
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
-    int debug=0;
+    int debug=1;
 
     /* now compute transformed coordinates */
 
-    xx = x*global_transform->r11 + 
-         y*global_transform->r21 + global_transform->dx;
 
-    yy = x*global_transform->r12 + 
-         y*global_transform->r22 + global_transform->dy;
+    if (mode == 2) {	/* skip transform */
+	xx = x;
+	yy = y;
+        /* and don't update bounding box */
+    } else {
+	xx = x*global_transform->r11 + 
+	    y*global_transform->r21 + global_transform->dx;
+	yy = x*global_transform->r12 + 
+	    y*global_transform->r22 + global_transform->dy;
 
-    /* globals for computing bounding boxes */
-    /* NOTE: This must be done prior to conversion into screen space */
-    xmax = max(x,xmax);
-    xmin = min(x,xmin);
-    ymax = max(y,ymax);
-    ymin = min(y,ymin);
+	/* globals for computing bounding boxes */
+	
+	if(!bounds_valid) {
+	    xmin=xmax=xx;
+	    ymin=ymax=yy;
+	    bounds_valid++;
+	}
+	xmax = max(xx,xmax);
+	xmin = min(xx,xmin);
+	ymax = max(yy,ymax);
+	ymin = min(yy,ymin);
+    }
+
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 	if (nseg) {
-	    if (mode == 0) { 	/* regular drawing */
-		if (drawon) {
-		    xwin_draw_line((int)xxold,(int)yyold,(int)xx,(int)yy);
-                }
-	    } else {		/* rubber band drawing */
+	    if (mode == 1) { 	/* rubber band drawing */
 		if (drawon) {
 		    xwin_xor_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+                }
+	    } else {		/* regular drawing */
+		if (drawon) {
+		    xwin_draw_line((int)xxold,(int)yyold,(int)xx,(int)yy);
  		}
 	    }
 	}
