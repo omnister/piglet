@@ -1,21 +1,24 @@
 
-#include "db.h"
+#include "db.h"		/* hierarchical database routines */
+#include "eprintf.h"	/* error reporting functions */
+
 #include <stdio.h>
 #include <math.h>
 #include "y.tab.h"
+
 #define EPS 1e-6
 
 /* master symbol table pointers */
-static struct db_tab *HEAD = 0;
-static struct db_tab *TAIL = 0;
+static DB_TAB *HEAD = 0;
+static DB_TAB *TAIL = 0;
 
 COORDS *first_pair, *last_pair; 
 OPTS   *first_opt, *last_opt;
 
 /* global drawing variables */
 XFORM *transform;	/* global xform matrix */
-double xmax, ymax; 	/* globals for finding bounding boxes */
-double xmin, ymin;
+NUM xmax, ymax; 	/* globals for finding bounding boxes */
+NUM xmin, ymin;
 double max(), min();;
 int drawon=1;		/* 0 = dont draw, 1 = draw */
 int nestlevel=9;
@@ -42,9 +45,9 @@ void set_line();
 DB_TAB *db_lookup(s)           /* find s in db */
 char *s;
 {
-    struct db_tab *sp;
+    DB_TAB *sp;
 
-    for (sp=HEAD; sp!=(struct db_tab *)0; sp=sp->next)
+    for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next)
         if (strcmp(sp->name, s)==0)
             return sp;
     return 0;               	/* 0 ==> not found */
@@ -53,24 +56,23 @@ char *s;
 DB_TAB *db_install(s)		/* install s in db */
 char *s;
 {
-    struct db_tab *sp;
-    char *emalloc();
+    DB_TAB *sp;
 
     /* this is written to ensure that a db_print is */
     /* not in reversed order...  New structures are */
     /* added at the end of the list using TAIL      */
 
-    sp = (struct db_tab *) emalloc(sizeof(struct db_tab));
+    sp = (DB_TAB *) emalloc(sizeof(struct db_tab));
     sp->name = emalloc(strlen(s)+1); /* +1 for '\0' */
     strcpy(sp->name, s);
 
-    sp->next   = (struct db_tab *) 0; 
+    sp->next   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
     sp->maxx = 0.0; 
     sp->maxy = 0.0; 
 
-    if (HEAD ==(struct db_tab *) 0) {	/* first element */
+    if (HEAD ==(DB_TAB *) 0) {	/* first element */
 	HEAD = TAIL = sp;
     } else {
 	TAIL->next = sp;		/* current tail points to new */
@@ -89,7 +91,7 @@ char *s;
 /* save a non-recursive archive of single cell to a file called "cell.d" */
 
 int db_save(sp)           	/* print db */
-struct db_tab *sp;
+DB_TAB *sp;
 {
 
     FILE *fp;
@@ -107,7 +109,7 @@ struct db_tab *sp;
 
 
 int db_def_archive(sp) 
-struct db_tab *sp;
+DB_TAB *sp;
 {
     FILE *fp;
     char buf[MAXFILENAME];
@@ -123,14 +125,14 @@ struct db_tab *sp;
 
 int db_def_arch_recurse(fp,sp) 
 FILE *fp;
-struct db_tab *sp;
+DB_TAB *sp;
 {
-    struct db_tab *dp;
+    DB_TAB *dp;
     COORDS *coords;
     DB_DEFLIST *p; 
 
     /* clear out all flag bits in cell definition headers */
-    for (dp=HEAD; dp!=(struct db_tab *)0; dp=dp->next) {
+    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
 	sp->flag=0;
     }
 
@@ -151,7 +153,7 @@ struct db_tab *sp;
 
 int db_def_print(fp, dp) 
 FILE *fp;
-struct db_tab *dp;
+DB_TAB *dp;
 {
     COORDS *coords;
     DB_DEFLIST *p; 
@@ -264,9 +266,7 @@ struct db_tab *dp;
 	    break;
 
 	default:
-	    fprintf(stderr, "unknown record type (%d) in db_def_print\n",
-		p->type );
-	    exit(1);
+	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
 	    break;
 	}
     }
@@ -288,17 +288,17 @@ OPTS *opts;
 }
 
 int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 NUM x1,y1,x2,y2,x3,y3;
 {
     struct db_arc *ap;
     struct db_deflist *dp;
-    char *emalloc();
  
     ap = (struct db_arc *) emalloc(sizeof(struct db_arc));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -324,17 +324,17 @@ NUM x1,y1,x2,y2,x3,y3;
 }
 
 int db_add_circ(cell, layer, opts, x1,y1,x2,y2)
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 NUM x1,y1,x2,y2;
 {
     struct db_circ *cp;
     struct db_deflist *dp;
-    char *emalloc();
  
     cp = (struct db_circ *) emalloc(sizeof(struct db_circ));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -358,17 +358,17 @@ NUM x1,y1,x2,y2;
 }
 
 int db_add_line(cell, layer, opts, coords)
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 COORDS *coords;
 {
     struct db_line *lp;
     struct db_deflist *dp;
-    char *emalloc();
  
     lp = (struct db_line *) emalloc(sizeof(struct db_line));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -389,7 +389,7 @@ COORDS *coords;
 }
 
 int db_add_note(cell, layer, opts, string ,x,y) 
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 char *string;
@@ -397,10 +397,10 @@ NUM x,y;
 {
     struct db_note *np;
     struct db_deflist *dp;
-    char *emalloc();
  
     np = (struct db_note *) emalloc(sizeof(struct db_note));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -423,17 +423,17 @@ NUM x,y;
 }
 
 int db_add_oval(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 NUM x1,y1, x2,y2, x3,y3;
 {
     struct db_oval *op;
     struct db_deflist *dp;
-    char *emalloc();
  
     op = (struct db_oval *) emalloc(sizeof(struct db_oval));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -459,17 +459,17 @@ NUM x1,y1, x2,y2, x3,y3;
 }
 
 int db_add_poly(cell, layer, opts, coords)
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 COORDS *coords;
 {
     struct db_poly *pp;
     struct db_deflist *dp;
-    char *emalloc();
  
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -490,17 +490,17 @@ COORDS *coords;
 }
 
 int db_add_rect(cell, layer, opts, x1,y1,x2,y2)
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 NUM x1,y1,x2,y2;
 {
     struct db_rect *rp;
     struct db_deflist *dp;
-    char *emalloc();
  
     rp = (struct db_rect *) emalloc(sizeof(struct db_rect));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -524,7 +524,7 @@ NUM x1,y1,x2,y2;
 }
 
 int db_add_text(cell, layer, opts, string ,x,y) 
-struct db_tab *cell;
+DB_TAB *cell;
 int layer;
 OPTS *opts;
 char *string;
@@ -532,10 +532,10 @@ NUM x,y;
 {
     struct db_text *tp;
     struct db_deflist *dp;
-    char *emalloc();
  
     tp = (struct db_text *) emalloc(sizeof(struct db_text));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -558,17 +558,17 @@ NUM x,y;
 }
 
 int db_add_inst(cell, subcell, opts, x, y)
-struct db_tab *cell;
-struct db_tab *subcell;
+DB_TAB *cell;
+DB_TAB *subcell;
 OPTS *opts;
 NUM x,y;
 {
     struct db_inst *ip;
     struct db_deflist *dp;
-    char *emalloc();
  
     ip = (struct db_inst *) emalloc(sizeof(struct db_inst));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
@@ -586,20 +586,6 @@ NUM x,y;
     ip->y=y;
     ip->opts=opts;
 }
-
-char *emalloc(n)    /* check return from malloc */
-unsigned n;
-{
-    char *p; 
-    void *malloc();
-
-    p = malloc(n);
-    if (p == 0) {
-        fprintf(stderr, "fatal error: out of memory", (char *) 0);
-	exit(1);
-    }
-    return p;
-}   
 
 /* a simple test harness */
 /*
@@ -707,7 +693,7 @@ int nest;
 
     /* printf ("# entering in db_render at level %d\n", nest); */
 
-    if (nest == 0) {
+    if (!X & nest == 0) {	/* autoplot output */
 	printf("nogrid\n");
 	printf("isotropic\n");
 	printf("back\n");
@@ -788,8 +774,7 @@ int nest;
 		    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
 			xp->r11 *= -1.0;
 		    } else {
-			fprintf(stderr,"unknown mirror option %s\n",
-			    op->optstring); 
+			weprintf("unknown mirror option %s\n", op->optstring); 
 		    }
 		    break;
 		case 'z':		
@@ -798,8 +783,7 @@ int nest;
 		    mat_slant(xp, optval);
 		    break;
 		default:
-			fprintf(stderr,"unknown option value: %s\n",
-			    op->optstring); 
+			weprintf("unknown option value: %s\n", op->optstring); 
 		    break;
 		}
 	    }
@@ -838,10 +822,10 @@ int nest;
 		    draw(xmax,ymax);
 		jump();
 		    /* and two diagonal lines from corner to corner */
-		    draw(max,ymax);
+		    draw(xmax,ymax);
 		    draw(xmin,ymin);
 		jump();
-		    draw(min,ymax);
+		    draw(xmin,ymax);
 		    draw(xmax,ymin);
 	    }
 
@@ -850,8 +834,7 @@ int nest;
 
 	    break;
 	default:
-	    fprintf(stderr, 
-		"unknown record type: %d in db_render\n", p->type);
+	    eprintf("unknown record type: %d in db_render\n", p->type);
 	    exit(1);
 	    break;
 	}
@@ -935,8 +918,7 @@ DB_DEFLIST *def;
 		/* fprintf(stderr,"in do_line: named primitive ignored: %s\n",
 		op->optstring); */
 	    } else {
-		fprintf(stderr,"in do_line: bad option: %s\n", op->optstring);
-		exit(1);
+		eprintf("in do_line: bad option: %s\n", op->optstring);
 	    }
 	    break;
 	}
@@ -1175,8 +1157,7 @@ DB_DEFLIST *def;
 	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
 		xp->r11 *= -1.0;
 	    } else {
-		fprintf(stderr,"unknown mirror option %s\n",
-		    op->optstring); 
+		weprintf("unknown mirror option %s\n", op->optstring); 
 	    }
 	    break;
 	case 'z':
@@ -1323,8 +1304,7 @@ DB_DEFLIST *def;
 	    } else if (strncasecmp(op->optstring+1,"MY",2) == 0) {
 		xp->r11 *= -1.0;
 	    } else {
-		fprintf(stderr,"unknown mirror option %s\n",
-		    op->optstring); 
+		weprintf("unknown mirror option %s\n", op->optstring); 
 	    }
 	    break;
 	case 'z':
@@ -1471,7 +1451,7 @@ NUM x,y;	/* location in real coordinate space */
     ymin = min(yy,ymin);
 }
 
-void jump() 
+void jump(void) 
 {
     if (X) {
 	nseg=0;  		/* for X */

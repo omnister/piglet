@@ -10,9 +10,44 @@
 #include <sys/types.h>
 #include <sys/unistd.h>
 
+#include <readline/readline.h>
+#include <readline/history.h>     
+
 #include "db.h"
 #include "xwin.h"
+#include "eprintf.h"
 
+/* globals for interacting with db.c */
+DB_TAB *currep = NULL;		/* keep track of current rep */
+DB_TAB *newrep = NULL;		/* scratch pointer for new rep */
+OPTS   *opts;
+XFORM  transform;
+XFORM  *xp = &transform;
+/* When non-zero, this global means the user is done using this program. */
+int done;
+
+char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.1 2003/01/12 19:05:18 walker Exp $"; 
+
+unsigned int width, height;	/* window pixel size */
+unsigned int dpy_width, dpy_height;	/* disply pixel size */
+
+double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
+double vp_ymin=-1000.0;
+double vp_xmax=1000.0;
+double vp_ymax=1000.0;	
+double scale = 1.0;		/* xform factors from real->viewport */
+double xoffset = 0.0;
+double yoffset = 0.0;
+
+int grid_xd = 50;	/* grid delta */
+int grid_yd = 50;
+int grid_xs = 5;	/* how often to display grid ticks */
+int grid_ys = 5;
+int grid_xo = 0; 	/* starting offset */
+int grid_yo = 0;
+
+int modified=0;
+int need_redraw=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -56,15 +91,12 @@ extern char *xmalloc();
 void V_to_R();
 void R_to_V(); 
 void snapxy();
+void snapxy_major();
 
-/* When non-zero, this global means the user is done using this program. */
-int done;
 
 Display *dpy; int scr;
 
 extern int errno;
-
-char progname[] = "pigtest";
 
 #define BUF_SIZE 128
 
@@ -76,39 +108,26 @@ GC gcx;
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 #define MAX_LINETYPE 5
 
-/* globals for interacting with db.c */
-/* DB_TAB *currep = NULL;		/* keep track of current rep */
-/* DB_TAB *newrep = NULL;		/* scratch pointer for new rep */
-OPTS   *opts;
-XFORM  transform;
-XFORM  *xp = &transform;
+int draw_box();
+Function * xwin_rubber_callback = NULL;
 
-unsigned int width, height;	/* window pixel size */
+void xwin_set_rubber_callback(func) 
+Function * func;
+{
+    xwin_rubber_callback = func;
+}
 
-double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
-double vp_ymin=-1000.0;
-double vp_xmax=1000.0;
-double vp_ymax=1000.0;	
-double scale = 1.0;		/* xform factors from real->viewport */
-double xoffset = 0.0;
-double yoffset = 0.0;
-
-int grid_xd = 5;	/* grid delta */
-int grid_yd = 5;
-int grid_xs = 1;	/* how often to display grid ticks */
-int grid_ys = 1;
-int grid_xo = 0; 	/* starting offset */
-int grid_yo = 0;
-
-int need_redraw = 0;
-char *procXevent();
+void xwin_clear_rubber_callback() 
+{
+    xwin_rubber_callback = (Function *) NULL;
+}
 
 int initX()
 {
     double x,y;
     double xu,yu;
     unsigned int border_width = 4;
-    unsigned int dpy_width, dpy_height;
+    extern unsigned int dpy_width, dpy_height;
     unsigned int icon_width, icon_height;
     char *window_name = "HOE: Hierarchical Object Editor";
     char *icon_name = "rigel";
@@ -132,23 +151,19 @@ int initX()
     char *s;
 
     if (!(size_hints = XAllocSizeHints())) {
-        fprintf(stderr, "%s: failure allocating SizeHints memory\n", progname);
-        exit (0);
+	eprintf("failure allocating SizeHints memory");
     }
     if (!(wm_hints = XAllocWMHints())) {
-        fprintf(stderr, "%s: failure allocating WMHints memory\n", progname);
+	eprintf("failure allocating WMHints memory");
         exit (0);
     }
     if (!(class_hints = XAllocClassHint())) {
-        fprintf(stderr, "%s: failure allocating ClassHint memory\n", progname);
-        exit (0);
+        eprintf("failure allocating ClassHint memory");
     }
 
     /* Connect to X server */
     if ( (dpy=XOpenDisplay(dpy_name)) == NULL ) {
-        (void) fprintf( stderr, "%s: cannot connect to X server %s\n",
-            progname, XDisplayName(dpy_name));
-        exit(-1);
+        eprintf("cannot connect to X server %s",XDisplayName(dpy_name) );
     }
 
     /* Get screen size from display structure macro */
@@ -159,7 +174,8 @@ int initX()
     /* eventually we want to set x,y from command line or
        resource database */
 
-    x=y=0;
+    /* suggest that window be placed in upper left corner */
+    x=y=2*border_width;
 
     /* Size window */
     width = dpy_width/2, height = dpy_height/2;
@@ -171,11 +187,8 @@ int initX()
 
     /* Get available icon sizes from window manager */
 
-    if (XGetIconSizes(dpy, RootWindow(dpy, scr),
-            &size_list, &icount) == 0)
-        fprintf(stderr, 
-            "%s: Window manager didn't set icon sizes - using default.\n", 
-            progname);
+    if (XGetIconSizes(dpy, RootWindow(dpy, scr), &size_list, &icount) == 0)
+        weprintf("Window manager didn't set icon sizes - using default.");
     else {
         /* should eventually create a pixmap here */
         ;
@@ -190,15 +203,11 @@ int initX()
     size_hints->min_height = 200;
 
     if (XStringListToTextProperty(&window_name, 1, &windowName) == 0) {
-        fprintf(stderr, "%s: structure allocation for windowName failed.\n",
-            progname);
-        exit(-1);
+        eprintf("structure allocation for windowName failed.");
     }
 
     if (XStringListToTextProperty(&icon_name, 1, &iconName) == 0) {
-        fprintf(stderr, "%s: structure allocation for iconName failed.\n",
-            progname);
-        exit(-1);
+        eprintf("structure allocation for iconName failed.");
     }
     
     wm_hints->initial_state = NormalState;
@@ -207,8 +216,8 @@ int initX()
 
     wm_hints->flags = StateHint | IconPixmapHint | InputHint;
 
-    class_hints->res_name = progname;
-    class_hints->res_class = "hoe";
+    class_hints->res_name = estrdup(progname());
+    class_hints->res_class = class_hints->res_name;
 
     XSetWMProperties(dpy, win, &windowName, &iconName,
         (char **) NULL, (int) NULL, size_hints, wm_hints, class_hints);
@@ -241,33 +250,36 @@ int initX()
     attr.backing_store = Always;
     XChangeWindowAttributes(dpy,win,CWBackingStore,&attr);   
 
-
     /* initialize various things, should be put into init() function */
 
     xwin_grid("");
-    xwin_window(-1000.0,-1000.0, 1000.0, 1000.0);
+    xwin_window(4, -1000.0,-1000.0, 1000.0, 1000.0);
     sprintf(buf,"");
+
+    /* xwin_set_rubber_callback(draw_box); */
 
     return(0);
 }
 
-char *procXevent() {
+int procXevent(fp)
+FILE *fp;
+{
 
     static int xold, yold, xstart, ystart;
     static int button_down=0;
     XEvent xe;
-    int i = 0;
+    static int i = 0;
 
-    char buf[BUF_SIZE];
-    char *s = NULL;
-    char *t = NULL;
+    static char buf[BUF_SIZE];
+    static char *s = NULL;
+    static char *t = NULL;
     static double x,y;
     static double xu,yu;
     extern double vp_xmax, vp_xmin, vp_ymax, vp_ymin;
 
-    int charcount;
-    char keybuf[10];
-    int keybufsize=10;
+    static int charcount;
+    static char keybuf[10];
+    static int keybufsize=10;
     KeySym keysym;
     XComposeStatus compose;
 
@@ -291,20 +303,31 @@ char *procXevent() {
 	if (need_redraw) {
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
-	    draw_grid(win, gcx, grid_xo, grid_yo,
-		grid_xd, grid_yd, grid_xs, grid_ys);
 	    if (currep != NULL ) {
 		/* render the current rep */
 		db_render(currep,xp,0);
 	    }
+	    draw_grid(win, gcx, grid_xo, grid_yo,
+		grid_xd, grid_yd, grid_xs, grid_ys);
 	}
+
+	/* some event resulted in text in buffer 's' */
+	/* so feed it back to readline routine */
+
+	if (s != NULL) {
+	    if (*s!='\0') {
+		return((int) *(s++));
+	    } else {
+		s = NULL;
+	    }
+	}
+
 	tset = rset;
 	nf = select(nfds, &tset, (fd_set *) 0, (fd_set *) 0, timer);
 	if (nf < 0) {
 	    if (errno == EINTR)
 		continue;
-	    fprintf(stderr, "pig: select failed. errno:%d\n", errno);
-	    exit(1);
+	    eprintf("select failed. errno:%d", errno);
 	}
 	nf > 0 && XFlush(dpy);
 	if (FD_ISSET(cn, &tset)) { 		/* pending X Event */
@@ -314,8 +337,10 @@ char *procXevent() {
 		    debug("got Motion",dbug);
 		    if(button_down) {
 
-			/* ERASE: this should be a rubber-band callback */
-			draw_box(win, gcx, xstart, ystart, (int)x,(int)y);
+			if (xwin_rubber_callback != NULL) {
+			    (*(xwin_rubber_callback)) (win,
+				gcx,xstart, ystart, (int)x,(int)y);
+			}
 
 			x = (double) xe.xmotion.x;
 			y = (double) xe.xmotion.y;
@@ -325,11 +350,12 @@ char *procXevent() {
 			    (int) xu,(int) yu, (int) x, (int) y,
 			    (int) x- (int) xu, (int) y - (int)yu);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-
 			R_to_V(&x,&y);
 
-			/* REDRAW: this should be a rubber-band callback */
-			draw_box(win, gcx, xstart, ystart, (int) x, (int) y);
+			if (xwin_rubber_callback != NULL) {
+			    (*(xwin_rubber_callback)) (win,
+				gcx,xstart, ystart, (int)x,(int)y);
+			}
 
 		    } else {		/* must be button up */
 			xu = (double) xe.xmotion.x;
@@ -344,23 +370,23 @@ char *procXevent() {
 		    break;
 		case Expose:
 		    debug("got Expose",dbug);
-		    xwin_grid("");
 
-		    xwin_window(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    xwin_window(4, vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    xwin_grid("");
 
 		    if (xe.xexpose.count != 0)
 			break;
 		    if (xe.xexpose.window == win) {
-		        draw_box(win, gcx, xstart, ystart, (int) x,(int) y);
 			draw_grid(win, gcx, grid_xo, grid_yo,
 			    grid_xd, grid_yd, grid_xs, grid_ys);
 		    } 
 		    break;
+
 		case ConfigureNotify:
 		    debug("got Configure Notify",dbug);
 		    width = xe.xconfigure.width;
 		    height = xe.xconfigure.height;
-		    xwin_window(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    xwin_window(4, vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 		    break;
 		case ButtonRelease:
 		    button_down=0;
@@ -372,53 +398,64 @@ char *procXevent() {
 		    debug("got ButtonRelease",dbug);
 		    break;
 		case ButtonPress:
-		    button_down=1;
-		    x = (double) xe.xmotion.x;
-		    y = (double) xe.xmotion.y;
-			/* printf("got mouse %g, %g\n",x,y); */
-		    V_to_R(&x,&y);
-			/* printf("converted to real: %g, %g\n",x,y); */
-		    snapxy(&x,&y);
-			/* printf("(%g, %g) ",x,y); */
+		    switch (xe.xbutton.button) {
+			case 1:	/* left button */
+			    button_down=1;
+			    x = (double) xe.xmotion.x;
+			    y = (double) xe.xmotion.y;
+				/* printf("got mouse %g, %g\n",x,y); */
+			    V_to_R(&x,&y);
+				/* printf("real coords: %g, %g\n",x,y); */
+			    snapxy(&x,&y);
+				/* printf("(%g, %g) ",x,y); */
 
-		    /* format for returning mouse loc as a string */
-		    sprintf(buf,"\n %d,%d \n", (int) x, (int) y);
-		    s = buf;
+			    /* format for returning mouse loc as a string */
+			    sprintf(buf," %d,%d ", (int) x, (int) y);
+			    s = buf;
 
-		    fflush(stdout);
-		    R_to_V(&x,&y);
-			/* printf("back to display: %g, %g\n",x,y); */
-		    xstart = (int) x;
-		    ystart = (int) y;
-			/* printf("and to ints: %d, %d\n",xstart,ystart); */
-		    debug("got ButtonPress",dbug);
+			    R_to_V(&x,&y);
+				/* printf("back to display: %g, %g\n",x,y); */
+			    xstart = (int) x;
+			    ystart = (int) y;
+				/* printf("ints: %d, %d\n",xstart,ystart); */
+			    debug("got ButtonPress",dbug);
+			    break;
+			case 2:	/* middle button */
+			    break;
+			case 3: /* right button */
+			    /* format for returning mouse loc as a string */
+			    sprintf(buf," ;\n");
+			    s = buf;
+			    break;
+			default:
+			    eprintf("unexpected button event: %d",
+				xe.xbutton.button);
+			    break;
+		    }
 		    break;
 		case KeyPress:
 		    debug("got KeyPress",dbug);
 	            charcount = XLookupString((XKeyEvent * ) &xe, keybuf, 
 		                    keybufsize, &keysym, &compose);
 
-		    /*  
-		     *	rl_pending_input= (char) (XKeysymToString(keysym))[0];
-		     *	rl_callback_read_char();
-		     */
-
+		    if (charcount >= 1) {
+			s = keybuf;
+		    }
+		    
+		    break;
+		case MapNotify:
+		case UnmapNotify:
+		case ReparentNotify:
 		    break;
 		default:
-		    fprintf(stderr,"got unexpected default event: %s\n",
+		    eprintf("got unexpected default event: %s",
 			event_names[xe.type]);
 		    break;
 		}
-		if (s != NULL) {
-		    t = s;
-		    s = NULL;
-		    return(t);
-		}
+
 	    }
 	} else if (FD_ISSET(in, &tset)) { 		/* pending stdin */
-	    return(fgets(buf,BUF_SIZE,stdin));
-	    /* do_callback_read_char(); */
-	    ;
+	    return(getc(stdin));
 	}
     }
 }
@@ -466,8 +503,7 @@ XFontStruct **font_info;
 
     /* Load font and get font information structure */
     if ((*font_info = XLoadQueryFont(dpy, fontname)) == NULL) {
-        fprintf(stderr, "%s: can't open %s font.\n", progname, fontname);
-        exit(-1);
+        eprintf("can't open %s font.", fontname);
     }
 }
 
@@ -569,8 +605,7 @@ int line;
        case 4:
        case 5:     line_style = LineOnOffDash; break;
        default:
-	   fprintf(stderr,"%s: line type %d out of range.\n", line);
-	   exit(1);
+	   eprintf("line type %d out of range.", line);
     }        
     
     switch (line) {
@@ -597,16 +632,21 @@ int dx,dy;		/* grid delta */
 int sx,sy;		/* grid skip number */
 {
     extern unsigned int width, height;
+    double delta;
     double x,y, xd,yd;
+    int i,j;
 
     double xstart, ystart, xend, yend;
+
+    XSetFillStyle(dpy, gc, FillSolid);
 
     xstart=(double) 0;
     ystart=(double) height;
 	/* printf("starting with %g %g\n", xstart, ystart); */
     V_to_R(&xstart, &ystart);
 	/* printf("V_to_R %g %g\n", xstart, ystart); */
-    snapxy(&xstart,&ystart);
+
+    snapxy_major(&xstart,&ystart);
 	/* printf("snap %g %g\n", xstart, ystart); */
 
     xend=(double) width;
@@ -614,7 +654,7 @@ int sx,sy;		/* grid skip number */
 	/* printf("starting with %g %g\n", xend, yend); */
     V_to_R(&xend, &yend);
 	/* printf("V_to_R %g %g\n", xend, yend); */
-    snapxy(&xend,&yend);
+    snapxy_major(&xend,&yend);
 	/* printf("snap %g %g\n", xend, yend); */
 
     if ( sx == 0 || sy == 0) {
@@ -622,41 +662,79 @@ int sx,sy;		/* grid skip number */
 	return(1);
     }
 
-    if ( ((xend-xstart)/(double)(dx*sx) >= (double) width/4) ||
-         ((yend-ystart)/(double)(dy*sy) >= (double) height/4) ) {
-	printf("grid suppressed, too many points\n");
-	return(1);
-    };
 
     if (dx > 0 && dy >0 && sx > 0 && sy > 0) {
-	for (x=xstart; x<=xend; x+=(double) dx*sx) {
-	    for (y=ystart; y<=yend; y+=(double) dy*sy) {
-		/* xorig, yorig, taken care of by snapxy above */
-		xd=x;
-		yd=y;
-		R_to_V(&xd,&yd);
-		XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+
+	/* require at least 5 pixels between grid ticks */
+
+	if ( ((xend-xstart)/(double)(dx) >= (double) width/5) ||
+	     ((yend-ystart)/(double)(dy) >= (double) height/5) ) {
+
+	    /* suppress grid */
+	    printf("grid suppressed, too many points\n");
+
+	} else { 
+
+	    /* draw grid */
+
+	    /* subtract dx*sx, dy*sy from starting coords to make sure */
+	    /* that we draw grid all the way to left margin even after */
+	    /* calling snap_major above */
+
+	    for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
+		for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
+		    for (i=0; i<sx; i++) {
+			for (j=0; j<sy; j++) {
+			    if (i==0 || j==0) {
+				xd=x + (double) i*dx;
+				yd=y + (double) j*dy;
+				R_to_V(&xd,&yd);
+				XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+			    }
+			}
+		    }
+		}
 	    }
+
+	    /* this is the old style grid - no fine ticks */
+
+	    /*
+	     *	for (x=xstart; x<=xend; x+=(double) dx*sx) {
+	     *	   for (y=ystart; y<=yend; y+=(double) dy*sy) {
+	     *		xd=x;
+	     *		yd=y;
+	     *		R_to_V(&xd,&yd);
+	     *		XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+	     *	    }
+	     *	}
+	     */
 	}
-	/* now draw crosshair same size as grid ticks */
 
-	/* conveniently reusing these variables */
-	x=(double)0; y=(double)-dy*sy; R_to_V(&x,&y);
-	xd=(double)0; yd=(double)dy*sy; R_to_V(&xd,&yd);
-	XDrawLine(dpy, win, gc, (int)x, (int)y, (int)xd, (int)yd);
+	/* now draw crosshair at 1/50 of largest display dimension */
 
-	x=(double)-dx*sx; y=(double)0; R_to_V(&x,&y);
-	xd=(double)dx*sx; yd=(double)0; R_to_V(&xd,&yd);
-	XDrawLine(dpy, win, gc, (int)x, (int)y, (int)xd, (int)yd);
+	if (width > height) {
+	    delta = (double) dpy_width/100;
+	} else {
+	    delta = (double) dpy_height/100;
+	}
+
+	/* conveniently reusing these variable names */
+	x=(double)0; y=0; R_to_V(&x,&y);
+
+	XDrawLine(dpy, win, gc, 
+	    (int)x, (int)(y-delta), (int)x, (int)(y+delta));
+	XDrawLine(dpy, win, gc, 
+	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y));
 
 	XFlush(dpy);
+
     } else {
 	printf("grid arguments out of range\n");
     }
     return(0);
 }
 
-void snapxy(x,y)	/* snap to grid */
+void snapxy(x,y)	/* snap to grid tick */
 double *x, *y;
 {
     extern int grid_xo, grid_xd;
@@ -672,12 +750,33 @@ double *x, *y;
 	grid_yd*(-(int) (0.5-(((*y)-grid_yo)/grid_yd)))+grid_yo);
 }
 
+void snapxy_major(x,y)	/* snap to grid ticks multiplied by ds,dy */
+double *x, *y;
+{
+    extern int grid_xo, grid_xd, grid_xs;
+    extern int grid_yo, grid_yd, grid_ys;
+
+    int xd, yd;
+
+    xd = grid_xd*grid_xs;
+    yd = grid_yd*grid_ys;
+
+    /* adapted from Graphic Gems, v1 p630 (round to nearest int fxn) */
+
+    *x = (double) ((*x)>0 ? 
+	xd*( (int) ((((*x)-grid_xo)/xd)+0.5))+grid_xo :
+	xd*(-(int) (0.5-(((*x)-grid_xo)/xd)))+grid_xo);
+    *y = (double) ((*y)>0 ? 
+	yd*( (int) ((((*y)-grid_yo)/yd)+0.5))+grid_yo : 
+	yd*(-(int) (0.5-(((*y)-grid_yo)/yd)))+grid_yo);
+}
+
 debug(s,dbug)
 char *s;
 int dbug;
 {
     if (dbug) {
-	fprintf(stderr,"%s\n");
+	weprintf("%s", s);
     }
 }
 
@@ -698,7 +797,7 @@ char *arg;
 
     int nargs;
 
-    printf("    xwin_grid %s\n", arg);
+    /* printf("    xwin_grid %s\n", arg); */
 
     nargs = sscanf(arg, "%d %d %d %d %d %d",
 	&grid_xd, &grid_yd,
@@ -716,17 +815,22 @@ char *arg;
 	 grid_yo = 0; 
     } else if (nargs == 6) {
 	;
+    } else if (nargs == 0) {
+	;
+    } else if (nargs == -1) {
+	;
     } else {
-	printf("xwin_grid: bad number of arguments\n");
+	printf("xwin_grid: bad number of arguments %d\n", nargs);
 	return(1);
     }
 
-
+    /* 
     printf("grid set to xydelta=%d,%d xyskip=%d,%d xyoffset=%d,%d\n",
 	grid_xd, grid_yd,
 	grid_xs, grid_ys,
 	grid_xo, grid_yo
     );
+    */
 
     need_redraw++;
     return (0);
@@ -740,7 +844,8 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
     xy1,xy2 zooms in on selected region
 */
 
-xwin_window(x1,y1,x2,y2) /* change the current window parameters */
+xwin_window(n, x1,y1,x2,y2) /* change the current window parameters */
+int n;
 double x1,y1,x2,y2;
 {
     extern XFORM *xp;
@@ -749,20 +854,22 @@ double x1,y1,x2,y2;
     double dratio,wratio;
     double tmp;
 
-    printf("xwin_window called with %f %f %f %f\n",x1,y1,x2,y2);
+    if (n==4) {
+	/* printf("xwin_window called with %f %f %f %f\n",x1,y1,x2,y2); */
 
-    if (x2 < x1) {		/* canonicalize the selection rectangle */
-	tmp = x2; x2 = x1; x1 = tmp;
-    }
-    if (y2 < y1) {
-	tmp = y2; y2 = y1; y1 = tmp;
-    }
+	if (x2 < x1) {		/* canonicalize the selection rectangle */
+	    tmp = x2; x2 = x1; x1 = tmp;
+	}
+	if (y2 < y1) {
+	    tmp = y2; y2 = y1; y1 = tmp;
+	}
 
-    printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2);
-    vp_xmin=x1;
-    vp_xmax=x2;
-    vp_ymin=y1;
-    vp_ymax=y2;
+	/* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
+	vp_xmin=x1;
+	vp_xmax=x2;
+	vp_ymin=y1;
+	vp_ymax=y2;
+    }
 
     dratio = (double) height/ (double)width;
     wratio = (vp_ymax-vp_ymin)/(vp_xmax-vp_xmin);
@@ -878,8 +985,7 @@ init_colors()
     while (!XMatchVisualInfo(dpy, scr, default_depth,
 	/* visual class */ i--, &visual_info)) 
 	;
-    printf("s: found a %s class visual at default depth.\n",
-	progname, visual_class[++i]);
+    weprintf("found a %s class visual at default depth.", visual_class[++i]);
 
     if ( i < StaticColor ) {	/* Color visual classes are 2 to 5 */
 	/* No color visual available at default depth;
@@ -905,25 +1011,21 @@ init_colors()
      * code will work (or fail in a controlled way) */
 
      for (i=0; i < MAX_COLORS; i++) {
-	printf("allocating %s\n", name[i]);
+	/* printf("allocating %s\n", name[i]); */
 	if (!XParseColor(dpy, default_cmap, name[i], &exact_def)) {
-	    fprintf(stderr, "%s: color name %s not in database",
-		progname, name[i]);
-	    exit(0);
+	    eprintf("color name %s not in database", name[i]);
 	}
-	printf("The RGB values from the database are %d, %d, %d\n",
-	    exact_def.red, exact_def.green, exact_def.blue);
+	/* printf("The RGB values from the database are %d, %d, %d\n",
+	    exact_def.red, exact_def.green, exact_def.blue); */
 	if (!XAllocColor(dpy, default_cmap, &exact_def)) {
-	    fprintf(stderr, "%s: can't allocate color:\n", progname);
-	    fprintf(stderr, "all colorcells allocated and\n");
-	    fprintf(stderr, "no matching cells found.\n");
+	    eprintf("no matching colors cells can be allocated");
 	    exit(0);
 	}
-	printf("The RGB values actually allocated are %d, %d, %d\n",
-	    exact_def.red, exact_def.green, exact_def.blue);
+	/* printf("The RGB values actually allocated are %d, %d, %d\n",
+	    exact_def.red, exact_def.green, exact_def.blue); */
 	colors[i] = exact_def.pixel;
 	ncolors++;
     }
-    printf("%s: allocated %d read-only color cells\n", progname, ncolors);
+    /* printf("%s: allocated %d read-only color cells\n", progname, ncolors); */
     return(1);
 }
