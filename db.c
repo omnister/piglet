@@ -464,7 +464,8 @@ NUM x,y;
 char *emalloc(n)    /* check return from malloc */
 unsigned n;
 {
-    char *p, *malloc();
+    char *p; 
+    void *malloc();
 
     p = malloc(n);
     if (p == 0)
@@ -568,9 +569,11 @@ DB_TAB *cell;
 XFORM *xf; 	/* coordinate transform matrix */
 {
     DB_DEFLIST *p;
+    OPTS *op;
     XFORM *xp, *xa;
-    p=cell->dbhead;
+    double optval;
 
+    printf("nogrid\n");
     printf("isotropic\n");
     printf("back\n");
 
@@ -609,8 +612,31 @@ XFORM *xf; 	/* coordinate transform matrix */
 	    xp->r12 = 0.0;
 	    xp->r21 = 0.0;
 	    xp->r22 = 1.0;
-	    xp->dx  = p->u.i->x;
-	    xp->dy  = p->u.i->y;
+	    xp->dx  = 0.0;
+	    xp->dy  = 0.0;
+
+    	    for (op=p->u.i->opts; op!=(OPTS *)0; op=op->next) {
+		switch (op->optstring[1]) {
+		case 'R':
+		    sscanf(op->optstring+2, "%lf", &optval);
+		    /* fprintf(stderr,"got rotation %g\n", optval); */
+		    rotate(xp, optval);
+		    break;
+		case 'X':
+		    sscanf(op->optstring+2, "%lf", &optval);
+		    /* fprintf(stderr,"got scale %g\n", optval); */
+		    scale(xp, optval);
+		    break;
+		case 'M':
+		    xp->r11 *= -1.0;
+		    break;
+		default:
+		    break;
+		}
+	    }
+
+	    xp->dx += p->u.i->x;
+	    xp->dy += p->u.i->y;
 
 	    xa = compose(xf,xp);
 
@@ -620,7 +646,8 @@ XFORM *xf; 	/* coordinate transform matrix */
 
 	    break;
 	default:
-	    fprintf(stderr, "unknown record type in db_def_print\n");
+	    fprintf(stderr, 
+		"unknown record type: %d in db_render\n", p->type);
 	    exit(1);
 	    break;
 	}
@@ -859,21 +886,8 @@ XFORM *xf;
 {
 
     NUM xx, yy;
-    if (xf->r11 == 1.0 && 
-        xf->r12 == 0.0 && 
-	xf->r21 == 0.0 &&  
-	xf->r22 == 1.0) 
-    {
-/*	printf("using simple xform\n");
-	printmat(xf); */
-	xx += xf->dx;
-	yy += xf->dy;
-    } else {
-/*	printf("using complex xform\n");
-	printmat(xf); */
-	xx = x*xf->r11 + y*xf->r21 + xf->dx;
-	yy = x*xf->r12 + y*xf->r22 + xf->dy;
-    }
+    xx = x*xf->r11 + y*xf->r21 + xf->dx;
+    yy = x*xf->r12 + y*xf->r22 + xf->dy;
     printf("%4.6f %4.6f\n",xx,yy);
 }
 

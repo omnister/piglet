@@ -60,10 +60,11 @@ archive		:	files_command command_list
 	    xp->r22 = 1.0;
 	    xp->dx  = 0.0;
 	    xp->dy  = 0.0;
-				/* db_render(currep,xp); */
 
 				/* when done, print all definitions */
-				db_print();
+				    /* db_print(); */
+				/* or render the last rep */
+				    db_render(currep,xp); 
 			    }
 		;
 
