@@ -40,14 +40,16 @@ int add_inst(LEXER *lp, char *inst_name)
     if (debug) printf("calling db_lookup with %s\n", inst_name);
     if ((ed_rep = db_lookup(inst_name)) == NULL) {
 
-	ed_rep = db_install(inst_name);  /* create blank stub */
 
 	/* now check if on disk */
 	snprintf(buf, MAXFILENAME, "./cells/%s.d", inst_name);
 	if((fp = fopen(buf, "r")) == 0) {
-	    printf("adding a null instance: %s\n", inst_name);
+	    printf("can't add a null instance: %s\n", inst_name);
+	    token_flush_EOL(lp);
+	    done++;
 	    /* cannot find copy on disk */
 	} else {
+	    ed_rep = db_install(inst_name);  /* create blank stub */
 	    /* read it in */
 	    printf("reading %s from disk\n", buf);
 	    my_lp = token_stream_open(fp, buf);

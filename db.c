@@ -11,6 +11,8 @@
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
 
+#define BB 2		/* draw bounding box and don't do xform */
+
 /* master symbol table pointers */
 static DB_TAB *HEAD = 0;
 static DB_TAB *TAIL = 0;
@@ -27,6 +29,7 @@ int bounds_valid=1;
 double max(), min();
 int drawon=1;		  /* 0 = dont draw, 1 = draw */
 int nestlevel=9;
+int boundslevel=0;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 
 /* routines for expanding db entries into vectors */
@@ -233,11 +236,9 @@ char *s;
 	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
 	    break;
 	}
-
     }
     
     free(sp);
-
 }
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
@@ -958,9 +959,6 @@ NUM *yymax;
     *yymin = ymin;
     *xxmax = xmax;
     *yymax = ymax;
-    /* snapxy(xxmin, yymin); */
-    /* snapxy(xxmax, yymax); */
-
 }
 
 void db_set_nest(nest) 
@@ -968,6 +966,14 @@ int nest;
 {
     extern int nestlevel;
     nestlevel = nest;
+}
+
+/* a debugging stub to turn pick-bounds display on/off */
+void db_set_bounds(bounds) 
+int bounds;
+{
+    extern int boundslevel;
+    boundslevel = bounds;
 }
 
 
@@ -984,7 +990,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     XFORM *save_transform;
     extern int nestlevel;
     double optval;
-    int debug=1;
+    int debug=0;
     double xminsave;
     double xmaxsave;
     double yminsave;
@@ -1062,7 +1068,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 
 	    /* NOTE: To work properly, these transformations have to */
 	    /* occur in the proper order, for example, rotation must come */
-	    /* after slant transformation or else it wont work properly */
+	    /* after slant transformation */
 
 	    switch (p->u.i->opts->mirror) {
 	    	case MIRROR_OFF:
@@ -1100,6 +1106,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* find bounding box on screen for instance */
 	    /* setting bounds_valid=0 forces first call to */
 	    /* draw(x,y) to set xmin/max = x, ymin/max = y */
+
 	    bounds_valid=0;
 
 	    if (nest >= nestlevel) { 
@@ -1127,27 +1134,26 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		drawon = 1;
 	    }
 
-	    /* if at nestlevel, draw bounding box */
-	    /* running through same transformations */
-	    /* as original draw */
 
 	    if (debug) printf("back from draw bound = %g %g %g %g\n",
 	        xmin, ymin, xmax, ymax);
+
+	    /* if at nestlevel, draw bounding box */
 
 	    if (nest == nestlevel) { 
 		set_pen(0);
 		jump();
 		    /* a square bounding box outline in white */
-		    draw(xmax,ymax,2); draw(xmax,ymin,2);
-		    draw(xmin,ymin,2); draw(xmin,ymax,2);
-		    draw(xmax,ymax,2);
+		    draw(xmax,ymax,BB); draw(xmax,ymin,BB);
+		    draw(xmin,ymin,BB); draw(xmin,ymax,BB);
+		    draw(xmax,ymax,BB);
 		jump();
 		    /* and diagonal lines from corner to corner */
-		    draw(xmax,ymax,2);
-		    draw(xmin,ymin,2);
+		    draw(xmax,ymax,BB);
+		    draw(xmin,ymin,BB);
 		jump();
-		    draw(xmin,ymax,2);
-		    draw(xmax,ymin,2);
+		    draw(xmin,ymax,BB);
+		    draw(xmax,ymin,BB);
 	    }
 
 
@@ -1185,11 +1191,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     if (nest == 0) { 
 	jump();
 	set_pen(12);
-	draw(xmin,ymax,2);
-	draw(xmax,ymax,2);
-	draw(xmax,ymin,2);
-	draw(xmin,ymin,2);
-	draw(xmin,ymax,2);
+	draw(xmin,ymax,BB);
+	draw(xmax,ymax,BB);
+	draw(xmax,ymin,BB);
+	draw(xmin,ymin,BB);
+	draw(xmin,ymax,BB);
     }
 
     cell->minx = xmin;
@@ -1221,7 +1227,7 @@ int mode;
 }
 
 /* ADD Cmask [.cname] [@sname] [:Wwidth] [:Rres] coord coord */
-void do_circ(def,mode)
+void do_circ(def, mode)
 DB_DEFLIST *def;
 int mode;		/* drawing mode */
 {
@@ -1256,14 +1262,14 @@ int mode;		/* drawing mode */
 	theta = theta_start+((double) i)*2.0*M_PI/((double) res);
 	x = r*sin(theta);
 	y = r*cos(theta);
-	draw(x1+x, y1+y,mode);
+	draw(x1+x, y1+y, mode);
     }
 }
 
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
   
 
-void do_line(def,mode)
+void do_line(def, mode)
 DB_DEFLIST *def;
 int mode; 	/* drawing mode */
 {
@@ -1422,13 +1428,13 @@ int mode; 	/* drawing mode */
 
 	    jump();
 	
-	    draw(xa, ya,mode);
-	    draw(xb, yb,mode);
+	    draw(xa, ya, mode);
+	    draw(xb, yb, mode);
 
 	    if( width != 0) {
-		draw(xc, yc,mode);
-		draw(xd, yd,mode);
-		draw(xa, ya,mode);
+		draw(xc, yc, mode);
+		draw(xd, yd, mode);
+		draw(xa, ya, mode);
 	    }
 
 	    /* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
@@ -1444,8 +1450,8 @@ int mode; 	/* drawing mode */
 	    }
 	} else {		/* width == 0 */
 	    jump();
-	    draw(x1,y1,mode);
-	    draw(x2,y2,mode);
+	    draw(x1,y1, mode);
+	    draw(x2,y2, mode);
 	    jump();
 	}
 
@@ -1728,16 +1734,15 @@ int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
-    int debug=1;
-
-    /* now compute transformed coordinates */
-
+    int debug=0;
+    int e=5;
 
     if (mode == 2) {	/* skip transform */
 	xx = x;
 	yy = y;
         /* and don't update bounding box */
     } else {
+	/* compute transformed coordinates */
 	xx = x*global_transform->r11 + 
 	    y*global_transform->r21 + global_transform->dx;
 	yy = x*global_transform->r12 + 
@@ -1767,6 +1772,9 @@ int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
 	    } else {		/* regular drawing */
 		if (drawon) {
 		    xwin_draw_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+		    if (boundslevel) {
+			draw_pick_bound(xxold, yyold, xx, yy, boundslevel);
+		    }
  		}
 	    }
 	}
@@ -1777,6 +1785,25 @@ int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
 	if (drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
     }
 }
+
+int draw_pick_bound(NUM x1, NUM y1, NUM x2, NUM y2, int boundslevel) {
+    NUM tmp;
+    NUM e = boundslevel;	/* pixel fuzz width */
+
+    if (x2 < x1) {		/* canonicalize the extent */
+	tmp = x2; x2 = x1; x1 = tmp;
+    }
+    if (y2 < y1) {
+	tmp = y2; y2 = y1; y1 = tmp;
+    }
+
+    xwin_draw_line((int)(x1-e),(int)(y1-e),(int)(x1-e),(int)(y2+e));
+    xwin_draw_line((int)(x1-e),(int)(y2+e),(int)(x2+e),(int)(y2+e));
+    xwin_draw_line((int)(x2+e),(int)(y2+e),(int)(x2+e),(int)(y1-e));
+    xwin_draw_line((int)(x2+e),(int)(y1-e),(int)(x1-e),(int)(y1-e));
+
+}
+
 
 void jump(void) 
 {
