@@ -9,7 +9,7 @@ W		[\t ]*
 
 %{
 #include <stdio.h>
-#include "gram.h"
+#include "db.h"
 
 #ifdef DEBUG	/* debugging version - if assert ok */
 #include <assert.h>
@@ -36,7 +36,10 @@ W		[\t ]*
 
 [ \t\n]+		;
 
-\"[^"]*\"		return token(QUOTED);
+\"[^"]*\"		{
+			    yylval.name = strsave(yytext); 
+			    return token(QUOTED);
+			}    
 
 ^$FILES			return token(FILES);
 ^EDI[T]			return token(EDIT);
@@ -49,29 +52,37 @@ W		[\t ]*
 ^WIN			return token(WINDOW);
 ^ADD			return token(ADD);
 
-N{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(NOTE);
-			}	
-T{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(TEXT);
-			}
-R{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(RECTANGLE);
-			}
-P{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(POLYGON);
-			}
-L{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(LINE);
+A{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(ARC);
 			}
 C{D}+			{
-			    sscanf(yytext+1, "%d", &yylval.num);
-			    return token(CIRCLE);
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(CIRC);
+			}
+L{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(LINE);
+			}
+N{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(NOTE);
+			}	
+O{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(OVAL);
+			}
+P{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(POLY);
+			}
+R{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(RECT);
+			}
+T{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
+			    return token(TEXT);
 			}
 
 ^SAV[E]			return token(SAVE);
@@ -79,13 +90,13 @@ C{D}+			{
 ^EXI[T]			return token(EXIT);
 
 [.:@]{L}[^ \t\n]+	{
-			    return token(OPTION);
 			    yylval.name = strsave(yytext); 
+			    return token(OPTION);
 			}
 
 {U}			|
 {Z}			{
-			    sscanf(yytext, "%d", &yylval.num); 
+			    sscanf(yytext, "%lf", &yylval.num); 
 			    return token(NUMBER);
 			}
 

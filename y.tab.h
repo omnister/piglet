@@ -10,20 +10,24 @@
 #define SAVE 266
 #define QUOTED 267
 #define ALL 268
-#define LINE 269
-#define RECTANGLE 270
-#define POLYGON 271
-#define CIRCLE 272
-#define NUMBER 273
-#define EXIT 274
-#define OPTION 275
-#define UNKNOWN 276
-#define TEXT 277
-#define NOTE 278
+#define NUMBER 269
+#define EXIT 270
+#define OPTION 271
+#define UNKNOWN 272
+#define ARC 273
+#define CIRC 274
+#define INST 275
+#define LINE 276
+#define NOTE 277
+#define OVAL 278
+#define POLY 279
+#define RECT 280
+#define TEXT 281
 typedef union {
-	int num;
+	double num;
 	PAIR pair;
-	COORD_LIST pairs;
+	COORDS *pairs;
+	OPTS *opts;
 	char *name;
 	} YYSTYPE;
 extern YYSTYPE yylval;
