@@ -13,7 +13,9 @@ OPTS opts;
 
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
-int add_note(int *layer)
+int add_note(lp, layer)
+LEXER *lp;
+int *layer;
 {
     enum {START,NUM1,COM1,NUM2,END} state = START;
 
@@ -33,7 +35,7 @@ int add_note(int *layer)
     str[0] = 0;
 
     while (!done) {
-	token = token_look(word);
+	token = token_look(lp, word);
 
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 
@@ -43,7 +45,7 @@ int add_note(int *layer)
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
-		    token_get(word); 
+		    token_get(lp, word); 
 		    if (opt_parse(word, "MRYZF", &opts) == -1) {
 			state = END;
 		    } else {
@@ -52,10 +54,10 @@ int add_note(int *layer)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == QUOTE) {
-		    token_get(str); 
+		    token_get(lp,str); 
 		    state = START;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just eat it up */
+		    token_get(lp, word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	/* error */
@@ -67,11 +69,11 @@ int add_note(int *layer)
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    sscanf(word, "%lf", &x1);	/* scan it in */
 		    state = COM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
@@ -83,9 +85,9 @@ int add_note(int *layer)
 		break;
 	    case COM1:		
 		if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp, word);
 		    state = NUM2;
 		} else {
 		    printf("    expected COMMA, got: %s\n",
@@ -95,7 +97,7 @@ int add_note(int *layer)
 		break;
 	    case NUM2:
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 
 		    if (strlen(str) == 0) {
@@ -108,7 +110,7 @@ int add_note(int *layer)
 			state = START;
 	            }
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
@@ -123,7 +125,7 @@ int add_note(int *layer)
 		if (token == EOC || token == CMD) {
 			;
 		} else {
-		    token_flush();
+		    token_flush_EOL(lp);
 		}
 		done++;
 		break;

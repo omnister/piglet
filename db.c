@@ -858,7 +858,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     XFORM *save_transform;
     extern int nestlevel;
     double optval;
-    int debug=0;
+    int debug=1;
     double xminsave;
     double xmaxsave;
     double yminsave;
@@ -990,6 +990,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* render instance */
 	    db_render(p->u.i->def, nest+1, mode);
 	    if (debug) printf("# in db_render at level %d\n", nest); 
+    
 
 	    /* don't draw anything below nestlevel */
 	    if (nest > nestlevel) { 
@@ -999,6 +1000,9 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
 	    /* if at nestlevel, draw bounding box */
+	    /* running through same transformations */
+	    /* as original draw */
+
 	    if (nest == nestlevel) { 
 		set_pen(0);
 		jump();
@@ -1016,42 +1020,38 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
 
-    xmin=min(xminsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
-    xmin=min(xminsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
-    xmin=min(xminsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
-    xmin=min(xminsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
+/*
+	xmin=min(xminsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
+	xmin=min(xminsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
+	xmin=min(xminsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
+	xmin=min(xminsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
 
-    xmax=max(xmaxsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
-    xmax=max(xmaxsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
-    xmax=max(xmaxsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
-    xmax=max(xmaxsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
+	xmax=max(xmaxsave,xmin*xp->r11 + ymin*xp->r21 + xp->dx);
+	xmax=max(xmaxsave,xmax*xp->r11 + ymax*xp->r21 + xp->dx);
+	xmax=max(xmaxsave,xmin*xp->r11 + ymax*xp->r21 + xp->dx);
+	xmax=max(xmaxsave,xmax*xp->r11 + ymin*xp->r21 + xp->dx);
 
+	ymin=min(yminsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
+	ymin=min(yminsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
+	ymin=min(yminsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
+	ymin=min(yminsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
 
-    ymin=min(yminsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
-    ymin=min(yminsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
-    ymin=min(yminsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
-    ymin=min(yminsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
+	ymax=max(ymaxsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
+	ymax=max(ymaxsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
+	ymax=max(ymaxsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
+	ymax=max(ymaxsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
 
-    ymax=max(ymaxsave,xmin*xp->r12 + ymin*xp->r22 + xp->dy);
-    ymax=max(ymaxsave,xmax*xp->r12 + ymax*xp->r22 + xp->dy);
-    ymax=max(ymaxsave,xmax*xp->r12 + ymin*xp->r22 + xp->dy);
-    ymax=max(ymaxsave,xmin*xp->r12 + ymax*xp->r22 + xp->dy);
-
+*/
 
 	    free(global_transform); free(xp);	
 	    global_transform = save_transform;	/* set transform back */
 
 	    /* now pass bounding box back */
 
-		/*
-
 	    xmin=min(xminsave, xmin+p->u.i->x);
 	    xmax=max(xmaxsave, xmax+p->u.i->x);
 	    ymin=min(yminsave, ymin+p->u.i->y);
 	    ymax=max(ymaxsave, ymax+p->u.i->y);
-
-		*/
-
 
 	    break;
 	default:
@@ -1077,7 +1077,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	draw(xmin,ymin,mode);
 	draw(xmin,ymax,mode);
     }
-    
+
     cell->minx = xmin;
     cell->maxx = xmax;
     cell->miny = ymin;
@@ -1678,10 +1678,10 @@ int mode;
 
     /* globals for computing bounding boxes */
     /* NOTE: This must be done prior to conversion into screen space */
-    xmax = max(xx,xmax);
-    xmin = min(xx,xmin);
-    ymax = max(yy,ymax);
-    ymin = min(yy,ymin);
+    xmax = max(x,xmax);
+    xmin = min(x,xmin);
+    ymax = max(y,ymax);
+    ymin = min(y,ymin);
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 

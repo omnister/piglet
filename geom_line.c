@@ -32,7 +32,9 @@ OPTS opts;
 
 static double x1, y1;
 
-int add_line(int *layer)
+int add_line(lp, layer)
+LEXER *lp;
+int *layer;
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
 
@@ -74,7 +76,7 @@ int add_line(int *layer)
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(word);
+	token = token_look(lp, word);
 	if (debug) {printf("got %s: %s\n", tok2str(token), word);}
 	if (token==CMD) {
 	    state=END;
@@ -84,7 +86,7 @@ int add_line(int *layer)
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(word); 
+		    token_get(lp,word); 
 		    if (opt_parse(word, "W", &opts) == -1) {
 		    	state = END;
 		    } else {
@@ -93,7 +95,7 @@ int add_line(int *layer)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just eat it up */
+		    token_get(lp,word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
@@ -107,12 +109,12 @@ int add_line(int *layer)
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp,word);
 		    xold=x1;
 		    sscanf(word, "%lf", &x1);	/* scan it in */
 		    state = COM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp,word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
@@ -124,9 +126,9 @@ int add_line(int *layer)
 	    case COM1:		
 		if (debug) printf("in com1\n");
 		if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp,word); /* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp,word);
 		    state = NUM2;
 		} else {
 		    printf("   expected COMMA, got %s\n", 
@@ -137,7 +139,7 @@ int add_line(int *layer)
 	    case NUM2:
 		if (debug) printf("in num2\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp,word);
 
 		    yold=y2;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
@@ -150,7 +152,7 @@ int add_line(int *layer)
 		    rubber_set_callback(draw_line);
 		    state = NUM3;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp,word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -162,14 +164,14 @@ int add_line(int *layer)
 	    case NUM3:		/* get pair of xy coordinates */
 		if (debug) printf("in num3\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp,word);
 		    xold=x2;
 		    sscanf(word, "%lf", &x2);	/* scan it in */
 		    state = COM2;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp,word); 	/* just ignore it */
 		} else if (token == BACK) {
-		    token_get(word); 	/* eat it */
+		    token_get(lp,word); 	/* eat it */
 		    if (debug) printf("dropping coord\n");
 		    rubber_clear_callback(); 
 		    rubber_draw(x2, y2);
@@ -188,12 +190,12 @@ int add_line(int *layer)
 	    case COM2:		
 		if (debug) printf("in com2\n");
 		if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp,word); 	/* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp,word);
 		    state = NUM4;
 		} else if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp,word); /* just ignore it */
 		} else {
 		    printf("  expected COMMA, got:%s\n", tok2str(token));
 		    state = END;	
@@ -202,7 +204,7 @@ int add_line(int *layer)
 	    case NUM4:
 		if (debug) printf("in num4\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp,word);
 		    yold=y2;
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 
@@ -236,7 +238,7 @@ int add_line(int *layer)
 		    }
 
 		} else if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp,word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -257,7 +259,7 @@ int add_line(int *layer)
 			/* should a CMD terminate a line? */
 			;
 		} else {
-		    token_flush();
+		    token_flush_EOL(lp);
 		}
 	    	rubber_clear_callback();
 		done++;

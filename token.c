@@ -2,81 +2,74 @@
 #include <string.h>             /* for strchr() */
 
 #include "token.h"
-
+#include "eprintf.h"
 #include "db.h"
 #include "xwin.h"
 
-/* need token_look() */
 
-int bufp = 0;		/* next free position in buf */
-
-static FILE *token_stream;
-
-struct savetok {
-    char *word;
-    TOKEN tok;
-} tokbuf[BUFSIZE];
-
-FILE *token_get_stream() {
-    return (token_stream);
+LEXER *token_stream_open(FILE *fp)  {
+    LEXER *lp;
+    lp = (LEXER *) emalloc(sizeof(struct lexer));
+    lp->bufp = 0;  /* no characters in pushback buf */
+    lp->token_stream = fp;
+    return (lp);
 }
 
-void token_set_stream(FILE *fp)  {
-    extern FILE *token_stream;
-    token_stream = fp;
+int token_stream_close(LEXER *lp)  {
+    int retcode;
+    retcode=fclose(lp->token_stream);
+    free(lp);
+    return(retcode);
 }
 
 /* lookahead to see the next token */
-TOKEN token_look(word)
-char *word;
+TOKEN token_look(LEXER *lp, char *word)
 {
     TOKEN token;
-    token=token_get(word);
-    token_unget(token, word);
+    token=token_get(lp, word);
+    token_unget(lp, token, word);
     return token;
 }
 
 /* stuff back a token */
-int token_unget(TOKEN token, char *word) 
+int token_unget(LEXER *lp, TOKEN token, char *word) 
 {
-    if (bufp >= BUFSIZE) {
+    if (lp->bufp >= BUFSIZE) {
 	eprintf("ungettoken: too many characters");
 	return(-1);
     } else {
-	tokbuf[bufp].word = (char *) estrdup(word);
-	tokbuf[bufp++].tok = token;
+	lp->tokbuf[lp->bufp].word = (char *) estrdup(word);
+	lp->tokbuf[lp->bufp++].tok = token;
 	return(0);
     }
 }
 
-int token_flush() 
+int token_flush_EOL(LEXER *lp) 
 {
     char word[BUFSIZE];
     TOKEN token;
-    while (token=token_get(word) != EOL) {
+    while (token=token_get(lp, word) != EOL) {
 	;
     }
     return(0);
 }
 
-TOKEN token_get(char *word) /* collect and classify token */
+TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 {
     enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM} state = NEUTRAL;
     int c;
     char *w;
-    extern FILE *token_stream;
     int debug=0;
 
-    
-    if (bufp > 0) {
-	strcpy(word, tokbuf[--bufp].word);
-	free(tokbuf[bufp].word);
-	tokbuf[bufp].word = (char *) NULL;
-	return(tokbuf[bufp].tok);
+    if (lp->bufp > 0) {
+	strcpy(word, lp->tokbuf[--(lp->bufp)].word);
+	free(lp->tokbuf[lp->bufp].word);
+	lp->tokbuf[lp->bufp].word = (char *) NULL;
+	return(lp->tokbuf[lp->bufp].tok);
     }
 
     w=word;
-    while((c=rlgetc(token_stream)) != EOF) {
+    while((c=rlgetc(lp->token_stream)) != EOF) {
 	switch(state) {
 	    case NEUTRAL:
 		switch(c) {
@@ -129,12 +122,12 @@ TOKEN token_get(char *word) /* collect and classify token */
 			continue;
 		    case '.':
 			*w++ = c;
-			c = rlgetc(token_stream);
+			c = rlgetc(lp->token_stream);
 			if (isdigit(c)) {
-			    rl_ungetc(c,token_stream);
+			    rl_ungetc(c,lp->token_stream);
 			    state = INNUM;
 			} else {
-			    rl_ungetc(c,token_stream);
+			    rl_ungetc(c,lp->token_stream);
 			    state = INOPT;
 			}
 			continue;	
@@ -148,7 +141,7 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,token_stream);
+		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
 		    if (debug) printf("returning NUMBER: %s \n", word);
 		    return(NUMBER);
@@ -161,7 +154,7 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,token_stream);
+		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
 		    if (debug) printf("returning OPT: %s \n", word);
 		    return(OPT);
@@ -169,7 +162,7 @@ TOKEN token_get(char *word) /* collect and classify token */
 	    case INQUOTE:
 		switch(c) {
 		    case '\\':
-			*w++ = rlgetc(token_stream);
+			*w++ = rlgetc(lp->token_stream);
 			continue;
 		    case '"':
 			*w = '\0';
@@ -180,8 +173,8 @@ TOKEN token_get(char *word) /* collect and classify token */
 			continue;
 		}
 	    case INWORD:
-		if (!isalnum(c) && (c!='_') ) {
-		    rl_ungetc(c,token_stream);
+		if (!isalnum(c) && (c!='_') && (c!='.') ) {
+		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
 		    if (lookup_command(word)) {
 		        if (debug) printf("lookup returns CMD: %s\n", word);
@@ -199,12 +192,7 @@ TOKEN token_get(char *word) /* collect and classify token */
 		break;
 	} /* switch state */
     } /* while loop */
-    if (token_stream != stdin) {
-	xwin_display_set_state(D_ON);
-	token_set_stream(stdin);
-    } else {
-	return(EOF);
-    }
+    return(EOF);
 }
 
 char *tok2str(token)

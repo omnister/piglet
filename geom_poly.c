@@ -31,7 +31,9 @@ OPTS opts;
 
 static double x1, y1;
 
-int add_poly(int *layer)
+int add_poly(lp, layer)
+LEXER *lp;
+int *layer;
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
 
@@ -50,7 +52,7 @@ int add_poly(int *layer)
     rl_setprompt("ADD_POLY> ");
 
     while (!done) {
-	token = token_look(word);
+	token = token_look(lp, word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;
@@ -60,7 +62,7 @@ int add_poly(int *layer)
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(word); 
+		    token_get(lp, word); 
 		    if (opt_parse(word, "W", &opts) == -1) {
 		    	state = END;
 		    } else {
@@ -69,7 +71,7 @@ int add_poly(int *layer)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just eat it up */
+		    token_get(lp, word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    done++;
@@ -83,12 +85,12 @@ int add_poly(int *layer)
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    xold=x1;
 		    sscanf(word, "%lf", &x1);	/* scan it in */
 		    state = COM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf("   cancelling ADD POLY\n");
 		    done++;
@@ -101,9 +103,9 @@ int add_poly(int *layer)
 	    case COM1:		
 		if (debug) printf("in com1\n");
 		if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp, word);
 		    state = NUM2;
 		} else {
 		    printf("  expected COMMA, got %s\n",
@@ -114,7 +116,7 @@ int add_poly(int *layer)
 	    case NUM2:
 		if (debug) printf("in num2\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 
 		    yold=y2;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
@@ -128,7 +130,7 @@ int add_poly(int *layer)
 		    rubber_set_callback(draw_poly);
 		    state = NUM3;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf("   cancelling ADD POLY\n");
 		    done++;
@@ -141,12 +143,12 @@ int add_poly(int *layer)
 	    case NUM3:		/* get pair of xy coordinates */
 		if (debug) printf("in num3\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    xold=x2;
 		    sscanf(word, "%lf", &x2);	/* scan it in */
 		    state = COM2;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
@@ -158,12 +160,12 @@ int add_poly(int *layer)
 	    case COM2:		
 		if (debug) printf("in com2\n");
 		if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp, word);
 		    state = NUM4;
 		} else if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf("cancelling ADD POLY\n");
 		    done++;
@@ -176,7 +178,7 @@ int add_poly(int *layer)
 	    case NUM4:
 		if (debug) printf("in num4\n");
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    yold=y2;
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 
@@ -214,7 +216,7 @@ int add_poly(int *layer)
 		    }
 
 		} else if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf("    cancelling ADD POLY\n");
 		    done++;
@@ -239,7 +241,7 @@ int add_poly(int *layer)
 		    printf("   cancelling ADD POLY\n");
 		    done++;
 		} else {
-		    token_flush();
+		    token_flush_EOL(lp);
 		}
 		done++;
 		break;

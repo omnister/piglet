@@ -22,7 +22,9 @@ static double x1, y1;
 
 OPTS opts;
 
-int add_rect(int *layer)
+int add_rect(lp, layer)
+LEXER *lp;
+int *layer;
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -39,7 +41,7 @@ int add_rect(int *layer)
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(word);
+	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 	if (token==CMD) {
 	    state=END;
@@ -47,12 +49,12 @@ int add_rect(int *layer)
 	switch(state) {	
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
-		token_get(word); /* ignore for now */
+		token_get(lp,word); /* ignore for now */
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(word); 	/* just eat it up */
+		token_get(lp,word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		 state = END;
@@ -64,11 +66,11 @@ int add_rect(int *layer)
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
 	    if (token == NUMBER) {
-		token_get(word);
+		token_get(lp,word);
 		sscanf(word, "%lf", &x1);	/* scan it in */
 		state = COM1;
 	    } else if (token == EOL) {
-		token_get(word); 	/* just ignore it */
+		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("   cancelling ADD RECT\n");
 		state = END;	
@@ -80,9 +82,9 @@ int add_rect(int *layer)
 	    break;
 	case COM1:		
 	    if (token == EOL) {
-		token_get(word); /* just ignore it */
+		token_get(lp,word); /* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(word);
+		token_get(lp,word);
 		state = NUM2;
 	    } else {
 		printf("ADD_RECT: expected COMMA: got: %s!\n", 
@@ -92,12 +94,12 @@ int add_rect(int *layer)
 	    break;
 	case NUM2:
 	    if (token == NUMBER) {
-		token_get(word);
+		token_get(lp,word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
 		rubber_set_callback(draw_box);
 		state = NUM3;
 	    } else if (token == EOL) {
-		token_get(word); 	/* just ignore it */
+		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("ADD_RECT: cancelling ADD RECT\n");
 	        state = END;
@@ -109,11 +111,11 @@ int add_rect(int *layer)
 	    break;
 	case NUM3:		/* get pair of xy coordinates */
 	    if (token == NUMBER) {
-		token_get(word);
+		token_get(lp,word);
 		sscanf(word, "%lf", &x2);	/* scan it in */
 		state = COM2;
 	    } else if (token == EOL) {
-		token_get(word); 	/* just ignore it */
+		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("ADD_RECT: cancelling ADD RECT\n");
 	        state = END;
@@ -125,12 +127,12 @@ int add_rect(int *layer)
 	    break;
 	case COM2:		
 	    if (token == EOL) {
-		token_get(word); 	/* just ignore it */
+		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(word);
+		token_get(lp,word);
 		state = NUM4;
 	    } else if (token == EOL) {
-		token_get(word); /* just ignore it */
+		token_get(lp,word); /* just ignore it */
 	    } else {
 		printf("ADD_RECT: expected COMMA, got:%s\n", 
 		    tok2str(token));
@@ -139,7 +141,7 @@ int add_rect(int *layer)
 	    break;
 	case NUM4:
 	    if (token == NUMBER) {
-		token_get(word);
+		token_get(lp,word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
 		state = START;
 		modified = 1;
@@ -147,7 +149,7 @@ int add_rect(int *layer)
 		rubber_clear_callback();
 		need_redraw++;
 	    } else if (token == EOL) {
-		token_get(word); /* just ignore it */
+		token_get(lp,word); /* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("ADD_RECT: cancelling ADD RECT\n");
 		state = END; 
@@ -162,7 +164,7 @@ int add_rect(int *layer)
 	    if (token == EOC || token == CMD) {
 		;
 	    } else {
-		token_flush();
+		token_flush_EOL(lp);
 	    }
 	    done++;
 	    break;

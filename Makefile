@@ -2,7 +2,7 @@
 OBJS= db.o xwin.o readfont.o rubber.o opt_parse.o \
        eprintf.o geom_circle.o geom_rect.o geom_line.o \
        geom_note.o geom_poly.o geom_text.o geom_inst.o \
-       rlgetc.o token.o lex.o coords.o
+       rlgetc.o token.o lex.o coords.o com_window.o
 
 TARS= Makefile NOTEDATA.F token.c token.h lex.c xwin.c db.c db.h readfont.c readfont.h \
 rlgetc.h eprintf.c rlgetc.c eprintf.h eventnames.h xwin.h  
@@ -18,6 +18,7 @@ pig: $(OBJS)
 coords.o:      db.h
 db.o:          db.h token.h xwin.h
 eprintf.o:     eprintf.h
+com_window.o:  db.h xwin.h token.h rubber.h
 geom_circle.c: db.h xwin.h token.h rubber.h
 geom_inst.c:   db.h xwin.h token.h rubber.h opt_parse.h
 geom_line.c:   db.h xwin.h token.h rubber.h

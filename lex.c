@@ -63,7 +63,7 @@ COMMAND commands[] =
     {"EDIt", com_edit, "begin edit of an old or new device"},
     {"EQUate", com_equate, "define characteristics of a mask layer"},
     {"EXIt", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
-    {"FILes", com_files, "purge named files"},
+    {"$FILes", com_files, "purge named files"},
     {"GRId", com_grid, "set grid spacing or turn grid on/off"},
     {"GROup", com_group, "create a device from existing components"},
     {"HELp", com_help, "print syntax diagram for the specified command"},
@@ -109,14 +109,9 @@ main(argc,argv)
 int argc;
 char **argv;
 {
-    char word[128];
-    char buf[128];
-    int retcode;
-    TOKEN token;
-    COMMAND *command;
-    COMMAND * find_command();
-    int i; /* scratch variable */
     int debug=0;
+    LEXER *lp;		/* lexer struct for main cmd loop */
+
 
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
@@ -129,10 +124,25 @@ char **argv;
 
     initialize_readline();
     rl_pending_input='\n';
-    rl_setprompt("INIT> ");
-    
-    token_set_stream(stdin);
-    while((token=token_get(word)) != EOF) {
+    rl_setprompt("");
+
+    lp = token_stream_open(stdin);
+    parse(lp);
+}
+
+parse(lp)
+LEXER *lp;
+{
+    int debug=0;
+    TOKEN token;
+    char word[128];
+    char buf[128];
+    int retcode;
+    COMMAND *command;
+    COMMAND * find_command();
+    int i; /* scratch variable */
+
+    while((token=token_get(lp, word)) != EOF) {
         if (debug) printf("IN MAIN: got %s: %s\n", tok2str(token), word);
 	switch (mode) {
 	    case MAIN:
@@ -166,10 +176,10 @@ char **argv;
 		command = find_command(word);
 		if (command == NULL) {
 		    printf(" bad command\n");
-		    token_flush();
+		    token_flush_EOL(lp);
 		} else {
 		    if (debug) printf("MAIN: found command\n");
-		    retcode = ((*(command->func)) (""));
+		    retcode = ((*(command->func)) (lp, ""));
 		}
 		break;
 	    case EOL:
@@ -177,9 +187,9 @@ char **argv;
 	    case EOC:
 		break;
 	    default:
-		printf(" expected COMMAND, got %s: %s\n",
+		printf(" MAIN: expected COMMAND, got %s: %s\n",
 			tok2str(token), word);
-		token_flush();
+		token_flush_EOL(lp);
 		break;
 	}
     }
@@ -237,8 +247,7 @@ char *name;
     and dispatches control the the appropriate add_<comp> subroutine
 */
 
-com_add(arg)		
-char *arg;	/* currently unused */
+com_add(LEXER *lp, char *arg)		
 {
     char *line;
     TOKEN token;
@@ -261,7 +270,7 @@ char *arg;	/* currently unused */
     /* check that we are editing a rep */
     if (currep == NULL ) {
 	printf("must do \"EDIT <name>\" before ADD\n");
-	token_flush();
+	token_flush_EOL(lp);
 	return(1);
     }
 
@@ -290,7 +299,7 @@ char *arg;	/* currently unused */
 
     while(!done) {
 	rl_setprompt("ADD> ");
-	token = token_get(word);
+	token = token_get(lp, word);
 	if (token == IDENT) { 	
 
 	    /* check to see if is a valid comp descriptor */
@@ -322,28 +331,28 @@ char *arg;	/* currently unused */
 	    if (valid_comp) {
 		switch (comp) {
 		    case 'A':
-			add_arc(&layer);
+			add_arc(lp, &layer);
 			break;
 		    case 'C':
-			add_circ(&layer);
+			add_circ(lp, &layer);
 			break;
 		    case 'L':
-			add_line(&layer);
+			add_line(lp, &layer);
 			break;
 		    case 'N':
-			add_note(&layer);
+			add_note(lp, &layer);
 			break;
 		    case 'O':
-			add_oval(&layer);
+			add_oval(lp, &layer);
 			break;
 		    case 'P':
-			add_poly(&layer);
+			add_poly(lp, &layer);
 			break;
 		    case 'R':
-			add_rect(&layer);
+			add_rect(lp, &layer);
 			break;
 		    case 'T':
-			add_text(&layer);
+			add_text(lp, &layer);
 			break;
 		    default:
 			printf("invalid comp name\n");
@@ -354,9 +363,9 @@ char *arg;	/* currently unused */
 		add_inst(word);
 	    }
 	} else if (token == QUOTE) {
-		add_inst(word);
+		add_inst(lp, word);
 	} else if (token == CMD) { /* return control back to top */
-	    token_unget(token, word);
+	    token_unget(lp, token, word);
 	    done++;
 	} else if (token == EOL) {
 	    ; /* ignore */
@@ -364,30 +373,29 @@ char *arg;	/* currently unused */
 	    done++;
 	} else {
 	    printf("expected COMP/LAYER or INST name\n");
-	    token_flush();
+	    token_flush_EOL(lp);
 	    done++;
 	}
     }
 }
 
-int add_arc(int *layer)
+int add_arc(LEXER *lp, int *layer)
 {
     rl_setprompt("ADD_ARC> ");
     printf("in add_arc (unimplemented)\n");
-    token_flush();
+    token_flush_EOL(lp);
     return(1);
 }
 
-int add_oval(int *layer)
+int add_oval(LEXER *lp, int *layer)
 {
     rl_setprompt("ADD_OVAL> ");
     printf("in add_oval (unimplemented)\n");
-    token_flush();
+    token_flush_EOL(lp);
     return(1);
 }
 
-com_archive(arg)    /* create an archive file of the specified device */
-char *arg;
+com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
     numbyes=0;
     need_redraw++; 
@@ -427,22 +435,21 @@ char *arg;
 }
 
 
-com_area(arg)		/* display the area of selected component */
-char *arg;
+com_area(LEXER *lp, char *arg)	  /* display area of selected component */
 {
     printf("    com_area %s\n", arg);
     return (0);
 }
 
-com_background(arg)	/* specified device for background overlay */
-char *arg;
+com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 {
     printf("    com_background %s\n", arg);
     return (0);
 }
 
 
-com_bye(arg)		/* terminate edit session */
+com_bye(lp, arg)		/* terminate edit session */
+LEXER *lp;
 char *arg;
 {
     /* The user wishes to quit using this program */
@@ -460,35 +467,36 @@ char *arg;
     return (0);
 }
 
-com_change(arg)		/* change characteristics of selected components */
-char *arg;
+com_change(LEXER *lp, char *arg) /* change properties of selected components */
 {
     printf("    com_change %s\n", arg);
     return (0);
 }
 
-com_copy(arg)		/* copy a component from one location to another */
-char *arg;
+com_copy(LEXER *lp, char *arg)	/* copy component  */
 {
     printf("    com_copy %s\n", arg);
     return (0);
 }
 
-com_define(arg)		/* define a macro */
+com_define(lp, arg)		/* define a macro */
+LEXER *lp;
 char *arg;
 {
     printf("    com_define %s\n", arg);
     return (0);
 }
 
-com_delete(arg)		/* delete a component from the current device */
+com_delete(lp, arg)  	/* delete component from currep */
+LEXER *lp;
 char *arg;
 {
     printf("    com_delete %s\n", arg);
     return (0);
 }
 
-com_display(arg)	/* turn the display on or off */
+com_display(lp, arg)	/* turn the display on or off */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -501,7 +509,7 @@ char *arg;
     int debug=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "ON", 2) == 0) {
@@ -513,7 +521,7 @@ char *arg;
 		}
 		break;
 	    case CMD:		/* command */
-		token_unget(token, word);
+		token_unget(lp, token, word);
 		break;
 	    case EOC:		/* end of command */
 		done++;
@@ -535,14 +543,16 @@ char *arg;
     return (0);
 }
 
-com_distance(arg)	/* measure the distance between two points */
+com_distance(lp, arg)	/* measure the distance between two points */
+LEXER *lp;
 char *arg;
 {
     printf("    com_distance %s\n", arg);
     return (0);
 }
 
-com_edit(arg)		/* begin edit of an old or new device */
+com_edit(lp, arg)		/* begin edit of an old or new device */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -555,7 +565,7 @@ char *arg;
     /* printf("    com_edit <%s>\n", arg); */
 
     name[0]=0;
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		strncpy(name, word, 128);
@@ -573,7 +583,7 @@ char *arg;
 		done++;
 		break;
 	    case CMD:		/* command */
-	    	token_unget(token, word);
+	    	token_unget(lp, token, word);
 		done++;
 		break;
 	    default:
@@ -617,14 +627,16 @@ char *arg;
     return (0);
 }
 
-com_equate(arg)		/* define characteristics of a mask layer */
+com_equate(lp, arg)		/* define characteristics of a mask layer */
+LEXER *lp;
 char *arg;
 {
     printf("    com_equate %s\n", arg);
     return (0);
 }
 
-com_exit(arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
+com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
+LEXER *lp;
 char *arg;
 {
     if (modified) {
@@ -637,10 +649,45 @@ char *arg;
     return (0);
 }
 
-com_files(arg)		/* purge named files */
+com_files(lp, arg)		/* purge named files */
+LEXER *lp;
 char *arg;
 {
-    printf("    com_files %s\n", arg);
+    TOKEN token;
+    int done=0;
+    int level;
+    char buf[128];
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=1;
+
+    if (debug) printf("in com_files\n");
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		/* FIXME: this should eventually purge */
+		/* all named files */
+	    	break;      
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+	    	break;	/* ignore */
+	    case NUMBER: 	/* number */
+	    case CMD:		/* command */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("FILES: expected IDENT, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
     return (0);
 }
 
@@ -648,7 +695,8 @@ char *arg;
 /* "GRID [ON | OFF] [:Ccolor] [spacing mult [xypnt]]" */
 /* com_grid(STATE, color, spacing, mult, x, y) */
 
-com_grid(arg)		/* change or redraw grid */
+com_grid(lp, arg)		/* change or redraw grid */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -664,7 +712,7 @@ char *arg;
     int debug=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "ON", 2) == 0) {
@@ -696,7 +744,7 @@ char *arg;
 	    case END:		/* end of file */
 		break;
 	    case CMD:		/* command */
-		/* token_unget(token, word); */
+		/* token_unget(lp, token, word); */
 		break;
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%lf", &tmp) != 1) {
@@ -763,21 +811,59 @@ char *arg;
     return (0);
 }
 
-com_group(arg)		/* create a device from existing components */
+com_group(lp, arg)	/* create a device from existing components */
+LEXER *lp;
 char *arg;
 {
     printf("    com_group %s\n", arg);
     return (0);
 }
 
-com_identify(arg)	/* identify named instances or components */
+/* Print out help for ARG, or for all commands if ARG is not present. */
+com_help(lp, arg)
+LEXER *lp;
+char *arg;
+{
+    register int i;
+    int printed = 0;
+
+    for (i = 0; commands[i].name; i++) {
+	if (!*arg || (strcmp(arg, commands[i].name) == 0)) {
+	    printf("%-12s%s.\n", commands[i].name, commands[i].doc);
+	    printed++;
+	}
+    }
+
+    if (!printed) {
+	printf("No commands match `%s'.  Possibilties are:\n", arg);
+
+	for (i = 0; commands[i].name; i++) {
+	    /* Print in six columns. */
+	    if (printed == 6) {
+		printed = 0;
+		printf("\n");
+	    }
+	    printf("%s\t", commands[i].name);
+	    printed++;
+	}
+
+	if (printed)
+	    printf("\n");
+    }
+    return (0);
+}
+
+
+com_identify(lp, arg)	/* identify named instances or components */
+LEXER *lp;
 char *arg;
 {
     printf("    com_identify\n", arg);
     return (0);
 }
 
-com_input(arg)		/* take command input from a file */
+com_input(lp, arg)		/* take command input from a file */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -788,12 +874,13 @@ char *arg;
     int err=0;
     int done=0;
     int nfiles=0;
+    LEXER *my_lp;
 
     if (debug) printf("in com_input\n");
     rl_setprompt("INP> ");
 
     buf[0]='\0';
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	if (debug) printf("COM_INPUT: got %s: %s\n",
 			tok2str(token), word);
 	switch(token) {
@@ -807,7 +894,10 @@ char *arg;
 			     return(1);
 			} else {
 			     xwin_display_set_state(D_OFF);
-			     token_set_stream(fp);
+			     my_lp = token_stream_open(fp);
+			     parse(my_lp);
+			     token_stream_close(my_lp); 
+			     xwin_display_set_state(D_ON);
 			}
 		    } else {
 			printf("INPUT: wrong number of args\n");
@@ -826,7 +916,7 @@ char *arg;
 		done++;
 		break;
 	    case CMD:		/* command */
-	    	token_unget(token,word);
+	    	token_unget(lp, token,word);
 		done++;
 		break;
 	    default:
@@ -836,21 +926,24 @@ char *arg;
     }
 }
 
-com_interrupt(arg)	/* interrupt an ADD to issue another command */
+com_interrupt(lp, arg)	/* interrupt an ADD to issue another command */
+LEXER *lp;
 char *arg;
 {
     printf("    com_interrupt\n", arg);
     return (0);
 }
 
-com_layer(arg)		/* set a default layer number */
+com_layer(lp, arg)		/* set a default layer number */
+LEXER *lp;
 char *arg;
 {
     printf("    com_layer\n", arg);
     return (0);
 }
 
-com_level(arg)		/* set the logical level of the current device */
+com_level(lp, arg)	/* set the logical level of the current device */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -863,7 +956,7 @@ char *arg;
     int debug=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &level) != 1) {
@@ -873,7 +966,7 @@ char *arg;
 		nnums++;
 		break;
 	    case CMD:		/* command */
-		token_unget(token, word);
+		token_unget(lp, token, word);
 		done++;
 		break;
 	    case EOC:		/* end of command */
@@ -911,14 +1004,16 @@ char *arg;
     return (0);
 }
 
-com_list(arg)		/* list information about the current environment */
+com_list(lp, arg)	/* list information about the current environment */
+LEXER *lp;
 char *arg;
 {
     printf("    com_list\n", arg);
     return (0);
 }
 
-com_lock(arg)		/* set the default lock angle */
+com_lock(lp, arg)		/* set the default lock angle */
+LEXER *lp;
 char *arg;
 {
     TOKEN token;
@@ -929,7 +1024,7 @@ char *arg;
     double tmp;
     int debug=0;
 
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%lf", &angle) != 1) {
@@ -939,7 +1034,7 @@ char *arg;
 		nnums++;
 		break;
 	    case CMD:		/* command */
-		token_unget(token, word);
+		token_unget(lp, token, word);
 		done++;
 		break;
 	    case EOC:		/* end of command */
@@ -966,7 +1061,8 @@ char *arg;
     return (0);
 }
 
-com_macro(arg)		/* enter the MACRO subsystem */
+com_macro(lp, arg)		/* enter the MACRO subsystem */
+LEXER *lp;
 char *arg;
 {
     printf("    com_macro\n", arg);
@@ -978,35 +1074,40 @@ char *arg;
     return (0);
 }
 
-com_menu(arg)		/* change or save the current menu */
+com_menu(lp, arg)		/* change or save the current menu */
+LEXER *lp;
 char *arg;
 {
     printf("    com_menu\n", arg);
     return (0);
 }
 
-com_move(arg)		/* move a component from one location to another */
+com_move(lp, arg)	/* move a component from one location to another */
+LEXER *lp;
 char *arg;
 {
     printf("    com_move\n", arg);
     return (0);
 }
 
-com_plot(arg)		/* make a plot of the current device */
+com_plot(lp, arg)		/* make a plot of the current device */
+LEXER *lp;
 char *arg;
 {
     printf("    com_plot\n", arg);
     return (0);
 }
 
-com_point(arg)		/* display the specified point on the screen */
+com_point(lp, arg)	/* display the specified point on the screen */
+LEXER *lp;
 char *arg;
 {
     printf("    com_point\n", arg);
     return (0);
 }
 
-com_process(arg)	/* enter the PROCESS subsystem */
+com_process(lp, arg)	/* enter the PROCESS subsystem */
+LEXER *lp;
 char *arg;
 {
     printf("    com_process\n", arg);
@@ -1018,21 +1119,25 @@ char *arg;
     return (0);
 }
 
-com_purge(arg)		/* remove device from memory and disk */
+com_purge(lp, arg)		/* remove device from memory and disk */
+LEXER *lp;
 char *arg;
 {
     printf("    com_purge\n", arg);
     return (0);
 }
 
-com_retrieve(arg)	/* read commands from an ARCHIVE file */
+com_retrieve(lp, arg)	/* read commands from an ARCHIVE file */
+LEXER *lp;
 char *arg;
 {
     printf("    com_retrieve\n", arg);
     return (0);
 }
 
-com_save()		/* save the current file or device to disk */
+com_save(lp, arg)	/* save the current file or device to disk */
+LEXER *lp;
+char *arg;
 {
     numbyes=0;
     need_redraw++; 
@@ -1070,7 +1175,8 @@ com_save()		/* save the current file or device to disk */
     return (0);
 }
 
-com_search(arg)		/* modify the search path */
+com_search(lp, arg)		/* modify the search path */
+LEXER *lp;
 char *arg;
 {
     printf("    com_search\n", arg);
@@ -1083,21 +1189,24 @@ char *arg;
     return (0);
 }
 
-com_set(arg)		/* set environment variables */
+com_set(lp, arg)		/* set environment variables */
+LEXER *lp;
 char *arg;
 {
     printf("    com_set\n", arg);
     return (0);
 }
 
-com_shell(arg)		/* run a program from within the editor */
+com_shell(lp, arg)		/* run a program from within the editor */
+LEXER *lp;
 char *arg;
 {
     printf("    com_shell\n", arg);
     return (0);
 }
 
-com_show(arg)		/* define which kinds of things to display */
+com_show(lp, arg)		/* define which kinds of things to display */
+LEXER *lp;
 char *arg;
 {
     /* FIXME: this is just a hack to eat up any SHOW commands */
@@ -1110,10 +1219,10 @@ char *arg;
     double tmp;
     int debug=0;
 
-    while(!done && (token=token_get(word)) != EOF) {
+    while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case CMD:		/* command */
-		token_unget(token, word);
+		token_unget(lp, token, word);
 		done++;
 		break;
 	    case EOC:		/* end of command */
@@ -1134,254 +1243,78 @@ char *arg;
     return (0);
 }
 
-com_smash(arg)		/* replace an instance with its components */
+com_smash(lp, arg)	/* replace an instance with its components */
+LEXER *lp;
 char *arg;
 {
     printf("    com_smash\n", arg);
     return (0);
 }
 
-com_split(arg)		/* cut a component into two halves */
+com_split(lp, arg)		/* cut a component into two halves */
+LEXER *lp;
 char *arg;
 {
     printf("    com_split\n", arg);
     return (0);
 }
 
-com_step(arg)		/* copy a component in an array fashion */
+com_step(lp, arg)	/* copy a component in an array fashion */
+LEXER *lp;
 char *arg;
 {
     printf("    com_step\n", arg);
     return (0);
 }
 
-com_stretch(arg)	/* make a component larger or smaller */
+com_stretch(lp, arg)	/* make a component larger or smaller */
+LEXER *lp;
 char *arg;
 {
     printf("    com_stretch\n", arg);
     return (0);
 }
 
-com_trace(arg)		/* highlight named signals */
+com_trace(lp, arg)		/* highlight named signals */
+LEXER *lp;
 char *arg;
 {
     printf("    com_trace\n", arg);
     return (0);
 }
 
-com_undo(arg)		/* undo the last command */
+com_undo(lp, arg)		/* undo the last command */
+LEXER *lp;
 char *arg;
 {
     printf("    com_undo\n", arg);
     return (0);
 }
 
-com_units(arg)		/* set editor resolution and user unit type */
+com_units(lp, arg)	/* set editor resolution and user unit type */
+LEXER *lp;
 char *arg;
 {
     printf("    com_units\n", arg);
     return (0);
 }
 
-com_version(arg)	/* identify the version number of program */
+com_version(lp, arg)	/* identify the version number of program */
+LEXER *lp;
 char *arg;
 {
     printf("    com_version: %s\n", version);
     return (0);
 }
 
-com_window(arg)		/* change the current window parameters */
-char *arg;
-{
-    double dx, dy, xmin, ymin, xmax, ymax, tmp;
-    double  x1, y1, x2, y2;
-    int n;
-    TOKEN token;
-    int done=0;
-    char buf[128];
-    char word[128];
-    double scale=1.0;
-    int debug=0;
-    int fit=0;
-    int nest=9;
+/* com_window(lp, arg)	  (defined in com_window.c) */
 
-    if (debug) printf("    com_window\n", arg);
-
-    buf[0]='\0';
-    while(!done && (token=token_get(word)) != EOF) {
-	switch(token) {
-	    case IDENT: 	/* identifier */
-		token_unget(token, word); 
-		done++;
-		break;
-	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
-		if (strncasecmp(word, ":F", 2) == 0) {
-		     fit++;
-		} else if (strncasecmp(word, ":X", 2) == 0) {
-		    if(sscanf(word+2, "%lf", &scale) != 1) {
-		        weprintf("WIN invalid scale argument: %s\n", word+2);
-			return(-1);
-		    }
-		    if (scale < 0.0) {
-		    	scale = 1.0/(-scale);
-		    }
-		    if (scale > 10.0 || scale < 0.10) {
-		        weprintf("WIN: scale out of range %s\n", word+2);
-			return (-1);
-		    }
-		} else if (strncasecmp(word, ":N", 2) == 0) {
-		    if(sscanf(word+2, "%d", &nest) != 1) {
-		        weprintf("WIN invalid nest level %s\n", word+2);
-			return(-1);
-		    }
-		    db_set_nest(nest);
-		} else {
-	    	     printf("WIN: bad option: %s\n", word);
-		}
-		break;
-	    case END:		/* end of file */
-		break;
-	    case CMD:		/* command */
-		token_unget(token, word); 
-		done++;
-		break;
-	    case NUMBER: 	/* number */
-		strcat(buf,word);
-		strcat(buf," ");
-		break;
-	    case EOC:		/* end of command */
-		done++;
-		break;
-	    case EOL:		/* newline or carriage return */
-	    case COMMA:		/* comma */
-		break;
-	    default:
-		eprintf("bad case in com_window");
-		break;
-	}
-    }
-    if (debug) printf("xwin_window got %s\n",buf);
-
-    n = sscanf(buf, "%lf %lf %lf %lf", &x1, &y1, &x2, &y2);
-
-    xwin_window_get(&xmin, &ymin, &xmax, &ymax);
-
-    if (n==2) {
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=x1-dx/2.0;
-	ymin=y1-dx/2.0;
-	xmax=x1+dx/2.0;
-	ymax=y1+dx/2.0;
-    } else if (n==4) {
-    	xmin=x1;
-	ymin=y1;
-	xmax=x2;
-	ymax=y2;
-    } else if (n==0 || n== -1) {
-	xwin_window_get(&xmin, &ymin, &xmax, &ymax);
-    } else {
-	eprintf("WIN: bad number of points");
-	return(0);
-    }
-
-    if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
-
-    if (fit) {
-	db_bounds(&xmin, &ymin, &xmax, &ymax);
-    }
-
-    if (debug) printf("%g %g %g %g %d\n", xmin, ymin, xmax, ymax, n);
-
-    if (xmax < xmin) {		/* canonicalize the selection rectangle */
-	tmp = xmax; xmax = xmin; xmin = tmp;
-    }
-    if (ymax < ymin) {
-	tmp = ymax; ymax = ymin; ymin = tmp;
-    }
-
-    if (fit) {
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin-=dx/10.0;
-	xmax+=dx/10.0;
-	ymin-=dy/10.0;
-	ymax+=dy/10.0;
-    } 
-
-    if (scale != 1.0) {
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=((xmax+xmin)/2.0)-((dx*scale)/2.0);
-	xmax=((xmax+xmin)/2.0)+((dx*scale)/2.0);
-	ymin=((ymax+ymin)/2.0)-((dy*scale)/2.0);
-	ymax=((ymax+ymin)/2.0)+((dy*scale)/2.0);
-    } 
-
-    if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
-
-    if (xmin == 0 && ymin == 0 && xmax == 0 && ymax == 0) {
-	;	/* don't set the window to a null size */
-    } else {
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    }
-    
-
-    return (0);
-}
-
-com_wrap(arg)		/* create a new device using existing components*/
+com_wrap(lp, arg)	/* create a new device using existing components*/
+LEXER *lp;
 char *arg;
 {
     printf("    com_wrap\n", arg);
     return (0);
-}
-
-
- /* Print out help for ARG, or for all commands if ARG is not present. */
-com_help(arg)
-char *arg;
-{
-    register int i;
-    int printed = 0;
-
-    for (i = 0; commands[i].name; i++) {
-	if (!*arg || (strcmp(arg, commands[i].name) == 0)) {
-	    printf("%-12s%s.\n", commands[i].name, commands[i].doc);
-	    printed++;
-	}
-    }
-
-    if (!printed) {
-	printf("No commands match `%s'.  Possibilties are:\n", arg);
-
-	for (i = 0; commands[i].name; i++) {
-	    /* Print in six columns. */
-	    if (printed == 6) {
-		printed = 0;
-		printf("\n");
-	    }
-	    printf("%s\t", commands[i].name);
-	    printed++;
-	}
-
-	if (printed)
-	    printf("\n");
-    }
-    return (0);
-}
-
- /* Return non-zero if ARG is a valid argument for CALLER, else print
-        an error message and return zero. */
-
-int valid_argument(caller, arg)
-char *caller, *arg;
-{
-    if (!arg || !*arg) {
-	eprintf("%s: Argument required.", caller);
-    }
-    return (1);
 }
 
 

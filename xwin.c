@@ -28,7 +28,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.10 2004/01/08 05:04:19 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.11 2004/01/10 08:28:00 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -131,6 +131,7 @@ int initX()
     int window_size = 0;    /* either BIG_ENOUGH or
                     TOO_SMALL to display contents */
 
+    int debug=0;
     int i;
     int c;
     char *s;
@@ -173,7 +174,7 @@ int initX()
     /* Get available icon sizes from window manager */
 
     if (XGetIconSizes(dpy, RootWindow(dpy, scr), &size_list, &icount) == 0)
-        weprintf("Window manager didn't set icon sizes - using default.");
+        if (debug) weprintf("Window manager didn't set icon sizes - using default.");
     else {
         /* should eventually create a pixmap here */
         ;
@@ -995,6 +996,7 @@ init_colors()
     int ncolors = 0;
     int i;
     XVisualInfo visual_info;
+    int debug=0;
 
     /* try to allocate colors for PseudoColor, TrueColor,
      * DirectCOlor, and StaticColor; use balack and white
@@ -1016,7 +1018,7 @@ init_colors()
     while (!XMatchVisualInfo(dpy, scr, default_depth,
 	/* visual class */ i--, &visual_info)) 
 	;
-    weprintf("found a %s class visual at default depth.", visual_class[++i]);
+    if (debug) weprintf("found a %s class visual at default depth.", visual_class[++i]);
 
     if ( i < StaticColor ) {	/* Color visual classes are 2 to 5 */
 	/* No color visual available at default depth;

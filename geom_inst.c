@@ -11,7 +11,8 @@ static double x1, y1;
 
 /* :Mmirror :Rrot :Xscale :Yyxratio :Zslant */
 
-int add_inst(inst_name)
+int add_inst(lp, inst_name)
+LEXER *lp;
 char *inst_name;
 {
     enum {START,NUM1,COM1,NUM2,END} state = START;
@@ -41,7 +42,7 @@ char *inst_name;
     }
 
     while (!done) {
-	token = token_look(word);
+	token = token_look(lp, word);
 	/* printf("got %s: %s\n", tok2str(token), word); */
 	if (token==CMD) {
 	    state=END;
@@ -49,7 +50,7 @@ char *inst_name;
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
-		    token_get(word); 
+		    token_get(lp, word); 
 		    if (opt_parse(word, "MRXYZ", &opts) == -1) {
 			state = END;
 		    } else {
@@ -58,7 +59,7 @@ char *inst_name;
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just eat it up */
+		    token_get(lp, word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
@@ -70,11 +71,11 @@ char *inst_name;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word); 
 		    sscanf(word, "%lf", &x1);	/* scan it in */
 		    state = COM1;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
 		} else {
@@ -85,9 +86,9 @@ char *inst_name;
 		break;
 	    case COM1:		
 		if (token == EOL) {
-		    token_get(word); /* just ignore it */
+		    token_get(lp, word); /* just ignore it */
 		} else if (token == COMMA) {
-		    token_get(word);
+		    token_get(lp, word);
 		    state = NUM2;
 		} else {
 		    printf("    expected COMMA, got: %s\n", tok2str(token));
@@ -96,13 +97,13 @@ char *inst_name;
 		break;
 	    case NUM2:
 		if (token == NUMBER) {
-		    token_get(word);
+		    token_get(lp, word);
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 		    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
 		    need_redraw++;
 		    state = START;
 		} else if (token == EOL) {
-		    token_get(word); 	/* just ignore it */
+		    token_get(lp, word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
 		} else {
@@ -116,7 +117,7 @@ char *inst_name;
 		if (token == EOC || token == CMD) {
 		    ;
 		} else {
-		    token_flush();
+		    token_flush_EOL(lp);
 		}
 		done++;
 		break;
