@@ -22,6 +22,7 @@ double x,y;
     tmp->coord.x = x;
     tmp->coord.y = y;
     tmp->next = NULL;
+    tmp->prev = NULL;
     return(tmp);
 }
 
@@ -32,10 +33,15 @@ double x,y;
     first_pair = last_pair = coord_create(x,y);
 }
 
+
 void coord_append(x,y)
 double x,y;
 {
-    last_pair = last_pair->next = coord_create(x,y);
+    COORDS *tmp;
+    tmp = last_pair;	/* save pointer to last coord */
+    last_pair->next = coord_create(x,y);
+    last_pair = last_pair->next;
+    last_pair->prev = tmp;
 }
 
 void coord_swap_last(x,y)
@@ -43,6 +49,15 @@ double x,y;
 {
     last_pair->coord.x = x;
     last_pair->coord.y = y;
+}
+
+void coord_drop()
+{
+    COORDS *tmp;
+    tmp = last_pair;
+    last_pair = last_pair->prev;
+    last_pair->next = NULL;
+    free((COORDS *) tmp);
 }
 
 
@@ -236,12 +251,6 @@ int add_line(int *layer)
 
 		    nsegs++;
 
-		    rubber_clear_callback();
-		    if (debug) printf("doing append\n");
-		    coord_append(x2,y2);
-		    rubber_set_callback(draw_line);
-		    rubber_draw(x2,y2);
-
 		    /* two identical clicks terminates this line */
 		    /* but keeps the ADD L command in effect */
 
@@ -250,12 +259,21 @@ int add_line(int *layer)
 			printf("error: a line must have finite length\n");
 			state = START;
 		    } else if (x2==xold && y2==yold) {
+		    	print_pairs();
+			printf("dropping coord\n");
+			coord_drop();  /* drop last coord */
+		    	print_pairs();
 			db_add_line(currep, *layer, opts, first_pair);
 			modified = 1;
 			need_redraw++;
 			rubber_clear_callback();
 			state = START;
 		    } else {
+			rubber_clear_callback();
+			if (debug) printf("doing append\n");
+			coord_append(x2,y2);
+			rubber_set_callback(draw_line);
+			rubber_draw(x2,y2);
 			state = NUM3;	/* loop till EOC */
 		    }
 
@@ -310,6 +328,7 @@ int count; /* number of times called */
 
         dbline.layer=1;
         dbline.opts=opt_create();
+	dbline.opts->width = 10.0;
         dbline.coords=first_pair;
 	
 	if (debug) {printf("in draw_line\n");}

@@ -26,11 +26,14 @@ int add_rect(int *layer)
     int done=0;
     int error=0;
     TOKEN token;
+    OPTS *opts;
     char word[BUFSIZE];
     double x2,y2;
 
     printf("layer %d\n",*layer);
     rl_setprompt("ADD_RECT> ");
+
+    opts = opt_create();
 
     while (!done) {
 	token = token_look(word);
@@ -116,7 +119,7 @@ int add_rect(int *layer)
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 		    state = START;
 		    modified = 1;
-		    db_add_rect(currep, *layer, (OPTS *) NULL, x1, y1, x2, y2);
+		    db_add_rect(currep, *layer, opts, x1, y1, x2, y2);
 		    rubber_clear_callback();
 		    need_redraw++;
 		} else if (token == EOL) {

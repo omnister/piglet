@@ -22,12 +22,12 @@
 DB_TAB *currep = NULL;		/* keep track of current rep */
 DB_TAB *newrep = NULL;		/* scratch pointer for new rep */
 OPTS   *opts;
-XFORM  transform;
-XFORM  *xp = &transform;
+XFORM  screen_transform;
+XFORM  *xp = &screen_transform;
 
 int done; /* When non-zero, this global means the user is done using this program. */
 
-char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.3 2003/12/13 17:02:34 walker Exp $"; 
+char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.4 2003/12/28 23:32:02 walker Exp $"; 
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -46,6 +46,8 @@ int grid_xs = 2;	/* how often to display grid ticks */
 int grid_ys = 2;
 int grid_xo = 0; 	/* starting offset */
 int grid_yo = 0;
+GRIDSTATE grid_state = ON;	/* ON, OFF */
+int grid_color = 1;	/* 1 through 6 for different colors */ 
 
 int modified=0;
 int need_redraw=0;
@@ -240,7 +242,9 @@ int initX()
 
     /* initialize various things, should be put into init() function */
 
-    xwin_grid("");
+    xwin_grid_pts(10.0, 10.0, 2.0, 2.0, 0.0, 0.0);
+    xwin_grid_color(1);
+    xwin_grid_state(ON);
     xwin_window(4, -100.0,-100.0, 100.0, 100.0);
     sprintf(buf,"");
 
@@ -292,8 +296,8 @@ FILE *fp;
 	    if (currep != NULL ) {
 		db_render(currep,xp,0,0); /* render the current rep */
 	    }
-	    draw_grid(win, gcx, grid_xo, grid_yo,
-		grid_xd, grid_yd, grid_xs, grid_ys);
+	    draw_grid(win, gcx, grid_xd, grid_yd,
+		grid_xs, grid_ys, grid_xo, grid_yo);
 	}
 
 	/* some event resulted in text in buffer 's' */
@@ -327,9 +331,7 @@ FILE *fp;
 			y = (double) xe.xmotion.y;
 			V_to_R(&x,&y);
 			snapxy(&x,&y);
-			sprintf(buf,"(%5d,%5d) (%5d,%5d) (%5d,%5d)          ",
-			    (int) xu,(int) yu, (int) x, (int) y,
-			    (int) x- (int) xu, (int) y - (int)yu);
+			sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
 
 			if (xold != x || yold != y) {
@@ -344,9 +346,7 @@ FILE *fp;
 			yu = (double) xe.xmotion.y;
 			V_to_R(&xu,&yu);
 			snapxy(&xu,&yu);
-			sprintf(buf,"(%5d,%5d) (%5d,%5d) (%5d,%5d)           ",
-			    (int) xu,(int) yu, (int) x, (int) y,
-			    (int) x- (int) xu, (int) y - (int)yu);
+			sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
 			
 			rubber_draw(xu, yu);
@@ -356,13 +356,12 @@ FILE *fp;
 		    debug("got Expose",dbug);
 
 		    xwin_window(4, vp_xmin, vp_ymin, vp_xmax, vp_ymax);
-		    xwin_grid("");
 
 		    if (xe.xexpose.count != 0)
 			break;
 		    if (xe.xexpose.window == win) {
-			draw_grid(win, gcx, grid_xo, grid_yo,
-			    grid_xd, grid_yd, grid_xs, grid_ys);
+			draw_grid(win, gcx, grid_xd, grid_yd,
+			    grid_xs, grid_ys, grid_xo, grid_yo);
 		    } 
 		    break;
 
@@ -580,19 +579,28 @@ int line;
 }    
 
 
-draw_grid(win, gc, xorig, yorig, dx, dy, sx, sy)
+draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
 Window win;
 GC gc;
-int xorig,yorig;	/* grid origin */
 int dx,dy;		/* grid delta */
 int sx,sy;		/* grid skip number */
+int xorig,yorig;	/* grid origin */
 {
     extern unsigned int width, height;
+    extern GRIDSTATE grid_state;
+    extern int grid_color;
     double delta;
     double x,y, xd,yd;
     int i,j;
+    int debug=0;
 
     double xstart, ystart, xend, yend;
+
+    if (debug) printf("draw_grid called with: %d %d %d %d %d %d, color %d\n", 
+    	dx, dy, sx, sy, xorig, yorig, grid_color);
+
+    /* colored grid */
+    XSetForeground(dpy, gc, colors[grid_color]); /* RCW */
 
     XSetFillStyle(dpy, gc, FillSolid);
 
@@ -614,7 +622,7 @@ int sx,sy;		/* grid skip number */
 	/* printf("snap %g %g\n", xend, yend); */
 
     if ( sx == 0 || sy == 0) {
-	printf("grid x,y step must be an integer greater than 1\n");
+	printf("grid x,y step must be a positive integer\n");
 	return(1);
     }
 
@@ -637,15 +645,17 @@ int sx,sy;		/* grid skip number */
 	    /* that we draw grid all the way to left margin even after */
 	    /* calling snap_major above */
 
-	    for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
-		for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
-		    for (i=0; i<sx; i++) {
-			for (j=0; j<sy; j++) {
-			    if (i==0 || j==0) {
-				xd=x + (double) i*dx;
-				yd=y + (double) j*dy;
-				R_to_V(&xd,&yd);
-				XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+	    if (grid_state == ON) {
+		for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
+		    for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
+			for (i=0; i<sx; i++) {
+			    for (j=0; j<sy; j++) {
+				if (i==0 || j==0) {
+				    xd=x + (double) i*dx;
+				    yd=y + (double) j*dy;
+				    R_to_V(&xd,&yd);
+				    XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+				}
 			    }
 			}
 		    }
@@ -737,59 +747,96 @@ int dbug;
 }
 
 
-xwin_grid(arg)		/* set grid spacing or turn grid on/off */
-char *arg;
+void xwin_grid_color(color) 
+int color;
 {
+    extern int grid_color;
+    int debug=0;
 
-    /* when changing this to use getopt, two solitary args should
-    automatically set xyskip to 1, xoffset to 0 */ 
+    if (debug) {
+    	printf("xwin_grid_color: old %d, new %d\n", grid_color, color);
+    }
 
+    if (grid_color != color) {
+	grid_color = color;
+	need_redraw++;
+    }
+}
+
+void xwin_grid_state(state) 
+GRIDSTATE state;
+{
+    extern GRIDSTATE grid_state;
+    int debug=0;
+
+    switch (state) {
+    	case TOGGLE:
+	    if (debug) printf("toggling grid state\n");
+	    if (grid_state==OFF) {
+	    	grid_state=ON;
+		need_redraw++;
+	    } else {
+	    	grid_state=OFF;
+		need_redraw++;
+	    }
+	    break;
+	case ON:
+	    if (debug) printf("grid on\n");
+	    if (state != grid_state) {
+		grid_state=ON;
+		need_redraw++;
+	    }
+	    break;
+	case OFF:
+	    if (debug) printf("grid off\n");
+	    if (state != grid_state) {
+		grid_state=OFF;
+		need_redraw++;
+	    }
+	    break;
+	default:
+	    weprintf("bad state in xwin_grid\n");
+	    break;
+    }
+}
+
+void xwin_grid_pts( xd, yd, xs, ys, xo, yo)
+double xd;
+double yd;
+double xs;
+double ys;
+double xo; 
+double yo;
+{
     extern int grid_xd;
     extern int grid_yd;
     extern int grid_xs;
     extern int grid_ys;
     extern int grid_xo;
     extern int grid_yo;
+    int debug = 0;
+   
+    if (debug) printf("xwin_grid_pts: setting grid, %g %g %g %g %g %g\n",
+	xd, yd, xs, ys, xo, yo);
 
-    int nargs;
+    /* only redraw if something has changed */
 
-    /* printf("    xwin_grid %s\n", arg); */
+    if (grid_xd != (int) (xd) ||
+        grid_yd != (int) (yd) ||
+	grid_xs != (int) (xs) ||
+	grid_ys != (int) (ys) ||
+	grid_xo != (int) (xo) ||  
+	grid_yo != (int) (yo)) {
 
-    nargs = sscanf(arg, "%d %d %d %d %d %d",
-	&grid_xd, &grid_yd,
-	&grid_xs, &grid_ys,
-	&grid_xo, &grid_yo
-    );
-    
-    if (nargs == 2) {
-	 grid_xs = 1;
-	 grid_ys = 1;
-	 grid_xo = 0;
-	 grid_yo = 0; 
-    } else if (nargs == 4) {
-	 grid_xo = 0;
-	 grid_yo = 0; 
-    } else if (nargs == 6) {
-	;
-    } else if (nargs == 0) {
-	;
-    } else if (nargs == -1) {
-	;
-    } else {
-	printf("xwin_grid: bad number of arguments %d\n", nargs);
-	return(1);
+	grid_xd=(int) (xd); 
+	grid_yd=(int) (yd); 
+	grid_xs=(int) (xs); 
+	grid_ys=(int) (ys); 
+	grid_xo=(int) (xo); 
+	grid_yo=(int) (yo); 
+	need_redraw++;
     }
 
-    /* 
-    printf("grid set to xydelta=%d,%d xyskip=%d,%d xyoffset=%d,%d\n",
-	grid_xd, grid_yd,
-	grid_xs, grid_ys,
-	grid_xo, grid_yo
-    );
-    */
-
-    need_redraw++;
-    return (0);
 }
 
 /*

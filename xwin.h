@@ -1,5 +1,4 @@
 
-
 extern int initX();
 extern int procXevent();
 extern int need_redraw;
@@ -27,7 +26,7 @@ extern void draw_box();
 extern DB_TAB *currep;
 extern DB_TAB *newrep;			/* scratch pointer for new rep */
 extern OPTS   *opts;
-extern XFORM  transform;
+extern XFORM  screen_transform;
 extern XFORM  *xp;
 
 /* When non-zero, this global means the user is done using this program. */
@@ -54,5 +53,20 @@ extern int modified;
 extern int need_redraw;
 
 extern char version[];
-extern int xwin_grid();
+
+typedef enum {ON, OFF, TOGGLE} GRIDSTATE;
+
+void xwin_grid_state( GRIDSTATE state );
+
+void xwin_grid_color( int color );
+
+void xwin_grid_pts( 
+	double xd,
+	double yd,
+	double xs,
+	double ys, 
+	double xo,
+	double yo
+);
+
 extern int xwin_window();

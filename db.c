@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "token.h"
+#include "xwin.h"       /* for snapxy() */
 
 #define EPS 1e-6
 
@@ -19,7 +20,7 @@ OPTS   *first_opt, *last_opt;
 XFORM *transform;	/* global xform matrix */
 NUM xmax, ymax; 	/* globals for finding bounding boxes */
 NUM xmin, ymin;
-double max(), min();;
+double max(), min();
 int drawon=1;		/* 0 = dont draw, 1 = draw */
 int nestlevel=9;
 int X=1;		/* 1 = draw to X, 0 = emit autoplot commands */
@@ -163,6 +164,7 @@ DB_TAB *dp;
     fprintf(fp, "PURGE %s;\n", dp->name);
     fprintf(fp, "EDIT ");
     fprintf(fp, "%s;\n",dp->name);
+    fprintf(fp, "WIN %g,%g %g,%g\n", dp->minx, dp->miny, dp->maxx, dp->maxy);
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	switch (p->type) {
@@ -720,8 +722,25 @@ char *s;
 }
 
 /********************************************************/
-/* rendering routines */
+/* rendering routine */
+/* db_render() sets globals xmax, ymax, xmin, ymin;
+/* db_bounds() accesses them for use in com_win();
 /********************************************************/
+
+void db_bounds(xxmin, yymin, xxmax, yymax)
+NUM *xxmin;
+NUM *yymin;
+NUM *xxmax;
+NUM *yymax;
+{
+    *xxmin = xmin;
+    *yymin = ymin;
+    *xxmax = xmax;
+    *yymax = ymax;
+    snapxy(xxmin, yymin);
+    snapxy(xxmax, yymax);
+
+}
 
 int db_render(cell,xf, nest, mode)
 DB_TAB *cell;
@@ -735,8 +754,13 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     extern XFORM *transform;
     extern int nestlevel;
     double optval;
+    int debug=0;
+    double xminsave;
+    double xmaxsave;
+    double yminsave;
+    double ymaxsave;
 
-    /* printf ("# entering in db_render at level %d\n", nest); */
+    if (debug) printf ("# entering in db_render at level %d\n", nest); 
 
     if (!X & nest == 0) {	/* autoplot output */
 	printf("nogrid\n");
@@ -744,7 +768,17 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	printf("back\n");
     }
 
-    transform = xf; 	/* set global transform */
+    transform = xf; 		/* set global transform */
+    				/* gets used in draw() */
+
+    if (nest == 0) {
+	xmax=0.0;		/* initialize globals to 0,0 location*/
+	xmin=0.0;		/* draw() routine will modify these */
+	ymax=0.0;
+	ymin=0.0;
+    }
+
+    if (debug) printf("initializing bounds %g %g %g %g\n", xmin, xmax, ymin, ymax);
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 	switch (p->type) {
@@ -815,6 +849,15 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 
 	    transform = compose(xp,xf);		/* set global transform */
 
+            /* save old min/max values for currep */
+
+	    xminsave=xmin;
+	    xmaxsave=xmax;
+	    yminsave=ymin;
+	    ymaxsave=ymax;
+
+	    /* find bounding box on screen for instance */
+
 	    xmax=transform->dx;		/* initialize globals to 0,0 location*/
 	    xmin=transform->dx;		/* draw() routine will modify these */
 	    ymax=transform->dy;
@@ -826,8 +869,9 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		drawon = 1;
 	    }
 
+	    /* render instance */
 	    db_render(p->u.i->def, transform, nest+1, mode);
-	    /* printf ("# in db_render at level %d\n", nest); */
+	    if (debug) printf("# in db_render at level %d\n", nest); 
 
 	    /* don't draw anything below nestlevel */
 	    if (nest > nestlevel) { 
@@ -845,7 +889,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		    draw(xmin,ymin,mode); draw(xmin,ymax,mode);
 		    draw(xmax,ymax,mode);
 		jump();
-		    /* and two diagonal lines from corner to corner */
+		    /* and diagonal lines from corner to corner */
 		    draw(xmax,ymax,mode);
 		    draw(xmin,ymin,mode);
 		jump();
@@ -856,6 +900,12 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    free(transform); free(xp);
 	    transform = xf;		/* set transform back */
 
+	    /* now pass bounding box back */
+	    xminsave=max(xminsave, xmin);
+	    xmaxsave=max(xmaxsave, xmax);
+	    yminsave=max(yminsave, ymin);
+	    ymaxsave=max(ymaxsave, ymax);
+
 	    break;
 	default:
 	    eprintf("unknown record type: %d in db_render\n", p->type);
@@ -863,6 +913,17 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    break;
 	}
     }
+
+
+    snapxy(&xmin, &ymin);
+    snapxy(&xmax, &ymax);
+
+    if (debug) printf("setting bounds %g %g %g %g\n", xmin, xmax, ymin, ymax);
+    
+    cell->minx = xmin;
+    cell->maxx = xmax;
+    cell->miny = ymin;
+    cell->maxy = ymax;
 }
 
 
@@ -932,6 +993,7 @@ int mode; 	/* drawing mode */
     double k,dxn,dyn;
     double width=0.0;
     int segment;
+    int debug=0;	/* set to 1 for copious debug output */
 
     width = def->u.l->opts->width;
 
@@ -970,141 +1032,143 @@ int mode; 	/* drawing mode */
 
     segment = 0;
     do {
-	    x1=x2; x2=temp->coord.x;
-	    y1=y2; y2=temp->coord.y;
+	x1=x2; x2=temp->coord.x;
+	y1=y2; y2=temp->coord.y;
 
-	    if (width != 0) {
-		if (segment == 0) {
-		    /* printf("# in 1\n"); */
-		    dx = x2-x1; 
-		    dy = y2-y1;
-		    a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
-		    dx *= a; 
-		    dy *= a;
-		} else {
-		    /* printf("# in 2\n"); */
-		    dx=dxn;
-		    dy=dyn;
-
-		    /* xa = xb; */
-		    /* ya = yb; */
-		    /* xd = xc; */
-		    /* yd = yc; */
-		}
-
-		if ( temp->next != NULL) {
-		    /* printf("# in 3\n"); */
-		    x3=temp->next->coord.x;
-		    y3=temp->next->coord.y;
-		    dxn = x3-x2; 
-		    dyn = y3-y2;
-		    a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
-		    dxn *= a; 
-		    dyn *= a;
-		}
-		
-		if ( temp->next == NULL && segment == 0) {
-
-		    /* printf("# in 4\n"); */
-		    xa = x1+dy*width; ya = y1-dx*width;
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-		    xd = x1-dy*width; yd = y1+dx*width;
-
-		} else if (temp->next != NULL && segment == 0) {  
-
-		    /* printf("# in 5\n"); */
-		    xa = x1+dy*width; ya = y1-dx*width;
-		    xd = x1-dy*width; yd = y1+dx*width;
-
-		    if (fabs(dx+dxn) < EPS) {
-			/* printf("# in 6\n"); */
-			k = (dx - dxn)/(dyn + dy); 
-		    } else {
-			/* printf("# in 7\n"); */
-			k = (dyn - dy)/(dx + dxn);
-		    }
-
-		    /* if (fabs(dx*dyn-dxn*dy)<EPS || fabs(dx*dyn+dxn*dy)<EPS) { */
-		
-		    /* check for co-linearity of segments */
-		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-			/* printf("# in 8\n"); */
-			xb = x2+dy*width; yb = y2-dx*width;
-			xc = x2-dy*width; yc = y2+dx*width;
-		    } else { 
-			/* printf("# in 19\n"); */
-			xb = x2+dy*width + k*dx*width;
-			yb = y2-dx*width + k*dy*width;
-			xc = x2-dy*width - k*dx*width; 
-			yc = y2+dx*width - k*dy*width;
-		    }
-
-		} else if (temp->next == NULL && segment >= 0) {
-
-		    /* printf("# in 10\n"); */
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-
-		    
-		} else if (temp->next != NULL && segment >= 0) {  
-
-		    /* printf("# in 11\n"); */
-		    if (fabs(dx+dxn) < EPS) {
-			/* printf("# in 12\n"); */
-			k = (dx - dxn)/(dyn + dy); 
-		    } else {
-			/* printf("# in 13\n"); */
-			k = (dyn - dy)/(dx + dxn);
-		    }
-
-		    /* check for co-linearity of segments */
-		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-			/* printf("# in 8\n"); */
-			xb = x2+dy*width; yb = y2-dx*width;
-			xc = x2-dy*width; yc = y2+dx*width;
-		    } else { 
-			/* printf("# in 9\n"); */
-			xb = x2+dy*width + k*dx*width;
-			yb = y2-dx*width + k*dy*width;
-			xc = x2-dy*width - k*dx*width; 
-			yc = y2+dx*width - k*dy*width;
-		    }
-		}
-
-		jump();
-
-		draw(xa, ya,mode);
-		draw(xb, yb,mode);
-
-		if( width != 0) {
-		    draw(xc, yc,mode);
-		    draw(xd, yd,mode);
-		    draw(xa, ya,mode);
-		}
-
-		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
-		/* check for co-linear reversal of path */
-		if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    /* printf("# in 20\n"); */
-		    xa = xc; ya = yc;
-		    xd = xb; yd = yb;
-		} else {
-		    /* printf("# in 21\n"); */
-		    xa = xb; ya = yb;
-		    xd = xc; yd = yc;
-		}
-	    } else {		/* width == 0 */
-		jump();
-		draw(x1,y1,mode);
-		draw(x2,y2,mode);
-		jump();
+	if (width != 0) {
+	    if (segment == 0) {
+		dx = x2-x1; 
+		dy = y2-y1;
+		a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
+		if (debug) printf("# in 1, a=%g\n",a);
+		dx *= a; 
+		dy *= a;
+	    } else {
+		if (debug) printf("# in 2\n"); 
+		dx=dxn;
+		dy=dyn;
 	    }
 
-	    temp = temp->next;
-	    segment++;
+	    if ( temp->next != NULL ) {
+		x3=temp->next->coord.x;
+		y3=temp->next->coord.y;
+		dxn = x3-x2; 
+		dyn = y3-y2;
+
+		/* prevent a singularity if the last */
+		/* rubber band segment has zero length */
+		if (dxn==0 && dyn==0) {
+		    a = 0;
+		} else {
+		    a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
+		}
+
+		if (debug) printf("# in 3, a=%g\n",a); 
+		dxn *= a; 
+		dyn *= a;
+	    }
+	    
+	    if ( temp->next == NULL && segment == 0) {
+
+		if (debug) printf("# in 4\n"); 
+		xa = x1+dy*width; ya = y1-dx*width;
+		xb = x2+dy*width; yb = y2-dx*width;
+		xc = x2-dy*width; yc = y2+dx*width;
+		xd = x1-dy*width; yd = y1+dx*width;
+
+	    } else if (temp->next != NULL && segment == 0) {  
+
+		if (debug) printf("# in 5\n"); 
+		xa = x1+dy*width; ya = y1-dx*width;
+		xd = x1-dy*width; yd = y1+dx*width;
+
+		if (fabs(dx+dxn) < EPS) {
+		    k = (dx - dxn)/(dyn + dy); 
+		    if (debug) printf("# in 6, k=%g\n",k);
+		} else {
+		    k = (dyn - dy)/(dx + dxn);
+		    if (debug) printf("# in 7, k=%g\n",k);
+		}
+
+		/* check for co-linearity of segments */
+		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		    if (debug) printf("# in 8\n"); 
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+		} else { 
+		    if (debug) printf("# in 19\n");
+		    xb = x2+dy*width + k*dx*width;
+		    yb = y2-dx*width + k*dy*width;
+		    xc = x2-dy*width - k*dx*width; 
+		    yc = y2+dx*width - k*dy*width;
+		}
+
+	    } else if ((temp->next == NULL && segment >= 0) ||
+	              ( temp->next->coord.x == x2 && 
+		        temp->next->coord.y == y2)) {
+
+		if (debug) printf("# in 10\n");
+		xb = x2+dy*width; yb = y2-dx*width;
+		xc = x2-dy*width; yc = y2+dx*width;
+
+	    } else if (temp->next != NULL && segment >= 0) {  
+
+		if (debug) printf("# in 11\n");
+		if (fabs(dx+dxn) < EPS) {
+		    k = (dx - dxn)/(dyn + dy); 
+		    if (debug) printf("# in 12, k=%g\n",k);
+		} else {
+		    if (debug) printf("# in 13, k=%g\n",k); 
+		    k = (dyn - dy)/(dx + dxn);
+		}
+
+		/* check for co-linearity of segments */
+		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		    if (debug) printf("# in 8\n"); 
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+		} else { 
+		    if (debug) printf("# in 9\n"); 
+		    xb = x2+dy*width + k*dx*width;
+		    yb = y2-dx*width + k*dy*width;
+		    xc = x2-dy*width - k*dx*width; 
+		    yc = y2+dx*width - k*dy*width;
+		}
+	    }
+
+	    jump();
+	
+	    draw(xa, ya,mode);
+	    draw(xb, yb,mode);
+
+	    if( width != 0) {
+		draw(xc, yc,mode);
+		draw(xd, yd,mode);
+		draw(xa, ya,mode);
+	    }
+
+	    /* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
+	    /* check for co-linear reversal of path */
+	    if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		if (debug) printf("# in 20\n"); 
+		xa = xc; ya = yc;
+		xd = xb; yd = yb;
+	    } else {
+		if (debug) printf("# in 21\n"); 
+		xa = xb; ya = yb;
+		xd = xc; yd = yc;
+	    }
+	} else {		/* width == 0 */
+	    jump();
+	    draw(x1,y1,mode);
+	    draw(x2,y2,mode);
+	    jump();
+	}
+
+	temp = temp->next;
+	segment++;
 
     } while(temp != NULL);
 }
@@ -1399,6 +1463,13 @@ int mode;
     NUM xx, yy;
     static NUM xxold, yyold;
 
+    /* globals for computing bounding boxes */
+    /* NOTE: This must be done prior to conversion into screen space */
+    xmax = max(x,xmax);
+    xmin = min(x,xmin);
+    ymax = max(y,ymax);
+    ymin = min(y,ymin);
+
     /* compute coordinates in screen space */
     xx = x*transform->r11 + y*transform->r21 + transform->dx;
     yy = x*transform->r12 + y*transform->r22 + transform->dy;
@@ -1419,12 +1490,6 @@ int mode;
 	    printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
 	}
     }
-
-    /* globals for computing bounding boxes */
-    xmax = max(xx,xmax);
-    xmin = min(xx,xmin);
-    ymax = max(yy,ymax);
-    ymin = min(yy,ymin);
 }
 
 void jump(void) 

@@ -236,6 +236,7 @@ char *arg;	/* currently unused */
     int layer;
     int comp;
     double x1,y1,x2,y2;
+    int debug=0;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -273,7 +274,7 @@ char *arg;	/* currently unused */
 	    /* check to see if is a valid comp descriptor */
   	    comp = toupper(word[0]);
 	    retval = sscanf(&word[1], "%d", &layer);
-	    printf("layer=%d\n",layer);
+	    if (debug) printf("layer=%d\n",layer);
 
 	    if (index("ACLNOPRT", comp) && retval)  {
 
@@ -543,6 +544,9 @@ char *arg;
 }
 
 
+/* "GRID [ON | OFF] [:Ccolor] [spacing mult [xypnt]]" */
+/* com_grid(STATE, color, spacing, mult, x, y) */
+
 com_grid(arg)		/* change or redraw grid */
 char *arg;
 {
@@ -550,37 +554,103 @@ char *arg;
     int done=0;
     char buf[128];
     char word[128];
-
-    printf("    com_grid %s\n", arg);
+    int gridcolor=0;
+    GRIDSTATE grid_state = TOGGLE;	
+    double pts[6] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
+    int npts=0;
+    int nopts=0;
+    double tmp;
+    int debug=0;
 
     buf[0]='\0';
     while(!done && (token=token_get(word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
+		if (strncasecmp(word, "ON", 2) == 0) {
+		    grid_state=ON;
+		    xwin_grid_state(grid_state);
+		} else if (strncasecmp(word, "OFF", 2) == 0) {
+		    grid_state=OFF;
+		    xwin_grid_state(grid_state);
+		} else {
+	    	     printf("bad argument to GRID: %s\n", word);
+		}
+		break;
 	    case QUOTE: 	/* quoted string */
+		break;
 	    case OPT:		/* option */
+		if (strncasecmp(word, ":C", 2) == 0) { /* set color */
+		    if(sscanf(word+2, "%d", &gridcolor) != 1) {
+		         weprintf("invalid GRID argument: %s\n", word+2);
+			return(-1);
+		    }
+		    nopts++;
+		    if (debug) printf("setting color: %d\n", (gridcolor%8)+1);
+		    xwin_grid_color((gridcolor%8)+1);
+		} else {
+	    	    weprintf("bad option to GRID: %s\n", word);
+		    return(-1);
+		}
+		break;
 	    case END:		/* end of file */
 		break;
 	    case CMD:		/* command */
 		/* token_unget(token, word); */
 		break;
 	    case NUMBER: 	/* number */
-		strcat(buf,word);
-		strcat(buf," ");
+		if(sscanf(word, "%lf", &tmp) != 1) {
+		    weprintf("invalid GRID argument: %s\n", word);
+		    return(-1);
+		}
+		if (debug) printf("com_grid: point #%d: %g\n", npts, tmp);
+
+		switch (npts) {
+		    case 0:
+		    case 1:
+		    case 2:
+		    case 3:
+		    	if (tmp <= 0) {
+			    weprintf("GRID STEPs, SKIPs must be positive integers\n");
+			    return(-1);
+			}
+		    case 4:
+		    case 5:
+		    	break;
+		    default:
+			weprintf("too many numbers to GRID\n");
+			return(-1);
+		    	break;
+		}
+
+		pts[npts++] = tmp;
 		break;
 	    case EOL:		/* newline or carriage return */
 	    case EOC:		/* end of command */
 		done++;
 		break;
 	    case COMMA:		/* comma */
+		/* ignore */
 		break;
 	    default:
 		eprintf("bad case in com_grid");
 		break;
 	}
     }
-    printf("calling xwin_grid with %s\n",buf);
-    xwin_grid(buf);
+
+    if (npts == 2 || npts == 4 || npts == 6 ) {
+	if (debug) printf("setting grid ON\n");
+	xwin_grid_state(ON);
+	xwin_grid_pts(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
+    } else if (npts == 0) { 	/* no points */
+    	if( nopts == 0) { 	/* and no options */
+	    if (debug) printf("no args, toggling grid %d\n", grid_state);
+	    xwin_grid_state(grid_state);
+    	}
+    } else {
+	printf("bad number of arguments\n");
+	return(-1);
+    }
+
     return (0);
 }
 
@@ -838,14 +908,15 @@ char *arg;
 com_window(arg)		/* change the current window parameters */
 char *arg;
 {
-    double xmin, ymin, xmax, ymax, tmp;
+    double dx, dy, xmin, ymin, xmax, ymax, tmp;
     int n;
     TOKEN token;
     int done=0;
     char buf[128];
     char word[128];
+    int debug=0;
 
-    printf("    com_window\n", arg);
+    if (debug) printf("    com_window\n", arg);
 
     buf[0]='\0';
     while(!done && (token=token_get(word)) != EOF) {
@@ -869,16 +940,22 @@ char *arg;
 	    case COMMA:		/* comma */
 		break;
 	    default:
-		eprintf("bad case in com_grid");
+		eprintf("bad case in com_window");
 		break;
 	}
     }
-    printf("xwin_window got %s\n",buf);
+    if (debug) printf("xwin_window got %s\n",buf);
 
     n = sscanf(buf, "%lf %lf %lf %lf",
 	&xmin, &ymin,
 	&xmax, &ymax
     );
+
+    if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
+    if (n<=0) {
+	db_bounds(&xmin, &ymin, &xmax, &ymax);
+    }
+    if (debug) printf("%g %g %g %g %d\n", xmin, ymin, xmax, ymax, n);
 
     if (xmax < xmin) {		/* canonicalize the selection rectangle */
 	tmp = xmax; xmax = xmin; xmin = tmp;
@@ -886,8 +963,25 @@ char *arg;
     if (ymax < ymin) {
 	tmp = ymax; ymax = ymin; ymin = tmp;
     }
+
+    if (n<=0) {
+	dx=(xmax-xmin);
+	dy=(ymax-ymin);
+	xmin-=dx/10.0;
+	xmax+=dx/10.0;
+	ymin-=dy/10.0;
+	ymax+=dy/10.0;
+    	n=4;
+    } 
+
+    if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
+
+    if (xmin == 0 && ymin == 0 && xmax == 0 && ymax == 0) {
+	;	/* don't set the window to a null size */
+    } else {
+	xwin_window(n,xmin,ymin,xmax,ymax);
+    }
     
-    xwin_window(n,xmin,ymin,xmax,ymax);
 
     return (0);
 }

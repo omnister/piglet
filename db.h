@@ -66,6 +66,7 @@ typedef struct coord_pair {
 typedef struct coord_list {
     PAIR coord;
     struct coord_list *next;
+    struct coord_list *prev;
 } COORDS;
 
 typedef struct xform {
@@ -83,6 +84,19 @@ typedef struct db_tab {
     char *name;             	/* cell name */
     double minx,miny;		/* for bounding box computation */
     double maxx,maxy;		/* ... */
+
+    /* FIXME: put hooks to store grid settings in this structure */
+    /* the grid in use at time of SAVE should be put in the disk */
+    /* archive with a GRID command.  When you edit a cell in memory */
+    /* the edit should automatically use the remembered grid */
+
+    double grid_xd;
+    double grid_yd;
+    double grid_xs;
+    double grid_ys;
+    double grid_xo;
+    double grid_yo;
+
     int modified;		/* for EXIT/SAVE and bounding box usage */
     int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
@@ -277,10 +291,11 @@ extern int db_render(
 extern void draw( NUM x, NUM y, int MODE);
 extern void jump(void);
 
+extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);
+
 /********************************************************/
 /* keep track of current rep */
 /* extern DB_TAB *currep; */
 
 /* scratch pointer for new rep */
 /* extern DB_TAB *newrep; */
-
