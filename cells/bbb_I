@@ -1,0 +1,16 @@
+PURGE aaa;
+EDIT aaa;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,0 10,10;
+ADD R3 0,0 10,10;
+SAVE;
+EXIT;
+
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,0 10,10;
+ADD aaa 0,0;
+ADD aaa 0,0;

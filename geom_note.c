@@ -62,8 +62,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	/* error */
 		} else {
-		    printf("    expected TOKEN or COORD, got: %s\n",
-		    	tok2str(token));
+		    token_err("NOTE", lp, "expected OPT or NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -78,8 +77,7 @@ int *layer;
 		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
 		} else {
-		    printf("    expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("NOTE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -90,8 +88,7 @@ int *layer;
 		    token_get(lp, word);
 		    state = NUM2;
 		} else {
-		    printf("    expected COMMA, got: %s\n",
-		    	tok2str(token));
+		    token_err("NOTE", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -115,8 +112,7 @@ int *layer;
 		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
 		} else {
-		    printf("    expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("NOTE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;

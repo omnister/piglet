@@ -7,12 +7,26 @@
 #include "xwin.h"
 
 
-LEXER *token_stream_open(FILE *fp)  {
+LEXER *token_stream_open(FILE *fp, char *name)  {
     LEXER *lp;
     lp = (LEXER *) emalloc(sizeof(struct lexer));
+    lp->name = strsave(name);
     lp->bufp = 0;  /* no characters in pushback buf */
     lp->token_stream = fp;
+    lp->mode = MAIN;
+    lp->line = 1;	/* keep track of line number for stream */
     return (lp);
+}
+
+int token_err(char *modulename, LEXER *lp, char *expected, TOKEN token) 
+{
+    if (strcmp(lp->name, "STDIN") == 0) {
+	printf("%s: %s, got %s\n", modulename, expected, tok2str(token));
+    } else {
+	printf("%s: in %s, line %d: %s, got %s\n", 
+	    modulename, lp->name, lp->line, expected, tok2str(token));
+    }
+    return(0);
 }
 
 int token_stream_close(LEXER *lp)  {
@@ -34,6 +48,8 @@ TOKEN token_look(LEXER *lp, char *word)
 /* stuff back a token */
 int token_unget(LEXER *lp, TOKEN token, char *word) 
 {
+    int debug=0;
+    if (debug) printf("ungetting %s\n", word);
     if (lp->bufp >= BUFSIZE) {
 	eprintf("ungettoken: too many characters");
 	return(-1);
@@ -81,6 +97,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			*w++ = c;
 			*w = '\0';
 			if (debug) printf("returning EOL: %s \n", word);
+			lp->line++;
 			return(EOL);
 		    case ',':
 			*w++ = c;
@@ -195,8 +212,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
     return(EOF);
 }
 
-char *tok2str(token)
-TOKEN token;
+char *tok2str(TOKEN token)
 {
     switch (token) {
 	case IDENT: return("IDENT"); 	break;

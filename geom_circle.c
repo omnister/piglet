@@ -39,7 +39,7 @@ int *layer;
 
     while (!done) {
 	token = token_look(lp, word);
-	/* printf("got %s: %s\n", tok2str(token), word); */
+	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 	if (token==CMD) {
 	    state=END;
 	} 
@@ -61,8 +61,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	
 		} else {
-		    printf("   expected OPT or NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("CIRCLE", lp, "expected OPT or NUMBER", token);
 		    state = END;	/* error */
 		}
 		break;
@@ -76,8 +75,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("CIRCLE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -88,7 +86,7 @@ int *layer;
 		    token_get(lp, word);
 		    state = NUM2;
 		} else {
-		    printf("    expected COMMA, got %s\n", tok2str(token));
+		    token_err("CIRCLE", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -103,8 +101,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER got: %s\n",
-		    	tok2str(token));
+		    token_err("CIRCLE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -118,8 +115,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER got: %s\n",
-		    	tok2str(token));
+		    token_err("CIRCLE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -132,7 +128,7 @@ int *layer;
 		} else if (token == EOL) {
 		    token_get(lp, word); /* just ignore it */
 		} else {
-		    printf("  expected COMMA, got:%s\n", tok2str(token));
+		    token_err("CIRCLE", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -141,7 +137,6 @@ int *layer;
 		    token_get(lp, word);
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 		    state = START;
-		    modified = 1;
 		    db_add_circ(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		    rubber_clear_callback();
 		    need_redraw++;
@@ -150,8 +145,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("CIRCLE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;

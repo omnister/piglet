@@ -1,0 +1,34 @@
+PURGE aaa;
+EDIT aaa;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,0 10,10;
+ADD R3 0,0 10,10;
+SAVE;
+EXIT;
+
+PURGE bbb;
+EDIT bbb;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,0 40,40;
+ADD aaa 0,0;
+ADD R4 5,5 20,20;
+ADD aaa 30,30;
+SAVE;
+EXIT;
+
+PURGE ccc;
+EDIT ccc;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN -10,-10 40,40;
+ADD bbb 0,0;
+ADD aaa 5,5;
+ADD bbb -10,-10;
+SAVE;
+EXIT;
+

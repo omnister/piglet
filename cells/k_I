@@ -1,0 +1,19 @@
+PURGE erhux;
+EDIT erhux;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,0 0,0;
+SAVE;
+EXIT;
+
+PURGE k;
+EDIT k;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN 0,-400 1280,0;
+ADD erhux 1280,-400;
+SAVE;
+EXIT;
+

@@ -3,9 +3,9 @@
 /* the last coord and cause a segmentation violation */
 
 #include "db.h"
+#include "token.h"
 #include "lex.h"
 #include "xwin.h"
-#include "token.h"
 #include "rubber.h"
 
 #define NORM 0		/* drawing modes */
@@ -100,8 +100,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-	            printf("   expected OPT or COORD got: %s\n", 
-		        tok2str(token));
+		    token_err("LINE", lp, "expected OPT or COORD", token);
 		    state = END; 
 		} 
 		xold=yold=0.0;
@@ -118,8 +117,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-	            printf("   expected NUMBER, got: %s\n", 
-		        tok2str(token));
+		    token_err("LINE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -131,8 +129,7 @@ int *layer;
 		    token_get(lp,word);
 		    state = NUM2;
 		} else {
-		    printf("   expected COMMA, got %s\n", 
-		    	tok2str(token));
+		    token_err("LINE", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -143,6 +140,7 @@ int *layer;
 
 		    yold=y2;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
+		    nsegs++;
 		    
 		    CP = coord_new(x1,y1);
 		    coord_append(CP, x1,y1);
@@ -156,8 +154,7 @@ int *layer;
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
-	            printf("    expected NUMBER, got: %s\n", 
-		        tok2str(token));
+		    token_err("LINE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -182,8 +179,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-	            printf("    expected NUMBER, got: %s\n", 
-		        tok2str(token));
+		    token_err("LINE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -197,7 +193,7 @@ int *layer;
 		} else if (token == EOL) {
 		    token_get(lp,word); /* just ignore it */
 		} else {
-		    printf("  expected COMMA, got:%s\n", tok2str(token));
+		    token_err("LINE", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -223,7 +219,6 @@ int *layer;
 			coord_drop(CP);  /* drop last coord */
 		    	if (debug) coord_print(CP);
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
-			modified = 1;
 			need_redraw++;
 			rubber_clear_callback();
 			state = START;
@@ -242,17 +237,15 @@ int *layer;
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
-	            printf("  expected NUMBER, got: %s\n", 
-		        tok2str(token));
+		    token_err("LINE", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
 	    case END:
 		if (debug) printf("in end\n");
-		if (token == EOC) {
+		if (token == EOC && nsegs >= 2) {
 			coord_drop(CP);  /* drop last coord */
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
-			modified = 1;
 			need_redraw++;
 		    	; /* add geom */
 		} else if (token == CMD) {
@@ -270,6 +263,7 @@ int *layer;
     }
     return(1);
 }
+
 
 void draw_line(x2, y2, count) 
 double x2, y2;

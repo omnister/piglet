@@ -15,6 +15,7 @@
 
 #include "db.h"
 #include "xwin.h"
+#include "token.h"
 #include "eprintf.h"
 #include "rubber.h"
 #include "lex.h"
@@ -28,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.11 2004/01/10 08:28:00 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.1 2004/01/16 12:00:00 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -50,6 +51,7 @@ int grid_yo = 0;
 GRIDSTATE grid_state = G_ON;		/* ON, OFF */
 DISPLAYSTATE display_state = D_ON;	/* ON, OFF */
 int grid_color = 1;	/* 1 through 6 for different colors */ 
+int grid_notified = 0;
 
 int modified=0;
 int need_redraw=0;
@@ -593,6 +595,7 @@ int xorig,yorig;	/* grid origin */
     double x,y, xd,yd;
     int i,j;
     int debug=0;
+    extern int grid_notified;
 
     double xstart, ystart, xend, yend;
 
@@ -634,7 +637,10 @@ int xorig,yorig;	/* grid origin */
 	if ( ((xend-xstart)/(double)(dx*sx) >= (double) width/5) ||
 	     ((yend-ystart)/(double)(dy*sx) >= (double) height/5) ) {
 
-	    printf("grid suppressed, too many points\n");
+	    if (!grid_notified) {
+		printf("grid suppressed, too many points\n");
+		grid_notified++;
+	    }
 
 	} else if ( ((xend-xstart)/(double)(dx) >= (double) width/5) ||
 	     ((yend-ystart)/(double)(dy) >= (double) height/5) ) {
@@ -893,8 +899,11 @@ double x1,y1,x2,y2;
     extern XFORM *xp;
     extern double vp_xmin, vp_ymin, vp_xmax, vp_ymax;
     extern double scale,xoffset,yoffset;
+    extern int grid_notified;
     double dratio,wratio;
     double tmp;
+
+    grid_notified=0;	/* never yet evaluated the grid visibility */ 
 
     /* printf("xwin_window_set called with %f %f %f %f\n",x1,y1,x2,y2); */
 

@@ -96,7 +96,8 @@ typedef struct db_tab {
     int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
-    struct db_tab *next;    	/* to link to another */
+    struct db_tab *next;    	/* to link to next */
+    struct db_tab *prev;    	/* link to previous */
 } DB_TAB;
 
 /********************************************************/
@@ -134,7 +135,8 @@ typedef struct db_circ {
 } DB_CIRC; 
 
 typedef struct db_inst {
-    struct db_tab *def;
+    /* struct db_tab *def; */
+    char *name;
     OPTS *opts;
     NUM x,y;
 } DB_INST; 
@@ -289,7 +291,8 @@ extern int db_save(
 
 extern int db_def_print(
 		FILE *fp,
-		DB_TAB *dp
+		DB_TAB *dp,
+		int mode
 	    );
 
 extern int db_def_archive(
@@ -308,5 +311,6 @@ extern void draw( NUM x, NUM y, int MODE);
 extern void jump(void);
 
 extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);
+
 
 /********************************************************/

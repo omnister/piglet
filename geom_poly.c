@@ -1,7 +1,7 @@
 #include "db.h"
+#include "token.h"
 #include "lex.h"
 #include "xwin.h"
-#include "token.h"
 #include "rubber.h"
 
 #define NORM 0		/* drawing modes */
@@ -13,9 +13,15 @@ DB_TAB dbtab;
 DB_DEFLIST dbdeflist;
 DB_POLY dbpoly;
 
-/* FIXME: successive segments currently reuse the same pointer to
-option block.  Need to make new one for each seg, and copy all values
-Also need to make sure and release any unused opts to avoid mem leaks.*/
+/* FIXME: this code should be a bit more robust.  It should
+/* automatically cull any colinear points
+as they are entered, should eliminate any consecutive duplicate points,
+should not allow any polys with less than three vertices, etc...  The
+user should not be able to enter a malformed geometry.  There is
+currently a tricky case where the user clicks xy1, xy2, and then EOC
+while setting on the xy2 point.  This enters a three-vertex poly with
+the last two points identical.  This gets saved, and causes a crash next
+time it is read back in since the last dup points create a false EOC */
 
 
 /*
@@ -35,7 +41,7 @@ int add_poly(lp, layer)
 LEXER *lp;
 int *layer;
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
+    enum {START,NUM1,COM1,NUM2,END,ERR} state = START;
 
     int debug=0;
     int done=0;
@@ -43,7 +49,6 @@ int *layer;
     int nsegs;
     TOKEN token;
     char word[BUFSIZE];
-    double x2,y2;
     static double xold, yold;
 
     opt_set_defaults(&opts);
@@ -76,13 +81,13 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    done++;
 		} else {
-	            printf("   expected OPTION or XYPAIR, got: %s\n", 
-		        tok2str(token));
+		    token_err("POLY", lp, "expected OPT or NUMBER", token);
 		    state = END; 
 		} 
 		xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
+
 		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
 		    token_get(lp, word);
@@ -92,11 +97,9 @@ int *layer;
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
-		    printf("   cancelling ADD POLY\n");
-		    done++;
+		    state = END;
 		} else {
-	            printf("   expected NUMBER, EOC or CMD, got: %s\n", 
-		        tok2str(token));
+		    token_err("POLY", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -108,134 +111,98 @@ int *layer;
 		    token_get(lp, word);
 		    state = NUM2;
 		} else {
-		    printf("  expected COMMA, got %s\n",
-		    	tok2str(token));
-		    state = END;	
+		    token_err("POLY", lp, "expected COMMA", token);
+		    state = END; 
 		}
 		break;
 	    case NUM2:
-		if (debug) printf("in num2\n");
+
+		if (debug) printf("in num2, nsegs=%d\n", nsegs);
 		if (token == NUMBER) {
 		    token_get(lp, word);
-
-		    yold=y2;
+		    yold=y1;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
-		    
-		    CP = coord_new(x1,y1);
-		    coord_append(CP, x1,y1);
-		    nsegs++;
-
-		    if (debug) coord_print(CP);
-
-		    rubber_set_callback(draw_poly);
-		    state = NUM3;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    printf("   cancelling ADD POLY\n");
-		    done++;
-		} else {
-	            printf("   expected NUMBER, EOC or CMD, got: %s\n", 
-		        tok2str(token));
-		    state = END; 
-		}
-		break;
-	    case NUM3:		/* get pair of xy coordinates */
-		if (debug) printf("in num3\n");
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    xold=x2;
-		    sscanf(word, "%lf", &x2);	/* scan it in */
-		    state = COM2;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-	            printf("  expected NUMBER, EOC or CMD, got: %s\n", 
-		        tok2str(token));
-		    state = END; 
-		}
-		break;
-	    case COM2:		
-		if (debug) printf("in com2\n");
-		if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM4;
-		} else if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    printf("cancelling ADD POLY\n");
-		    done++;
-		} else {
-		    printf("  expected COMMA, EOC or CMD, got:%s\n",
-		    	tok2str(token));
-		    state = END;	
-		}
-		break;
-	    case NUM4:
-		if (debug) printf("in num4\n");
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    yold=y2;
-		    sscanf(word, "%lf", &y2);	/* scan it in */
 
 		    nsegs++;
 
-		    /* two identical clicks terminates this poly */
-		    /* but keeps the ADD L command in effect */
+		    if (nsegs == 1) {
+			CP = coord_new(x1,y1);
+			coord_append(CP, x1,y1);
+			if (debug) coord_print(CP);
+			rubber_set_callback(draw_poly);
+			state = NUM1;
+		    } else if (nsegs<=3 && x1==xold && y1==yold) {
 
-		    if (nsegs==1 && x1==x2 && y1==y2) {
+			/* two identical clicks terminates this poly */
+			/* but keeps the ADD P command in effect */
+
 	    		rubber_clear_callback();
-			printf("POLY: seg must have finite length\n");
+			printf("POLY: not enough distinct segments\n");
 			state = START;
-		    } else if (x2==xold && y2==yold) {
+		    } else if (x1==xold && y1==yold) {
 
 		    	if (debug) coord_print(CP);
 			if (debug) printf("dropping coord\n");
 			coord_drop(CP);  /* drop last coord */
 		    	if (debug) coord_print(CP);
-			if (debug) printf("adding poly1 layer %d\n", *layer);
 
-			db_add_poly(currep, *layer, opt_copy(&opts), CP);
-			modified = 1;
+		    	if (nsegs >= 3) {
+			    if (debug) printf("adding poly1 layer %d, nsegs=%d\n",
+				*layer, nsegs);
+			    db_add_poly(currep, *layer, opt_copy(&opts), CP);
+		    	} else {
+			    printf("   POLY requires at least three points\n");
+			}
+			   
 			need_redraw++;
 			rubber_clear_callback();
 			state = START;
 		    } else {
 			rubber_clear_callback();
 			if (debug) printf("doing append\n");
-			coord_swap_last(CP, x2, y2);
-			coord_append(CP, x2,y2);
-			nsegs++;
+			coord_swap_last(CP, x1, y1);
+			coord_append(CP, x1,y1);
 			rubber_set_callback(draw_poly);
-			rubber_draw(x2,y2);
-			state = NUM3;	/* loop till EOC */
+			rubber_draw(x1,y1);
+			state = NUM1;	/* loop till EOC */
 		    }
-
 		} else if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    printf("    cancelling ADD POLY\n");
+		    token_get(lp, word); 	/* just ignore it */
+		} else if (token == EOC) {
+		    printf("   cancelling ADD POLY\n");
 		    done++;
+		} else if (token == CMD) {
+		    state = END; 
 		} else {
-	            printf("  expected NUMBER, EOC or CMD, got: %s\n", 
-		        tok2str(token));
+		    token_err("POLY", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
 	    case END:
 		if (debug) printf("in end\n");
 		if (token == EOC) {
+		    token_get(lp, word);	/* eat it */
+		    if (debug) printf("stream = %s\n", lp->name);
+		    if (strcmp(lp->name , "STDIN") != 0) {
+			coord_drop(CP);  	/* drop last coord */
+		    }
+		    if (debug) printf("x1 %g, y1 %g, xold %g, yold %g\n",
+		    	x1, y1, xold, yold);
+		    if (x1==xold && y1==yold) {
+			if (debug) printf("dropping coord\n");
+			coord_drop(CP);  /* drop last coord */
+			nsegs--;
+		    }
 		    if (debug) printf("adding poly2 layer %d\n", *layer);
-		    if (nsegs >= 3) {
+		    if (nsegs >= 2) {
+		    	if (debug) coord_print(CP);
+			if (debug) printf("adding poly1 layer %d nsegs=%d\n",
+				*layer, nsegs);
 			db_add_poly(currep, *layer, opt_copy( & opts), CP);
-			modified = 1;
 			need_redraw++;
 		    } else {
 			printf("   POLY requires at least three points\n");
+			rubber_clear_callback();
 		    }
 		} else if (token == CMD) {
 		    printf("   cancelling ADD POLY\n");
@@ -252,6 +219,8 @@ int *layer;
     rubber_clear_callback();
     return(1);
 }
+
+/* make  poly_check(CP) to remove collinear points and dups */
 
 void draw_poly(x2, y2, count) 
 double x2, y2;

@@ -1,0 +1,10 @@
+for file in *.c *.h Makefile NOTE* TEXT*
+do
+    rcsdiff $file >/tmp/$file.changes 2>&1
+    if [ $? != 0 ] 
+    then
+    	echo "***********"  $file "***********" 
+	cat /tmp/$file.changes
+    fi
+   rm /tmp/$file.changes
+done

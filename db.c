@@ -9,6 +9,9 @@
 
 #define EPS 1e-6
 
+#define CELL 0		/* modes for db_def_print() */
+#define ARCHIVE 1
+
 /* master symbol table pointers */
 static DB_TAB *HEAD = 0;
 static DB_TAB *TAIL = 0;
@@ -44,15 +47,22 @@ void set_line();
 
 /********************************************************/
 
-DB_TAB *db_lookup(s)           /* find s in db */
-char *s;
+DB_TAB *db_lookup(char *name)           /* find name in db */
 {
     DB_TAB *sp;
+    int debug=0;
 
-    for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next)
-        if (strcmp(sp->name, s)==0)
-            return sp;
-    return 0;               	/* 0 ==> not found */
+    if (debug) printf("calling db_lookup with %s: ", name);
+    if (HEAD != (DB_TAB *)0) {
+	for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next) {
+	    if (strcmp(sp->name, name)==0) {
+		if (debug) printf("found!\n");
+		return(sp);
+	    }
+	}
+    }
+    if (debug) printf("not found!\n");
+    return(0);               	/* 0 ==> not found */
 } 
 
 DB_TAB *db_install(s)		/* install s in db */
@@ -69,6 +79,7 @@ char *s;
     strcpy(sp->name, s);
 
     sp->next   = (DB_TAB *) 0; 
+    sp->prev   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
 
@@ -92,7 +103,10 @@ char *s;
     if (HEAD ==(DB_TAB *) 0) {	/* first element */
 	HEAD = TAIL = sp;
     } else {
-	TAIL->next = sp;		/* current tail points to new */
+	sp->prev = TAIL;
+	if (TAIL != (DB_TAB *) 0) {
+	    TAIL->next = sp;		/* current tail points to new */
+	}
 	TAIL = sp;			/* and tail becomes new */
     }
 
@@ -102,7 +116,136 @@ char *s;
 int db_purge(s)			/* remove all definitions for s */
 char *s;
 {
-    /* not yet implemented */
+    DB_TAB *sp;
+    DB_DEFLIST *p;
+    COORDS *coords;
+    COORDS *ncoords;
+    int debug=0;
+
+    if ((sp=db_lookup(s)) == 0) { 	/* not in memory */
+    	return(1);
+    } else {				/* unlink s */
+        if (debug) printf("db_purge: unlinking %s from db\n", s);
+
+        if (currep == sp) {
+	    currep = NULL;
+	    need_redraw++;
+	}
+
+	if (HEAD==sp) {
+	    HEAD=sp->next;
+	}
+
+	if (TAIL==sp) {
+	    TAIL=sp->prev;
+	}
+
+	if (sp->prev != (DB_TAB *) 0) {
+	    sp->prev->next = sp->next;
+        }
+	if (sp->next != (DB_TAB *) 0) {
+	    sp->next->prev = sp->prev;
+	}
+    }
+
+    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+	switch (p->type) {
+
+        case ARC:  /* arc definition */
+	    if (debug) printf("db_purge: freeing arc\n");
+	    free(p->u.a->opts);
+	    free(p->u.a);
+	    free(p);
+	    break;
+
+        case CIRC:  /* circle definition */
+	    if (debug) printf("db_purge: freeing circle\n");
+	    free(p->u.c->opts);
+	    free(p->u.c);
+	    free(p);
+	    break;
+
+        case LINE:  /* line definition */
+
+	    if (debug) printf("db_purge: freeing line\n");
+	    coords = p->u.l->coords;
+	    while(coords != NULL) {
+		ncoords = coords->next;
+		free(coords);	
+		coords=ncoords;
+	    }
+	    free(p->u.l->opts);
+	    free(p->u.l);
+	    free(p);
+	    break;
+
+        case NOTE:  /* note definition */
+
+	    if (debug) printf("db_purge: freeing note\n");
+	    free(p->u.n->opts);
+	    free(p->u.n->text);
+	    free(p->u.n);
+	    free(p);
+	    break;
+
+        case OVAL:  /* oval definition */
+
+	    if (debug) printf("db_purge: freeing oval\n");
+	    free(p->u.o->opts);
+	    free(p->u.o);
+	    free(p);
+	    break;
+
+        case POLY:  /* polygon definition */
+
+	    if (debug) printf("db_purge: freeing poly\n");
+	    coords = p->u.p->coords;
+	    while(coords != NULL) {
+		ncoords = coords->next;
+		free(coords);
+		coords=ncoords;
+	    }
+	    free(p->u.p->opts);
+	    free(p->u.p);
+	    free(p);
+	    break;
+
+	case RECT:  /* rectangle definition */
+
+	    if (debug) printf("db_purge: freeing rect\n");
+	    free(p->u.r->opts);
+	    free(p->u.r);
+	    free(p);
+	    break;
+
+        case TEXT:  /* text definition */
+
+	    if (debug) printf("db_purge: freeing text\n");
+	    free(p->u.t->opts);
+	    free(p->u.t->text);
+	    free(p->u.t);
+	    free(p);
+	    break;
+
+        case INST:  /* instance call */
+
+	    if (debug) printf("db_purge: freeing instance call: %s\n",
+	    	p->u.i->name);
+	    free(p->u.i->name);
+	    free(p->u.i->opts);
+	    free(p->u.i);
+	    free(p);
+	    break;
+
+	default:
+	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
+	    break;
+	}
+
+    }
+    
+    free(sp);
+
 }
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
@@ -119,7 +262,7 @@ DB_TAB *sp;
     snprintf(buf, MAXFILENAME, "./cells/%s.d", sp->name);
     err+=((fp = fopen(buf, "w+")) == 0); 
 
-    db_def_print(fp, sp); 
+    db_def_print(fp, sp, CELL); 
     err+=(fclose(fp) != 0);
 
     return(err);
@@ -140,7 +283,7 @@ DB_TAB *sp;
     fp = fopen(buf, "w+"); 
 
     db_def_arch_recurse(fp,sp);
-    db_def_print(fp, sp);
+    db_def_print(fp, sp, ARCHIVE);
 
     err+=(fclose(fp) != 0);
 
@@ -152,7 +295,6 @@ FILE *fp;
 DB_TAB *sp;
 {
     DB_TAB *dp;
-    COORDS *coords;
     DB_DEFLIST *p; 
 
     /* clear out all flag bits in cell definition headers */
@@ -162,29 +304,31 @@ DB_TAB *sp;
 
     for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 
-	if (p->type == INST && !(p->u.i->def->flag)) {
+	if (p->type == INST && !(db_lookup(p->u.i->name)->flag)) {
 
-	     db_def_arch_recurse(fp, p->u.i->def); 	/* recurse */
-	     (p->u.i->def->flag)++;
-
-	     db_def_print(fp, p->u.i->def);
+	    db_def_arch_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
+	    ((db_lookup(p->u.i->name))->flag)++;
+	    db_def_print(fp, db_lookup(p->u.i->name), ARCHIVE);
 	}
     }
-
     return(0); 	
 }
 
 
-int db_def_print(fp, dp) 
+int db_def_print(fp, dp, mode) 
 FILE *fp;
 DB_TAB *dp;
+int mode;
 {
     COORDS *coords;
     DB_DEFLIST *p; 
     int i;
 
-    fprintf(fp, "PURGE %s;\n", dp->name);
-    fprintf(fp, "EDIT %s;\n",dp->name);
+    if (mode == ARCHIVE) {
+	fprintf(fp, "PURGE %s;\n", dp->name); 
+	fprintf(fp, "EDIT %s;\n", dp->name);
+    }
+
     fprintf(fp, "LOCK %g;\n", dp->lock_angle);
     fprintf(fp, "LEVEL %d;\n", dp->logical_level);
     fprintf(fp, "GRID ON;\n");
@@ -245,7 +389,7 @@ DB_TAB *dp;
 
         case POLY:  /* polygon definition */
 
-	    fprintf(fp, "ADD P%d ", p->u.p->layer);
+	    fprintf(fp, "ADD P%d", p->u.p->layer);
 	    db_print_opts(fp, p->u.p->opts, "W");
 
 	    i=1;
@@ -278,7 +422,7 @@ DB_TAB *dp;
 	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
 	    db_print_opts(fp, p->u.t->opts, "MRYZF");
 
-	    fprintf(fp, "%s %g,%g;\n",
+	    fprintf(fp, "\"%s\" %g,%g;\n",
 		p->u.t->text,
 		p->u.t->x,
 		p->u.t->y
@@ -286,7 +430,7 @@ DB_TAB *dp;
 	    break;
 
         case INST:  /* instance call */
-	    fprintf(fp, "ADD %s ", p->u.i->def->name);
+	    fprintf(fp, "ADD %s ", p->u.i->name);
 	    db_print_opts(fp, p->u.i->opts, "MRXYZ");
 	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
@@ -298,10 +442,13 @@ DB_TAB *dp;
 	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
 	    break;
 	}
+
     }
 
-    fprintf(fp, "SAVE;\n");
-    fprintf(fp, "EXIT;\n\n");
+    if (mode == ARCHIVE) {
+	fprintf(fp, "SAVE;\n");
+	fprintf(fp, "EXIT;\n\n");
+    }
 }
 
 
@@ -313,6 +460,8 @@ NUM x1,y1,x2,y2,x3,y3;
 {
     struct db_arc *ap;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     ap = (struct db_arc *) emalloc(sizeof(struct db_arc));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -383,6 +532,8 @@ COORDS *coords;
 {
     struct db_line *lp;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     lp = (struct db_line *) emalloc(sizeof(struct db_line));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -415,6 +566,8 @@ NUM x,y;
 {
     struct db_note *np;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     np = (struct db_note *) emalloc(sizeof(struct db_note));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -448,6 +601,8 @@ NUM x1,y1, x2,y2, x3,y3;
 {
     struct db_oval *op;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     op = (struct db_oval *) emalloc(sizeof(struct db_oval));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -485,6 +640,8 @@ COORDS *coords;
     struct db_poly *pp;
     struct db_deflist *dp;
     int debug = 0;
+
+    cell->modified++;
  
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -517,6 +674,8 @@ NUM x1,y1,x2,y2;
 {
     struct db_rect *rp;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     rp = (struct db_rect *) emalloc(sizeof(struct db_rect));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -552,6 +711,8 @@ NUM x,y;
 {
     struct db_text *tp;
     struct db_deflist *dp;
+
+    cell->modified++;
  
     tp = (struct db_text *) emalloc(sizeof(struct db_text));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -586,6 +747,8 @@ NUM x,y;
     struct db_inst *ip;
     struct db_deflist *dp;
  
+    cell->modified++;
+
     ip = (struct db_inst *) emalloc(sizeof(struct db_inst));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -601,13 +764,14 @@ NUM x,y;
     dp->u.i = ip;
     dp->type = INST;
 
-    ip->def=subcell;
+    /* ip->def=subcell; */
+    ip->name=strsave(subcell->name);
+
     ip->x=x;
     ip->y=y;
     ip->opts=opts;
 }
 
-/* a simple test harness */
 /*
 main () { 	
 
@@ -858,7 +1022,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     XFORM *save_transform;
     extern int nestlevel;
     double optval;
-    int debug=1;
+    int debug=0;
     double xminsave;
     double xmaxsave;
     double yminsave;
@@ -941,6 +1105,12 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* occur in the proper order, for example, rotation must come */
 	    /* after slant transformation or else it wont work properly */
 
+	    /* FIXME: inst calls should be by name, not by pointer */
+	    /* it is possible to PURGE a cell in memory and then try */
+	    /* to reference a bad pointer, causing a crash... For this */
+	    /* reason, instances are called by name, and the pointer */
+	    /* is always accessed with a db_lookup() call */
+
 	    switch (p->u.i->opts->mirror) {
 	    	case MIRROR_OFF:
 		    break;
@@ -988,8 +1158,9 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
 	    /* render instance */
-	    db_render(p->u.i->def, nest+1, mode);
-	    if (debug) printf("# in db_render at level %d\n", nest); 
+	    if (debug) printf("rendering %s, %d\n",
+	    	p->u.i->name, db_lookup(p->u.i->name));
+	    db_render(db_lookup(p->u.i->name), nest+1, mode);
     
 
 	    /* don't draw anything below nestlevel */
@@ -1056,7 +1227,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    break;
 	default:
 	    eprintf("unknown record type: %d in db_render\n", p->type);
-	    exit(1);
+	    return(1);
 	    break;
 	}
     }
@@ -1065,7 +1236,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     /* snapxy(&xmin, &ymin); */
     /* snapxy(&xmax, &ymax); */
 
-    if (1) printf("setting bounds %g %g %g %g\n",
+    if (debug) printf("setting bounds %g %g %g %g\n",
     	xmin, xmax, ymin, ymax);
 
     if (nest == 0) {

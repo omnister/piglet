@@ -1,0 +1,13 @@
+
+The only global variables that have scope across files are
+declared in xwin.h:
+
+    /* globals for interacting with db.c */
+
+    extern DB_TAB *currep;   /* defined in db.c */
+    extern int quit_now;     /* defined in xwin.c */
+    extern int modified;     /* defined in xwin.c */
+    extern int need_redraw;  /* defined in xwin.c */
+    extern char version[];   /* defined in xwin.c */
+
+

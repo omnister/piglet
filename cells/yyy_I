@@ -1,0 +1,14 @@
+PURGE yyy;
+EDIT yyy;
+LOCK 0;
+LEVEL 1;
+GRID ON;
+WIN -70,-146.569 833.64,572.132;
+ADD xxx 0,0;
+ADD xxx 470,260;
+ADD foo 440,40;
+ADD bar 0,230;
+ADD T7 :F50 this is a hierarchy test -40,480;
+SAVE;
+EXIT;
+

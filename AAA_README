@@ -1,0 +1,325 @@
+
+OK.  Just type make and you should have a working piglet.
+
+Here's some things to try.  Firstly, the drawings that you create
+will all be in the sub-directory ./cells.  Later on, I plan to
+implement a search path for drawings.
+
+Notice that piglet creates a graphic window.  The editor is scanning
+both the graphic window and the original shell window that you used to
+start piglet.  You can either type coordinates, or click them with the
+mouse.  The shell window should have a prompt:
+
+MAIN>
+
+----------------- GRID ---------------------
+
+Try playing with the grid.  If you type "gri 20 2;", you'll get a 20x20
+grid tick with a skip of two.  You'll see what I mean if you try it.  You
+can move your mouse in the graphic area and see the xy coordinates of
+the mouse displaying in the upper left corner.
+
+You can also offset the grid.  Try "gri 20 2 5 5;" and notice that the
+origin is now at 5,5 instead of 0,0.
+
+Finally, you can make a non-isotropic grid with something like 
+"gri 10 20 2 4 7 7";  This form of the command sets:
+
+   gri <xspacing> <yspacing> <xskip> <yskip> <xorig> <yorig>
+
+When entering points with the mouse, the clicks ALWAYS snap to the grid,
+giving a powerful way to enter precise coordinates.
+
+The grid also allows an option ":C<0-7>" which will set the color of the
+grid to any of the 8 system colors.  For example: "grid :c2 10 2" creates
+a red grid.  The colors are "white, red, green, blue, cyan, magenta,
+yellow".
+
+You can also turn the grid on with "GRI ON" or off with "GRI OFF". 
+Typing "GRI;" with no arguments toggles the grid state.
+
+COMMANDS
+--------
+
+All the piglet built-in commands can be abbreviated to just three letters
+with one exception.  DISPLAY must be entered as "DISP" or "disp" to
+distinguish it from "DIStance".
+
+HELP
+----
+
+You can get a list of all commands by typing "?" or "HELP".  You can get a
+summary on just one command by typing "HELP <command>".  
+
+There is documentation of the commercial versions of piglet in the
+sub-directory "doc".  All these manual pages are copyright either
+HP or DurstCad.  Please don't distribute these any further.  I'm sharing
+these with potential developers because they provide a blueprint for
+developing the code.  They will not be distributed with the public
+release of PD_piglet.
+
+
+----------------- CREATING A CELL  ---------------------
+
+Once you are happy with the grid spacing and color, try adding some
+primitives to the drawing.  First give your drawing a name with "edi
+mycell".
+
+RECTANGLES
+----------
+
+Now try adding a rectangle by typing "ADD R7" then clicking
+the two corners of your rectangle with your left mouse button.  You can
+add as many rectangles as you want by continuing to click pairs.  The
+command can be terminated with a right-click or by typing either a ";"
+or another command name at the keyboard.  You can get different colors
+by adding R<layer_number>.  The layers cycle mod(8) through the color
+table and then cycle through line types.  For example, "ADD R15" is the
+same color as "ADD R7", but uses a dot-dash line type.   Later on, the plan
+is to implement the PROCESS command which will allows you to to bind 
+outline colors, fill patterns, fill colors and so on to specific layer
+numbers or names.
+
+As always with piglet, you can either use the mouse to enter coordinates
+or the keyboard.  For example, you can type:
+
+	"ADD R22 0,0 100,121;"
+
+to explicitly add precise coordinates without using the mouse.  This is
+very handy when you are entering precise coordinates from a table or from 
+calculations.  
+
+INPUT
+-----
+
+As a final trick, you can use a program to create lines
+like the above, print them into a file named "./cells/foo", and then read
+them into your current cell using the input command: "INP foo".
+
+
+COMMAND LINE EDITING
+--------------------
+
+Anything typed at the command line goes into a readline buffer.  I have
+mine set up with a vi command history binding.  You can change the
+binding by editing ~/.inputrc.  My file looks like:
+
+------------ cut here for gnu readline ~/.inputrc file ----------
+set editing-mode vi
+set keymap vi
+------------ cut here for gnu readline ~/.inputrc file ----------
+
+If you don't set anything, I think you get either an emacs or 
+up-arrow, down-arrow editing mechanism.
+
+WINDOWING
+---------
+
+You can fit the window to the bounding box of the drawing
+by typing "WIN :F;".   You can center the drawing on a particular
+point by typing "WIN" and then double clicking on any given point.
+Clicking two different points will window in on a region.  You can
+get a zoom in or zoom out by using "WIN :X<factor>".
+
+
+LINES
+-----
+
+You can add lines with "ADD L<layer_number>".  Keep clicking your
+coordinates with your left-mouse button.  Double-clicking on the same point
+will terminate the line and still let you create new lines.  Right-clicking
+or typing ";" will terminate both the line and the command.
+
+Lines can have width.  Typing "ADD L7 :W20" will let you enter a line
+with a width of 20.  The default is a width of zero.
+
+CIRCLES
+-------
+
+Circles are added with "ADD C<layer> :R<degrees> XY1 XY2". The ":R" option 
+gives the resolution in degrees.  This is handy for making regular polygons.
+For instance "ADD C7 :R72" will create a perfect pentagon.  The pentagon
+rotates during rubberband drawing such that the second point, XY2, is always
+on one of the vertices.  "ADD C7 :R90" is a way to add a rotated square.
+"ADD C7 :R120" adds an equilateral triangle.
+
+POLYGONS
+--------
+
+Similiar to lines.  The polygons are always closed for you while you are
+drawing.  Double clicking terminates but keeps the command active.
+
+NOTES and TEXT
+--------------
+
+You can add notes (drawn with zero width strokes) with 
+
+    ADD N<layer> :F<fontsize> "text to be displayed";
+
+Text is drawn with polygons and can be entered with
+
+    ADD T<layer> :F<fontsize> "text to be displayed";
+
+The fontsize is the vertical spacing of the characters that will
+produce single-spaced lines of text.  So, a fontsize of :F20 will
+produce a capital letter with a height of 15 units.
+
+Other fun options are
+
+    ":M<x|y|xy>"     mirror the text around x,y, or both xy axes
+    ":R<angle>"      rotate text by <angle> in degrees
+    ":Y<yxratio>"    set y to x ratio to make skinny or fat letters
+    ":Z<slant>"      create italics by slanting the text by <slant> degrees
+
+These fonts are defined in NOTEDATA.F and TEXTDATA.F and are easily
+changed.  I have quite a few fonts that are derived from the Hershey
+font database.  The format is pretty simple and is documented in
+readfont.c.
+
+INSTANCES
+---------
+
+You can save your drawing with the "SAVE;" command.  You can then 
+"EXIT;" and you are ready to "EDI" a new drawing.  This is the fun part 
+of piglet.  Try doing "EDI newdrawing" and adding a copy of our previous
+drawing as a sub-cell.   Doing "ADD mycell" lets you click to
+add copies of your previous drawing "mycell" to "newdrawing".   You
+can use options to add copies with scaling, rotation, etc:
+
+    ":M<x|y|xy>"     mirror the text around x,y, or both xy axes
+    ":R<angle>"      rotate text by <angle> in degrees
+    ":X<factor>"      scale instance by <factor>
+    ":Y<yxratio>"    set y to x ratio to make skinny or fat letters
+    ":Z<slant>"      create italics by slanting the text by <slant> degrees
+
+This nesting can be arbitrarily deep.  You can "SAVE newdrawing" and
+then "EDI biggerdrawing" and add copies of both "newdrawing" and "mydrawing"
+into "biggerdrawing".
+
+Also, the subcells are live.  This means that if you finish with a
+drawing using sub-drawings of slotted screws, you can change them all to
+philips-style screws by simply editing the original definition.  It will
+change in all the drawings that have called the cell, no matter how complex
+the nesting or the transformations applied.
+
+SAVE
+----
+
+When you "SAV" a cell it creates a text file in ./cells/<CELLNAME>.d
+The file is human readable and is a nicely formatted transcript of the
+exact commands that you typed and moused to create the cell in the first
+place.  You can edit this file (carefully) and the textual changes will
+take effect next time you start a new piglet and read in the definition.
+
+PURGE
+-----
+
+If you want to use textual processing to change a cell that's already
+been read into memory, you can "PURGE <cellname>", and then re-edit it.
+The second edit will re-read the disk definition including any changes
+that have been added.
+
+DEMOS
+-----
+
+There are several big drawings in the cells directory.  You can take
+a look at these to see how piglet handles thousands of polygons.
+Try: 
+
+    "EDI CDRCFR"   a hybrid substrate for a 2.488 GHz phase locked loop
+    "EDI tone"     a schematic for a PBX dial tone generator
+    "EDI fontest"  an example of all the characters
+    "EDI H20919M1" a 24x36 inch 6-layer Printed Circuit Board design
+    "EDI testpen"  a sample of all the line types
+    "EDI PLAN2"    the floor plans of the two houses on my lot 
+    "EDI slic"     a telephone subscriber line interface circui
+
+You can look at the CELL.d files to see the top level definitions or
+you can look at the CELL_I file to see the full hierarchical archive
+which includes all the sub-cell definitions.  The archive file is fully
+self-contained and is suitable for e-mailing a complete design to another
+person.
+
+MISSING STUFF
+-------------
+
+There are data structures and stubs for OVALS and ARCS.  These and others
+should be an easy project.
+
+Most conspicuous is the lack of "DELete", "MOVe", "COPy" and "STRetch". 
+This is the next big code push.  I'll start with the "IDEntify" command. 
+This will simply pass a coordinate to db_render().  As the screen is
+refreshed, the bounding box of every instance will be compared to the
+"IDEntify" coordinate.  The top-10 closest primitives will be saved in
+sorted order in a linked list.  The best match will be highlighted and
+it's name printed to stdout.  If this isn't the one the user had in
+mind, then the up/down arrows can be used to roll through the linked
+list until the correct primitive is selected. 
+
+Once "IDE" is working, it should be easy to use the functionality to
+implement "DEL" and "MOV".
+
+Next priority is the MENU.  This will be a simple text block in the corner
+of the display.  It will be a simple gridded block of every piglet command
+like:
+
+|ADD  |R|C|L|N|T|O|A|
+|EDI |SAV |PUR |WIN |
+|COP |MOV |DEL |INP |
+|:F|:R|:X|:Y|:M|:Z|||
+|0|1|2|3|4|5|6|7|8|9|
+...
+
+Each cell is color coded so that "DEL" can be something like
+red and "EDI" green.  When the mouse is clicked on a menu item,
+it simple causes the literal text of the menu to be injected into
+the parse stream.  The mechanism for this is already in place and
+is used to pass the mouse clicks into the parser as ascii representations
+of the mouse coordinates.  With such a simple menu in place, the editing
+is quite fast and efficient, requiring the keyboard only for precision 
+coordinate or text string entry.
+
+PRINTING
+--------
+
+The basic rendering engine creates output consisting of xy() coordinates
+for defining a drawing path, jump() commands which move to the next
+coordinate without drawing, pen(pen_number) to set colors, and
+line(line_type) to set line style.  These should be trivial to convert to
+either postscript or HPGL output.  
+
+MACROS
+------
+
+The original piglet had macros and command line math evaluation so
+you could define more complex functions and type things like:
+
+    ADD R7 0,0 35/2,100+5*sqrt(2);
+
+for computing precise coordinates on the fly.
+
+REVISION CONTROL
+----------------
+
+It would be easy to have every SAVE do a "ci -l" on the cell, thereby
+keeping revision control on every cell.  
+
+I'm thinking of allowing the user to create variables that are stored with
+the cell.  They could look like:
+
+$$F: "some text keyed to F" $$
+$$H: "some text keyed to H" $$
+
+The user could then add text to the drawing referencing these variables
+with something like:
+
+	ADD T7 :F20 $F;
+
+If one of the variables has the $Id keyword in it, then RCS will substitute
+that keyword dynamically with the version number at each checkin.  This
+makes it trivial to put a text block in the lower left corner of your
+drawing that is always lists the latest rev number for the drawing.
+
+You could also define variables that would make the cell automatically
+upgrade to the latest available version, or insist that the version be
+frozen at particular rev number.

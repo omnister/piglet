@@ -31,16 +31,6 @@ int com_split(), com_step(), com_stretch(), com_trace();
 int com_undo(), com_units(), com_version(), com_window();
 int com_wrap();
 
-#define MAIN 0
-#define PRO 1
-#define SEA 2
-#define MAC 3
-#define EDI 4
-
-int mode=MAIN;
-/* A structure which contains information on the
-   commands this program can understand. */
-
 typedef struct {
     char *name;			/* User printable name of the function. */
     Function *func;		/* Function to call to do the job. */
@@ -126,7 +116,7 @@ char **argv;
     rl_pending_input='\n';
     rl_setprompt("");
 
-    lp = token_stream_open(stdin);
+    lp = token_stream_open(stdin,"STDIN");
     parse(lp);
 }
 
@@ -143,8 +133,9 @@ LEXER *lp;
     int i; /* scratch variable */
 
     while((token=token_get(lp, word)) != EOF) {
-        if (debug) printf("IN MAIN: got %s: %s\n", tok2str(token), word);
-	switch (mode) {
+        if (debug) printf("%s, line %d: IN MAIN: got %s: %s\n", 
+	    lp->name,  lp->line, tok2str(token), word);
+	switch (lp->mode) {
 	    case MAIN:
 		rl_setprompt("MAIN> ");
 		break;
@@ -158,7 +149,6 @@ LEXER *lp;
 		rl_setprompt("MACRO> ");
 		break;
 	    case EDI:
-		/* GLOBAL currep */
 		if (currep != NULL) {
 		    sprintf(buf, "EDIT %s> ", currep->name);
 		    rl_setprompt(buf);
@@ -187,7 +177,7 @@ LEXER *lp;
 	    case EOC:
 		break;
 	    default:
-		printf(" MAIN: expected COMMAND, got %s: %s\n",
+		printf("MAIN: expected COMMAND, got %s: %s\n",
 			tok2str(token), word);
 		token_flush_EOL(lp);
 		break;
@@ -359,8 +349,15 @@ com_add(LEXER *lp, char *arg)
 			break;
 		}
 	    } else {  /* must be a identifier */
+	        /* check to see if "ADD I <name>" */
+		if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
+		    if((token=token_get(lp,word)) != IDENT) {
+			printf("ADD INST: bad inst name: %s\n", word);
+			done++;
+		    }
+		}
 		if (debug) printf("calling add_inst with %s\n", word);
-		add_inst(word);
+		add_inst(lp, word);
 	    }
 	} else if (token == QUOTE) {
 		add_inst(lp, word);
@@ -371,8 +368,10 @@ com_add(LEXER *lp, char *arg)
 	    ; /* ignore */
 	} else if (token == EOC) {
 	    done++;
+	} else if (token == EOF) {
+	    done++;
 	} else {
-	    printf("expected COMP/LAYER or INST name\n");
+	    printf("ADD: expected COMP/LAYER or INST name: %d\n", token);
 	    token_flush_EOL(lp);
 	    done++;
 	}
@@ -407,7 +406,7 @@ com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 	    exit(-1);
 	};
 	printf("    archived %s\n", currep->name);
-	modified = 0;
+	currep->modified = 0;
     } else {
 	printf("error: not currently editing a cell\n");
     }    	
@@ -457,11 +456,10 @@ char *arg;
 
     numbyes++;	/* number of com_bye() calls */
 
-    if (currep != NULL && modified && numbyes==1) {
+    if (currep != NULL && currep->modified && numbyes==1) {
 	printf("    you have an unsaved instance (%s)!\n", currep->name);
     } else {
 	quit_now++;
-	fprintf(stderr, "    com_bye %s\n", arg);
 	exit(1); 	/* for now just bail */
     }
     return (0);
@@ -559,23 +557,35 @@ char *arg;
     int done=0;
     char word[128];
     char name[128];
+    char buf[128];
     int error=0;
     int debug=0;
+    int nfiles=0;
+    FILE *fp;
+    LEXER *my_lp;
+    DB_TAB *save_rep;  
+   
 
-    /* printf("    com_edit <%s>\n", arg); */
+    if (debug) printf("    com_edit <%s>\n", arg); 
 
     name[0]=0;
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
-		strncpy(name, word, 128);
+		if (nfiles == 0) {
+		    strncpy(name, word, 128);
+		    nfiles++;
+		} else {
+		    printf("EDIT: wrong number of args\n");
+		    return(-1);
+		}
 	    	break;
 	    case QUOTE: 	/* quoted string */
 	    case OPT:		/* option */
 	    case END:		/* end of file */
 	    case NUMBER: 	/* number */
 	    case COMMA:		/* comma */
-		printf("expected IDENT: got %s\n", tok2str(token));
+		printf("EDIT: expected IDENT: got %s\n", tok2str(token));
 	    	break;
 	    case EOL:		/* newline or carriage return */
 	    	break;	/* ignore */
@@ -592,7 +602,9 @@ char *arg;
 	}
     }
 
-    if (mode == MAIN || (mode == EDI && !modified)) {
+    if (lp->mode == MAIN || 
+        currep == NULL || 
+	(lp->mode == EDI && !currep->modified)) {
 
 	/* check for a name provided */
 	if (strlen(name) == 0) {
@@ -602,24 +614,40 @@ char *arg;
 
 	if (debug) printf("got %s\n", name); 
 
-	mode = EDI;
+	lp->mode = EDI;
     
 	/* don't destroy it if it's already in memory */
 	if ((currep=db_lookup(name)) == NULL) {
-	    currep = db_install(name);
-	} 
+
+	    currep = db_install(name);  	/* create blank stub */
+
+	    /* now check if on disk */
+	    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
+	    if((fp = fopen(buf, "r")) == 0) {
+		/* cannot find copy on disk */
+	    } else {
+		/* read it in */
+		xwin_display_set_state(D_OFF);
+		my_lp = token_stream_open(fp, buf);
+		save_rep=currep;
+		printf ("reading %s from disk\n", name);
+		parse(my_lp);
+		token_stream_close(my_lp); 
+		if (currep != NULL) {
+		    currep->modified = 0;
+		}
+		
+		currep=save_rep;
+		xwin_display_set_state(D_ON);
+		if ((currep=db_lookup(name)) == NULL) {
+		    printf("error in reading in %s\n", name);
+		}
+	    }
+	}
+
 	need_redraw++;
 
-	/* 
-	if inpath(PATH, <device>) {
-	    push=push_env(device);
-	    read_in(device);
-	} else {
-	    push=push_env(NULL);
-	}
-	*/
-
-    } else if (mode == EDI) {
+    } else if (lp->mode == EDI) {
 	printf("    must SAVE current device before new EDIT\n");
     } else {
 	printf("    must EXIT before entering EDIT subsystem\n");
@@ -639,10 +667,10 @@ com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 LEXER *lp;
 char *arg;
 {
-    if (modified) {
+    if (currep != NULL && currep->modified) {
 	printf("    must save before exiting\n");
     } else {
-	mode = MAIN;
+	lp->mode = MAIN;
 	currep = NULL;
 	need_redraw++;
     }
@@ -734,8 +762,8 @@ char *arg;
 			return(-1);
 		    }
 		    nopts++;
-		    if (debug) printf("setting color: %d\n", (gridcolor%8)+1);
-		    xwin_grid_color((gridcolor%8)+1);
+		    if (debug) printf("setting color: %d\n", (gridcolor%8));
+		    xwin_grid_color((gridcolor%8));
 		} else {
 	    	    weprintf("bad option to GRID: %s\n", word);
 		    return(-1);
@@ -875,6 +903,7 @@ char *arg;
     int done=0;
     int nfiles=0;
     LEXER *my_lp;
+    DB_TAB *save_rep;
 
     if (debug) printf("in com_input\n");
     rl_setprompt("INP> ");
@@ -886,18 +915,21 @@ char *arg;
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (nfiles == 0) {
-		    snprintf(buf, MAXFILENAME, "./cells/%s.d", word);
+		    snprintf(buf, MAXFILENAME, "./cells/%s", word);
 		    nfiles++;
 		    if (nfiles == 1) {
 			if((fp = fopen(buf, "r")) == 0) {
-			     printf("COM_INPUT: could not open %s\n", buf);
-			     return(1);
+			    printf("COM_INPUT: could not open %s\n", buf);
+			    return(1);
 			} else {
-			     xwin_display_set_state(D_OFF);
-			     my_lp = token_stream_open(fp);
-			     parse(my_lp);
-			     token_stream_close(my_lp); 
-			     xwin_display_set_state(D_ON);
+			    xwin_display_set_state(D_OFF);
+			    my_lp = token_stream_open(fp, buf);
+			    save_rep=currep;
+			    printf ("reading %s from disk\n", buf);
+			    parse(my_lp);
+			    token_stream_close(my_lp); 
+			    currep=save_rep;
+			    xwin_display_set_state(D_ON);
 			}
 		    } else {
 			printf("INPUT: wrong number of args\n");
@@ -1066,8 +1098,8 @@ LEXER *lp;
 char *arg;
 {
     printf("    com_macro\n", arg);
-    if (mode == MAIN) {
-	mode = MAC;
+    if (lp->mode == MAIN) {
+	lp->mode = MAC;
     } else {
 	printf("    must EXIT before entering MACRO subsystem\n");
     }
@@ -1111,8 +1143,8 @@ LEXER *lp;
 char *arg;
 {
     printf("    com_process\n", arg);
-    if (mode == MAIN) {
-	mode = PRO;
+    if (lp->mode == MAIN) {
+	lp->mode = PRO;
     } else {
 	printf("    must EXIT before entering PROCESS subsystem\n");
     }
@@ -1123,7 +1155,37 @@ com_purge(lp, arg)		/* remove device from memory and disk */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_purge\n", arg);
+    TOKEN token;
+    int done=0;
+    int level;
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+	        db_purge(word);
+	    	break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+		; /* eat em up! */
+	    	break;
+	}
+    }
     return (0);
 }
 
@@ -1144,11 +1206,15 @@ char *arg;
     int err;
 
     if (currep != NULL) {
-	if (db_save(currep)) {
-	    printf("unable to save %s\n", currep->name);
-	};
-	printf("    saved %s\n", currep->name);
-	modified = 0;
+	if (currep->modified) {
+	    if (db_save(currep)) {
+		printf("unable to save %s\n", currep->name);
+	    };
+	    printf("saved %s\n", currep->name);
+	    currep->modified = 0;
+        } else {
+	    ; /* silently refuse to write non-modified cell */
+	}
     } else {
 	printf("error: not currently editing a cell\n");
     }    	
@@ -1181,8 +1247,8 @@ char *arg;
 {
     printf("    com_search\n", arg);
 
-    if (mode == MAIN) {
-	mode = SEA;
+    if (lp->mode == MAIN) {
+	lp->mode = SEA;
     } else {
 	printf("    must EXIT before entering SEARCH subsystem\n");
     }

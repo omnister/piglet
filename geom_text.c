@@ -62,9 +62,8 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	/* error */
 		} else {
-		    printf("    expected TOKEN or COORD, got: %s\n",
-		    	tok2str(token));
-		    state = END; 
+		    token_err("TEXT", lp, "expected OPT or NUMBER", token);
+		    token_get(lp, word);
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
@@ -75,11 +74,10 @@ int *layer;
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
-		    printf(" cancelling ADD TEXT\n");
+		    printf("ADD TEXT: cancelling ADD TEXT\n");
 		    state = END; 
 		} else {
-		    printf("    expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("TEXT", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -90,8 +88,7 @@ int *layer;
 		    token_get(lp, word);
 		    state = NUM2;
 		} else {
-		    printf("    expected COMMA, got: %s\n",
-		    	tok2str(token));
+		    token_err("TEXT", lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -114,8 +111,7 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
-		    printf("    expected NUMBER, got: %s\n",
-		    	tok2str(token));
+		    token_err("TEXT", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;

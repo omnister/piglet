@@ -59,8 +59,7 @@ int *layer;
 	    } else if (token == EOC || token == CMD) {
 		 state = END;
 	    } else {
-		printf("ADD_RECT: expected OPT or COORD, got: %s\n",
-		    tok2str(token));
+		token_err("RECT", lp, "expected OPT or NUMBER", token);
 		state = END;	/* error */
 	    }
 	    break;
@@ -75,8 +74,7 @@ int *layer;
 		printf("   cancelling ADD RECT\n");
 		state = END;	
 	    } else {
-		printf("ADD_RECT: expected NUMBER, got: %s\n",
-		    tok2str(token));
+		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -87,8 +85,7 @@ int *layer;
 		token_get(lp,word);
 		state = NUM2;
 	    } else {
-		printf("ADD_RECT: expected COMMA: got: %s!\n", 
-		    tok2str(token));
+		token_err("RECT", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -101,11 +98,10 @@ int *layer;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("ADD_RECT: cancelling ADD RECT\n");
+		printf("ADD RECT: cancelling ADD RECT\n");
 	        state = END;
 	    } else {
-		printf("ADD_RECT: expected NUMBER, got: %s\n",
-		    tok2str(token));
+		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -117,11 +113,10 @@ int *layer;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("ADD_RECT: cancelling ADD RECT\n");
+		printf("ADD RECT: cancelling ADD RECT\n");
 	        state = END;
 	    } else {
-		printf("ADD_RECT: expected COORD, got: %s\n",
-		    tok2str(token));
+		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -134,8 +129,7 @@ int *layer;
 	    } else if (token == EOL) {
 		token_get(lp,word); /* just ignore it */
 	    } else {
-		printf("ADD_RECT: expected COMMA, got:%s\n", 
-		    tok2str(token));
+		token_err("RECT", lp, "expected COMMA", token);
 		state = END;	
 	    }
 	    break;
@@ -144,18 +138,16 @@ int *layer;
 		token_get(lp,word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
 		state = START;
-		modified = 1;
 		db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		rubber_clear_callback();
 		need_redraw++;
 	    } else if (token == EOL) {
 		token_get(lp,word); /* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("ADD_RECT: cancelling ADD RECT\n");
+		printf("ADD RECT: cancelling ADD RECT\n");
 		state = END; 
 	    } else {
-		printf("ADD_RECT: expected NUMBER, got: %s\n",
-		    tok2str(token));
+		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
