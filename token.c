@@ -132,10 +132,20 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		    case '7':
 		    case '8':
 		    case '9':
+			*w++ = c;
+			state = INNUM;
+			continue;
 		    case '+':
 		    case '-':
-			state = INNUM;
+		    case '#':
 			*w++ = c;
+			c = rlgetc(lp->token_stream);
+			rl_ungetc(c,lp->token_stream);
+			if (isdigit(c) || c=='.') {
+			    state = INNUM;
+			} else {
+			    state = INOPT;
+			}
 			continue;
 		    case '.':
 			*w++ = c;

@@ -12,7 +12,6 @@
 
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
-
 #define BB 2		/* draw bounding box and don't do xform */
 
 /* master symbol table pointers */
@@ -27,9 +26,11 @@ XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 NUM xmax, ymax; 	   /* globals for finding bounding boxes */
 NUM xmin, ymin;
+int layer;
 int bounds_valid=1;
 double max(), min();
-int drawon=1;		  /* 0 = dont draw, 1 = draw */
+int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
+int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
 int boundslevel=0;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
@@ -48,7 +49,7 @@ void mat_print();
 /* primitives for outputting autoplot,X primitives */
 void draw();
 void jump();
-void set_pen();
+void set_layer();
 void set_line();
 
 /********************************************************/
@@ -399,7 +400,7 @@ int mode;
         case CIRC:  /* circle definition */
 
 	    fprintf(fp, "ADD C%d ", p->u.c->layer);
-	    db_print_opts(fp, p->u.c->opts, "WR");
+	    db_print_opts(fp, p->u.c->opts, "WRY");
 
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.c->x1,
@@ -1087,7 +1088,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
         case POLY:  /* polygon definition */
 	    do_poly(p, &childbb, mode);
 	    if (debug) printf("poly bounds = %g,%g %g,%g\n",
-	    	childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
+		childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
 	    break;
 	case RECT:  /* rectangle definition */
 	    do_rect(p, &childbb, mode);
@@ -1171,7 +1172,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
             if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
-		set_pen(0);
+		set_layer(0,0);
 		jump();
 		    /* a square bounding box outline in white */
 		    draw(childbb.xmax, childbb.ymax, &childbb, BB); 
@@ -1206,7 +1207,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
  
     if (nest == 0) { 
 	jump();
-	set_pen(12);
+	set_layer(12,0);
 	draw(bb->xmin, bb->ymax, &mybb, BB);
 	draw(bb->xmax, bb->ymax, &mybb, BB);
 	draw(bb->xmax, bb->ymin, &mybb, BB);
@@ -1247,14 +1248,14 @@ int mode;
     y3=def->u.a->y3;
 }
 
-/* ADD Cmask [.cname] [@sname] [:Wwidth] [:Rres] coord coord */
+/* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
 void do_circ(def, bb, mode)
 DB_DEFLIST *def;
 BOUNDS *bb;
 int mode;		/* drawing mode */
 {
     int i;
-    double r,theta,x,y,x1,y1,x2,y2;
+    double r1, r2,theta,x,y,x1,y1,x2,y2;
     double theta_start;
     int res;
 
@@ -1274,16 +1275,26 @@ int mode;		/* drawing mode */
     y2 = (double) def->u.c->y2;
     
     jump();
-    set_pen(def->u.c->layer);
+    set_layer(def->u.c->layer, CIRC);
 
     x = (double) (x2-x1);
     y = (double) (y2-y1);
-    r = sqrt(x*x+y*y);
+
+    /* this next snippet of code works on the realization that an oval */
+    /* is really just the vector sum of two counter-rotating phasors */
+    /* of different lengths.  If r1=r and r2=0, you get a circle.  If you */
+    /* solve the math for r1, r2 as a function of major/minor axis widths */
+    /* you get the following.  If :Y<aspect_ratio> is unset, then the following */
+    /* defaults to a perfectly round circle... */
+
+    r1 = (1.0+def->u.c->opts->aspect_ratio)*sqrt(x*x+y*y)/2.0;
+    r2 = (1.0-def->u.c->opts->aspect_ratio)*sqrt(x*x+y*y)/2.0;
+
     theta_start = atan2(x,y);
     for (i=0; i<=res; i++) {
-	theta = theta_start+((double) i)*2.0*M_PI/((double) res);
-	x = r*sin(theta);
-	y = r*cos(theta);
+	theta = ((double) i)*2.0*M_PI/((double) res);
+	x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
+	y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
 	draw(x1+x, y1+y, bb, mode);
     }
 }
@@ -1334,7 +1345,7 @@ int mode; 	/* drawing mode */
      */
 
     /* printf("# rendering line\n"); */
-    set_pen(def->u.l->layer);
+    set_layer(def->u.l->layer, LINE);
 
     temp = def->u.l->coords;
     x2=temp->coord.x;
@@ -1520,9 +1531,9 @@ int mode;
     double x2, y2;
     
     if (debug) printf("# rendering polygon\n"); 
-    
+
     if (debug) printf("# setting pen %d\n", def->u.p->layer); 
-    set_pen(def->u.p->layer);
+    set_layer(def->u.p->layer, POLY);
 
     
     /* FIXME: should eventually check for closure here and probably */
@@ -1536,7 +1547,7 @@ int mode;
     jump();
     while(temp != NULL) {
 	x2=temp->coord.x; y2=temp->coord.y;
-	if (temp->prev->coord.x == x2 && temp->prev->coord.y == y2) {
+	if (npts && temp->prev->coord.x==x2 && temp->prev->coord.y==y2) {
 	    ;
 	} else {
 	    npts++;
@@ -1575,8 +1586,8 @@ int mode;	/* drawing mode */
     y2 = (double) def->u.r->y2;
     
     jump();
-    set_pen(def->u.c->layer);
 
+    set_layer(def->u.r->layer, RECT);
     draw(x1, y1, bb, mode); draw(x1, y2, bb, mode);
     draw(x2, y2, bb, mode); draw(x2, y1, bb, mode);
     draw(x1, y1, bb, mode);
@@ -1630,7 +1641,7 @@ int mode;
     mat_slant(xp, def->u.t->opts->slant);
     mat_rotate(xp, def->u.t->opts->rotation);
 
-    jump(); set_pen(def->u.t->layer);
+    jump(); set_layer(def->u.t->layer, TEXT);
 
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
@@ -1738,7 +1749,7 @@ XFORM *xa;
  * get sent twice).  By using jump() and sending the points serially, we
  * have the option of building a linked list and using XDrawLines() rather
  * than XDrawLine().  In addition, the draw()/jump() paradigm is used by
- * autoplot, so has a long history.
+ * Bob Jewett's autoplot program, so has a long history.
  */
 
 static int nseg=0;
@@ -1748,6 +1759,7 @@ NUM x,y;		   /* location in real coordinate space */
 BOUNDS *bb;		   /* bounding box */
 int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 {
+    extern int layer;
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
@@ -1780,21 +1792,24 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	}
     }
 
-    /* FIXME: there is a problem with extreme zooming where */
-    /* the transformed points are bigger than the range of */
-    /* an unsigned int.  In this case, you get garbage aliased */
-    /* back onto the screen... need to check for range here and */
-    /* clip accordingly */
+    /* Before I added the clip() routine, there was a problem with  */
+    /* extreme zooming on a large drawing.  When the transformed points */
+    /* exceeded ~2^18, the X11 routines would overflow and the improperly */
+    /* clipped lines would alias back onto the screen...  Adding the */
+    /* Cohen-Sutherland clipper completely eliminated this problem. */
+    /* I couldn't find the dynamic range of Xlib documented anywhere. */
+    /* I was surprised that the range was not equal to the full 2^32 bit */
+    /* range of an unsigned int */
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
 	    if (mode == 1) { 	/* rubber band drawing */
-		if (drawon) {
+		if (showon && drawon) {
 		    xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
                 }
 	    } else {		/* regular drawing */
-		if (drawon) {
+		if (showon && drawon) {
 		    xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
 		    if (boundslevel) {
 			draw_pick_bound(x1, y1, x2, y2, boundslevel);
@@ -1806,12 +1821,14 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	yyold=yy;
 	nseg++;
     } else {
-	if (drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
+	if (showon && drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
     }
 }
 
 /* Cohen-Sutherland 2-D Clipping Algorithm */
 /* See: Foley & Van Dam, p146-148 */
+/* called with xy12 and rewrites xyc12 with clipped values, */
+/* returning 0 if rejected and 1 if accepted */
 
 int clip(x1, y1, x2, y2, xc1, yc1, xc2, yc2)
 double x1, y1, x2, y2;
@@ -1820,8 +1837,8 @@ double *xc1, *yc1, *xc2, *yc2;
 
     double vp_xmin=0;
     double vp_ymin=0;
-    double vp_xmax=3.0*(double) width;
-    double vp_ymax=3.0*(double) height;
+    double vp_xmax=(double) width;
+    double vp_ymax=(double) height;
     int debug=0;
     int done=0;
     int accept=0;
@@ -1920,15 +1937,26 @@ void jump(void)
     }
 }
 
-void set_pen(pnum)
-int pnum;
+void set_layer(lnum, comp)
+int lnum;	/* layer number */
+int comp;	/* component type */
 {
-    if (X) {
-	xwin_set_pen((pnum%8));		/* for X */
+    extern int layer;
+    extern int showon;
+    layer=lnum;
+
+    if (comp) {
+	showon = show_check_visible(comp, lnum);
     } else {
-	if (drawon) printf("pen %d\n", (pnum%8));	/* autoplot */
+        showon=1;
     }
-    set_line((((int)(pnum/8))%5));
+
+    if (X) {
+	xwin_set_pen((lnum%8));		/* for X */
+    } else {
+	if (drawon) printf("pen %d\n", (lnum%8));	/* autoplot */
+    }
+    set_line((((int)(lnum/8))%5));
 }
 
 void set_line(lnum)
@@ -1951,5 +1979,102 @@ double min(a,b)
 double a, b;
 {
     return(a<=b?a:b);
+}
+
+
+show_list(layer) 
+{
+    int i,j;
+    printf("\n");
+    i=layer;
+    printf("%d ",i);
+    for (j=((sizeof(i)*8)-1); j>=0; j--) {
+	if (getbits(show[i], j, 1)) {
+	    printf("1");
+	} else {
+	    printf("0");
+	}
+    }
+    printf("\n");
+}
+
+getbits(x,p,n)	/* get n bits from position p */ 
+unsigned int x, p, n;
+{
+    return((x >> (p+1-n)) & ~(~0 << n));
+}
+
+show_init() { /* set everyone visible, but RO */
+    int i;
+    /* default is all visible, none modifiable. */
+    for (i=0; i<MAX_LAYER; i++) {
+    	show[i]=0|ALL;  /* visible */
+    }
+}
+
+void show_set_visible(int comp, int layer, int state) {
+
+    int lstart, lstop, i;
+    int debug=0;
+
+    if (layer==0) {
+    	lstart=0;
+	lstop=MAX_LAYER;
+    } else {
+    	lstart=layer;
+	lstop=layer;
+    }
+
+    for (i=lstart; i<=lstop; i++) {
+	if (state) {
+	    show[i] |= comp;
+	} else {
+	    show[i] &= ~(comp);
+	}
+    }
+     
+    if (debug) printf("setting layer %d, comp %d, state %d db %d\n",
+    	layer, comp, state,  show_check_visible(comp, layer));
+}
+
+void show_set_modify(int comp, int layer, int state) {
+
+    int lstart, lstop, i;
+    int debug=0;
+
+    if (layer==0) {
+    	lstart=0;
+	lstop=MAX_LAYER;
+    } else {
+    	lstart=layer;
+	lstop=layer;
+    }
+
+    for (i=lstart; i<=lstop; i++) {
+	if (state) {
+	    show[i] |= (comp*2);
+	} else {
+	    show[i] &= ~(comp*2);
+	}
+    }
+
+    if (debug) printf("setting layer %d, comp %d, state %d db %d\n",
+    	layer, comp, state,  show_check_modifiable(comp, layer));
+}
+
+/* check modifiability */
+int show_check_modifiable(int comp, int layer) {
+    int debug=0;
+
+    if (debug) show_list(layer);
+    return (show[layer] & (comp*2));
+}
+
+/* check visibility */
+int show_check_visible(int comp, int layer) {
+    int debug=0;
+    if (debug) printf("checking vis, comp %d, layer %d, returning %d\n",
+    	comp, layer, show[layer] & comp);
+    return (show[layer] & (comp));
 }
 

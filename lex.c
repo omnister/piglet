@@ -232,6 +232,41 @@ char *name;
 /*                                                                  */
 /* **************************************************************** */
 
+int is_comp(char c)
+{
+    int ret;
+
+    switch(toupper(c)) {
+    	case 'A':
+	    return(ARC);
+	    break;
+    	case 'C':
+	    return(CIRC);
+	    break;
+    	case 'L':
+	    return(LINE);
+	    break;
+    	case 'N':
+	    return(NOTE);
+	    break;
+    	case 'O':
+	    return(OVAL);
+	    break;
+    	case 'P':
+	    return(POLY);
+	    break;
+    	case 'R':
+	    return(RECT);
+	    break;
+    	case 'T':
+	    return(TEXT);
+	    break;
+	default:
+	    return(0);
+	    break;
+    }
+}
+
 /* 
     Add a component to the current device.
     This routine checks for <component[layer]> or <instance_name>
@@ -265,8 +300,6 @@ com_add(LEXER *lp, char *arg)
 	return(1);
     }
 
-    rl_setprompt("ADD> ");
-
 /* 
     To dispatch to the proper add_<comp> routine, we look 
     here for either a primitive indicator
@@ -288,20 +321,20 @@ com_add(LEXER *lp, char *arg)
 
 */
 
+    rl_saveprompt();
+    rl_setprompt("ADD> ");
     while(!done) {
-	rl_setprompt("ADD> ");
 	token = token_get(lp, word);
 	if (token == IDENT) { 	
 
 	    /* check to see if is a valid comp descriptor */
 	    valid_comp=0;
-	    comp=toupper(word[0]);
-	    if (index("ACLNOPRT", comp)) {
+	    if (comp = is_comp(toupper(word[0]))) {
 	    	if (strlen(word) == 1) {
-		    if (debug) printf("using default layer=%d\n",layer);
-		    valid_comp++;			/* no layer given */
+		    printf("using default layer=%d\n",layer);
+		    valid_comp++;	/* no layer given */
 		} else {
-		    valid_comp=1;
+		    valid_comp++;
 		    /* check for any non-digit characters */
 		    /* to allow instance names like "L1234b" */
 		    for (i=0; i<strlen(&word[1]); i++) {
@@ -316,50 +349,66 @@ com_add(LEXER *lp, char *arg)
 			    valid_comp=0;
 			}
 		    } 
+		    if (valid_comp) {
+		        if (layer > MAX_LAYER) {
+			    printf("layer must be less than %d\n",
+				MAX_LAYER);
+			    valid_comp=0;
+			    done++;
+			}
+			if (!show_check_modifiable(comp, layer)) {
+			    printf("layer %d is not modifiable!\n",
+				layer);
+			    token_flush_EOL(lp);
+			    valid_comp=0;
+			    done++;
+			}
+		    }
 		}
 	    } 
 
-	    if (valid_comp) {
-		switch (comp) {
-		    case 'A':
-			add_arc(lp, &layer);
-			break;
-		    case 'C':
-			add_circ(lp, &layer);
-			break;
-		    case 'L':
-			add_line(lp, &layer);
-			break;
-		    case 'N':	/* last arg is font # */
-			add_text(lp, &layer, 0);  
-			break;
-		    case 'E':	/* synonym for oval */
-		    case 'O':
-			add_oval(lp, &layer);
-			break;
-		    case 'P':
-			add_poly(lp, &layer);
-			break;
-		    case 'R':
-			add_rect(lp, &layer);
-			break;
-		    case 'T':	/* last arg is font # */
-			add_text(lp, &layer, 1);
-			break;
-		    default:
-			printf("invalid comp name\n");
-			break;
-		}
-	    } else {  /* must be a identifier */
-	        /* check to see if "ADD I <name>" */
-		if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-		    if((token=token_get(lp,word)) != IDENT) {
-			printf("ADD INST: bad inst name: %s\n", word);
-			done++;
+	    if (!done) {
+		if (valid_comp) {
+		    switch (comp) {
+			case ARC:
+			    add_arc(lp, &layer);
+			    break;
+			case CIRC:
+			    add_circ(lp, &layer);
+			    break;
+			case LINE:
+			    add_line(lp, &layer);
+			    break;
+			case NOTE:	/* last arg is font # */
+			    add_text(lp, &layer, 0);  
+			    break;
+			case OVAL:	/* synonym for oval */
+			    add_oval(lp, &layer);
+			    break;
+			case POLY:
+			    add_poly(lp, &layer);
+			    break;
+			case RECT:
+			    add_rect(lp, &layer);
+			    break;
+			case TEXT:	/* last arg is font # */
+			    add_text(lp, &layer, 1);
+			    break;
+			default:
+			    printf("invalid comp name\n");
+			    break;
 		    }
+		} else {  /* must be a identifier */
+		    /* check to see if "ADD I <name>" */
+		    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
+			if((token=token_get(lp,word)) != IDENT) {
+			    printf("ADD INST: bad inst name: %s\n", word);
+			    done++;
+			}
+		    }
+		    if (debug) printf("calling add_inst with %s\n", word);
+		    add_inst(lp, word);
 		}
-		if (debug) printf("calling add_inst with %s\n", word);
-		add_inst(lp, word);
 	    }
 	} else if (token == QUOTE) {
 		add_inst(lp, word);
@@ -378,6 +427,7 @@ com_add(LEXER *lp, char *arg)
 	    done++;
 	}
     }
+    rl_restoreprompt();
 }
 
 int add_arc(LEXER *lp, int *layer)
@@ -632,6 +682,7 @@ char *arg;
 
 	    currep = db_install(name);  	/* create blank stub */
 	    do_win(4, -100.0, -100.0, 100.0, 100.0, 1.0);
+	    show_init();
 	    need_redraw++;
 
 	    /* now check if on disk */
@@ -642,10 +693,14 @@ char *arg;
 		/* read it in */
 		xwin_display_set_state(D_OFF);
 		my_lp = token_stream_open(fp, buf);
+		my_lp->mode = EDI;
 		save_rep=currep;
 		printf ("reading %s from disk\n", name);
+		show_set_modify(ALL,0,1);
 		parse(my_lp);
 		token_stream_close(my_lp); 
+		show_set_modify(ALL,0,0);
+		show_set_visible(ALL,0,1);
 		if (currep != NULL) {
 		    xwin_window_set(
 		    	currep->minx, 
@@ -658,6 +713,7 @@ char *arg;
 		
 		currep=save_rep;
 		xwin_display_set_state(D_ON);
+		show_init();
 		need_redraw++;
 		if ((currep=db_lookup(name)) == NULL) {
 		    printf("error in reading in %s\n", name);
@@ -984,10 +1040,14 @@ char *arg;
 			} else {
 			    xwin_display_set_state(D_OFF);
 			    my_lp = token_stream_open(fp, buf);
+			    my_lp->mode = EDI;
 			    save_rep=currep;
 			    printf ("reading %s from disk\n", buf);
+			    show_set_modify(ALL,0,1);
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
+			    show_set_modify(ALL,0,0);
+			    show_set_visible(ALL,0,1);
 			    currep=save_rep;
 			    xwin_display_set_state(D_ON);
 			}
@@ -1287,10 +1347,14 @@ char *arg;
 			} else {
 			    xwin_display_set_state(D_OFF);
 			    my_lp = token_stream_open(fp, buf);
+			    my_lp->mode = EDI;
 			    save_rep=currep;
 			    printf ("reading %s from disk\n", buf);
+			    show_set_modify(ALL,0,1);
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
+			    show_set_modify(ALL,0,0);
+			    show_set_visible(ALL,0,1);
 			    currep=save_rep;
 			    xwin_display_set_state(D_ON);
 			}
@@ -1437,43 +1501,7 @@ char *arg;
     return (0);
 }
 
-com_show(lp, arg)		/* define which kinds of things to display */
-LEXER *lp;
-char *arg;
-{
-    /* FIXME: this is just a hack to eat up any SHOW commands */
-
-    TOKEN token;
-    int done=0;
-    int level;
-    char word[128];
-    int nnums=0;
-    double tmp;
-    int debug=0;
-
-    while(!done && (token=token_get(lp, word)) != EOF) {
-	switch(token) {
-	    case CMD:		/* command */
-		token_unget(lp, token, word);
-		done++;
-		break;
-	    case EOC:		/* end of command */
-		done++;
-		break;
-	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
-	    case IDENT: 	/* identifier */
-	    case COMMA:		/* comma */
-	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
-	    case END:		/* end of file */
-	    default:
-		; /* eat em up! */
-	    	break;
-	}
-    }
-    return (0);
-}
+/* com_show(lp, arg)		define which kinds of things to display */
 
 com_smash(lp, arg)	/* replace an instance with its components */
 LEXER *lp;

@@ -1,15 +1,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define ARC 273
-#define CIRC 274
-#define INST 275
-#define LINE 276
-#define NOTE 277
-#define OVAL 278
-#define POLY 279
-#define RECT 280
-#define TEXT 281
+/* these definitions map bit fields in an int skipping every other */
+/* bit allowing circle visibility to be set with x|CIRC, and circle */
+/* modifiability with x|(CIRC*2) (eg: the next higher bit */
+
+#define ARC       1
+#define CIRC      4
+#define INST     16
+#define LINE     64
+#define NOTE    256
+#define OVAL   1024
+#define POLY   4096
+#define RECT  16384
+#define TEXT  65536
+#define ALL   87381   /* sum of all bits */
+
+#define MAX_LAYER 1024
+
+int show[MAX_LAYER];
 
 /* definition of hierarchical editor data structures */
 
@@ -193,7 +202,7 @@ typedef struct db_text {
    primitives in a cell structure */
 
 typedef struct db_deflist {
-    short   type;
+    int   type;
     union {
         DB_ARC  *a;  /* arc definition */
         DB_CIRC *c;  /* circle definition */
@@ -313,5 +322,9 @@ extern void jump(void);
 
 extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);
 
+extern void show_set_visible(int comp, int layer, int state);
+extern void show_set_modify(int comp, int layer, int state);
+extern int  show_check_modifiable(int comp, int layer);
+extern int  show_check_visible(int comp, int layer);
 
 /********************************************************/

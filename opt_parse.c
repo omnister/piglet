@@ -22,7 +22,11 @@ OPTS *popt;
     double optval;
     int i;
 
-    if (optstring[0] == '.') {
+    if (optstring[0] == '#' || optstring[0] == '-' || optstring[0] == '+') {
+    	/* got a SHOW option - should not get this here */
+	weprintf("options must start with a colon: \"%s\"\n", optstring); 
+	return(ERR);
+    } else if (optstring[0] == '.') {
 	/* got a component name */
     	popt->cname = strsave(optstring);
     } else if (optstring[0] == '@') {

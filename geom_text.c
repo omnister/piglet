@@ -176,7 +176,7 @@ int count; /* number of times called */
 {
 	static double xold, yold;
 	int i;
-	BOUNDS bb;
+	static BOUNDS bb;
 
 	bb.init=0;
 	int debug=0;
@@ -204,7 +204,7 @@ int count; /* number of times called */
 	    jump(); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
-	    do_text(&dbdeflist, 1);
+	    do_text(&dbdeflist, &bb, 1);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
