@@ -637,23 +637,31 @@ void discard_pairs()
     last_pair = NULL;
 }		
 
-OPTS *opt_alloc(s)
+OPTS *opt_create(s)
 char *s;
 {
-    OPTS *temp;
-    temp = (OPTS *) emalloc(sizeof(OPTS));
-    temp->optstring = s;
-    temp->next = NULL;
-    return(temp);
+    OPTS *tmp;
+    tmp = (OPTS *) emalloc(sizeof(OPTS));
+    tmp->optstring = s;
+    tmp->next = NULL;
+    return(tmp);
 }     
 
-void append_opt(s)
+void opt_new(s)
 char *s;
 {
-    last_opt->next = opt_alloc(s);
+    OPTS *tmp;
+    first_opt = last_opt = opt_create(s);
+}
+
+void opt_append(s)
+char *s;
+{
+    last_opt = last_opt->next = opt_create(s);
     last_opt = last_opt->next;
 }
 
+/* not necessarily working yet 
 void discard_opts()
 {
     OPTS *temp;
@@ -665,6 +673,7 @@ void discard_opts()
     }
     last_opt = NULL;
 }             
+*/
 
 char *strsave(s)   /* save string s somewhere */
 char *s;

@@ -406,13 +406,17 @@ char *arg;
 }
 
 
+static int numbyes=0;
+
 com_bye(arg)		/* terminate edit session */
 char *arg;
 {
     /* The user wishes to quit using this program */
     /* Just set DONE non-zero. */
 
-    if (currep != NULL && modified) {
+    numbyes++;	/* number of com_bye() calls */
+
+    if (currep != NULL && modified && numbyes==1) {
 	printf("    you have an unsaved instance (%s)!\n", currep->name);
     } else {
 	done = 1;
@@ -705,6 +709,7 @@ char *arg;
 
 com_save()		/* save the current file or device to disk */
 {
+    numbyes=0;
     need_redraw++; 
     int err;
 

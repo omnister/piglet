@@ -8,6 +8,7 @@
 
 PAIR tmp_pair;
 static COORDS *first_pair, *last_pair; 
+static OPTS *first_opt, *last_opt; 
 
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
@@ -92,11 +93,14 @@ int add_line(int *layer)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
+    int debug=0;
     int done=0;
     int error=0;
+    int nsegs;
     TOKEN token;
     char word[BUFSIZE];
     double x2,y2;
+    static double xold, yold;
 
 /*
  *   (this chain from HEAD is the cell definition symbol table)
@@ -122,18 +126,19 @@ int add_line(int *layer)
  */
 
 
-    printf("layer %d\n",*layer);
+    if (debug) {printf("layer %d\n",*layer);}
     rl_setprompt("ADD_LINE> ");
 
     while (!done) {
 	token = token_look(word);
-	printf("got %s: %s\n", tok2str(token), word);
+	if (debug) {printf("got %s: %s\n", tok2str(token), word);}
 	if (token==CMD) {
 	    state=END;
 	} 
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
-		printf("in start\n");
+		nsegs=0;
+		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(word); /* ignore for now */
 		    state = START;
@@ -145,11 +150,13 @@ int add_line(int *layer)
 		} else {
 		    state = END;	/* error */
 		}
+		xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		printf("in num1\n");
+		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
 		    token_get(word);
+		    xold=x1;
 		    sscanf(word, "%lf", &x1);	/* scan it in */
 		    state = COM1;
 		} else if (token == EOL) {
@@ -159,7 +166,7 @@ int add_line(int *layer)
 		}
 		break;
 	    case COM1:		
-		printf("in com1\n");
+		if (debug) printf("in com1\n");
 		if (token == EOL) {
 		    token_get(word); /* just ignore it */
 		} else if (token == COMMA) {
@@ -171,9 +178,11 @@ int add_line(int *layer)
 		}
 		break;
 	    case NUM2:
-		printf("in num2\n");
+		if (debug) printf("in num2\n");
 		if (token == NUMBER) {
 		    token_get(word);
+
+		    yold=y2;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 		    
 		    coord_new(x1,y1);
@@ -190,9 +199,10 @@ int add_line(int *layer)
 		}
 		break;
 	    case NUM3:		/* get pair of xy coordinates */
-		printf("in num3\n");
+		if (debug) printf("in num3\n");
 		if (token == NUMBER) {
 		    token_get(word);
+		    xold=x2;
 		    sscanf(word, "%lf", &x2);	/* scan it in */
 		    state = COM2;
 		} else if (token == EOL) {
@@ -202,7 +212,7 @@ int add_line(int *layer)
 		}
 		break;
 	    case COM2:		
-		printf("in com2\n");
+		if (debug) printf("in com2\n");
 		if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
 		} else if (token == COMMA) {
@@ -216,20 +226,37 @@ int add_line(int *layer)
 		}
 		break;
 	    case NUM4:
-		printf("in num4\n");
+		if (debug) printf("in num4\n");
 		if (token == NUMBER) {
 		    token_get(word);
+		    yold=y2;
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 
+		    nsegs++;
+
 		    rubber_clear_callback();
-		    printf("doing append\n");
+		    if (debug) printf("doing append\n");
 		    coord_append(x2,y2);
 		    rubber_set_callback(draw_line);
 		    rubber_draw(x2,y2);
 
-		    print_pairs(first_pair);
+		    /* two identical clicks terminates this line */
+		    /* but keeps the ADD L command in effect */
 
-		    state = NUM3;	/* loop till EOC */
+		    if (nsegs==1 && x1==x2 && y1==y2) {
+	    		rubber_clear_callback();
+			printf("error: a line must have finite length\n");
+			state = START;
+		    } else if (x2==xold && y2==yold) {
+			db_add_line(currep, *layer, (OPTS *) NULL, first_pair);
+			modified = 1;
+			need_redraw++;
+			rubber_clear_callback();
+			state = START;
+		    } else {
+			state = NUM3;	/* loop till EOC */
+		    }
+
 		} else if (token == EOL) {
 		    token_get(word); /* just ignore it */
 		} else if (token == EOC) {
@@ -238,7 +265,7 @@ int add_line(int *layer)
 		break;
 	    case END:
 	    default:
-		printf("in end\n");
+		if (debug) printf("in end\n");
 		if (token == EOC) {
 			db_add_line(currep, *layer, (OPTS *) NULL, first_pair);
 			modified = 1;
@@ -264,6 +291,8 @@ int count; /* number of times called */
 	static double x1old, x2old, y1old, y2old;
 	int i;
 
+	int debug=0;
+
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_LINE dbline; */
@@ -288,7 +317,7 @@ int count; /* number of times called */
         dbline.opts=(OPTS *)NULL;
         dbline.coords=first_pair;
 	
-	printf("in draw_line\n");
+	if (debug) {printf("in draw_line\n");}
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
@@ -303,60 +332,6 @@ int count; /* number of times called */
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
 	    do_line(&dbdeflist, 1);
-	}
-
-	/* save old values */
-	x1old=x1;
-	y1old=y1;
-	x2old=x2;
-	y2old=y2;
-	jump();
-}
-
-void old_draw_line(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
-{
-	static double x1old, x2old, y1old, y2old;
-	COORDS *tmp;
-	int i;
-	
-	printf("in draw_line\n");
-
-	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
-	    tmp = first_pair;
-	    while(tmp != NULL) {
-		draw(tmp->coord.x, tmp->coord.y, RUBBER);
-		tmp = tmp->next;
-	    }
-	    draw(x2, y2, RUBBER);
-	} else if (count > 0) {		/* intermediate calls */
-
-	    jump(); /* erase old shape */
-	    tmp = first_pair;
-	    while(tmp != NULL) {
-		draw(tmp->coord.x, tmp->coord.y, RUBBER);
-		tmp = tmp->next;
-	    }
-	    draw(x2old, y2old, RUBBER);
-
-	    jump(); /* draw new shape */
-	    tmp = first_pair;
-	    while(tmp != NULL) {
-		draw(tmp->coord.x, tmp->coord.y, RUBBER);
-		tmp = tmp->next;
-	    }
-	    draw(x2, y2, RUBBER);
-	
-	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
-	    tmp = first_pair;
-	    while(tmp != NULL) {
-		draw(tmp->coord.x, tmp->coord.y, RUBBER);
-		tmp = tmp->next;
-	    }
-	    draw(x2old, y2old, RUBBER);
 	}
 
 	/* save old values */
