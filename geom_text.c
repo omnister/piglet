@@ -14,13 +14,20 @@ void draw_text();
 
 OPTS opts;
 
-
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
-int add_text(lp, layer, font_num)
+int add_note(lp, layer) {
+    add_annotation(lp, layer, 0);
+}
+
+int add_text(lp, layer) {
+    add_annotation(lp, layer, 1);
+}
+
+int add_annotation(lp, layer, mode)
 LEXER *lp;
 int *layer;
-int font_num;
+int mode;
 {
     enum {START,NUM1,COM1,NUM2,END} state = START;
 
@@ -36,13 +43,13 @@ int font_num;
     DB_TAB *ed_rep;
 
     opt_set_defaults( &opts );
-    opts.font_num = font_num;
+    opts.font_num = mode;	/* default note font=0, text=1 */
 
     str[0] = 0;
 
     while (!done) {
 
-	if ((opts.font_num)%2) {
+	if (mode) {
 	    rl_setprompt("ADD_TEXT> ");
 	    type="TEXT";
 	} else {
@@ -64,7 +71,9 @@ int font_num;
 		    if (nargs > 1) {
 			rubber_clear_callback();
 		    }
-		    if (opt_parse(word, TEXT_OPTS, &opts) == -1) {
+		    if (mode && opt_parse(word, TEXT_OPTS, &opts) == -1) {
+			state = END;
+		    } else if (!mode && opt_parse(word, NOTE_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;
@@ -131,8 +140,13 @@ int font_num;
 		    } else {
 
 			rubber_clear_callback();
-			db_add_text(currep, *layer, opt_copy(&opts),
-			    strsave(str), x1, y1);
+			if (mode) {
+			    db_add_text(currep, *layer, opt_copy(&opts),
+				strsave(str), x1, y1);
+			} else {
+			    db_add_note(currep, *layer, opt_copy(&opts),
+				strsave(str), x1, y1);
+			}
 			rubber_set_callback(draw_text);
 			need_redraw++;
 			state = START;

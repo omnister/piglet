@@ -184,7 +184,7 @@ com_copy(LEXER *lp, char *arg)
 		    ymax=p_best->ymax;
 		    state = NUM3;
 		} else {
-		    printf("nothing here that is copyable...\n");
+		    printf("nothing here that is copyable... try SHO command?\n");
 		    state = START;
 		}
 	    } else if (token == EOL) {

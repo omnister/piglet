@@ -25,7 +25,7 @@ XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 
 /* routines for expanding db entries into vectors */
-void do_arc(),  do_circ(), do_line();
+void do_arc(),  do_circ(), do_line(), do_note();
 void do_oval(), do_poly(), do_rect(), do_text();
 
 void db_free_component(); 		/* recycle memory for component */
@@ -241,6 +241,14 @@ DB_DEFLIST *p;
 	dp->u.l->opts=opt_copy(p->u.l->opts);
 	dp->u.l->coords=coord_copy(p->u.l->coords);
 	break;
+    case NOTE:  /* note definition */
+	dp->u.n = (struct db_note *) emalloc(sizeof(struct db_note));
+	dp->u.n->layer=p->u.n->layer;
+	dp->u.n->opts=opt_copy(p->u.n->opts);
+	dp->u.n->text=strsave(p->u.n->text);
+	dp->u.n->x=p->u.n->x;
+	dp->u.n->y=p->u.n->y;
+    	break;
     case OVAL:  /* oval definition */
 	dp->u.o = (struct db_oval *) emalloc(sizeof(struct db_oval));
 	dp->u.o->layer=p->u.o->layer;
@@ -326,6 +334,15 @@ DB_DEFLIST *p;
 	    }
 	    free(p->u.l->opts);
 	    free(p->u.l);
+	    free(p);
+	    break;
+
+	case NOTE:  /* note definition */
+
+	    if (debug) printf("db_purge: freeing note\n");
+	    free(p->u.n->opts);
+	    free(p->u.n->text);
+	    free(p->u.n);
 	    free(p);
 	    break;
 
@@ -514,6 +531,18 @@ int mode;
 
 	    break;
 
+        case NOTE:  /* note definition */
+
+	    fprintf(fp, "ADD N%d ", p->u.n->layer);
+	    db_print_opts(fp, p->u.n->opts, NOTE_OPTS);
+
+	    fprintf(fp, "\"%s\" %g,%g;\n",
+		p->u.n->text,
+		p->u.n->x,
+		p->u.n->y
+	    );
+	    break;
+
         case OVAL:  /* oval definition */
 
 	    fprintf(fp, "#add OVAL not implemented yet\n");
@@ -549,13 +578,9 @@ int mode;
 	    );
 	    break;
 
-        case TEXT:  /* text and note definition */
+        case TEXT:  /* text definition */
 
-	    if (p->u.t->opts->font_num%2) {
-		fprintf(fp, "ADD T%d ", p->u.t->layer); 	/* 1,3,5.. = text */
-	    } else {
-		fprintf(fp, "ADD N%d ", p->u.t->layer); 	/* 0,2,4.. = note */
-	    }
+	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
 	    db_print_opts(fp, p->u.t->opts, TEXT_OPTS);
 
 	    fprintf(fp, "\"%s\" %g,%g;\n",
@@ -611,6 +636,7 @@ struct db_deflist *dp;
 	db_free_component(currep->deleted);	/* gone for good now! */
     } 
     currep->deleted = dp;		/* save for one level of undo */
+    currep->modified++;
 }
 
 void db_insert_component(cell,dp) 
@@ -633,6 +659,8 @@ struct db_deflist *dp;
 	}
 	cell->dbtail = dp;
     }
+
+    cell->modified++;
 }
 
 void db_move_component(p, dx, dy) /* move any component by dx, dy */
@@ -659,6 +687,10 @@ double dx, dy;
 	    coords = coords->next;
 	}
 	break;
+    case NOTE:  /* note definition */
+	p->u.n->x += dx;
+	p->u.n->y += dy;
+	break;
     case OVAL:  /* oval definition */
         /* FIXME: Not implemented */
 	break;
@@ -676,7 +708,7 @@ double dx, dy;
 	p->u.r->x2 += dx;
 	p->u.r->y2 += dy;
 	break;
-    case TEXT:  /* text and note definition */
+    case TEXT:  /* text definition */
 	p->u.t->x += dx;
 	p->u.t->y += dy;
 	break;
@@ -700,8 +732,6 @@ NUM x1,y1,x2,y2,x3,y3;
     struct db_arc *ap;
     struct db_deflist *dp;
 
-    cell->modified++;
- 
     ap = (struct db_arc *) emalloc(sizeof(struct db_arc));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -760,8 +790,6 @@ COORDS *coords;
     struct db_line *lp;
     struct db_deflist *dp;
 
-    cell->modified++;
- 
     lp = (struct db_line *) emalloc(sizeof(struct db_line));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -785,8 +813,6 @@ NUM x1,y1, x2,y2, x3,y3;
     struct db_oval *op;
     struct db_deflist *dp;
 
-    cell->modified++;
- 
     op = (struct db_oval *) emalloc(sizeof(struct db_oval));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -817,8 +843,6 @@ COORDS *coords;
     struct db_poly *pp;
     struct db_deflist *dp;
     int debug = 0;
-
-    cell->modified++;
  
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -846,8 +870,6 @@ NUM x1,y1,x2,y2;
     struct db_rect *rp;
     struct db_deflist *dp;
 
-    cell->modified++;
- 
     rp = (struct db_rect *) emalloc(sizeof(struct db_rect));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -867,6 +889,34 @@ NUM x1,y1,x2,y2;
     return(0);
 }
 
+int db_add_note(cell, layer, opts, string ,x,y) 
+DB_TAB *cell;
+int layer;
+OPTS *opts;
+char *string;
+NUM x,y;
+{
+    struct db_note *np;
+    struct db_deflist *dp;
+ 
+    np = (struct db_note *) emalloc(sizeof(struct db_note));
+    dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+    dp->next = NULL;
+    dp->prev = NULL;
+
+    dp->u.n = np;
+    dp->type = NOTE;
+
+    np->layer=layer;
+    np->text=string;
+    np->opts=opts;
+    np->x=x;
+    np->y=y;
+
+    db_insert_component(cell,dp);
+    return(0);
+}
+
 int db_add_text(cell, layer, opts, string ,x,y) 
 DB_TAB *cell;
 int layer;
@@ -876,8 +926,6 @@ NUM x,y;
 {
     struct db_text *tp;
     struct db_deflist *dp;
-
-    cell->modified++;
  
     tp = (struct db_text *) emalloc(sizeof(struct db_text));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -906,8 +954,6 @@ NUM x,y;
     struct db_inst *ip;
     struct db_deflist *dp;
  
-    cell->modified++;
-
     ip = (struct db_inst *) emalloc(sizeof(struct db_inst));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
     dp->next = NULL;
@@ -1444,8 +1490,62 @@ int mode;	/* drawing mode */
 }
 
 
+/* ADD Nmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
+ *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
+ */
 
-/* ADD [TN]mask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
+void do_note(def, bb, mode)
+DB_DEFLIST *def;
+BOUNDS *bb;
+int mode;
+{
+
+    XFORM *xp;
+    NUM x,y;
+    OPTS  *op;
+    double optval;
+
+    /* create a unit xform matrix */
+
+    xp = (XFORM *) emalloc(sizeof(XFORM));  
+    xp->r11 = 1.0; xp->r12 = 0.0; xp->r21 = 0.0;
+    xp->r22 = 1.0; xp->dx  = 0.0; xp->dy  = 0.0;
+
+    /* NOTE: To work properly, these transformations have to */
+    /* occur in the proper order, for example, rotation must come */
+    /* after slant transformation or else it wont work properly */
+
+    switch (def->u.n->opts->mirror) {
+	case MIRROR_OFF:
+	    break;
+	case MIRROR_X:
+	    xp->r22 *= -1.0;
+	    break;
+	case MIRROR_Y:
+	    xp->r11 *= -1.0;
+	    break;
+	case MIRROR_XY:
+	    xp->r11 *= -1.0;
+	    xp->r22 *= -1.0;
+	    break;
+    }
+
+    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
+    mat_scale(xp, 1.0/def->u.n->opts->aspect_ratio, 1.0);
+    mat_slant(xp, def->u.n->opts->slant);
+    mat_rotate(xp, def->u.n->opts->rotation);
+
+    jump(); set_layer(def->u.n->layer, NOTE);
+
+    xp->dx += def->u.n->x;
+    xp->dy += def->u.n->y;
+
+    writestring(def->u.n->text, xp, def->u.n->opts->font_num, bb, mode);
+
+    free(xp);
+}
+
+/* ADD Tmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
  *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
  */
 

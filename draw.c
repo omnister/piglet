@@ -217,6 +217,9 @@ char *name;			/* instance name restrict or NULL */
 	case LINE:  /* arc definition */
 	    layer = p->u.l->layer;
 	    break;
+	case NOTE:  /* note definition */
+	    layer = p->u.n->layer;
+	    break;
 	case OVAL:  /* oval definition */
 	    layer = p->u.o->layer;
 	    break;
@@ -226,10 +229,10 @@ char *name;			/* instance name restrict or NULL */
 	case RECT:  /* rectangle definition */
 	    layer = p->u.r->layer;
 	    break;
-	case TEXT:  /* text and note definition */
+	case TEXT:  /* text definition */
 	    layer = p->u.t->layer;
 	    break;
-	case INST:  /* text and note definition */
+	case INST:  /* instance definition */
 	    layer = 0;
 	    break;
 	default:
@@ -278,6 +281,10 @@ char *name;			/* instance name restrict or NULL */
 		    do_line(p, &childbb, D_PICK); 
 		    if (debug) printf("in line %g\n", childbb.xmax);
 		    break;
+		case NOTE:  /* note definition */
+		    do_note(p, &childbb, D_PICK); 
+		    if (debug) printf("in note %g\n", childbb.xmax);
+		    break;
 		case OVAL:  /* oval definition */
 		    do_oval(p, &childbb, D_PICK);
 		    if (debug) printf("in oval %g\n", childbb.xmax);
@@ -290,7 +297,7 @@ char *name;			/* instance name restrict or NULL */
 		    do_rect(p, &childbb, D_PICK);
 		    if (debug) printf("in rect %g\n", childbb.xmax);
 		    break;
-		case TEXT:  /* text and note definition */
+		case TEXT:  /* text definition */
 		    do_text(p, &childbb, D_PICK); 
 		    if (debug) printf("in text %g\n", childbb.xmax);
 		    break;
@@ -364,6 +371,12 @@ DB_DEFLIST *p;			/* print out identifying information */
 	db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
 	printf("\n");
 	break;
+    case NOTE:  /* note definition */
+	printf("   NOTE %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.n->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	db_print_opts(stdout, p->u.n->opts, NOTE_OPTS);
+	printf(" \"%s\"\n", p->u.n->text);
+	break;
     case OVAL:  /* oval definition */
 	break;
     case POLY:  /* polygon definition */
@@ -378,7 +391,7 @@ DB_DEFLIST *p;			/* print out identifying information */
 	db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
 	printf("\n");
 	break;
-    case TEXT:  /* text and note definition */
+    case TEXT:  /* text definition */
 	printf("   TEXT %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
 		p->u.t->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
@@ -423,6 +436,10 @@ DB_DEFLIST *p;			/* component to display */
 	db_drawbounds(p);
 	do_line(p, &childbb, D_RUBBER);
 	break;
+    case NOTE:  /* note definition */
+	db_drawbounds(p);
+	do_note(p, &childbb, D_RUBBER);
+	break;
     case OVAL:  /* oval definition */
 	db_drawbounds(p);
 	do_oval(p, &childbb, D_RUBBER);
@@ -435,9 +452,9 @@ DB_DEFLIST *p;			/* component to display */
 	db_drawbounds(p);
 	do_rect(p, &childbb, D_RUBBER);
 	break;
-    case TEXT:  /* text and note definition */
+    case TEXT:  /* text definition */
 	db_drawbounds(p);
-	do_text(p, &childbb, D_RUBBER);
+	do_note(p, &childbb, D_RUBBER);
 	break;
     case INST:  /* instance call */
 	db_drawbounds(p);
@@ -563,6 +580,9 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
         case LINE:  /* line definition */
 	    do_line(p, &childbb, mode);
 	    break;
+        case NOTE:  /* note definition */
+	    do_note(p, &childbb, mode);
+	    break;
         case OVAL:  /* oval definition */
 	    do_oval(p, &childbb, mode);
 	    break;
@@ -574,7 +594,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	case RECT:  /* rectangle definition */
 	    do_rect(p, &childbb, mode);
 	    break;
-        case TEXT:  /* text and note definition */
+        case TEXT:  /* text definition */
 	    do_text(p, &childbb, mode);
 	    break;
         case INST:  /* recursive instance call */

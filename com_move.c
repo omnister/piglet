@@ -184,7 +184,7 @@ com_move(LEXER *lp, char *arg)
 		    ymax=p_best->ymax;
 		    state = NUM3;
 		} else {
-		    printf("nothing here to move...\n");
+		    printf("nothing here to move... try SHO command?\n");
 		    state = START;
 		}
 	    } else if (token == EOL) {
@@ -278,6 +278,7 @@ com_move(LEXER *lp, char *arg)
 		printf("got %g %g\n", x3, y3);
 		rubber_clear_callback();
 		db_move_component(p_best, x3-x2, y3-y2);
+		currep->modified++;
 		need_redraw++;
 		state = START;
 	    } else if (token == EOL) {

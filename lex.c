@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
+#include <math.h>
 
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
@@ -649,6 +650,8 @@ char *arg;
     int nopts=0;
     double tmp;
     int debug=0;
+    int i;
+    double UNITS=100.0;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -696,7 +699,7 @@ char *arg;
 		    case 0:
 		    case 1:
 		    	if (tmp < 0) {
-			    weprintf("GRID SPACING/MULT must be positive integers\n");
+			    weprintf("GRID SPACING/MULT must be positive numbers\n");
 			    return(-1);
 			}
 		    case 2:
@@ -722,6 +725,14 @@ char *arg;
 	    default:
 		eprintf("bad case in com_grid");
 		break;
+	}
+    }
+
+    for (i=0; i<npts; i++) {
+    	tmp = floor((pts[i]*UNITS)+0.5)/UNITS;
+	if (pts[i] != tmp) {
+	    printf("GRID: can't fit grid within UNITS, changing %d: %g to %g\n",i, pts[i], tmp);
+	    pts[i] = tmp;
 	}
     }
 

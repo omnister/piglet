@@ -120,8 +120,8 @@ com_add(LEXER *lp, char *arg)
 			case LINE:
 			    add_line(lp, &layer);
 			    break;
-			case NOTE:	/* last arg is font # */
-			    add_text(lp, &layer, 0);  
+			case NOTE:
+			    add_note(lp, &layer);  
 			    break;
 			case OVAL:	/* synonym for oval */
 			    add_oval(lp, &layer);
@@ -132,8 +132,8 @@ com_add(LEXER *lp, char *arg)
 			case RECT:
 			    add_rect(lp, &layer);
 			    break;
-			case TEXT:	/* last arg is font # */
-			    add_text(lp, &layer, 1);
+			case TEXT:
+			    add_text(lp, &layer);
 			    break;
 			default:
 			    printf("invalid comp name\n");

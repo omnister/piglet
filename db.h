@@ -20,6 +20,7 @@
 #define LINE_OPTS "W"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
+#define NOTE_OPTS "MNRYZF"
 #define TEXT_OPTS "MNRYZF"
 #define INST_OPTS "MRXYZ"
 
@@ -197,6 +198,13 @@ typedef struct db_rect {
     NUM x1,y1,x2,y2;
 } DB_RECT; 
 
+typedef struct db_note {
+    int layer;
+    OPTS *opts;
+    char *text;
+    NUM x,y;
+} DB_NOTE; 
+
 typedef struct db_text {
     int layer;
     OPTS *opts;
@@ -213,10 +221,11 @@ typedef struct db_deflist {
         DB_CIRC *c;  /* circle definition */
         DB_INST *i;  /* instance call */
         DB_LINE *l;  /* line definition */
+        DB_NOTE *n;  /* note definition */
         DB_OVAL *o;  /* oval definition */
         DB_POLY *p;  /* polygon definition */
         DB_RECT *r;  /* rectangle definition */
-        DB_TEXT *t;  /* text & note definition */
+        DB_TEXT *t;  /* text definition */
     } u;
     NUM xmin, ymin, xmax, ymax; /* wrapper bounds for screening extents */
     struct db_deflist *next;    /* to link to another */
@@ -257,6 +266,14 @@ extern int db_add_line(
 		int layer,
 		OPTS *opts,
 		COORDS *coords
+	    );
+
+extern int db_add_note(
+		DB_TAB *cell,
+		int layer,
+		OPTS *opts,
+		char *string,
+		NUM x, NUM y      
 	    );
 
 extern int db_add_oval(

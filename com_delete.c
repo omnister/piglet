@@ -174,7 +174,7 @@ com_delete(LEXER *lp, char *arg)
 		    db_unlink_component(currep, p_best);
 		    need_redraw++;
 		} else {
-		    printf("nothing here to delete...\n");
+		    printf("nothing here to delete...try SHO command?\n");
 		}
 		state = START;
 	    } else if (token == EOL) {

@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.25 2004/10/23 00:47:34 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.26 2004/11/10 23:24:49 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -44,12 +44,12 @@ double scale = 1.0;		/* xform factors from real->viewport */
 double xoffset = 0.0;
 double yoffset = 0.0;
 
-int grid_xd = 10;	/* grid delta */
-int grid_yd = 10;
-int grid_xs = 2;	/* how often to display grid ticks */
-int grid_ys = 2;
-int grid_xo = 0; 	/* starting offset */
-int grid_yo = 0;
+double grid_xd = 10.0;	/* grid delta */
+double grid_yd = 10.0;
+double grid_xs = 2.0;	/* how often to display grid ticks */
+double grid_ys = 2.0;
+double grid_xo = 0.0; 	/* starting offset */
+double grid_yo = 0.0;
 GRIDSTATE grid_state = G_ON;		/* ON, OFF */
 DISPLAYSTATE display_state = D_ON;	/* ON, OFF */
 int grid_color = 1;	/* 1 through 6 for different colors */ 
@@ -116,17 +116,22 @@ GC gcx;
 
 static char *menu_label[] = {
    "EDI  ",
+   "SHO#E;\n",
+   "WIN:F",
    "ADD  ",
    "MOV  ",
    "COPY ",
    "DEL  ",
+   "DUMP ",
+   "PLOT ",
+   "DIST ",
    "IDEN ",
    "GRID ",
    "LOCK ",
    "SAVE ",
-   "EXIT "
+   "EXIT;"
 };
-#define MAX_CHOICE 9
+#define MAX_CHOICE 15
 
 Window inverted_pane = NONE;
 Window panes[MAX_CHOICE];
@@ -206,7 +211,7 @@ int initX()
     top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
 
     /* figure out menu sizes */
-    string = menu_label[6];
+    string = menu_label[1];
     char_count = strlen(string);
 
     load_font(&font_info);
@@ -354,6 +359,7 @@ FILE *fp;
     static int button_down=0;
     XEvent xe;
     static int i = 0;
+    int j;
     int debug=0;
     BOUNDS bb;
 
@@ -434,7 +440,7 @@ FILE *fp;
 		    y = (double) xe.xmotion.y;
 		    V_to_R(&x,&y);
 		    snapxy(&x,&y);
-		    sprintf(buf,"(%5d,%5d)", (int) x, (int) y);
+		    sprintf(buf,"(%-8g,%-8g)", x, y);
 		    if (display_state == D_ON) {
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
 		    }
@@ -459,9 +465,12 @@ FILE *fp;
 			draw_grid(win, gcx, grid_xd, grid_yd,
 			    grid_xs, grid_ys, grid_xo, grid_yo);
 		    }  
-
-		    /* paint_pane(xe.xexpose.window,
-		    	panes, gca, gcb, WHITE); */
+		
+		    for (j=0; j<MAX_CHOICE; j++) {
+		         if (panes[j] == xe.xexpose.window) {
+			     paint_pane(xe.xexpose.window, panes, gca, gcb, BLACK);
+			 }
+		    }
 
 		    break;
 
@@ -480,31 +489,64 @@ FILE *fp;
 		    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
 		    break;
 		case ButtonPress:
-		    switch (xe.xbutton.button) {
-			case 1:	/* left button */
-			    button_down=1;
-			    x = (double) xe.xmotion.x;
-			    y = (double) xe.xmotion.y;
-			    V_to_R(&x,&y);
-			    snapxy(&x,&y);
+		    if (xe.xexpose.window == win) {
+			switch (xe.xbutton.button) {
+			    case 1:	/* left button */
+				button_down=1;
+				x = (double) xe.xmotion.x;
+				y = (double) xe.xmotion.y;
+				V_to_R(&x,&y);
 
-			    /* returning mouse loc as a string */
-			    sprintf(buf," %d, %d\n", (int) x, (int) y);
-			    s = buf;
+				/* FIXME: put in facility to turn off snapping for fine picking */
+				/*
+				if (snap==0) {
+				    snap=1;
+				} else {
+				    snapxy(&x,&y);
+				}
+				*/
 
-			    if (debug) printf("EVENT LOOP: got ButtonPress\n");
-			    break;
-			case 2:	/* middle button */
-			    break;
-			case 3: /* right button */
-			    /* RIGHT button returns EOC */
-			    sprintf(buf," ;\n");
-			    s = buf;
-			    break;
-			default:
-			    eprintf("unexpected button event: %d",
-				xe.xbutton.button);
-			    break;
+				snapxy(&x,&y);
+
+				/* returning mouse loc as a string */
+				sprintf(buf," %g, %g\n", x, y);
+				s = buf;
+
+				if (debug) printf("EVENT LOOP: got ButtonPress\n");
+				break;
+			    case 2:	/* middle button */
+				break;
+			    case 3: /* right button */
+				/* RIGHT button returns EOC */
+				sprintf(buf," ;\n");
+				s = buf;
+				break;
+			    default:
+				eprintf("unexpected button event: %d",
+				    xe.xbutton.button);
+				break;
+			}
+		    } else {
+			for (j=0; j<MAX_CHOICE; j++) {
+			    if (panes[j] == xe.xbutton.window) {
+				switch (xe.xbutton.button) {
+				case 1:
+				   s=menu_label[j];
+				   break;
+				case 2:	
+				   break;
+				case 3:
+				   /* RIGHT button returns EOC */
+				   sprintf(buf," ;\n");
+				   s = buf;
+				   break;
+				default:
+				   eprintf("unexpected button event: %d",
+					xe.xbutton.button);
+				   break;
+			    	}
+			    }
+			}
 		    }
 		    break;
 		case KeyPress:
@@ -691,9 +733,9 @@ int line;
 draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
 Window win;
 GC gc;
-int dx,dy;		/* grid delta */
-int sx,sy;		/* grid skip number */
-int xorig,yorig;	/* grid origin */
+double dx,dy;		/* grid delta */
+double sx,sy;		/* grid skip number */
+double xorig,yorig;	/* grid origin */
 {
     extern unsigned int width, height;
     extern GRIDSTATE grid_state;
@@ -706,7 +748,7 @@ int xorig,yorig;	/* grid origin */
 
     double xstart, ystart, xend, yend;
 
-    if (debug) printf("draw_grid called with: %d %d %d %d %d %d, color %d\n", 
+    if (debug) printf("draw_grid called with: %g %g %g %g %g %g, color %d\n", 
     	dx, dy, sx, sy, xorig, yorig, grid_color);
 
     /* colored grid */
@@ -731,31 +773,31 @@ int xorig,yorig;	/* grid origin */
     snapxy_major(&xend,&yend);
 	if (debug) printf("snap %g %g\n", xend, yend); 
 
-    if ( sx == 0 || sy == 0) {
+    if ( sx <= 0.0 || sy <= 0.0) {
 	printf("grid x,y step must be a positive integer\n");
 	return(1);
     }
 
 
-    if (dx > 0 && dy >0 && sx > 0 && sy > 0) {
+    if (dx > 0.0 && dy >0.0 && sx > 0.0 && sy > 0.0) {
 
 	/* require at least 5 pixels between grid ticks */
 
-	if ( ((xend-xstart)/(double)(dx*sx) >= (double) width/5) ||
-	     ((yend-ystart)/(double)(dy*sx) >= (double) height/5) ) {
+	if ( ((xend-xstart)/(dx*sx) >= (double) width/5) ||
+	     ((yend-ystart)/(dy*sx) >= (double) height/5) ) {
 
 	    if (!grid_notified) {
 		printf("grid suppressed, too many points\n");
 		grid_notified++;
 	    }
 
-	} else if ( ((xend-xstart)/(double)(dx) >= (double) width/5) ||
-	     ((yend-ystart)/(double)(dy) >= (double) height/5) ) {
+	} else if ( ((xend-xstart)/(dx) >= (double) width/5) ||
+	     ((yend-ystart)/(dy) >= (double) height/5) ) {
 
 	    /* this is the old style grid - no fine ticks */
 
-	    for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
-	       for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
+	    for (x=xstart-dx*sx; x<=xend; x+=dx*sx) {
+	       for (y=ystart-dy*sy; y<=yend; y+=dy*sy) {
 		    xd=x;
 		    yd=y;
 		    R_to_V(&xd,&yd);
@@ -774,8 +816,8 @@ int xorig,yorig;	/* grid origin */
 	    /* calling snap_major above */
 
 	    if (grid_state == G_ON && display_state == D_ON) {
-		for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
-		    for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
+		for (x=xstart-dx*sx; x<=xend; x+=dx*sx) {
+		    for (y=ystart-dy*sy; y<=yend; y+=dy*sy) {
 			for (i=0; i<sx; i++) {
 			    for (j=0; j<sy; j++) {
 				if (i==0 || j==0) {
@@ -848,8 +890,13 @@ double x, y;
 void snapxy(x,y)	/* snap to grid tick */
 double *x, *y;
 {
-    extern int grid_xo, grid_xd;
-    extern int grid_yo, grid_yd;
+    extern double grid_xo, grid_xd;
+    extern double grid_yo, grid_yd;
+    int debug=0;
+
+    if (debug) printf("snap called with %g %g, and xo %g %g xd %g %g\n", 
+    	*x, *y,grid_xo, grid_yo, grid_xd, grid_yd);
+
 
     /* adapted from Graphic Gems, v1 p630 (round to nearest int fxn) */
 
@@ -864,10 +911,10 @@ double *x, *y;
 void snapxy_major(x,y)	/* snap to grid ticks multiplied by ds,dy */
 double *x, *y;
 {
-    extern int grid_xo, grid_xd, grid_xs;
-    extern int grid_yo, grid_yd, grid_ys;
+    extern double grid_xo, grid_xd, grid_xs;
+    extern double grid_yo, grid_yd, grid_ys;
 
-    int xd, yd;
+    double xd, yd;
 
     xd = grid_xd*grid_xs;
     yd = grid_yd*grid_ys;
@@ -984,12 +1031,12 @@ double ys;
 double xo; 
 double yo;
 {
-    extern int grid_xd;
-    extern int grid_yd;
-    extern int grid_xs;
-    extern int grid_ys;
-    extern int grid_xo;
-    extern int grid_yo;
+    extern double grid_xd;
+    extern double grid_yd;
+    extern double grid_xs;
+    extern double grid_ys;
+    extern double grid_xo;
+    extern double grid_yo;
     int debug = 0;
    
     printf("setting grid: xydelta=%g,%g xyskip=%g,%g xyoffset=%g,%g\n",
@@ -997,19 +1044,19 @@ double yo;
 
     /* only redraw if something has changed */
 
-    if (grid_xd != (int) (xd) ||
-        grid_yd != (int) (yd) ||
-	grid_xs != (int) (xs) ||
-	grid_ys != (int) (ys) ||
-	grid_xo != (int) (xo) ||  
-	grid_yo != (int) (yo)) {
+    if (grid_xd !=  xd ||
+        grid_yd !=  yd ||
+	grid_xs !=  xs ||
+	grid_ys !=  ys ||
+	grid_xo !=  xo ||  
+	grid_yo !=  yo) {
 
-	grid_xd=(int) (xd); 
-	grid_yd=(int) (yd); 
-	grid_xs=(int) (xs); 
-	grid_ys=(int) (ys); 
-	grid_xo=(int) (xo); 
-	grid_yo=(int) (yo); 
+	grid_xd= xd; 
+	grid_yd= yd; 
+	grid_xs= xs; 
+	grid_ys= ys; 
+	grid_xo= xo; 
+	grid_yo= yo; 
 	need_redraw++;
 
 	if (currep != NULL) {
@@ -1210,10 +1257,10 @@ init_colors()
     /* Otherwise, got a color visual at default depth */
 
     /* The visual we found is not necessarily the default
-     * visual, and therefore it is not necessaritly the one
-     * we used to creat our window; however, we now know
-     * for sure that color is supported, so the following
-     * code will work (or fail in a controlled way) */
+     * visual, and therefore it is not necessarily the one we used to
+     * creat our window; however, we now know for sure that color is
+     * supported, so the following code will work (or fail in a
+     * controlled way) */
 
      for (i=0; i < MAX_COLORS; i++) {
 	/* printf("allocating %s\n", name[i]); */
@@ -1271,8 +1318,9 @@ int mode;
 
     /* The string length is necessary because strings 
      * for XDrawString may not be null terminated */
+    XSetForeground(dpy, gc, colors[2]);
     XDrawString(dpy, window, gc, x, y, menu_label[win],
-        strlen(menu_label[win]));
+        strlen(menu_label[win])); 
 }
 
 
