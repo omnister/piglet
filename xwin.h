@@ -31,7 +31,9 @@ void xwin_grid_color( int color );
 extern void xwin_window_set();
 extern void xwin_window_get();
 extern void xwin_dump_graphics();
+extern void xwin_draw_text(double x, double y, char *s);
 extern void xwin_draw_point(double x, double y);
+extern void xwin_draw_circle(double x, double y);
 void xwin_grid_pts( 
     double xd, double yd,
     double xs, double ys, 

@@ -96,16 +96,31 @@ COMMAND commands[] =
 static int numbyes=0;
 static int def_layer=0;
 
+#include <signal.h>
+#define MAXSIGNAL 31	/* biggest signal under linux */
+void sighandler(); 	/* catch signal */
+
 main(argc,argv)
 int argc;
 char **argv;
 {
     int debug=0;
     LEXER *lp;		/* lexer struct for main cmd loop */
+    int i;
+    int err=0;
 
 
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
+
+    /* set up to catch all signal */
+    /* for (i=1; i<=MAXSIGNAL; i++) { */
+
+    err+=(signal(2, &sighandler) == SIG_ERR);
+    err+=(signal(3, &sighandler) == SIG_ERR);
+    err+=(signal(15, &sighandler) == SIG_ERR);
+    err+=(signal(20, &sighandler) == SIG_ERR);
+    if (err) printf("main() had difficulty setting sighandler\n");
 
     initX();
 
@@ -186,6 +201,24 @@ LEXER *lp;
     }
 }
 
+void sighandler(x)
+int x;
+{
+    static int last=-1;
+
+    printf("caught %d: %s",x, strsignal(x));
+    if (x == 3) {
+       if (last==x) {
+            exit(0);
+       } else {
+            printf(": do it again and I'll die!");
+       }
+    }
+    last = x;
+    printf("\n");
+}
+
+	
 /* Look up NAME as the name of a command, and return a pointer to that
    command.  Return a NULL pointer if NAME isn't a command name. */
 

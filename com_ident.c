@@ -26,6 +26,7 @@ int *layer;
     double x2,y2;
     int debug=0;
     DB_DEFLIST *p_best;
+    DB_DEFLIST *p_prev = NULL;
 
     if (debug) printf("layer %d\n",*layer);
     rl_setprompt("IDENT> ");
@@ -83,9 +84,14 @@ int *layer;
 		token_get(lp,word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
+		if (p_prev != NULL) {
+		    db_highlight(p_best);	/* unhighlight it */
+		}
+
 		if ((p_best=db_ident(currep, x1, y1, 0, 0, 0, 0)) != NULL) {
 		    db_notate(p_best);		/* print information */
 		    db_highlight(p_best);	
+		    p_prev=p_best;
 		}
 
 		state = NUM1;
@@ -109,6 +115,9 @@ int *layer;
 	    done++;
 	    break;
 	}
+    }
+    if (p_prev != NULL) {
+	db_highlight(p_best);	/* unhighlight any remaining component */
     }
     return(1);
 }

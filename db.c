@@ -1487,6 +1487,11 @@ int mode;	/* drawing mode */
     draw(x1, y1, bb, mode); draw(x1, y2, bb, mode);
     draw(x2, y2, bb, mode); draw(x2, y1, bb, mode);
     draw(x1, y1, bb, mode);
+
+    if (mode==D_RUBBER) {
+    	xwin_draw_circle(x1,y1);
+    	xwin_draw_circle(x2,y2);
+    }
 }
 
 

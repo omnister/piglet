@@ -191,7 +191,7 @@ char *name;			/* instance name restrict or NULL */
 	return(0);
     }
 
-    if (mode) {		/* pick rather than ident mode */
+    if (mode && debug) {		/* pick rather than ident mode */
     	printf("db_ident: called with layer %d, comp %d, name %s\n", 
 		pick_layer, comp, name);
     }
@@ -360,8 +360,8 @@ DB_DEFLIST *p;			/* print out identifying information */
     case ARC:  /* arc definition */
 	break;
     case CIRC:  /* circle definition */
-	printf("   CIRC %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.c->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   CIRC %d center=%.5g,%.5g point_on_circumference=%.5g,%.5g ", 
+		p->u.c->layer, p->u.c->x1, p->u.c->y1, p->u.c->x2, p->u.c->y2);
 	db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
 	printf("\n");
 	break;

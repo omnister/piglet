@@ -32,7 +32,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.27 2004/11/11 19:05:50 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.1 2004/11/12 12:00:00 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -851,6 +851,57 @@ double xorig,yorig;	/* grid origin */
     return(0);
 }
 
+void xwin_draw_circle(x,y) 
+double x, y;
+{
+    double delta;
+    extern unsigned int width, height;
+    char buf[BUF_SIZE];
+
+    sprintf(buf,"%d,%d", (int) x, (int) y);
+
+    if (width > height) {
+	delta = (double) dpy_width/200;
+    } else {
+	delta = (double) dpy_height/200;
+    }
+
+    R_to_V(&x,&y);
+
+    XDrawLine(dpy, win, gcx, 
+	(int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y+delta*0.7));
+    XDrawLine(dpy, win, gcx, 
+	(int)(x+delta*0.7), (int)(y+delta*0.7), 
+	(int)x, (int)(y+delta));
+    XDrawLine(dpy, win, gcx, 
+	(int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y+delta*0.7));
+    XDrawLine(dpy, win, gcx, 
+	(int)(x-delta*0.7), (int)(y+delta*0.7), (int)x,
+	(int)(y+delta));
+    XDrawLine(dpy, win, gcx, 
+	(int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y-delta*0.7));
+    XDrawLine(dpy, win, gcx, 
+	(int)(x-delta*0.7), (int)(y-delta*0.7), (int)x,
+	(int)(y-delta));
+    XDrawLine(dpy, win, gcx, 
+	(int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y-delta*0.7));
+    XDrawLine(dpy, win, gcx, 
+	(int)(x+delta*0.7), (int)(y-delta*0.7), (int)x,
+	(int)(y-delta));
+
+    XFlush(dpy);
+}
+
+void xwin_draw_text(x,y,s) 
+double x, y;
+char *s;
+{
+    R_to_V(&x,&y);
+
+    XDrawString(dpy,win,gcx, x, y, s, strlen(s));
+    XFlush(dpy);
+}
+
 void xwin_draw_point(x,y) 
 double x, y;
 {
@@ -873,7 +924,7 @@ double x, y;
     XDrawLine(dpy, win, gcx, 
 	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
 
-    XDrawImageString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
+    XDrawString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
 
     XFlush(dpy);
 }

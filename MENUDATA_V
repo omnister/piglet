@@ -1,71 +1,20 @@
-
-ayyyyy	|ADD |R|P|L|N|T|
-ayyygg	|INP |C|A|I|+|-|
-ayyggg	|SHO |#|^|1|2|3|
-ayyggg	|WIN |;|!|4|5|6|
-yyyggg	|:F|:V|:Z|7|8|9|
-yyyggg	|:D|:S|:V|,|0|.|
-yyyyyy	|:W|:M|:N|:O|:R|
-yyaaaw	|:X|:Y|X|Y|@|  |
-ww	|      |       |
-aaa	|WRA |SMA |GRO |
-aaa	|MOV |COP |STR |
-ypy	|IDE |DEC |DIS |
-wwg	|POI |GRI |LOC |
-ygg	|PLO | :C | :X |
-ww	|      |       |
-rrr	|UND |    |DEL |
-yyr	|SAV |EDI |EXI |
-
-wwag    |;   | A| :O|0|
-ywag    |ADD | R| :P|1|
-ywag    |MOV | P| :Z|2|
-ywag    |COP | L| :W|3|
-rwag    |DEL | C| :R|4|
-ywag    |STR | N| :R|5|
-ywag    |GRO | T| :F|6|
-ywag    |WRA | I| :X|7|
-rwag    |SMA | E| :M|8|
-ywag    |STE | ,| :N|9|
-ywwg    |DEC | -|  |10|
-ywwg    |UND | +|  |11|
-wwwg    |SHO | #|  |12|
-ywwg    |IDE | .|  |13|
-ywwg    |TRA | @|  |14|
-waag    |WIN |:F|  |15|
-yaag    |GRI | ^|  |16|
-yaag    |LOC |  |  |17|
-gwag    |DUM | %|  |18|
-gwag    |POI |  |  |19|
-gwag    |PLO |  |  |20|
-gwag    |DIS |  |  |21|
-gwag    |ARE |  |  |22|
-ywgg    |EDI |HELP |23|
-rwyg    |SAV |EXI  |24|
-
-wwag |;       | A|       |0| 
-ywag |ADD     | R|       |1|
-ywag |MOVe    | P|       |2|
-ywag |COPy    | L| Wid=  |3|
-rwag |DELete  | C| Res=  |4|
-ywag |STRetch | N| Rot=  |5|
-ywag |GROup   | T| Font= |6|
-ywag |WRAp    | I| Xscl= |7|
-rwag |SMAsh   | ;| Mir=X |8|
-ywag |STEp S= | ,| Mir=Y |9|
-ywyg |DEClare | -|XAS   |10|
-ywyg |UNDo    | +|YAS   |11|
-wwwg |SHOw    | #| #A;  |12|
-ywwg |IDEntify| .| :    |13|
-ywwg |TRAce   | @| ;    |14|
-waag |WINdow  |:F| Vprt=|15|
-yaag |WIN V=2 |:N| Nest=|16|
-yaag |GRId    |:O| Zoom=|17|
-yaag |LOCk    |:P| Xabs=|18|
-gwag |DUMp    | %| Detl=|19|
-gwag |POInt   |  | Symb=|20|
-gwag |DIStance|  | Boun=|21|
-gwag |AREa    |  | Intc=|22|
-ywgg |EDIt    |  |HELp  |23|
-rwyg |SAVe    | ;|EXIt; |24|
-
+ayyyyy |ADD |R|P|L|N|T|
+ayyygg |SHO |C|E|I|+|-|
+ayyggg |GRI |#|^|1|2|3|
+ayyggg |WIN |;|!|4|5|6|
+yyyggg |:F|:V|:Z|7|8|9|
+yyyggg |:D|:S|:V|,|0|.|
+yyyyy  |:W|:C|:N|:O|:R|
+yyaaaa |:X|:Y|:M|X|Y|@|
+gw     |SHO #E; |     |
+wrgbapy|1|2|3|4|5|6|7 |
+ww     |       |      |
+aaa    |WRA |SMA |GRO |
+aaa    |MOV |COP |STR |
+ypy    |IDE |POI |LIS |
+ygg    |DIST |DISP |  |
+ggg    |DUM |PLO |LOC |
+ggy    |ARC |RET |INP |
+gw     |CHA |         |
+rrr    |UND |BYE |DEL |
+yyr    |SAV |EDI |EXI |

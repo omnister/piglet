@@ -15,7 +15,7 @@ geom_line.c  geom_poly.c geom_rect.c geom_text.c lex.c lex.h \
 Makefile MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h \
 plan.EQUATE plan.MOVE plan.SELECT plan.STATUS plan.TODO readfont.c \
 readfont.h rlgetc.c rlgetc.h rubber.c rubber.h TEXTDATA.F token.c \
-token.h xwin.c xwin.h postscript.o readmenu.c
+token.h xwin.c xwin.h postscript.o readmenu.c web RCS
 
 CC=cc -ggdb
 

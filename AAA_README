@@ -36,7 +36,7 @@ Finally, you can make a non-isotropic grid with something like
 When entering points with the mouse, the clicks ALWAYS snap to the grid,
 giving a powerful way to enter precise coordinates.
 
-The grid also allows an option ":C<0-7>" which will set the color of the
+The grid also allows an option ":C<1-7>" which will set the color of the
 grid to any of the 8 system colors.  For example: "grid :c2 10 2" creates
 a red grid.  The colors are "white, red, green, blue, cyan, magenta,
 yellow".
