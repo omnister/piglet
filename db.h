@@ -5,16 +5,20 @@
 /*
  *   (this chain from HEAD is the cell definition symbol table)
  *
+ *   all insertions are made at TAIL to avoid reversing definition order
+ *   everytime an archive is made and retrieved (a classic HP Piglet bug)
+ *
+ *
  *                                              TAIL--|
  *                                                    v 
- *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->0
+ *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
  *                           |                |                  |
  *                           |               ...                ...
  *                           v
- *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->0
+ *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->NULL
  *                                  |    |    |
  *                                  |    |    v
- *                                  |    v  [db_inst]
+ *                                  |    v  [db_inst] (recursive call)
  *                                  v  [db_line]
  *                                [db_rect]
  *
@@ -54,6 +58,9 @@ typedef struct xform {
 
 typedef struct db_tab {
     char *name;             	/* cell name */
+    double minx,miny;		/* for bounding box computation */
+    double maxx,maxy;		/* ... */
+    int modified;		/* for EXIT/SAVE and bounding box usage */
     int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
@@ -164,9 +171,16 @@ extern int db_add_poly();
 extern int db_add_rect();
 extern int db_add_text();
 
-extern int db_print();
+extern int db_save();
 extern int db_def_print();
 extern int db_def_archive();
 extern int db_render();
 
+extern void draw();
+extern void jump();
+
 /********************************************************/
+
+extern DB_TAB *currep;	/* keep track of current rep */
+extern DB_TAB *newrep;  /* scratch pointer for new rep */
+

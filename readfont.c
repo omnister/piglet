@@ -60,7 +60,7 @@ XFORM *xf;
 
     i = fonttab[c];
 
-    printf("jump\n");
+    jump();
     while (xdef[i] != -64 || ydef[i] != -64) {
 	if (xdef[i] != -64) {
 
@@ -68,11 +68,13 @@ XFORM *xf;
 	    yp = y+ (0.8 * (double) ydef[i]) / ((double) dy);
 
 	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
-	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy; 
+	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
 
-	    printf("%g %g\n", xt, yt);
+	    draw(xt,yt); 
+
 	} else {
-	    printf("jump\n");
+	    
+	    jump();
 	}
 	i++;
     }
