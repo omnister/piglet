@@ -268,10 +268,10 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
 	if (debug) printf("doing fit \n");
 	dx=(xmax-xmin);
 	dy=(ymax-ymin);
-	xmin-=dx/10.0;
-	xmax+=dx/10.0;
-	ymin-=dy/10.0;
-	ymax+=dy/10.0;
+	xmin-=dx/40.0;
+	xmax+=dx/40.0;
+	ymin-=dy/40.0;
+	ymax+=dy/40.0;
     } 
 
     if (scale != 1.0) {
@@ -300,38 +300,39 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
+	BOUNDS bounds;
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
+	    draw(x1,y1, &bounds, RUBBER);
+	    draw(x1,y2, &bounds, RUBBER);
+	    draw(x2,y2, &bounds, RUBBER);
+	    draw(x2,y1, &bounds, RUBBER);
+	    draw(x1,y1, &bounds, RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
+	    draw(x1old,y1old, &bounds, RUBBER);
+	    draw(x1old,y2old, &bounds, RUBBER);
+	    draw(x2old,y2old, &bounds, RUBBER);
+	    draw(x2old,y1old, &bounds, RUBBER);
+	    draw(x1old,y1old, &bounds, RUBBER);
 
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
+	    draw(x1,y1, &bounds, RUBBER);
+	    draw(x1,y2, &bounds, RUBBER);
+	    draw(x2,y2, &bounds, RUBBER);
+	    draw(x2,y1, &bounds, RUBBER);
+	    draw(x1,y1, &bounds, RUBBER);
 
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
+	    draw(x1old,y1old, &bounds, RUBBER);
+	    draw(x1old,y2old, &bounds, RUBBER);
+	    draw(x2old,y2old, &bounds, RUBBER);
+	    draw(x2old,y1old, &bounds, RUBBER);
+	    draw(x1old,y1old, &bounds, RUBBER);
 	}
 
 	/* save old values */

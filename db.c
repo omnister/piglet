@@ -976,10 +976,31 @@ int bounds;
     boundslevel = bounds;
 }
 
+void db_bounds_update(mybb, childbb) 
+BOUNDS *mybb;
+BOUNDS *childbb;
+{
 
-int db_render(cell, nest, mode)
+    if (mybb->init==0) {
+    	mybb->xmin = childbb->xmin;
+    	mybb->ymin = childbb->ymin;
+    	mybb->xmax = childbb->xmax;
+    	mybb->ymax = childbb->ymax;
+	mybb->init++;
+    } else if (childbb->init != 0 && mybb->init != 0) {
+        /* pass bounding box back */
+	mybb->xmin=min(mybb->xmin, childbb->xmin);
+	mybb->ymin=min(mybb->ymin, childbb->ymin);
+	mybb->xmax=max(mybb->xmax, childbb->xmax);
+	mybb->ymax=max(mybb->ymax, childbb->ymax);
+    }
+    return;
+}
+
+int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
 int nest;	/* nesting level */
+BOUNDS *bb;
 int mode; 	/* 0=regular rendering, 1=xor rubberband */
 {
     DB_DEFLIST *p;
@@ -996,6 +1017,10 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     double yminsave;
     double ymaxsave;
 
+    BOUNDS childbb;
+    BOUNDS mybb;
+    mybb.init=0; 
+
     if (nest == 0) {
 	unity_transform.r11 = 1.0;
 	unity_transform.r12 = 0.0;
@@ -1006,8 +1031,6 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
         global_transform = &unity_transform;
     }
 
-    if (debug) printf ("#rendering %s at level %d\n", cell->name, nest); 
-
     if (!X && (nest == 0)) {	/* autoplot output */
 	printf("nogrid\n");
 	printf("isotropic\n");
@@ -1015,37 +1038,38 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     }
 
     if (nest == 0) {
-        if (debug) printf("initializing global bounding box to 0\n");
-	xmax=0.0;		/* initialize globals to 0,0 location*/
-	xmin=0.0;		/* draw() routine will modify these */
-	ymax=0.0;
-	ymin=0.0;
+	mybb.xmax=0.0;		/* initialize globals to 0,0 location*/
+	mybb.xmin=0.0;		/* draw() routine will modify these */
+	mybb.ymax=0.0;
+	mybb.ymin=0.0;
+	mybb.init++;
     }
 
-    if (debug) printf("bounds = %g %g %g %g\n", xmin, xmax, ymin, ymax);
-
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	childbb.init=0;
+
 	switch (p->type) {
         case ARC:  /* arc definition */
-	    do_arc(p, mode);
+	    do_arc(p, &childbb, mode);
 	    break;
         case CIRC:  /* circle definition */
-	    do_circ(p, mode);
+	    do_circ(p, &childbb, mode);
 	    break;
         case LINE:  /* line definition */
-	    do_line(p, mode);
+	    do_line(p, &childbb, mode);
 	    break;
         case OVAL:  /* oval definition */
-	    do_oval(p, mode);
+	    do_oval(p, &childbb, mode);
 	    break;
         case POLY:  /* polygon definition */
-	    do_poly(p, mode);
+	    do_poly(p, &childbb, mode);
 	    break;
 	case RECT:  /* rectangle definition */
-	    do_rect(p, mode);
+	    do_rect(p, &childbb, mode);
 	    break;
         case TEXT:  /* text and note definition */
-	    do_text(p, mode);
+	    do_text(p, &childbb, mode);
 	    break;
         case INST:  /* recursive instance call */
 
@@ -1089,25 +1113,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    mat_scale(xp, 1.0/p->u.i->opts->aspect_ratio, 1.0); 
 	    mat_slant(xp,  p->u.i->opts->slant); 
 	    mat_rotate(xp, p->u.i->opts->rotation);
-
 	    xp->dx += p->u.i->x;
 	    xp->dy += p->u.i->y;
 
 	    save_transform = global_transform;
 	    global_transform = compose(xp,global_transform);
-
-            /* save old min/max values for currep */
-
-	    xminsave=xmin;
-	    xmaxsave=xmax;
-	    yminsave=ymin;
-	    ymaxsave=ymax;
-
-	    /* find bounding box on screen for instance */
-	    /* setting bounds_valid=0 forces first call to */
-	    /* draw(x,y) to set xmin/max = x, ymin/max = y */
-
-	    bounds_valid=0;
 
 	    if (nest >= nestlevel) { 
 		drawon = 0;
@@ -1118,14 +1128,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    /* instances are called by name, not by pointer */
 	    /* otherwise, it is possible to PURGE a cell in */
 	    /* memory and then reference a bad pointer, causing */
-	    /* a crash... instances are always accessed */
+	    /* a crash... so instances are always accessed */
 	    /* with a db_lookup() call */
 
-	    /* render instance */
-	    if (debug) printf("rendering %s, %d\n",
-	    	p->u.i->name, db_lookup(p->u.i->name));
-	    db_render(db_lookup(p->u.i->name), nest+1, mode);
-    
+	    childbb.init=0;
+	    db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
 
 	    /* don't draw anything below nestlevel */
 	    if (nest > nestlevel) { 
@@ -1134,44 +1141,26 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		drawon = 1;
 	    }
 
-
-	    if (debug) printf("back from draw bound = %g %g %g %g\n",
-	        xmin, ymin, xmax, ymax);
-
-	    /* if at nestlevel, draw bounding box */
-
-	    if (nest == nestlevel) { 
+            if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
 		set_pen(0);
 		jump();
 		    /* a square bounding box outline in white */
-		    draw(xmax,ymax,BB); draw(xmax,ymin,BB);
-		    draw(xmin,ymin,BB); draw(xmin,ymax,BB);
-		    draw(xmax,ymax,BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, BB); 
+		    draw(childbb.xmax, childbb.ymin, &childbb, BB);
+		    draw(childbb.xmin, childbb.ymin, &childbb, BB);
+		    draw(childbb.xmin, childbb.ymax, &childbb, BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, BB);
 		jump();
 		    /* and diagonal lines from corner to corner */
-		    draw(xmax,ymax,BB);
-		    draw(xmin,ymin,BB);
-		jump();
-		    draw(xmin,ymax,BB);
-		    draw(xmax,ymin,BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, BB);
+		    draw(childbb.xmin, childbb.ymin, &childbb, BB);
+		jump() ;
+		    draw(childbb.xmin, childbb.ymax, &childbb, BB);
+		    draw(childbb.xmax, childbb.ymin, &childbb, BB);
 	    }
-
 
 	    free(global_transform); free(xp);	
 	    global_transform = save_transform;	/* set transform back */
-
-	    /* now pass bounding box back */
-
-	    if (debug) printf("saved bounds = %g %g %g %g\n",
-	    	xminsave, yminsave, xmaxsave, ymaxsave);
-
-	    xmin=min(xminsave, xmin);
-	    xmax=max(xmaxsave, xmax);
-	    ymin=min(yminsave, ymin);
-	    ymax=max(ymaxsave, ymax);
-
-	    if (debug) printf("compositing bounds = %g %g %g %g\n",
-	        xmin, ymin, xmax, ymax);
 
 	    break;
 	default:
@@ -1179,37 +1168,39 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    return(1);
 	    break;
 	}
+	/* now pass bounding box back */
+	db_bounds_update(&mybb, &childbb);
     }
 
-
-    /* snapxy(&xmin, &ymin); */
-    /* snapxy(&xmax, &ymax); */
-
-    if (debug) printf("setting bounds %g %g %g %g\n",
-    	xmin, xmax, ymin, ymax);
-
+    db_bounds_update(bb, &mybb);
+ 
     if (nest == 0) { 
 	jump();
 	set_pen(12);
-	draw(xmin,ymax,BB);
-	draw(xmax,ymax,BB);
-	draw(xmax,ymin,BB);
-	draw(xmin,ymin,BB);
-	draw(xmin,ymax,BB);
-    }
+	draw(bb->xmin, bb->ymax, &mybb, BB);
+	draw(bb->xmax, bb->ymax, &mybb, BB);
+	draw(bb->xmax, bb->ymin, &mybb, BB);
+	draw(bb->xmin, bb->ymin, &mybb, BB);
+	draw(bb->xmin, bb->ymax, &mybb, BB);
 
-    cell->minx = xmin;
-    cell->maxx = xmax;
-    cell->miny = ymin;
-    cell->maxy = ymax;
+	/* update cell and globals for db_bounds() */
+	cell->minx = xmin = bb->xmin;
+	cell->maxx = xmax = bb->xmax;
+	cell->miny = ymin = bb->ymin;
+	cell->maxy = ymax = bb->ymax;
+
+    } 
+
+    /* set min/max in inst call here */
 }
 
 
 /******************** plot geometries *********************/
 
 /* ADD Emask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord */ 
-void do_arc(def, mode)
+void do_arc(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;
 {
     NUM x1,y1,x2,y2,x3,y3;
@@ -1227,8 +1218,9 @@ int mode;
 }
 
 /* ADD Cmask [.cname] [@sname] [:Wwidth] [:Rres] coord coord */
-void do_circ(def, mode)
+void do_circ(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;		/* drawing mode */
 {
     int i;
@@ -1262,15 +1254,16 @@ int mode;		/* drawing mode */
 	theta = theta_start+((double) i)*2.0*M_PI/((double) res);
 	x = r*sin(theta);
 	y = r*cos(theta);
-	draw(x1+x, y1+y, mode);
+	draw(x1+x, y1+y, bb, mode);
     }
 }
 
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
   
 
-void do_line(def, mode)
+void do_line(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode; 	/* drawing mode */
 {
     COORDS *temp;
@@ -1428,13 +1421,13 @@ int mode; 	/* drawing mode */
 
 	    jump();
 	
-	    draw(xa, ya, mode);
-	    draw(xb, yb, mode);
+	    draw(xa, ya, bb, mode);
+	    draw(xb, yb, bb, mode);
 
 	    if( width != 0) {
-		draw(xc, yc, mode);
-		draw(xd, yd, mode);
-		draw(xa, ya, mode);
+		draw(xc, yc, bb, mode);
+		draw(xd, yd, bb, mode);
+		draw(xa, ya, bb, mode);
 	    }
 
 	    /* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
@@ -1450,8 +1443,8 @@ int mode; 	/* drawing mode */
 	    }
 	} else {		/* width == 0 */
 	    jump();
-	    draw(x1,y1, mode);
-	    draw(x2,y2, mode);
+	    draw(x1,y1, bb, mode);
+	    draw(x2,y2, bb, mode);
 	    jump();
 	}
 
@@ -1463,8 +1456,9 @@ int mode; 	/* drawing mode */
 
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
 
-void do_oval(def, mode)
+void do_oval(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;
 {
     NUM x1,y1,x2,y2,x3,y3;
@@ -1484,8 +1478,9 @@ int mode;
 
 /* ADD Pmask [.cname] [@sname] [:Wwidth] coord coord coord [coord ...]  */ 
 
-void do_poly(def, mode)
+void do_poly(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;
 {
     COORDS *temp;
@@ -1515,7 +1510,7 @@ int mode;
 	    ;
 	} else {
 	    npts++;
-	    draw(x2, y2, mode);
+	    draw(x2, y2, bb, mode);
 	}
 	temp = temp->next;
     }
@@ -1527,7 +1522,7 @@ int mode;
     /* next bit of code when npts > 2 */
 
     if ((x1 != x2 || y1 != y2) && npts > 2) {
-	draw(x1, y1, mode);
+	draw(x1, y1, bb, mode);
     }
 
 }
@@ -1535,8 +1530,9 @@ int mode;
 
 /* ADD Rmask [.cname] [@sname] [:Wwidth] coord coord  */
 
-void do_rect(def, mode)
+void do_rect(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;	/* drawing mode */
 {
     double x1,y1,x2,y2;
@@ -1551,9 +1547,9 @@ int mode;	/* drawing mode */
     jump();
     set_pen(def->u.c->layer);
 
-    draw(x1, y1, mode); draw(x1, y2, mode);
-    draw(x2, y2, mode); draw(x2, y1, mode);
-    draw(x1, y1, mode);
+    draw(x1, y1, bb, mode); draw(x1, y2, bb, mode);
+    draw(x2, y2, bb, mode); draw(x2, y1, bb, mode);
+    draw(x1, y1, bb, mode);
 }
 
 
@@ -1562,8 +1558,9 @@ int mode;	/* drawing mode */
  *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
  */
 
-void do_text(def, mode)
+void do_text(def, bb, mode)
 DB_DEFLIST *def;
+BOUNDS *bb;
 int mode;
 {
 
@@ -1608,7 +1605,7 @@ int mode;
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
 
-    writestring(def->u.t->text, xp, def->u.t->opts->font_num, mode);
+    writestring(def->u.t->text, xp, def->u.t->opts->font_num, bb, mode);
 
     free(xp);
 }
@@ -1714,30 +1711,20 @@ XFORM *xa;
  * autoplot, so has a long history.
  */
 
-
-/* FIXME: currently transform gets seeded at the top of the render
-tree in db_render by XWIN based on real->screen relationship.  This makes the
-whole pipeline tangled up with graphical window size.  This was done to make
-the transform maximally efficient.  It would be cleaner to always seed the
-render pipeline with the unit transform and pass transform as an explicit
-argument down the pipe.  That way, drawing is always done in real-world coords
-with no admixture of screen transformations.  That requires draw to
-concatenate the screen transform at the last possible moment just before
-calling the X plotting funcions.  */
-
 static int nseg=0;
 
-void draw(x, y, mode)	/* draw x,y transformed by extern global xf */
-NUM x,y;		/* location in real coordinate space */
-int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
+void draw(x, y, bb, mode)  /* draw x,y transformed by extern global xf */
+NUM x,y;		   /* location in real coordinate space */
+BOUNDS *bb;		   /* bounding box */
+int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 {
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
     int debug=0;
-    int e=5;
 
     if (mode == 2) {	/* skip transform */
+	if (debug) printf("in draw, mode=%d\n", mode);
 	xx = x;
 	yy = y;
         /* and don't update bounding box */
@@ -1750,15 +1737,16 @@ int mode;		/* 0=regular, 1=rubberband, 2=bounding box */
 
 	/* globals for computing bounding boxes */
 	
-	if(!bounds_valid) {
-	    xmin=xmax=xx;
-	    ymin=ymax=yy;
-	    bounds_valid++;
+	if(bb->init == 0) {
+	    bb->xmin=bb->xmax=xx;
+	    bb->ymin=bb->ymax=yy;
+	    bb->init++;
+	} else {
+	    bb->xmax = max(xx,bb->xmax);
+	    bb->xmin = min(xx,bb->xmin);
+	    bb->ymax = max(yy,bb->ymax);
+	    bb->ymin = min(yy,bb->ymin);
 	}
-	xmax = max(xx,xmax);
-	xmin = min(xx,xmin);
-	ymax = max(yy,ymax);
-	ymin = min(yy,ymin);
     }
 
 

@@ -176,7 +176,9 @@ int count; /* number of times called */
 {
 	static double xold, yold;
 	int i;
+	BOUNDS bb;
 
+	bb.init=0;
 	int debug=0;
 
 	/* DB_TAB dbtab;  */
@@ -208,16 +210,16 @@ int count; /* number of times called */
 	    jump(); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
-	    do_text(&dbdeflist, 1);
+	    do_text(&dbdeflist, &bb, 1);
 	    jump(); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
-	    do_text(&dbdeflist, 1);
+	    do_text(&dbdeflist, &bb, 1);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
-	    do_text(&dbdeflist, 1);
+	    do_text(&dbdeflist, &bb, 1);
 	}
 
 	/* save old values */

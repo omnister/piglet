@@ -70,6 +70,14 @@ typedef struct xform {
      double dy;
 } XFORM; 
 
+typedef struct bounds {
+    double xmin;
+    double ymin;
+    double xmax;
+    double ymax;
+    int init;	/* 0 = non-initialized */
+} BOUNDS;
+
 /********************************************************/
 
 typedef struct db_tab {
@@ -296,10 +304,11 @@ extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 extern int db_render(
 		DB_TAB *cell,
 		int nest,
+		BOUNDS *bb,
 		int mode
 	    );
 
-extern void draw( NUM x, NUM y, int MODE);
+extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);
 extern void jump(void);
 
 extern void db_bounds(NUM *xmin, NUM *ymin, NUM *xmax, NUM *ymax);

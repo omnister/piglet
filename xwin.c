@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.18 2004/01/27 23:58:39 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.19 2004/02/01 08:54:50 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -352,6 +352,7 @@ FILE *fp;
     XEvent xe;
     static int i = 0;
     int debug=0;
+    BOUNDS bb;
 
     static char buf[BUF_SIZE];
     static char *s = NULL;
@@ -387,7 +388,8 @@ FILE *fp;
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
 	    if (currep != NULL ) {
-		db_render(currep,0,0); /* render the current rep */
+	        bb.init=0;
+		db_render(currep,0,&bb,0); /* render the current rep */
 	    }
 	    draw_grid(win, gcx, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);

@@ -171,38 +171,40 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
+	BOUNDS bb;
+	bb.init=0;
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
+	    draw(x1,y1, &bb, RUBBER);
+	    draw(x1,y2, &bb, RUBBER);
+	    draw(x2,y2, &bb, RUBBER);
+	    draw(x2,y1, &bb, RUBBER);
+	    draw(x1,y1, &bb, RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
+	    draw(x1old,y1old, &bb, RUBBER);
+	    draw(x1old,y2old, &bb, RUBBER);
+	    draw(x2old,y2old, &bb, RUBBER);
+	    draw(x2old,y1old, &bb, RUBBER);
+	    draw(x1old,y1old, &bb, RUBBER);
 
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
+	    draw(x1,y1, &bb, RUBBER);
+	    draw(x1,y2, &bb, RUBBER);
+	    draw(x2,y2, &bb, RUBBER);
+	    draw(x2,y1, &bb, RUBBER);
+	    draw(x1,y1, &bb, RUBBER);
 
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
+	    draw(x1old,y1old, &bb, RUBBER);
+	    draw(x1old,y2old, &bb, RUBBER);
+	    draw(x2old,y2old, &bb, RUBBER);
+	    draw(x2old,y1old, &bb, RUBBER);
+	    draw(x1old,y1old, &bb, RUBBER);
 	}
 
 	/* save old values */

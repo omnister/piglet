@@ -228,6 +228,9 @@ int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
 	int i;
+	BOUNDS bb;
+
+	bb.init=0;
 
 	int debug=0;
 
@@ -252,17 +255,17 @@ int count; /* number of times called */
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    do_poly(&dbdeflist, 1);
+	    do_poly(&dbdeflist, &bb, 1);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
-	    do_poly(&dbdeflist, 1);
+	    do_poly(&dbdeflist, &bb, 1);
 	    jump(); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
-	    do_poly(&dbdeflist, 1);
+	    do_poly(&dbdeflist, &bb, 1);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    do_poly(&dbdeflist, 1);
+	    do_poly(&dbdeflist, &bb, 1);
 	}
 
 	/* save old values */
