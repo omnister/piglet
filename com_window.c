@@ -71,13 +71,6 @@ char *arg;
 		    } else {
 			db_set_nest(nest);
 		    }
-		} else if (strncasecmp(word, ":B", 2) == 0) {
-		    if(sscanf(word+2, "%d", &bounds) != 1) {
-		        weprintf("WIN invalid bound level %s\n", word+2);
-		        state=END;
-		    } else {
-			db_set_bounds(bounds);
-		    }
 		} else {
 	    	     printf("WIN: bad option: %s\n", word);
 		     state = END;

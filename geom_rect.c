@@ -18,6 +18,7 @@
 /* FIXME: this version does not yet parse any options */
 
 static double x1, y1;
+void draw_box();
 
 OPTS opts;
 

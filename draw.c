@@ -3,11 +3,9 @@
 #include "xwin.h"
 
 /* global variables that need to eventually be on a stack for nested edits */
-int layer;
 int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
-int boundslevel=3;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 FILE *PLOT_FD;		  /* file descriptor for plotting */
 
@@ -21,14 +19,6 @@ int nest;
 {
     extern int nestlevel;
     nestlevel = nest;
-}
-
-/* a debugging stub to turn pick-bounds display on/off */
-void db_set_bounds(bounds) 
-int bounds;
-{
-    extern int boundslevel;
-    boundslevel = bounds;
 }
 
 void db_bounds_update(mybb, childbb) 
@@ -128,7 +118,8 @@ double fuzz;
 	    exit(1);
 	    break;
     }
-    /* printf("%g %g %g %g %g %d\n", p->xmin, p->ymin, p->xmax, p->ymax, retval, outcode); */
+    /* printf("%.5g %.5g %.5g %.5g %.5g %d\n",
+    	p->xmin, p->ymin, p->xmax, p->ymax, retval, outcode); */
     return (retval);
 }
 
@@ -342,34 +333,40 @@ DB_DEFLIST *p;			/* print out identifying information */
     case ARC:  /* arc definition */
 	break;
     case CIRC:  /* circle definition */
-	printf("   CIRC %d LL=%.2g,%.2g UR=%.2g,%.2g ", p->u.c->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   CIRC %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.c->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
 	printf("\n");
 	break;
     case LINE:  /* line definition */
-	printf("   LINE %d LL=%g,%g UR=%g,%g ", p->u.l->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   LINE %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.l->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
 	printf("\n");
 	break;
     case OVAL:  /* oval definition */
 	break;
     case POLY:  /* polygon definition */
-	printf("   POLY %d LL=%g,%g UR=%g,%g ", p->u.p->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   POLY %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.p->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.p->opts, POLY_OPTS);
 	printf("\n");
 	break;
     case RECT:  /* rectangle definition */
-	printf("   RECT %d LL=%g,%g UR=%g,%g ", p->u.r->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   RECT %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.r->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
 	printf("\n");
 	break;
     case TEXT:  /* text and note definition */
-	printf("   TEXT %d LL=%g,%g UR=%g,%g ", p->u.t->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   TEXT %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.t->layer, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
 	printf(" \"%s\"\n", p->u.t->text);
 	break;
     case INST:  /* instance call */
-	printf("   INST %s LL=%g,%g UR=%g,%g ", p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   INST %s LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.i->opts, INST_OPTS);
 	printf("\n");
 	break;
@@ -439,6 +436,17 @@ DB_TAB *cell;
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 	db_notate(p);
+    }
+    printf("   grid is %.5g %.5g %.5g %.5g %.5g %.5g\n",
+    	currep->grid_xd, currep->grid_yd, currep->grid_xs,
+	currep->grid_ys, currep->grid_xo, currep->grid_yo);
+
+    printf("   logical level = %d\n", currep->logical_level);
+    printf("   lock angle    = %d\n", currep->lock_angle);
+    if (currep->modified) {
+	printf("   cell is modified\n");
+    } else {
+	printf("   cell is not modified\n");
     }
 }
 
@@ -535,7 +543,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    break;
         case POLY:  /* polygon definition */
 	    do_poly(p, &childbb, mode);
-	    if (debug) printf("poly bounds = %g,%g %g,%g\n",
+	    if (debug) printf("poly bounds = %.5g,%.5g %.5g,%.5g\n",
 		childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
 	    break;
 	case RECT:  /* rectangle definition */
@@ -703,7 +711,6 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
-    extern int layer;
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
@@ -774,11 +781,6 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	    } else {		/* regular drawing */
 		if (showon && drawon) {
 		    xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
-		    /*
-		    if (boundslevel) {
-			draw_pick_bound(x1, y1, x2, y2, boundslevel);
-		    }
-		    */
  		}
 	    }
 	}
@@ -850,7 +852,7 @@ double *xc1, *yc1, *xc2, *yc2;
     int code2=0;
     double tmp;
 
-    if (debug) printf("canonicalized: %g,%g %g,%g\n", x1, y1, x2, y2);
+    if (debug) printf("canonicalized: %.5g,%.5g %.5g,%.5g\n", x1, y1, x2, y2);
 
     while (!done) {
         /* compute "outcodes" */
@@ -883,7 +885,7 @@ double *xc1, *yc1, *xc2, *yc2;
 		    tmp=code1; code1=code2; code2=tmp;
 		}
 
-		if (debug) printf("preclip: %g,%g %g,%g\n", x1, y1, x2, y2);
+		if (debug) printf("preclip: %.5g,%.5g %.5g,%.5g\n", x1, y1, x2, y2);
 		if (code1 & 1) {		/* divide line at top */
 			x1 = x1 + (x2-x1)*(vp_ymax-y1)/(y2-y1);
                         y1 = vp_ymax;
@@ -897,7 +899,7 @@ double *xc1, *yc1, *xc2, *yc2;
 			y1 = y1 + (y2-y1)*(vp_xmin-x1)/(x2-x1);
                         x1 = vp_xmin;
                 }
-		if (debug) printf("after: %g,%g %g,%g\n", x1, y1, x2, y2);
+		if (debug) printf("after: %.5g,%.5g %.5g,%.5g\n", x1, y1, x2, y2);
 	    }
 	}
     }
@@ -910,25 +912,6 @@ double *xc1, *yc1, *xc2, *yc2;
 	return(1);
     }
     return(0);
-}
-
-
-int draw_pick_bound(NUM x1, NUM y1, NUM x2, NUM y2, int boundslevel) {
-    NUM tmp;
-    NUM e = boundslevel;	/* pixel fuzz width */
-
-    if (x2 < x1) {		/* canonicalize the extent */
-	tmp = x2; x2 = x1; x1 = tmp;
-    }
-    if (y2 < y1) {
-	tmp = y2; y2 = y1; y1 = tmp;
-    }
-
-    xwin_draw_line((int)(x1-e),(int)(y1-e),(int)(x1-e),(int)(y2+e));
-    xwin_draw_line((int)(x1-e),(int)(y2+e),(int)(x2+e),(int)(y2+e));
-    xwin_draw_line((int)(x2+e),(int)(y2+e),(int)(x2+e),(int)(y1-e));
-    xwin_draw_line((int)(x2+e),(int)(y1-e),(int)(x1-e),(int)(y1-e));
-
 }
 
 
@@ -945,9 +928,7 @@ void set_layer(lnum, comp)
 int lnum;	/* layer number */
 int comp;	/* component type */
 {
-    extern int layer;
     extern int showon;
-    layer=lnum;
 
     if (comp) {
 	showon = show_check_visible(comp, lnum);

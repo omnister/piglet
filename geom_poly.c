@@ -12,6 +12,7 @@ static COORDS *CP;
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_POLY dbpoly;
+void draw_poly(); 
 
 /* FIXME: this code should be a bit more robust.  It should
 automatically cull any colinear points as they are entered, should
@@ -50,6 +51,8 @@ int *layer;
     TOKEN token;
     char word[BUFSIZE];
     static double xold, yold;
+
+    if (debug) printf("in add poly layer %d\n", *layer);
 
     opt_set_defaults(&opts);
 

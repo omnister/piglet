@@ -6,7 +6,7 @@
 #include "rlgetc.h"
 
 /*
-SHOW {+|-|#} [EACILN0PRT]<layer>
+SHOW {+|-|#}[EACILN0PRT]<layer>
 
    + : make it visible
    - : turn it off
@@ -41,7 +41,7 @@ char *arg;
     int visible=0;
     int modifiable=0;
     int comp=0;
-    int layer=0;
+    int show_layer=0;
 
     if (lp->mode != EDI) {
     	printf("No cell currently being edited!\n");
@@ -117,19 +117,19 @@ char *arg;
 
 		    if (!done) {
 			if ((strlen(word) >= 3)) {
-			    if(sscanf(&word[2], "%d", &layer) != 1 || 
-				    layer > MAX_LAYER) {
+			    if(sscanf(&word[2], "%d", &show_layer) != 1 || 
+				    show_layer > MAX_LAYER) {
 				printf("SHOW: bad layer number: %s\n", word);
 				done++;
 				token_flush_EOL(lp);
 			    } 
 			} else {
-			    layer=0;
+			    show_layer=0;
 			}
 		    }
 		    if (!done) {
-			show_set_visible(comp, layer, visible);
-			show_set_modify(comp, layer, modifiable);
+			show_set_visible(comp, show_layer, visible);
+			show_set_modify(comp, show_layer, modifiable);
 		    }
 	        break;
 

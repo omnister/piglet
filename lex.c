@@ -13,8 +13,6 @@
 
 char prompt[128];
 
-static int layer=0; 	/* global for remembering default layer */
-
 /* The names of functions that actually do the manipulation. */
 
 int com_add(), com_archive(), com_area(), com_background();
@@ -95,6 +93,7 @@ COMMAND commands[] =
 };
 
 static int numbyes=0;
+static int def_layer=0;
 
 main(argc,argv)
 int argc;
@@ -378,13 +377,8 @@ char *arg;
     return (0);
 }
 
-com_delete(lp, arg)  	/* delete component from currep */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_delete %s\n", arg);
-    return (0);
-}
+/* now in com_delete.c */
+/*com_delete(lp, arg)  	/* delete component from currep */
 
 com_display(lp, arg)	/* turn the display on or off */
 LEXER *lp;
@@ -800,6 +794,9 @@ char *arg;
 			printf("    %-12s: %s.\n", 
 				commands[i].name, commands[i].doc);
 			printed++;
+
+			/* doesn't connect to stdin... */
+			/*system("nroff -man web/man1p/grid.1p | less");*/
 		    }
 		} 
 	    	break;
@@ -922,7 +919,57 @@ com_layer(lp, arg)		/* set a default layer number */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_layer\n", arg);
+    extern int def_layer;
+
+    TOKEN token;
+    int done=0;
+    int layer;
+    char buf[128];
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%d", &layer) != 1) {
+		    weprintf("LEVEL invalid layer number: %s\n", word);
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("LEVEL: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    if (nnums==1) {
+	 def_layer=layer;
+    } else if (nnums==0) {
+	 printf("LAYER: current default is %d\n", def_layer);
+    } else {
+	printf("LAYER: wrong number of arguments\n");
+	return(-1);
+    }
+
     return (0);
 }
 
@@ -1413,4 +1460,7 @@ char *arg;
     return (0);
 }
 
-
+int default_layer()
+{
+   return(def_layer);
+}

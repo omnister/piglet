@@ -27,8 +27,7 @@ com_add(LEXER *lp, char *arg)
     int valid_comp=0;
     int i;
     int flag;
-
-    extern int layer;
+    int layer;
 
     int comp;
     double x1,y1,x2,y2;
@@ -72,6 +71,7 @@ com_add(LEXER *lp, char *arg)
 	    valid_comp=0;
 	    if (comp = is_comp(toupper(word[0]))) {
 	    	if (strlen(word) == 1) {
+		    layer=default_layer();
 		    printf("using default layer=%d\n",layer);
 		    valid_comp++;	/* no layer given */
 		} else {
@@ -148,7 +148,7 @@ com_add(LEXER *lp, char *arg)
 			}
 		    }
 		    if (debug) printf("calling add_inst with %s\n", word);
-		    if (!show_check_modifiable(INST, layer)) {
+		    if (!show_check_modifiable(INST, 0)) {
 			    printf("INST component is not modifiable!\n");
 		    } else {
 			add_inst(lp, word);
@@ -156,7 +156,7 @@ com_add(LEXER *lp, char *arg)
 		}
 	    }
 	} else if (token == QUOTE) {
-	    if (!show_check_modifiable(INST, layer)) {
+	    if (!show_check_modifiable(INST, 0)) {
 		    printf("INST component is not modifiable!\n");
 	    } else {
 		add_inst(lp, word);

@@ -12,6 +12,7 @@ DB_CIRC dbcirc;
 
 OPTS opts;
 
+void draw_circle();
 
 int add_circ(lp, layer)
 LEXER *lp;

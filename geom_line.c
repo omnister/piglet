@@ -13,6 +13,7 @@ static COORDS *CP;
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_LINE dbline;
+void draw_line(); 
 
 /*
  *
