@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define FILES 257
 #define FILE_NAME 258
 #define EDIT 259
@@ -18,16 +14,15 @@
 #define EXIT 270
 #define OPTION 271
 #define UNKNOWN 272
-#define PURGE 273
-#define ARC 274
-#define CIRC 275
-#define INST 276
-#define LINE 277
-#define NOTE 278
-#define OVAL 279
-#define POLY 280
-#define RECT 281
-#define TEXT 282
+#define ARC 273
+#define CIRC 274
+#define INST 275
+#define LINE 276
+#define NOTE 277
+#define OVAL 278
+#define POLY 279
+#define RECT 280
+#define TEXT 281
 typedef union {
 	double num;
 	PAIR pair;

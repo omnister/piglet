@@ -22,7 +22,7 @@ NUM xmin, ymin;
 double max(), min();;
 int drawon=1;		/* 0 = dont draw, 1 = draw */
 int nestlevel=9;
-int X=0;		/* 1 = draw to X, 0 = emit autoplot commands */
+int X=1;		/* 1 = draw to X, 0 = emit autoplot commands */
 
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line(), do_note();
@@ -96,16 +96,15 @@ DB_TAB *sp;
 
     FILE *fp;
     char buf[MAXFILENAME];
-    int err=0;
 
     mkdir("./cells", 0777);
     snprintf(buf, MAXFILENAME, "./cells/%s.d", sp->name);
-    err+=((fp = fopen(buf, "w+")) == 0); 
+    fp = fopen(buf, "w+"); 
 
     db_def_print(fp, sp); 
-    err+=(fclose(fp) != 0);
+    fclose(fp);
 
-    return(err);
+    return 0;
 }
 
 
@@ -683,7 +682,7 @@ char *s;
 int db_render(cell,xf, nest)
 DB_TAB *cell;
 XFORM *xf; 	/* coordinate transform matrix */
-int nest;	/* nesting level */
+int nest;
 {
     DB_DEFLIST *p;
     OPTS *op;
@@ -794,8 +793,8 @@ int nest;	/* nesting level */
 
 	    transform = compose(xp,xf);		/* set global transform */
 
-	    xmax=transform->dx;		/* initialize globals to 0,0 location*/
-	    xmin=transform->dx;		/* draw() routine will modify these */
+	    xmax=transform->dx;
+	    xmin=transform->dx;
 	    ymax=transform->dy;
 	    ymin=transform->dy;
 
@@ -808,14 +807,12 @@ int nest;	/* nesting level */
 	    db_render(p->u.i->def, transform, nest+1);
 	    /* printf ("# in db_render at level %d\n", nest); */
 
-	    /* don't draw anything below nestlevel */
 	    if (nest > nestlevel) { 
 		drawon = 0;
 	    } else {
 		drawon = 1;
 	    }
 
-	    /* if at nestlevel, draw bounding box */
 	    if (nest == nestlevel) { 
 		set_pen(1);
 		jump();
@@ -1436,8 +1433,7 @@ NUM x,y;	/* location in real coordinate space */
 
     if (X) {
 	if (nseg) {
-	    ;
-	    /* xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy); /* for X*/
+	    xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
 	}
 	xxold=xx;
 	yyold=yy;
@@ -1468,7 +1464,7 @@ void set_pen(pnum)
 int pnum;
 {
     if (X) {
-	/* xwin_set_pen((pnum%6)+1);		/* for X */
+	xwin_set_pen((pnum%6)+1);		/* for X */
     } else {
 	printf("pen %d\n", (pnum%6)+1);		/* autoplot */
     }
@@ -1479,7 +1475,7 @@ void set_line(lnum)
 int lnum;
 {
     if (X) {
-	/* xwin_set_line((lnum%5));		/* for X */
+	xwin_set_line((lnum%5));		/* for X */
     } else {
 	printf("line %d\n", (lnum%5));	/* autoplot */
     }

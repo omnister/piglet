@@ -26,7 +26,7 @@ XFORM  *xp = &transform;
 /* When non-zero, this global means the user is done using this program. */
 int done;
 
-char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.1 2003/01/12 19:05:18 walker Exp $"; 
+char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.2 2003/12/12 04:31:12 walker Exp $"; 
 
 unsigned int width, height;	/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -39,10 +39,10 @@ double scale = 1.0;		/* xform factors from real->viewport */
 double xoffset = 0.0;
 double yoffset = 0.0;
 
-int grid_xd = 50;	/* grid delta */
-int grid_yd = 50;
-int grid_xs = 5;	/* how often to display grid ticks */
-int grid_ys = 5;
+int grid_xd = 10;	/* grid delta */
+int grid_yd = 10;
+int grid_xs = 2;	/* how often to display grid ticks */
+int grid_ys = 2;
 int grid_xo = 0; 	/* starting offset */
 int grid_yo = 0;
 
@@ -253,7 +253,7 @@ int initX()
     /* initialize various things, should be put into init() function */
 
     xwin_grid("");
-    xwin_window(4, -1000.0,-1000.0, 1000.0, 1000.0);
+    xwin_window(4, -100.0,-100.0, 100.0, 100.0);
     sprintf(buf,"");
 
     /* xwin_set_rubber_callback(draw_box); */
@@ -265,8 +265,11 @@ int procXevent(fp)
 FILE *fp;
 {
 
-    static int xold, yold, xstart, ystart;
+    static int xold = 0;
+    static int yold = 0;
+    static int xstart, ystart;
     static int button_down=0;
+    static int new = 0;
     XEvent xe;
     static int i = 0;
 
@@ -336,7 +339,6 @@ FILE *fp;
 		case MotionNotify:
 		    debug("got Motion",dbug);
 		    if(button_down) {
-
 			if (xwin_rubber_callback != NULL) {
 			    (*(xwin_rubber_callback)) (win,
 				gcx,xstart, ystart, (int)x,(int)y);
@@ -358,6 +360,12 @@ FILE *fp;
 			}
 
 		    } else {		/* must be button up */
+
+			if (xwin_rubber_callback != NULL) {
+			    (*(xwin_rubber_callback)) (win,
+				gcx,xstart, ystart, (int)xu,(int)yu);
+			}
+
 			xu = (double) xe.xmotion.x;
 			yu = (double) xe.xmotion.y;
 			V_to_R(&xu,&yu);
@@ -366,6 +374,11 @@ FILE *fp;
 			    (int) xu,(int) yu, (int) x, (int) y,
 			    (int) x- (int) xu, (int) y - (int)yu);
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
+			R_to_V(&xu,&yu);
+			if (xwin_rubber_callback != NULL) {
+			    (*(xwin_rubber_callback)) (win,
+				gcx,xstart, ystart, (int)xu,(int)yu);
+			}
 		    }
 		    break;
 		case Expose:
@@ -390,6 +403,10 @@ FILE *fp;
 		    break;
 		case ButtonRelease:
 		    button_down=0;
+		    if (xwin_rubber_callback != NULL) {
+			(*(xwin_rubber_callback)) (win,
+			    gcx,xstart, ystart, (int)x,(int)y);
+		    }
 		    x = (double) xe.xmotion.x;
 		    y = (double) xe.xmotion.y;
 		    V_to_R(&x,&y);
@@ -409,21 +426,22 @@ FILE *fp;
 			    snapxy(&x,&y);
 				/* printf("(%g, %g) ",x,y); */
 
-			    /* format for returning mouse loc as a string */
-			    sprintf(buf," %d,%d ", (int) x, (int) y);
+			    /* returning mouse loc as a string */
+			    sprintf(buf," %d, %d\n", (int) x, (int) y);
 			    s = buf;
 
 			    R_to_V(&x,&y);
 				/* printf("back to display: %g, %g\n",x,y); */
 			    xstart = (int) x;
 			    ystart = (int) y;
+			    new = 1;
 				/* printf("ints: %d, %d\n",xstart,ystart); */
 			    debug("got ButtonPress",dbug);
 			    break;
 			case 2:	/* middle button */
 			    break;
 			case 3: /* right button */
-			    /* format for returning mouse loc as a string */
+			    /* RIGHT button returns EOC */
 			    sprintf(buf," ;\n");
 			    s = buf;
 			    break;
@@ -527,13 +545,12 @@ int x2,y2;
 
     XSetFunction(dpy, gc, GXxor);
 
-    /* inner fill */
-    /* XSetFillStyle(dpy, gc, FillStippled); */
-    /* XFillRectangle(dpy, win, gc, lx, ly, ux-lx, uy-ly); */
-
-    /* outline */
-    XSetFillStyle(dpy, gc, FillSolid);
-    XDrawRectangle(dpy, win, gc, lx, ly, ux-lx, uy-ly);
+    XDrawLine(dpy, win, gc, lx, ly, lx, uy);
+    XDrawLine(dpy, win, gc, lx, uy, ux, uy);
+    XDrawLine(dpy, win, gc, ux, uy, ux, ly);
+    XDrawLine(dpy, win, gc, ux, ly, lx, ly);
+    XDrawLine(dpy, win, gc, ux, uy, lx, ly);
+    XDrawLine(dpy, win, gc, ux, ly, lx, uy);
 }
 
 void xwin_draw_line(x1, y1, x2, y2)
