@@ -3,6 +3,7 @@ L		[A-Za-z]
 LD		[A-Za-z0-9]
 D		[0-9]
 LDM		[A-Za-z0-9/_.]
+X		[+-]?{D}*"."{D}+
 Z		[+-]?{D}+"."{D}*
 U		[+-]?{D}+
 W		[\t ]*
@@ -37,7 +38,16 @@ W		[\t ]*
 [ \t\n]+		;
 
 \"[^"]*\"		{
-			    yylval.name = strsave(yytext); 
+			    /* strsave(yytext); */
+			    /* remove open and close quotes */
+			    yylval.name = (char *) strdup(yytext+1);
+			    if (yylval.name[yyleng-2] != '"') {
+				fprintf(stderr, 
+				    "unterminated character string",
+				    (char *) 0);
+			    } else {
+				yylval.name[yyleng-2] = '\0';
+			    }
 			    return token(QUOTED);
 			}    
 
@@ -85,9 +95,16 @@ T{D}+			{
 			    return token(TEXT);
 			}
 
+I			{
+			    return token(INST);
+			}
+
 ^SAV[E]			return token(SAVE);
 #A			return token(ALL);
 ^EXI[T]			return token(EXIT);
+
+^PUR[G]			|
+^PURG[E]		return token(PURGE);
 
 [.:@]{L}[^ \t\n]+	{
 			    yylval.name = strsave(yytext); 
@@ -95,6 +112,7 @@ T{D}+			{
 			}
 
 {U}			|
+{X}			|
 {Z}			{
 			    sscanf(yytext, "%lf", &yylval.num); 
 			    return token(NUMBER);

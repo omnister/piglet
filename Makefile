@@ -2,12 +2,12 @@
 SRC = scan.l gram.y 
 OBJ = scan.o gram.o
 
-pig: gram.o scan.o db.o
-	cc -g gram.o scan.o db.o -o pig -lfl -lm
+pig: gram.o scan.o db.o readfont.o
+	cc -g gram.o scan.o db.o readfont.o -o pig -lfl -lm
 
 lexer: scan.o
-	lex -l scan.l
-	cc -g -DDEBUG lex.yy.c -o lexer -lfl
+	lex -il scan.l
+	cc  -g -DDEBUG lex.yy.c -o lexer -lfl
 	rm lex.yy.c
 
 clean: 
@@ -16,7 +16,7 @@ clean:
 y.tab.h: gram.o
 
 scan.o: scan.l y.tab.h 
-	lex -l scan.l
+	lex -il scan.l
 	#cc -DYYDEBUG -c lex.yy.c 
 	cc -g -c lex.yy.c 
 	rm lex.yy.c

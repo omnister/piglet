@@ -5,11 +5,11 @@
 /*
  *   (this chain from HEAD is the cell definition symbol table)
  *
- *                                                  TAIL--|
- *                                                        v 
- *   HEAD->[db_tab <cellname0> ]->[<cellname1>]->...[<cellnamek>]->0
- *                           |               |                 |
- *                           |              ...               ...
+ *                                              TAIL--|
+ *                                                    v 
+ *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->0
+ *                           |                |                  |
+ *                           |               ...                ...
  *                           v
  *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->0
  *                                  |    |    |
