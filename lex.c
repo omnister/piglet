@@ -472,9 +472,11 @@ char *arg;
     int nnums=0;
     double tmp;
     int debug=0;
-
+    char *s = NULL;
+    int i;
 
     while(!done && (token=token_get(lp, word)) != EOF) {
+	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
 	switch(token) {
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
@@ -482,6 +484,19 @@ char *arg;
 		break;
 	    case EOC:		/* end of command */
 		done++;
+		xwin_raise_window();
+		need_redraw++;
+
+		/* FIXME: horrible kludge, we have to wait until the display is properly */
+		/* updated.  How do you know when everything has been properly sloshed */
+		/* through the server?  This is simply an empirical hack that works */
+		/* on my system */
+
+		for (i=0; i<=20; i++) {
+		    xwin_doXevent(s);
+		}
+		xwin_dump_graphics();
+		xwin_doXevent(s);
 		break;
 	    case EOL:		/* newline or carriage return */
 	    	break;	/* ignore */
@@ -496,147 +511,13 @@ char *arg;
 		return(-1);
 	    	break;
 	}
-    }
-
-    xwin_raise_window();
-    xwin_dump_graphics();
-
+    } 
     return (0);
 }
 
-com_edit(lp, arg)		/* begin edit of an old or new device */
-LEXER *lp;
-char *arg;
-{
-    TOKEN token;
-    int done=0;
-    char word[128];
-    char name[128];
-    char buf[128];
-    int error=0;
-    int debug=0;
-    int nfiles=0;
-    FILE *fp;
-    LEXER *my_lp;
-    DB_TAB *save_rep;  
-    DB_TAB *new_rep;  
-   
+/* now in com_edit.c */
+/* com_edit(lp, arg)		/* begin edit of an old or new device */
 
-    if (debug) printf("    com_edit <%s>\n", arg); 
-
-    name[0]=0;
-    while(!done && (token=token_get(lp, word)) != EOF) {
-	switch(token) {
-	    case IDENT: 	/* identifier */
-		if (nfiles == 0) {
-		    strncpy(name, word, 128);
-		    nfiles++;
-		} else {
-		    printf("EDIT: wrong number of args\n");
-		    return(-1);
-		}
-	    	break;
-	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
-	    case END:		/* end of file */
-	    case NUMBER: 	/* number */
-	    case COMMA:		/* comma */
-		printf("EDIT: expected IDENT: got %s\n", tok2str(token));
-	    	break;
-	    case EOL:		/* newline or carriage return */
-	    	break;	/* ignore */
-	    case EOC:		/* end of command */
-		done++;
-		break;
-	    case CMD:		/* command */
-	    	token_unget(lp, token, word);
-		done++;
-		break;
-	    default:
-		eprintf("bad case in com_edi");
-		break;
-	}
-    }
-
-    if (lp->mode == MAIN || currep == NULL  ||
-	(lp->mode == EDI && !currep->modified)) {
-
-	if (lp->mode == EDI) {
-	    if (currep != NULL) {
-		currep->being_edited = 0;
-	    }
-	}
-
-	/* check for a name provided */
-	if (strlen(name) == 0) {
-	    printf("    must provide a name: EDIT <name>\n");
-	    return (0);
-	} 
-
-	if (debug) printf("got %s\n", name); 
-
-	lp->mode = EDI;
-    
-	if ((new_rep=db_lookup(name)) == NULL) { /* Not already in memory */
-
-	    currep = db_install(name);  	/* create blank stub */
-	    show_init();
-	    need_redraw++;
-
-	    /* now check if on disk */
-	    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
-	    if((fp = fopen(buf, "r")) == 0) {
-		/* cannot find copy on disk */
-		/* so leave the user with an empty start */
-		if (debug) printf("calling dowin 1\n");
-		do_win(lp, 4, -100.0, -100.0, 100.0, 100.0, 1.0);
-	    } else {
-		/* read it in */
-		xwin_display_set_state(D_OFF);
-		my_lp = token_stream_open(fp, buf);
-		my_lp->mode = EDI;
-		save_rep=currep;
-		printf ("reading %s from disk\n", name);
-		/* FIXME should save and restore show sets or store them in currep */
-		show_set_modify(ALL,0,1);
-		parse(my_lp);
-		token_stream_close(my_lp); 
-		if (debug) printf ("done reading %s from disk\n", name);
-		show_set_modify(ALL,0,0);
-		show_set_visible(ALL,0,1);
-		xwin_display_set_state(D_ON);
-		
-		currep=save_rep;
-		if (debug) printf("calling dowin 2\n");
-		do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax, 1.0); 
-		currep->modified = 0;
-		currep->being_edited++;
-		show_init();
-		need_redraw++;
-	    }
-	} else {			/* was already in memory */
-	    if (new_rep->being_edited) {
-	       printf("can't edit the same cell twice!\n");
-	       return(0);
-	    } else {
-		currep = new_rep;
-		xwin_window_set(
-		    currep->minx, 
-		    currep->miny,
-		    currep->maxx,
-		    currep->maxy
-		);
-		currep->being_edited = 1;
-	    } 
-	}	
-    } else if (lp->mode == EDI) {
-	printf("    must SAVE current device before new EDIT\n");
-    } else {
-	printf("    must EXIT before entering EDIT subsystem\n");
-    }
-    if (debug) printf("leaving  com_edit <%s>\n", arg); 
-    return (0);
-}
 
 com_equate(lp, arg)		/* define characteristics of a mask layer */
 LEXER *lp;
@@ -646,11 +527,13 @@ char *arg;
     return (0);
 }
 
+
 com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 LEXER *lp;
 char *arg;
 {
     int debug=0;
+    int editlevel;
     static int linenumber;	/* remember last request so that */
     				/* two EXIts in a row will force exit */
 
@@ -660,12 +543,21 @@ char *arg;
 	printf("    current device is unsaved!");
 	printf("    typing \"EXIT\" a second time will force exit\n");
     } else {
-	lp->mode = MAIN;
 	if (currep != NULL) {
+	    editlevel=currep->being_edited;
+	    currep->being_edited = 0;
+	    /* FIXME: This is where we should set currep to the next cell in the */
+	    /* edit stack... */
+
+	    if ((currep = db_edit_pop(editlevel)) != NULL) {
+	    	;
+	    } else {
+		lp->mode = MAIN;
+	    }
+
+	} else {
 	    /* can get here if someone purges the very cell */
 	    /* that they are editing and then does an EXIT */
-	    currep->being_edited = 0;
-	    currep = NULL;
 	}
 	need_redraw++;
     }
@@ -1029,6 +921,10 @@ char *arg;
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &layer) != 1) {
 		    weprintf("LEVEL invalid layer number: %s\n", word);
+		    return(-1);
+		} 
+		if (layer < 0 || layer > MAX_LAYER) {
+		    printf("LEVEL: layer must be positive integer less than %d\n", MAX_LAYER);
 		    return(-1);
 		}
 		nnums++;

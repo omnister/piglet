@@ -32,6 +32,49 @@ void db_free_component(); 		/* recycle memory for component */
 
 /********************************************************/
 
+DB_TAB * db_edit_pop(level)
+int level;
+{
+
+    /* simply run through the db and return a pointer */
+    /* to the rep with the highest <being_edited> variable */
+    /* that is less than <level>.  Print an error if we  */
+    /* find a <being_edited> equal or higher than <level> */
+    /* The editor logic should ensure that this never can */
+    /* happen... */
+
+    int debug=0;
+
+    DB_TAB *sp;
+    DB_TAB *sp_best;
+    int maxlevel;
+
+    if (debug) printf("db_edit_pop: called with level %d\n", level);
+
+    if (HEAD != (DB_TAB *)0) {
+	for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next) {
+	    if (sp->being_edited > 0) {
+		if (debug) printf("db_edit_pop: %s is level %d\n",
+			sp->name, sp->being_edited);
+		if (sp->being_edited > maxlevel) {
+		    maxlevel = sp->being_edited;
+		    sp_best = sp;
+		}
+	    }
+	}
+    }
+    if (maxlevel > level) {
+	printf("fatal error in db_edit_pop()\n"); 
+    } else if (maxlevel > 0) {
+	if (debug) printf("db_edit_pop(): returning pointer to %s\n", sp_best->name); 
+        return (sp_best);	
+    } else {
+	if (debug) printf("db_edit_pop(): returning NULL\n"); 
+	return (NULL);
+    }
+}
+
+
 DB_TAB *db_lookup(char *name)           /* find name in db */
 {
     DB_TAB *sp;
@@ -69,10 +112,15 @@ char *s;
     sp->dbtail = (struct db_deflist *) 0; 
     sp->deleted = (struct db_deflist *) 0; 
 
-    sp->minx = 0.0; 
-    sp->miny = 0.0; 
-    sp->maxx = 0.0; 
-    sp->maxy = 0.0; 
+    sp->vp_xmin = -100.0; 
+    sp->vp_ymin = -100.0; 
+    sp->vp_xmax = 100.0; 
+    sp->vp_ymax = 100.0; 
+
+    sp->minx = -100.0; 
+    sp->miny = -100.0; 
+    sp->maxx = 100.0; 
+    sp->maxy = 100.0; 
 
     /* FIXME: good place for an ENV variables to let */
     /* user set the default grid color and step sizes */
@@ -89,6 +137,7 @@ char *s;
     sp->logical_level=1;
     sp->lock_angle=0.0;
     sp->modified = 0;
+    sp->being_edited = 0;
     sp->flag = 0;
 
     if (HEAD ==(DB_TAB *) 0) {	/* first element */

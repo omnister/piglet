@@ -30,14 +30,15 @@
 
 int show[MAX_LAYER];
 
-/* definition of hierarchical editor data structures */
-
-/*
+/*   definition of hierarchical editor data structures 
+ *
+ *
  *   (this chain from HEAD is the cell definition symbol table)
  *
  *   all insertions are made at TAIL to avoid reversing definition order
- *   everytime an archive is made and retrieved (a classic HP Piglet bug)
- *
+ *   everytime an archive is made and retrieved (a classic HP Piglet bug
+ *   which made it very difficult to run a diff(1) on two versions of an
+ *   archive file.
  *
  *                                              TAIL--|
  *                                                    v 
@@ -52,6 +53,8 @@ int show[MAX_LAYER];
  *                                  v  [db_line]
  *                                [db_rect]
  *
+ *   actually db_deflist chains are also double-linked with both head and tail,
+ *   but this is not shown here for simplicity...
  *
  */
 
@@ -127,7 +130,10 @@ typedef struct db_tab {
     int display_state;		/* turns X11 display on or off (see xwin.c)*/
 
     int modified;		/* for EXIT/SAVE and bounding box usage */
+
     int being_edited;		/* flag to prevent recursive edits */
+    				/* 0 = not edited, !0 = location in edit stack */
+
     int flag;			/* bookingkeeping flag for db_def_archive() */
 
     struct db_deflist *dbhead;  /* pointer to first cell definition */
@@ -247,6 +253,7 @@ extern char *strsave( char *string );
 
 extern DB_TAB *db_lookup( char *cellname );
 extern DB_TAB *db_install( char *cellname ); 
+extern DB_TAB *db_edit_pop( int level ); 
 
 extern int db_add_arc(  
 		DB_TAB *cell,
@@ -382,6 +389,7 @@ extern void jump(void);
 extern void show_set_visible(int comp, int layer, int state);
 extern void show_set_modify(int comp, int layer, int state);
 extern int  show_check_modifiable(int comp, int layer);
+
 extern int  show_check_visible(int comp, int layer);
 
 /********************************************************/

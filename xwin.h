@@ -41,6 +41,8 @@ void xwin_grid_pts(
     double xo, double yo
 );
 
+extern int xwin_doXevent();
+
 /* to set up rubber band routine */
 
 void xwin_set_rubber_callback();

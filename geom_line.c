@@ -32,7 +32,7 @@ OPTS opts;
 static double x1, yy1;
 static double xsnap, ysnap;
 
-void setsnap(x,y) 
+void setlockpoint(x,y) 
 double x, y;
 {
     extern double xsnap, ysnap;
@@ -44,7 +44,7 @@ double x, y;
     ysnap = y;
 }
 
-void snap(px, py, lock) 
+void lockpoint(px, py, lock) 
 double *px, *py;
 double lock;
 {
@@ -80,7 +80,8 @@ double lock;
     	/* overwrite px, py, to produce vector with same radius, but proper theta */
 	*px = xsnap+radius*cos(snaptheta);
 	*py = ysnap+radius*sin(snaptheta);
-	snapxy(px, py);
+
+	snapxy(px, py);	   /* snap computed points to grid */
     }
 }
 
@@ -100,29 +101,6 @@ int *layer;
     char word[BUFSIZE];
     double x2,y2;
     static double xold, yold;
-
-/*
- *   (this chain from HEAD is the cell definition symbol table)
- *
- *   all insertions are made at TAIL to avoid reversing definition order
- *   everytime an archive is made and retrieved (a classic HP Piglet bug)
- *
- *
- *                                              TAIL--|
- *                                                    v 
- *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
- *                           |                |                  |
- *                           |               ...                ...
- *                           v
- *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->NULL
- *                                  |    |    |
- *                                  |    |    v
- *                                  |    v  [db_inst] (recursive call)
- *                                  v  [db_line]
- *                                [db_rect]
- *
- *
- */
 
     if (debug) {printf("layer %d\n",*layer);}
     rl_setprompt("ADD_LINE> ");
@@ -198,7 +176,7 @@ int *layer;
 		    CP = coord_new(x1,yy1);
 		
 		    coord_append(CP, x1,yy1);
-		    setsnap(x1,yy1);
+		    setlockpoint(x1,yy1);
 
 		    if (debug) coord_print(CP);
 
@@ -232,7 +210,7 @@ int *layer;
 			coord_drop(CP);  /* drop last coord */
 			coord_swap_last(CP, x2, y2);
 			coord_get(CP, count-2, &x2, &y2);
-			setsnap(x2,y2);
+			setlockpoint(x2,y2);
 		    } else {
 		    	printf("can't drop last point!\n");
 		    }
@@ -287,10 +265,17 @@ int *layer;
 		    } else {
 			rubber_clear_callback();
 			if (debug) printf("doing append\n");
-			snap(&x2, &y2, currep->lock_angle); 
+
+			/* only apply lock if this is an interactive edit */
+			/* and not if reading from a file */
+
+			if (strcmp(lp->name, "STDIN") == 0) {
+			    lockpoint(&x2, &y2, currep->lock_angle); 
+			}
+
 			coord_swap_last(CP, x2, y2);
 			coord_append(CP, x2,y2);
-			setsnap(x2,y2);
+			setlockpoint(x2,y2);
 			rubber_set_callback(draw_line);
 			rubber_draw(x2,y2);
 			state = NUM3;	/* loop till EOC */
@@ -345,7 +330,7 @@ int count; /* number of times called */
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_LINE dbline; */
 
-	snap(&x2, &y2, currep->lock_angle);
+	lockpoint(&x2, &y2, currep->lock_angle); 
 
         dbtab.dbhead = &dbdeflist;
         dbtab.dbtail = &dbdeflist;

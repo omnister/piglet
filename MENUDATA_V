@@ -6,15 +6,16 @@ yyyggg |:F|:V|:Z|7|8|9|
 yyyggg |:D|:S|:V|,|0|.|
 yyyyy  |:W|:C|:N|:O|:R|
 yyaaaa |:X|:Y|:M|X|Y|@|
+ggg    |LAY |LEV |LOC |
 gw     |SHO #E; |     |
 wrgbapy|1|2|3|4|5|6|7 |
 ww     |       |      |
-aaa    |WRA |SMA |GRO |
-aaa    |MOV |COP |STR |
+aap    |MOV |COP |CHA |
 ypy    |IDE |POI |LIS |
-ygg    |DIST |DISP |  |
-ggg    |DUM |PLO |LOC |
-ggy    |ARC |RET |INP |
-gw     |CHA |         |
-rrr    |UND |BYE |DEL |
-yyr    |SAV |EDI |EXI |
+ygg    |DIST |DIS |   |
+ggg    |DUM |PLO |ARC |
+ggy    |RET |    |INP |
+ggb    |ARE |WRA |GRO |
+bbr    |STR |SMA |PUR |
+yrr    |EDI |DEL |EXI |
+ygr    |SAV |UND |BYE |

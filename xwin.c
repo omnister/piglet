@@ -33,7 +33,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.29 2004/11/29 21:38:52 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.2 2004/12/02 12:00:00 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -61,7 +61,6 @@ int grid_color = 1;	/* 1 through 6 for different colors */
 int grid_notified = 0;
 
 int need_redraw=0;
-int need_dump=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -137,7 +136,7 @@ int initX()
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
     unsigned int icon_width, icon_height;
-    char *window_name = "HOE: Hierarchical Object Editor";
+    char *window_name = "RHOE: Rick's Hierarchical Object Editor";
     char *icon_name = "rigel";
     char buf[BUF_SIZE];
     Pixmap icon_pixmap;
@@ -348,32 +347,12 @@ int initX()
 int procXevent(fp)
 FILE *fp;
 {
-
-    static int button_down=0;
-    XEvent xe;
-    static int i = 0;
-    int j;
-    int debug=0;
-
-    static char buf[BUF_SIZE];
-    static char *s = NULL;
-    static char *t = NULL;
-    static double x,y;
-    static double xu,yu;
-    static double xold,yold;
-    BOUNDS bb;
-
-    static int charcount;
-    static char keybuf[10];
-    static int keybufsize=10;
-    KeySym keysym;
-    XComposeStatus compose;
-
     /* readline select stuff */
     int nf, nfds, cn, in; 
     struct timeval *timer = (struct timeval *) 0;
     fd_set rset, tset;
-    unsigned long all = 0xffffffff;
+    static char *s = NULL;
+    BOUNDS bb;
 
     /* courtesy g_plt_X11.c code from gnuplot */
     cn = ConnectionNumber(dpy);
@@ -384,7 +363,9 @@ FILE *fp;
     FD_SET(in, &rset);
 
     nfds = (cn > in) ? cn + 1 : in + 1;
+
     while (1) {
+
 	if (need_redraw) {
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
@@ -397,7 +378,6 @@ FILE *fp;
 		draw_grid(win, gcx, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
 	    }
-	    /* DRAW_MENU */
 	}
 
 	/* some event resulted in text in buffer 's' */
@@ -419,173 +399,210 @@ FILE *fp;
 	    eprintf("select failed. errno:%d", errno);
 	}
 	nf > 0 && XFlush(dpy);
+
 	if (FD_ISSET(cn, &tset)) { 		/* pending X Event */
-	    while (XCheckMaskEvent(dpy, all, &xe)) {
-		switch (xe.type) {
-		case MotionNotify:
-		    if (debug) printf("EVENT LOOP: got Motion\n");
-
-		    x = (double) xe.xmotion.x;
-		    y = (double) xe.xmotion.y;
-		    V_to_R(&x,&y);
-		    snapxy(&x,&y);
-		    sprintf(buf,"(%-8g,%-8g)", x, y);
-		    if (xwin_display_state() == D_ON) {
-			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-		    }
-
-		    if (xold != x || yold != y) {
-	    		if (xwin_display_state() == D_ON) {
-			    rubber_draw(x, y);
-			}
-			xold=x;
-			yold=y;
-		    } 
-
-		    break;
-		case Expose:
-		    if (debug) printf("EVENT LOOP: got Expose\n");
-
-		    if (currep != NULL) {
-			xwin_window_set(
-		    	currep->vp_xmin, 
-			currep->vp_ymin,
-			currep->vp_xmax,
-			currep->vp_ymax );
-		    } else {
-			xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
-		    }
-
-		    if (xe.xexpose.count != 0)
-			break;
-		    if (xe.xexpose.window == win) {
-	    		if (currep != NULL ) {
-			    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
-				currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
-			} else {
-			    draw_grid(win, gcx, grid_xd, grid_yd,
-				grid_xs, grid_ys, grid_xo, grid_yo);
-		    	}
-		    }  
-		
-		    for (j=1; j<=num_menus; j++) {
-		         if (menutab[j].pane == xe.xexpose.window) {
-			     paint_pane(xe.xexpose.window, menutab, gca, gcb, BLACK);
-			 }
-		    }
-
-		    break;
-
-		case ConfigureNotify:
-		    if (debug) printf("EVENT LOOP: got Config Notify\n");
-		    top_width = xe.xconfigure.width;
-		    g_height=top_height = xe.xconfigure.height;
-		    g_width=top_width-menu_width;
-		    XMoveWindow(dpy, menuwin, top_width-menu_width, 0);
-		    XResizeWindow(dpy, menuwin, menu_width, g_height);
-		    XResizeWindow(dpy, win, top_width-menu_width, g_height);
-		    if (currep != NULL) {
-			xwin_window_set( currep->vp_xmin, 
-			                 currep->vp_ymin,
-				         currep->vp_xmax, 
-					 currep->vp_ymax );
-		    } else {
-			xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
-		    }
-		    break;
-		case ButtonRelease:
-		    button_down=0;
-		    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
-		    break;
-		case ButtonPress:
-		    if (xe.xexpose.window == win) {
-			switch (xe.xbutton.button) {
-			    case 1:	/* left button */
-				button_down=1;
-				x = (double) xe.xmotion.x;
-				y = (double) xe.xmotion.y;
-				V_to_R(&x,&y);
-
-				/* FIXME: put in facility to turn off snapping for fine picking */
-				/*
-				if (snap==0) {
-				    snap=1;
-				} else {
-				    snapxy(&x,&y);
-				}
-				*/
-
-				snapxy(&x,&y);
-
-				/* returning mouse loc as a string */
-				sprintf(buf," %g, %g\n", x, y);
-				s = buf;
-
-				if (debug) printf("EVENT LOOP: got ButtonPress\n");
-				break;
-			    case 2:	/* middle button */
-				break;
-			    case 3: /* right button */
-				/* RIGHT button returns EOC */
-				sprintf(buf," ;\n");
-				s = buf;
-				break;
-			    default:
-				eprintf("unexpected button event: %d",
-				    xe.xbutton.button);
-				break;
-			}
-		    } else {
-			for (j=1; j<=num_menus; j++) {
-			    if (menutab[j].pane == xe.xbutton.window) {
-				switch (xe.xbutton.button) {
-				case 1:
-				   s=menutab[j].text;
-				   break;
-				case 2:	
-				   break;
-				case 3:
-				   /* RIGHT button returns EOC */
-				   sprintf(buf," ;\n");
-				   s = buf;
-				   break;
-				default:
-				   eprintf("unexpected button event: %d",
-					xe.xbutton.button);
-				   break;
-			    	}
-			    }
-			}
-		    }
-		    break;
-		case KeyPress:
-		    if (debug) printf("EVENT LOOP: got KeyPress\n");
-	            charcount = XLookupString((XKeyEvent * ) &xe, keybuf, 
-		                    keybufsize, &keysym, &compose);
-
-		    if (charcount >= 1) {
-			s = keybuf;
-		    }
-		    
-		    break;
-		case MapNotify:
-		case UnmapNotify:
-		case ReparentNotify:
-		    break;
-		default:
-		    eprintf("got unexpected default event: %s",
-			event_names[xe.type]);
-		    break;
-		}
-
-	    }
-	} 
-	if (need_dump) {
-	    need_dump=0;
-	    dump_window(win, gca, g_width, g_height);
+	    xwin_doXevent(&s);
 	}
+
 	if (FD_ISSET(in, &tset)) {	/* pending stdin */
 	    return(getc(stdin));
+	}
+    }
+}
+
+xwin_doXevent(s)
+char **s;
+{
+    static int button_down=0;
+    XEvent xe;
+    static int i = 0;
+    int j;
+    int debug=0;
+
+    static char buf[BUF_SIZE];
+    static char *t = NULL;
+    static double x,y;
+    static double xu,yu;
+    static double xold,yold;
+    unsigned long all = 0xffffffff;
+
+    static int charcount;
+    static char keybuf[10];
+    static int keybufsize=10;
+    KeySym keysym;
+    XComposeStatus compose;
+    BOUNDS bb;
+
+    if (need_redraw) {
+	need_redraw = 0;
+	XClearArea(dpy, win, 0, 0, 0, 0, False);
+	if (currep != NULL ) {
+	    bb.init=0;
+	    db_render(currep,0,&bb,0); /* render the current rep */
+	    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+		currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+	} else {
+	    draw_grid(win, gcx, grid_xd, grid_yd,
+		grid_xs, grid_ys, grid_xo, grid_yo);
+	}
+    }
+
+    while (XCheckMaskEvent(dpy, all, &xe)) { /* pending X Event */
+	switch (xe.type) {
+	case MotionNotify:
+	    if (debug) printf("EVENT LOOP: got Motion\n");
+
+	    x = (double) xe.xmotion.x;
+	    y = (double) xe.xmotion.y;
+	    V_to_R(&x,&y);
+	    snapxy(&x,&y);
+	    sprintf(buf,"(%-8g,%-8g)", x, y);
+	    if (xwin_display_state() == D_ON) {
+		XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
+	    }
+
+	    if (xold != x || yold != y) {
+		if (xwin_display_state() == D_ON) {
+		    rubber_draw(x, y);
+		}
+		xold=x;
+		yold=y;
+	    } 
+
+	    break;
+	case Expose:
+	    if (debug) printf("EVENT LOOP: got Expose\n");
+
+	    if (currep != NULL) {
+		xwin_window_set(
+		currep->vp_xmin, 
+		currep->vp_ymin,
+		currep->vp_xmax,
+		currep->vp_ymax );
+	    } else {
+		xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
+	    }
+
+	    if (xe.xexpose.count != 0)
+		break;
+	    if (xe.xexpose.window == win) {
+		if (currep != NULL ) {
+		    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+			currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+		} else {
+		    draw_grid(win, gcx, grid_xd, grid_yd,
+			grid_xs, grid_ys, grid_xo, grid_yo);
+		}
+	    }  
+	
+	    for (j=1; j<=num_menus; j++) {
+		 if (menutab[j].pane == xe.xexpose.window) {
+		     paint_pane(xe.xexpose.window, menutab, gca, gcb, BLACK);
+		 }
+	    }
+
+	    break;
+
+	case ConfigureNotify:
+	    if (debug) printf("EVENT LOOP: got Config Notify\n");
+	    top_width = xe.xconfigure.width;
+	    g_height=top_height = xe.xconfigure.height;
+	    g_width=top_width-menu_width;
+	    XMoveWindow(dpy, menuwin, top_width-menu_width, 0);
+	    XResizeWindow(dpy, menuwin, menu_width, g_height);
+	    XResizeWindow(dpy, win, top_width-menu_width, g_height);
+	    if (currep != NULL) {
+		xwin_window_set( currep->vp_xmin, 
+				 currep->vp_ymin,
+				 currep->vp_xmax, 
+				 currep->vp_ymax );
+	    } else {
+		xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
+	    }
+	    break;
+	case ButtonRelease:
+	    button_down=0;
+	    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
+	    break;
+	case ButtonPress:
+	    if (xe.xexpose.window == win) {
+		switch (xe.xbutton.button) {
+		    case 1:	/* left button */
+			button_down=1;
+			x = (double) xe.xmotion.x;
+			y = (double) xe.xmotion.y;
+			V_to_R(&x,&y);
+
+			/* FIXME: put in facility to turn off snapping for fine picking */
+			/*
+			if (snap==0) {
+			    snap=1;
+			} else {
+			    snapxy(&x,&y);
+			}
+			*/
+
+			snapxy(&x,&y);
+
+			/* returning mouse loc as a string */
+			sprintf(buf," %g, %g\n", x, y);
+			*s = buf;
+
+			if (debug) printf("EVENT LOOP: got ButtonPress\n");
+			break;
+		    case 2:	/* middle button */
+			break;
+		    case 3: /* right button */
+			/* RIGHT button returns EOC */
+			sprintf(buf," ;\n");
+			*s = buf;
+			break;
+		    default:
+			eprintf("unexpected button event: %d",
+			    xe.xbutton.button);
+			break;
+		}
+	    } else {
+		for (j=1; j<=num_menus; j++) {
+		    if (menutab[j].pane == xe.xbutton.window) {
+			switch (xe.xbutton.button) {
+			case 1:
+			   *s=menutab[j].text;
+			   break;
+			case 2:	
+			   break;
+			case 3:
+			   /* RIGHT button returns EOC */
+			   sprintf(buf," ;\n");
+			   *s = buf;
+			   break;
+			default:
+			   eprintf("unexpected button event: %d",
+				xe.xbutton.button);
+			   break;
+			}
+		    }
+		}
+	    }
+	    break;
+	case KeyPress:
+	    if (debug) printf("EVENT LOOP: got KeyPress\n");
+	    charcount = XLookupString((XKeyEvent * ) &xe, keybuf, 
+			    keybufsize, &keysym, &compose);
+
+	    if (charcount >= 1) {
+		*s = keybuf;
+	    }
+	    
+	    break;
+	case MapNotify:
+	case UnmapNotify:
+	case ReparentNotify:
+	    break;
+	default:
+	    eprintf("got unexpected default event: %s",
+		event_names[xe.type]);
+	    break;
 	}
     }
 }
@@ -1482,6 +1499,8 @@ unsigned int width, height;
     int i;
     int debug=0;
 
+    XSync(dpy,0);
+
     if (currep == NULL) {
     	printf("nothing to dump, not editing any cell...\n");
 	return(0);
@@ -1562,5 +1581,5 @@ unsigned int width, height;
 }
 
 void xwin_dump_graphics() {
-    need_dump++;
+    dump_window(win, gca, g_width, g_height);
 }
