@@ -6,6 +6,8 @@
 #include "token.h"
 #include "xwin.h"       /* for snapxy() */
 
+#include "rubber.h"
+
 #include "unistd.h"     /* for access() */
 
 #define EPS 1e-6
@@ -34,6 +36,7 @@ int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
 int boundslevel=0;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
+FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line();
@@ -1027,8 +1030,16 @@ double x, y;
 {
     DB_DEFLIST *p;
     int debug=0;
+    BOUNDS childbb;
+
+    if (cell == NULL) {
+    	printf("no cell currently being edited!\n");
+	return(0);
+    }
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	childbb.init=0;
 
 	if (p->xmin <= x && p->xmax >= x && p->ymin <= y && p->ymax >= y) {
 	    switch (p->type) {
@@ -1037,32 +1048,54 @@ double x, y;
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case CIRC:  /* circle definition */
+		do_circ(p, &childbb, D_RUBBER);
 		printf("circ: %g %g %g %g\n",
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case LINE:  /* line definition */
+		do_line(p, &childbb, D_RUBBER);
 		printf("line: %g %g %g %g\n", 
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case OVAL:  /* oval definition */
+		do_oval(p, &childbb, D_RUBBER);
 		printf("oval: %g %g %g %g\n",
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case POLY:  /* polygon definition */
+		do_poly(p, &childbb, D_RUBBER);
 		printf("poly: %g %g %g %g\n", 
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case RECT:  /* rectangle definition */
+		do_rect(p, &childbb, D_RUBBER);
 		printf("rect: %g %g %g %g\n", 
 			p->xmin, p->ymin, p->xmax, p->ymax);
 		break;
 	    case TEXT:  /* text and note definition */
-		printf("text: %g %g %g %g: \"%s\"\n", 
-			p->xmin, p->ymin, p->xmax, p->ymax, p->u.t->text);
-		break;
 	    case INST:  /* recursive instance call */
-		printf("%s: %g %g %g %g\n", 
+		if (p->type == TEXT) {
+		    printf("text: %g %g %g %g: \"%s\"\n", 
+			p->xmin, p->ymin, p->xmax, p->ymax, p->u.t->text);
+		} else if (p->type == INST) {
+		    printf("%s: %g %g %g %g\n", 
 			p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+		}
+		set_layer(0,0);
+		jump();
+		    /* a square bounding box outline in white */
+		    draw(p->xmax, p->ymax, &childbb, D_RUBBER); 
+		    draw(p->xmax, p->ymin, &childbb, D_RUBBER);
+		    draw(p->xmin, p->ymin, &childbb, D_RUBBER);
+		    draw(p->xmin, p->ymax, &childbb, D_RUBBER);
+		    draw(p->xmax, p->ymax, &childbb, D_RUBBER);
+		jump();
+		    /* and diagonal lines from corner to corner */
+		    draw(p->xmax, p->ymax, &childbb, D_RUBBER);
+		    draw(p->xmin, p->ymin, &childbb, D_RUBBER);
+		jump() ;
+		    draw(p->xmin, p->ymax, &childbb, D_RUBBER);
+		    draw(p->xmax, p->ymin, &childbb, D_RUBBER);
 		break;
 	    default:
 		eprintf("unknown record type: %d in db_ident\n", p->type);
@@ -1114,11 +1147,35 @@ DB_TAB *cell;
     }
 }
 
+int db_plot() {
+    BOUNDS bb;
+    bb.init=0;
+    char buf[MAXFILENAME];
+
+    if (currep == NULL) {
+    	printf("not currently editing any rep!\n");
+	return(0);
+    }
+
+    snprintf(buf, MAXFILENAME, "%s.plot", currep->name);
+    printf("plotting to %s\n", buf);
+    fflush(stdout);
+
+    if((PLOT_FD=fopen(buf, "w+")) == 0) {
+    	printf("db_plot: can't open plotfile: \"%s\"\n", buf);
+    } else {
+	X=0;				    /* turn X display off */
+	db_render(currep, 0, &bb, D_NORM);  /* dump plot */
+	X=1;				    /* turn X back on*/
+    }
+}
+
+
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
 int nest;	/* nesting level */
 BOUNDS *bb;
-int mode; 	/* 0=regular rendering, 1=xor rubberband */
+int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 {
     DB_DEFLIST *p;
     OPTS *op;
@@ -1149,9 +1206,9 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     }
 
     if (!X && (nest == 0)) {	/* autoplot output */
-	printf("nogrid\n");
-	printf("isotropic\n");
-	printf("back\n");
+	fprintf(PLOT_FD, "nogrid\n");
+	fprintf(PLOT_FD, "isotropic\n");
+	fprintf(PLOT_FD, "back\n");
     }
 
     if (nest == 0) {
@@ -1269,18 +1326,18 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		set_layer(0,0);
 		jump();
 		    /* a square bounding box outline in white */
-		    draw(childbb.xmax, childbb.ymax, &childbb, BB); 
-		    draw(childbb.xmax, childbb.ymin, &childbb, BB);
-		    draw(childbb.xmin, childbb.ymin, &childbb, BB);
-		    draw(childbb.xmin, childbb.ymax, &childbb, BB);
-		    draw(childbb.xmax, childbb.ymax, &childbb, BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB); 
+		    draw(childbb.xmax, childbb.ymin, &childbb, D_BB);
+		    draw(childbb.xmin, childbb.ymin, &childbb, D_BB);
+		    draw(childbb.xmin, childbb.ymax, &childbb, D_BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB);
 		jump();
 		    /* and diagonal lines from corner to corner */
-		    draw(childbb.xmax, childbb.ymax, &childbb, BB);
-		    draw(childbb.xmin, childbb.ymin, &childbb, BB);
+		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB);
+		    draw(childbb.xmin, childbb.ymin, &childbb, D_BB);
 		jump() ;
-		    draw(childbb.xmin, childbb.ymax, &childbb, BB);
-		    draw(childbb.xmax, childbb.ymin, &childbb, BB);
+		    draw(childbb.xmin, childbb.ymax, &childbb, D_BB);
+		    draw(childbb.xmax, childbb.ymin, &childbb, D_BB);
 	    }
 
 	    free(global_transform); free(xp);	
@@ -1307,11 +1364,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     if (nest == 0) { 
 	jump();
 	set_layer(12,0);
-	draw(bb->xmin, bb->ymax, &mybb, BB);
-	draw(bb->xmax, bb->ymax, &mybb, BB);
-	draw(bb->xmax, bb->ymin, &mybb, BB);
-	draw(bb->xmin, bb->ymin, &mybb, BB);
-	draw(bb->xmin, bb->ymax, &mybb, BB);
+	draw(bb->xmin, bb->ymax, &mybb, D_BB);
+	draw(bb->xmax, bb->ymax, &mybb, D_BB);
+	draw(bb->xmax, bb->ymin, &mybb, D_BB);
+	draw(bb->xmin, bb->ymin, &mybb, D_BB);
+	draw(bb->xmin, bb->ymax, &mybb, D_BB);
 
 	/* update cell and globals for db_bounds() */
 	cell->minx = xmin = bb->xmin;
@@ -1847,9 +1904,10 @@ XFORM *xa;
  * drawline(x1,y1,x2,y2), but that would have been nearly 2x more 
  * inefficient when  drawing lines with more than two nodes (all shared nodes
  * get sent twice).  By using jump() and sending the points serially, we
- * have the option of building a linked list and using XDrawLines() rather
- * than XDrawLine().  In addition, the draw()/jump() paradigm is used by
- * Bob Jewett's autoplot program, so has a long history.
+ * have the option of improving the efficiency later by building a linked 
+ * list and using XDrawLines() rather than XDrawLine().  
+ * In addition, the draw()/jump() paradigm is used by
+ * Bob Jewett's autoplot(1) program, so has a long history.
  */
 
 static int nseg=0;
@@ -1857,7 +1915,8 @@ static int nseg=0;
 void draw(x, y, bb, mode)  /* draw x,y transformed by extern global xf */
 NUM x,y;		   /* location in real coordinate space */
 BOUNDS *bb;		   /* bounding box */
-int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
+int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
+			   /* D_BB=bounding box, D_PICK=pick checking */
 {
     extern int layer;
     extern XFORM *global_transform;	/* global for efficiency */
@@ -1866,20 +1925,22 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
     int debug=0;
     double x1, y1, x2, y2;
 
-    if (mode == 2) {	/* skip transform */
+    if (mode == D_BB) {	
+	/* skip screen transform to draw bounding */
+	/* boxes in nested hierarchies, also don't */
+	/* update bounding boxes (sort of a free */
+	/* drawing mode in absolute coordinates) */
 	if (debug) printf("in draw, mode=%d\n", mode);
 	xx = x;
 	yy = y;
-        /* and don't update bounding box */
-    } else {
+    } else if (mode==D_NORM || mode==D_RUBBER || mode==D_PICK) {
 	/* compute transformed coordinates */
 	xx = x*global_transform->r11 + 
 	    y*global_transform->r21 + global_transform->dx;
 	yy = x*global_transform->r12 + 
 	    y*global_transform->r22 + global_transform->dy;
 
-	/* globals for computing bounding boxes */
-	
+	/* merge bounding boxes */
 	if(bb->init == 0) {
 	    bb->xmin=bb->xmax=xx;
 	    bb->ymin=bb->ymax=yy;
@@ -1890,6 +1951,9 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	    bb->ymax = max(yy,bb->ymax);
 	    bb->ymin = min(yy,bb->ymin);
 	}
+    } else {
+    	printf("bad mode: %d in draw() function\n", mode);
+	exit(1);
     }
 
     /* Before I added the clip() routine, there was a problem with  */
@@ -1899,12 +1963,15 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
     /* Cohen-Sutherland clipper completely eliminated this problem. */
     /* I couldn't find the dynamic range of Xlib documented anywhere. */
     /* I was surprised that the range was not equal to the full 2^32 bit */
-    /* range of an unsigned int */
+    /* range of an unsigned int (RCW) */
 
     if (X) {
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
-	    if (mode == 1) { 	/* rubber band drawing */
+	    if (mode == D_PICK) {   /* no drawing just pick checking */
+	        /* idea is to overlay bb with pick point */
+		/* hit=check_pick(x1, y1, x2, y2, bb, boundslevel); */
+	    } else if (mode == D_RUBBER) { /* xor rubber band drawing */
 		if (showon && drawon) {
 		    xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
                 }
@@ -1921,7 +1988,8 @@ int mode;		   /* 0=regular, 1=rubberband, 2=bounding box */
 	yyold=yy;
 	nseg++;
     } else {
-	if (showon && drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
+	/* autoplot output */
+	if (showon && drawon) fprintf(PLOT_FD, "%4.6g %4.6g\n", xx,yy);	
     }
 }
 
@@ -2033,7 +2101,7 @@ void jump(void)
     if (X) {
 	nseg=0;  		/* for X */
     } else {
-	if (drawon) printf("jump\n");  	/* autoplot */
+	if (drawon) fprintf(PLOT_FD, "jump\n");  	/* autoplot */
     }
 }
 
@@ -2054,7 +2122,7 @@ int comp;	/* component type */
     if (X) {
 	xwin_set_pen((lnum%8));		/* for X */
     } else {
-	if (drawon) printf("pen %d\n", (lnum%8));	/* autoplot */
+	if (drawon) fprintf(PLOT_FD, "pen %d\n", (lnum%8));	/* autoplot */
     }
     set_line((((int)(lnum/8))%5));
 }
@@ -2065,7 +2133,7 @@ int lnum;
     if (X) {
 	xwin_set_line((lnum%5));		/* for X */
     } else {
-	if (drawon) printf("line %d\n", (lnum%5)+1);	/* autoplot */
+	if (drawon) fprintf(PLOT_FD, "line %d\n", (lnum%5)+1);	/* autoplot */
     }
 }
 

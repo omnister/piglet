@@ -8,9 +8,6 @@
 #include "xwin.h"
 #include "rubber.h"
 
-#define NORM 0		/* drawing modes */
-#define RUBBER 1	 
-
 static COORDS *CP;
 
 DB_TAB dbtab; 
@@ -298,17 +295,17 @@ int count; /* number of times called */
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    do_line(&dbdeflist, &bb, 1);
+	    do_line(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
-	    do_line(&dbdeflist, &bb, 1);
+	    do_line(&dbdeflist, &bb, D_RUBBER);
 	    jump(); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
-	    do_line(&dbdeflist, &bb, 1);
+	    do_line(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    do_line(&dbdeflist, &bb, 1);
+	    do_line(&dbdeflist, &bb, D_RUBBER);
 	}
 
 	/* save old values */

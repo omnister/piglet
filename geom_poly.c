@@ -14,14 +14,14 @@ DB_DEFLIST dbdeflist;
 DB_POLY dbpoly;
 
 /* FIXME: this code should be a bit more robust.  It should
-/* automatically cull any colinear points
-as they are entered, should eliminate any consecutive duplicate points,
-should not allow any polys with less than three vertices, etc...  The
-user should not be able to enter a malformed geometry.  There is
-currently a tricky case where the user clicks xy1, xy2, and then EOC
-while setting on the xy2 point.  This enters a three-vertex poly with
-the last two points identical.  This gets saved, and causes a crash next
-time it is read back in since the last dup points create a false EOC */
+automatically cull any colinear points as they are entered, should
+eliminate any consecutive duplicate points, should not allow any polys
+with less than three vertices, etc...  The user should not be able to
+enter a malformed geometry.  There is currently a tricky case where the
+user clicks xy1, xy2, and then EOC while setting on the xy2 point.  This
+enters a three-vertex poly with the last two points identical.  This
+gets saved, and causes a crash next time it is read back in since the
+last dup points create a false EOC */
 
 
 /*
@@ -255,17 +255,17 @@ int count; /* number of times called */
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    do_poly(&dbdeflist, &bb, 1);
+	    do_poly(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
-	    do_poly(&dbdeflist, &bb, 1);
+	    do_poly(&dbdeflist, &bb, D_RUBBER);
 	    jump(); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
-	    do_poly(&dbdeflist, &bb, 1);
+	    do_poly(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    do_poly(&dbdeflist, &bb, 1);
+	    do_poly(&dbdeflist, &bb, D_RUBBER);
 	}
 
 	/* save old values */

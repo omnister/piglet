@@ -4,9 +4,6 @@
 #include "rubber.h"
 #include "lex.h"
 
-#define NORM   0	/* draw() modes */
-#define RUBBER 1
-
 static double x1, y1;
 
 DB_TAB dbtab; 
@@ -193,17 +190,17 @@ int count; /* number of times called */
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
 	    dbcirc.x2 = x2; dbcirc.y2 = y2;
-	    do_circ(&dbdeflist, &bb, 1);
+	    do_circ(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
-	    do_circ(&dbdeflist, &bb, 1);
+	    do_circ(&dbdeflist, &bb, D_RUBBER);
 	    jump(); /* draw new shape */
 	    dbcirc.x2 = x2; dbcirc.y2 = y2;
-	    do_circ(&dbdeflist, &bb, 1);
+	    do_circ(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    do_circ(&dbdeflist, &bb, 1);
+	    do_circ(&dbdeflist, &bb, D_RUBBER);
 	}
 
 	jump();

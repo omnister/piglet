@@ -4,9 +4,6 @@
 #include "rubber.h"
 #include "opt_parse.h"
 
-#define NORM   0	/* draw() modes */
-#define RUBBER 1
-
 static double x1, y1;
 
 /* :Mmirror :Rrot :Xscale :Yyxratio :Zslant */

@@ -5,9 +5,6 @@
 #include "lex.h"
 #include "rlgetc.h"
 
-#define NORM   0	/* draw() modes */
-#define RUBBER 1
-
 static double x1, y1;
 int fit=0;		/* don't fit */
 int nest=9;		/* default nesting level */
@@ -309,35 +306,35 @@ int count; /* number of times called */
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    draw(x1,y1, &bounds, RUBBER);
-	    draw(x1,y2, &bounds, RUBBER);
-	    draw(x2,y2, &bounds, RUBBER);
-	    draw(x2,y1, &bounds, RUBBER);
-	    draw(x1,y1, &bounds, RUBBER);
+	    draw(x1,y1, &bounds, D_RUBBER);
+	    draw(x1,y2, &bounds, D_RUBBER);
+	    draw(x2,y2, &bounds, D_RUBBER);
+	    draw(x2,y1, &bounds, D_RUBBER);
+	    draw(x1,y1, &bounds, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bounds, RUBBER);
-	    draw(x1old,y2old, &bounds, RUBBER);
-	    draw(x2old,y2old, &bounds, RUBBER);
-	    draw(x2old,y1old, &bounds, RUBBER);
-	    draw(x1old,y1old, &bounds, RUBBER);
+	    draw(x1old,y1old, &bounds, D_RUBBER);
+	    draw(x1old,y2old, &bounds, D_RUBBER);
+	    draw(x2old,y2old, &bounds, D_RUBBER);
+	    draw(x2old,y1old, &bounds, D_RUBBER);
+	    draw(x1old,y1old, &bounds, D_RUBBER);
 
 	    jump(); /* draw new shape */
-	    draw(x1,y1, &bounds, RUBBER);
-	    draw(x1,y2, &bounds, RUBBER);
-	    draw(x2,y2, &bounds, RUBBER);
-	    draw(x2,y1, &bounds, RUBBER);
-	    draw(x1,y1, &bounds, RUBBER);
+	    draw(x1,y1, &bounds, D_RUBBER);
+	    draw(x1,y2, &bounds, D_RUBBER);
+	    draw(x2,y2, &bounds, D_RUBBER);
+	    draw(x2,y1, &bounds, D_RUBBER);
+	    draw(x1,y1, &bounds, D_RUBBER);
 
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bounds, RUBBER);
-	    draw(x1old,y2old, &bounds, RUBBER);
-	    draw(x2old,y2old, &bounds, RUBBER);
-	    draw(x2old,y1old, &bounds, RUBBER);
-	    draw(x1old,y1old, &bounds, RUBBER);
+	    draw(x1old,y1old, &bounds, D_RUBBER);
+	    draw(x1old,y2old, &bounds, D_RUBBER);
+	    draw(x2old,y2old, &bounds, D_RUBBER);
+	    draw(x2old,y1old, &bounds, D_RUBBER);
+	    draw(x1old,y1old, &bounds, D_RUBBER);
 	}
 
 	/* save old values */

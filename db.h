@@ -328,6 +328,8 @@ extern int db_render(
 		int mode
 	    );
 
+extern int db_plot();			/* plot the device to a file */
+
 extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);
 extern void jump(void);
 

@@ -1253,6 +1253,7 @@ LEXER *lp;
 char *arg;
 {
     printf("    com_plot\n", arg);
+    db_plot();
     return (0);
 }
 

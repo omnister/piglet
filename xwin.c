@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/unistd.h>
 
 #include <readline/readline.h>
@@ -29,7 +30,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.21 2004/02/07 04:22:10 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.1 2004/10/08 12:00:00 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -1311,10 +1312,12 @@ unsigned int width, height;
     printf("green mask= %d\n", xi->green_mask);
     printf("blue mask= %d\n", xi->blue_mask);
 
-    printf("dumping to dump.ppm ");
+    sprintf(buf, "%s.ppm", currep->name);
+
+    printf("dumping to %s", buf);
     fflush(stdout);
 
-    fd = open("dump.ppm", O_WRONLY | O_CREAT | O_TRUNC );
+    fd = open(buf, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO );
     sprintf(buf, "P6\n%d\n%d\n%d\n", width, height, 255);
     write(fd, buf, strlen(buf));
 

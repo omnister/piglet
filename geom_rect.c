@@ -4,9 +4,6 @@
 #include "rubber.h"
 #include "lex.h"
 
-#define NORM   0	/* draw() modes */
-#define RUBBER 1
-
 /*
  *
  *        +--------------+---------<--+---------------+
@@ -176,35 +173,35 @@ int count; /* number of times called */
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    draw(x1,y1, &bb, RUBBER);
-	    draw(x1,y2, &bb, RUBBER);
-	    draw(x2,y2, &bb, RUBBER);
-	    draw(x2,y1, &bb, RUBBER);
-	    draw(x1,y1, &bb, RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
+	    draw(x1,y2, &bb, D_RUBBER);
+	    draw(x2,y2, &bb, D_RUBBER);
+	    draw(x2,y1, &bb, D_RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, RUBBER);
-	    draw(x1old,y2old, &bb, RUBBER);
-	    draw(x2old,y2old, &bb, RUBBER);
-	    draw(x2old,y1old, &bb, RUBBER);
-	    draw(x1old,y1old, &bb, RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
 
 	    jump(); /* draw new shape */
-	    draw(x1,y1, &bb, RUBBER);
-	    draw(x1,y2, &bb, RUBBER);
-	    draw(x2,y2, &bb, RUBBER);
-	    draw(x2,y1, &bb, RUBBER);
-	    draw(x1,y1, &bb, RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
+	    draw(x1,y2, &bb, D_RUBBER);
+	    draw(x2,y2, &bb, D_RUBBER);
+	    draw(x2,y1, &bb, D_RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
 
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, RUBBER);
-	    draw(x1old,y2old, &bb, RUBBER);
-	    draw(x2old,y2old, &bb, RUBBER);
-	    draw(x2old,y1old, &bb, RUBBER);
-	    draw(x1old,y1old, &bb, RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
 	}
 
 	/* save old values */

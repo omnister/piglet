@@ -4,8 +4,6 @@
 #include "rubber.h"
 #include "opt_parse.h"
 
-#define NORM   0	/* draw() modes */
-#define RUBBER 1
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_TEXT dbtext;
@@ -204,22 +202,22 @@ int count; /* number of times called */
 	    jump(); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
-	    do_text(&dbdeflist, &bb, 1);
+	    do_text(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
-	    do_text(&dbdeflist, &bb, 1);
+	    do_text(&dbdeflist, &bb, D_RUBBER);
 	    jump(); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
-	    do_text(&dbdeflist, &bb, 1);
+	    do_text(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
-	    do_text(&dbdeflist, &bb, 1);
+	    do_text(&dbdeflist, &bb, D_RUBBER);
 	}
 
 	/* save old values */
