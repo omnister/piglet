@@ -32,7 +32,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.1 2004/11/12 12:00:00 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.28 2004/11/12 21:09:37 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
