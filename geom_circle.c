@@ -2,24 +2,18 @@
 #include "xwin.h"
 #include "token.h"
 #include "rubber.h"
+#include "lex.h"
 
 #define NORM   0	/* draw() modes */
 #define RUBBER 1
 
-/*
- *
- *        +--------------+---------<--+---------------+
- *        v              v            ^               |
- * (ADD)--0---(R)------+-1------------+--|xy|---|xy|----|prim|->
- *        |            | |            |                  |cmd |
- *        +-(R)<layer>-+ +-(:W<width>-+
- *                       |            |
- *                       +-(:FILL)----+
- */
-
 static double x1, y1;
 
-int add_rect(int *layer)
+DB_TAB dbtab; 
+DB_DEFLIST dbdeflist;
+DB_CIRC dbcirc;
+int add_circ(int *layer)
+
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -32,7 +26,7 @@ int add_rect(int *layer)
     int debug=0;
 
     if (debug) printf("layer %d\n",*layer);
-    rl_setprompt("ADD_RECT> ");
+    rl_setprompt("ADD_CIRCLE> ");
 
     opts = opt_create();
 
@@ -82,7 +76,7 @@ int add_rect(int *layer)
 		if (token == NUMBER) {
 		    token_get(word);
 		    sscanf(word, "%lf", &y1);	/* scan it in */
-		    rubber_set_callback(draw_box);
+		    rubber_set_callback(draw_circle);
 		    state = NUM3;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
@@ -120,7 +114,7 @@ int add_rect(int *layer)
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 		    state = START;
 		    modified = 1;
-		    db_add_rect(currep, *layer, opts, x1, y1, x2, y2);
+		    db_add_circ(currep, *layer, opts, x1, y1, x2, y2);
 		    rubber_clear_callback();
 		    need_redraw++;
 		} else if (token == EOL) {
@@ -144,50 +138,44 @@ int add_rect(int *layer)
     return(1);
 }
 
-void draw_box(x2, y2, count) 
+void draw_circle(x2, y2, count) 
 double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
+	int i;
+
+	int debug=0;
+
+        dbtab.dbhead = &dbdeflist;
+        dbtab.dbtail = &dbdeflist;
+        dbtab.next = NULL;
+	dbtab.name = "callback";
+
+        dbdeflist.u.c = &dbcirc;
+        dbdeflist.type = CIRC;
+
+        dbcirc.layer=1;
+        dbcirc.x1 = x1; dbcirc.y1 = y1;
+	
+	if (debug) {printf("in draw_circle\n");}
 
 	if (count == 0) {		/* first call */
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
+	    dbcirc.x2 = x2; dbcirc.y2 = y2;
+	    do_circ(&dbdeflist, 1);
 
 	} else if (count > 0) {		/* intermediate calls */
-
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
-
+	    do_circ(&dbdeflist, 1);
 	    jump(); /* draw new shape */
-	    draw(x1,y1, RUBBER);
-	    draw(x1,y2, RUBBER);
-	    draw(x2,y2, RUBBER);
-	    draw(x2,y1, RUBBER);
-	    draw(x1,y1, RUBBER);
-
+	    dbcirc.x2 = x2; dbcirc.y2 = y2;
+	    do_circ(&dbdeflist, 1);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */
-	    draw(x1old,y1old, RUBBER);
-	    draw(x1old,y2old, RUBBER);
-	    draw(x2old,y2old, RUBBER);
-	    draw(x2old,y1old, RUBBER);
-	    draw(x1old,y1old, RUBBER);
+	    do_circ(&dbdeflist, 1);
 	}
 
-	/* save old values */
-	x1old=x1;
-	y1old=y1;
-	x2old=x2;
-	y2old=y2;
 	jump();
 }
 

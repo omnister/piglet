@@ -17,6 +17,7 @@
 #include "xwin.h"
 #include "eprintf.h"
 #include "rubber.h"
+#include "lex.h"
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
@@ -27,7 +28,7 @@ XFORM  *xp = &screen_transform;
 
 int done; /* When non-zero, this global means the user is done using this program. */
 
-char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.4 2003/12/28 23:32:02 walker Exp $"; 
+char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.5 2004/01/01 09:09:07 walker Exp $"; 
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -245,7 +246,7 @@ int initX()
     xwin_grid_pts(10.0, 10.0, 2.0, 2.0, 0.0, 0.0);
     xwin_grid_color(1);
     xwin_grid_state(ON);
-    xwin_window(4, -100.0,-100.0, 100.0, 100.0);
+    xwin_window_set(-100.0,-100.0, 100.0, 100.0);
     sprintf(buf,"");
 
     return(0);
@@ -355,7 +356,7 @@ FILE *fp;
 		case Expose:
 		    debug("got Expose",dbug);
 
-		    xwin_window(4, vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 
 		    if (xe.xexpose.count != 0)
 			break;
@@ -369,7 +370,7 @@ FILE *fp;
 		    debug("got Configure Notify",dbug);
 		    width = xe.xconfigure.width;
 		    height = xe.xconfigure.height;
-		    xwin_window(4, vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 		    break;
 		case ButtonRelease:
 		    button_down=0;
@@ -540,8 +541,8 @@ int line;
 
     if (line > MAX_LINETYPE) {
 	line = MAX_LINETYPE;
-    } else if (line < 1) {
-	line = 1;
+    } else if (line < 0) {
+	line = 0;
     }
 
     /* there are two switches here because even if you XSetDashes(),
@@ -554,23 +555,23 @@ int line;
      */
 
     switch (line) {
+       case 0:     line_style = LineOnOffDash; break;
        case 1:     line_style = LineSolid; break;
        case 2:
        case 3:
-       case 4:
-       case 5:     line_style = LineOnOffDash; break;
+       case 4:     line_style = LineOnOffDash; break;
        default:
 	   eprintf("line type %d out of range.", line);
     }        
     
     switch (line) {
+       case 0:     dash_list[0]=7; dash_list[1]=2;
+                   dash_list[2]=1; dash_list[3]=2; dash_n=4; break;
        case 1:
        case 2:     dash_list[0]=7; dash_list[1]=5; dash_n=2; break;
        case 3:     dash_list[0]=2; dash_list[1]=2; dash_n=2; break;
        case 4:     dash_list[0]=7; dash_list[1]=2;
                    dash_list[2]=3; dash_list[3]=2; dash_n=4; break;
-       case 5:     dash_list[0]=7; dash_list[1]=2;
-                   dash_list[2]=1; dash_list[3]=2; dash_n=4; break;
     }
 
     dash_offset=0;
@@ -631,15 +632,28 @@ int xorig,yorig;	/* grid origin */
 
 	/* require at least 5 pixels between grid ticks */
 
-	if ( ((xend-xstart)/(double)(dx) >= (double) width/5) ||
+	if ( ((xend-xstart)/(double)(dx*sx) >= (double) width/5) ||
+	     ((yend-ystart)/(double)(dy*sx) >= (double) height/5) ) {
+
+	    printf("grid suppressed, too many points\n");
+
+	} else if ( ((xend-xstart)/(double)(dx) >= (double) width/5) ||
 	     ((yend-ystart)/(double)(dy) >= (double) height/5) ) {
 
-	    /* suppress grid */
-	    printf("grid suppressed, too many points\n");
+	    /* this is the old style grid - no fine ticks */
+
+	    for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
+	       for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
+		    xd=x;
+		    yd=y;
+		    R_to_V(&xd,&yd);
+		    XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+		}
+	    }
 
 	} else { 
 
-	    /* draw grid */
+	    /* draw grid with fine intermediate ticks */
 
 	    /* subtract dx*sx, dy*sy from starting coords to make sure */
 	    /* that we draw grid all the way to left margin even after */
@@ -662,18 +676,6 @@ int xorig,yorig;	/* grid origin */
 		}
 	    }
 
-	    /* this is the old style grid - no fine ticks */
-
-	    /*
-	     *	for (x=xstart; x<=xend; x+=(double) dx*sx) {
-	     *	   for (y=ystart; y<=yend; y+=(double) dy*sy) {
-	     *		xd=x;
-	     *		yd=y;
-	     *		R_to_V(&xd,&yd);
-	     *		XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
-	     *	    }
-	     *	}
-	     */
 	}
 
 	/* now draw crosshair at 1/50 of largest display dimension */
@@ -847,8 +849,17 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
     xy1,xy2 zooms in on selected region
 */
 
-xwin_window(n, x1,y1,x2,y2) /* change the current window parameters */
-int n;
+void xwin_window_get(x1, y1, x2, y2) 
+double *x1,*y1,*x2,*y2;
+{
+    extern double vp_xmin, vp_ymin, vp_xmax, vp_ymax;
+    *x1 = vp_xmin;
+    *y1 = vp_ymin;
+    *x2 = vp_xmax;
+    *y2 = vp_ymax;
+}
+
+void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
 double x1,y1,x2,y2;
 {
     extern XFORM *xp;
@@ -857,22 +868,20 @@ double x1,y1,x2,y2;
     double dratio,wratio;
     double tmp;
 
-    if (n==4) {
-	/* printf("xwin_window called with %f %f %f %f\n",x1,y1,x2,y2); */
+    /* printf("xwin_window_set called with %f %f %f %f\n",x1,y1,x2,y2); */
 
-	if (x2 < x1) {		/* canonicalize the selection rectangle */
-	    tmp = x2; x2 = x1; x1 = tmp;
-	}
-	if (y2 < y1) {
-	    tmp = y2; y2 = y1; y1 = tmp;
-	}
-
-	/* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
-	vp_xmin=x1;
-	vp_xmax=x2;
-	vp_ymin=y1;
-	vp_ymax=y2;
+    if (x2 < x1) {		/* canonicalize the selection rectangle */
+	tmp = x2; x2 = x1; x1 = tmp;
     }
+    if (y2 < y1) {
+	tmp = y2; y2 = y1; y1 = tmp;
+    }
+
+    /* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
+    vp_xmin=x1;
+    vp_xmax=x2;
+    vp_ymin=y1;
+    vp_ymax=y2;
 
     dratio = (double) height/ (double)width;
     wratio = (vp_ymax-vp_ymin)/(vp_xmax-vp_xmin);
@@ -908,8 +917,6 @@ double x1,y1,x2,y2;
     xp->dy  = yoffset;
 
     need_redraw++;
-
-    return (0);
 }
 
 void V_to_R(x,y) 

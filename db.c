@@ -115,14 +115,20 @@ DB_TAB *sp;
 {
     FILE *fp;
     char buf[MAXFILENAME];
+    int err=0;
 
-    snprintf(buf, MAXFILENAME, "%s_I", sp->name);
+    mkdir("./cells", 0777);
+    snprintf(buf, MAXFILENAME, "./cells/%s_I", sp->name);
+    err+=((fp = fopen(buf, "w+")) == 0); 
+
     fp = fopen(buf, "w+"); 
 
     db_def_arch_recurse(fp,sp);
     db_def_print(fp, sp);
 
-    fclose(fp); 
+    err+=(fclose(fp) != 0);
+
+    return(err);
 }
 
 int db_def_arch_recurse(fp,sp) 
@@ -742,6 +748,13 @@ NUM *yymax;
 
 }
 
+void db_set_nest(nest) 
+int nest;
+{
+    extern int nestlevel;
+    nestlevel = nest;
+}
+
 int db_render(cell,xf, nest, mode)
 DB_TAB *cell;
 XFORM *xf; 	/* coordinate transform matrix */
@@ -760,9 +773,9 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     double yminsave;
     double ymaxsave;
 
-    if (debug) printf ("# entering in db_render at level %d\n", nest); 
+    if (debug) printf ("#rendering %s at level %d\n", cell->name, nest); 
 
-    if (!X & nest == 0) {	/* autoplot output */
+    if (!X && (nest == 0)) {	/* autoplot output */
 	printf("nogrid\n");
 	printf("isotropic\n");
 	printf("back\n");
@@ -772,13 +785,14 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     				/* gets used in draw() */
 
     if (nest == 0) {
+        if (debug) printf("initializing global bounding box to 0\n");
 	xmax=0.0;		/* initialize globals to 0,0 location*/
 	xmin=0.0;		/* draw() routine will modify these */
 	ymax=0.0;
 	ymin=0.0;
     }
 
-    if (debug) printf("initializing bounds %g %g %g %g\n", xmin, xmax, ymin, ymax);
+    if (debug) printf("bounds = %g %g %g %g\n", xmin, xmax, ymin, ymax);
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 	switch (p->type) {
@@ -858,10 +872,10 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 
 	    /* find bounding box on screen for instance */
 
-	    xmax=transform->dx;		/* initialize globals to 0,0 location*/
-	    xmin=transform->dx;		/* draw() routine will modify these */
-	    ymax=transform->dy;
-	    ymin=transform->dy;
+	    xmax=0.0;		/* initialize globals to 0,0 location*/
+	    xmin=0.0;		/* draw() routine will modify these */
+	    ymax=0.0;
+	    ymin=0.0;
 
 	    if (nest >= nestlevel) { 
 		drawon = 0;
@@ -882,7 +896,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 
 	    /* if at nestlevel, draw bounding box */
 	    if (nest == nestlevel) { 
-		set_pen(1);
+		set_pen(0);
 		jump();
 		    /* a square bounding box outline in white */
 		    draw(xmax,ymax,mode); draw(xmax,ymin,mode);
@@ -901,10 +915,10 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    transform = xf;		/* set transform back */
 
 	    /* now pass bounding box back */
-	    xminsave=max(xminsave, xmin);
-	    xmaxsave=max(xmaxsave, xmax);
-	    yminsave=max(yminsave, ymin);
-	    ymaxsave=max(ymaxsave, ymax);
+	    xmin=min(xminsave, xmin+p->u.i->x);
+	    xmax=max(xmaxsave, xmax+p->u.i->x);
+	    ymin=min(yminsave, ymin+p->u.i->y);
+	    ymax=max(ymaxsave, ymax+p->u.i->y);
 
 	    break;
 	default:
@@ -956,6 +970,9 @@ int mode;		/* drawing mode */
     int i;
     double r,theta,x,y,x1,y1,x2,y2;
 
+    /* FIXME: should eventually parse resolution */
+    int res=64;	/* resolution */
+
     /* printf("# rendering circle\n"); */
 
     x1 = (double) def->u.c->x1; 	/* center point */
@@ -970,8 +987,8 @@ int mode;		/* drawing mode */
     x = (double) (x1-x2);
     y = (double) (y1-y2);
     r = sqrt(x*x+y*y);
-    for (i=0; i<=16; i++) {
-	theta = ((double) i)*2.0*3.1415926/16.0;
+    for (i=0; i<=res; i++) {
+	theta = ((double) i)*2.0*M_PI/((double) res);
 	x = r*sin(theta);
 	y = r*cos(theta);
 	draw(x1+x, y1+y,mode);
@@ -1470,25 +1487,23 @@ int mode;
     ymax = max(y,ymax);
     ymin = min(y,ymin);
 
-    /* compute coordinates in screen space */
+    /* now compute coordinates in screen space */
     xx = x*transform->r11 + y*transform->r21 + transform->dx;
     yy = x*transform->r12 + y*transform->r22 + transform->dy;
 
     if (X) {
 	if (nseg) {
 	    if (mode == 0) { 	/* regular drawing */
-		xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
+		if (drawon) xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
 	    } else {		/* rubber band drawing */
-		xwin_xor_line((int) xxold, (int) yyold, (int) xx, (int) yy);
+		if (drawon) xwin_xor_line((int) xxold, (int) yyold, (int) xx, (int) yy);
 	    }
 	}
 	xxold=xx;
 	yyold=yy;
 	nseg++;
     } else {
-	if (drawon) {
-	    printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
-	}
+	if (drawon) printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
     }
 }
 
@@ -1497,7 +1512,7 @@ void jump(void)
     if (X) {
 	nseg=0;  		/* for X */
     } else {
-	printf("jump\n");  	/* autoplot */
+	if (drawon) printf("jump\n");  	/* autoplot */
     }
 }
 
@@ -1505,20 +1520,20 @@ void set_pen(pnum)
 int pnum;
 {
     if (X) {
-	xwin_set_pen((pnum%6)+1);		/* for X */
+	xwin_set_pen((pnum%7));		/* for X */
     } else {
-	printf("pen %d\n", (pnum%6)+1);		/* autoplot */
+	if (drawon) printf("pen %d\n", (pnum%7));	/* autoplot */
     }
-    set_line((((int)(pnum/6))%5)+1);
+    set_line((((int)(pnum/7))%5));
 }
 
 void set_line(lnum)
 int lnum;
 {
     if (X) {
-	xwin_set_line((lnum%5));		/* for X */
+	xwin_set_line((lnum%5)+1);		/* for X */
     } else {
-	printf("line %d\n", (lnum%5));	/* autoplot */
+	if (drawon) printf("line %d\n", (lnum%5)+1);	/* autoplot */
     }
 }
 

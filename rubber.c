@@ -2,7 +2,7 @@
 
 this set of routines manages the rubber band drawing function for
 interactive point selection.  The rubber band shapes are drawn with an
-xor function so that drawing a line twice will erase it.  We need to
+xor function such that drawing a line twice will erase it.  We need to
 insure that the first shape drawn after rubber_set_callback() gets
 erased before the second shape is drawn, and so on, until the last call
 is made by rubber_clear_callback(). 

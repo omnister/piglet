@@ -11,9 +11,6 @@ void xwin_set_pen(int pen);
 void xwin_set_rubber_callback();
 void xwin_clear_rubber_callback();
 
-/* rubber band callbacks */
-extern void draw_line();
-extern void draw_box();
 
 /* 
  * rubber band function receives current location back as arguments 
@@ -69,4 +66,5 @@ void xwin_grid_pts(
 	double yo
 );
 
-extern int xwin_window();
+extern void xwin_window_set();
+extern void xwin_window_get();

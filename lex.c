@@ -102,6 +102,7 @@ COMMAND commands[] =
     {(char *) NULL, (Function *) NULL, (char *) NULL}
 };
 
+static int numbyes=0;
 
 main(argc,argv)
 int argc;
@@ -276,8 +277,7 @@ char *arg;	/* currently unused */
 	    retval = sscanf(&word[1], "%d", &layer);
 	    if (debug) printf("layer=%d\n",layer);
 
-	    if (index("ACLNOPRT", comp) && retval)  {
-
+	    if (index("ACLNOPRT", comp) && retval==1)  {
 		switch (comp) {
 		    case 'A':
 			add_arc(&layer);
@@ -308,6 +308,7 @@ char *arg;	/* currently unused */
 			break;
 		}
 	    } else {  /* must be a identifier */
+		printf("calling add_inst with %s\n", word);
 		add_inst(word);
 	    }
 	} else if (token == QUOTE) {
@@ -331,14 +332,6 @@ int add_arc(int *layer)
 {
     rl_setprompt("ADD_ARC> ");
     printf("in add_arc (unimplemented)\n");
-    token_flush();
-    return(1);
-}
-
-int add_circ(int *layer)
-{
-    rl_setprompt("ADD_CIRC> ");
-    printf("in add_circle (unimplemented)\n");
     token_flush();
     return(1);
 }
@@ -377,20 +370,46 @@ int add_text(int *layer)
     return(1);
 }
 
-int add_inst()
-{
-    rl_setprompt("ADD_INST> ");
-    printf("in add_inst (unimplemented)\n");
-    token_flush();
-    return(1);
-}
-
-com_archive(arg)	/* create an archive file of the specified device */
+com_archive(arg)    /* create an archive file of the specified device */
 char *arg;
 {
-    printf("    com_archive %s\n", arg);
+    numbyes=0;
+    need_redraw++; 
+    int err;
+
+    if (currep != NULL) {
+	if (db_def_archive(currep)) {
+	    printf("unable to archive %s\n", currep->name);
+	    exit(-1);
+	};
+	printf("    archived %s\n", currep->name);
+	modified = 0;
+    } else {
+	printf("error: not currently editing a cell\n");
+    }    	
+
+    /*
+	if(<name> != curr_name() && name != NULL) {
+	    if (exists_on_disk(name)) {
+		if_ask("do you want to overwrite?",name)
+		    writedb(currdev, name);
+		    mark_unmodified(name);
+	    } else {
+	    	writedb(currdev,name)
+		mark_unmodified(name);
+	    }
+	} else {
+	    if (currrname == NULL) {
+		prompt for new name or break
+	    }
+	    writedb(currdev, currname);
+	    mark_unmodified(name);
+	}
+    */
+
     return (0);
 }
+
 
 com_area(arg)		/* display the area of selected component */
 char *arg;
@@ -406,8 +425,6 @@ char *arg;
     return (0);
 }
 
-
-static int numbyes=0;
 
 com_bye(arg)		/* terminate edit session */
 char *arg;
@@ -480,11 +497,11 @@ char *arg;
 
     /* printf("    com_edit <%s>\n", arg); */
 
-    if (mode == MAIN) {
+    if (mode == MAIN || (mode == EDI && !modified)) {
 
 	/* check for a name provided */
 	if (token=token_get(name) != IDENT) {
-	    printf("    1must provide a name: EDIT <name>\n");
+	    printf("    must provide a name: EDIT <name>\n");
 	    return (0);
 	} 
 
@@ -508,7 +525,7 @@ char *arg;
 	*/
 
     } else if (mode == EDI) {
-	printf("    recursive EDIT not supported\n");
+	printf("    must SAVE current device before new EDIT\n");
     } else {
 	printf("    must EXIT before entering EDIT subsystem\n");
     }
@@ -909,12 +926,16 @@ com_window(arg)		/* change the current window parameters */
 char *arg;
 {
     double dx, dy, xmin, ymin, xmax, ymax, tmp;
+    double  x1, y1, x2, y2;
     int n;
     TOKEN token;
     int done=0;
     char buf[128];
     char word[128];
+    double scale=1.0;
     int debug=0;
+    int fit=0;
+    int nest=9;
 
     if (debug) printf("    com_window\n", arg);
 
@@ -922,21 +943,49 @@ char *arg;
     while(!done && (token=token_get(word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
+		token_unget(token, word); 
+		done++;
+		break;
 	    case QUOTE: 	/* quoted string */
 	    case OPT:		/* option */
+		if (strncasecmp(word, ":F", 2) == 0) {
+		     fit++;
+		} else if (strncasecmp(word, ":X", 2) == 0) {
+		    if(sscanf(word+2, "%lf", &scale) != 1) {
+		        weprintf("WIN invalid scale argument: %s\n", word+2);
+			return(-1);
+		    }
+		    if (scale < 0.0) {
+		    	scale = 1.0/(-scale);
+		    }
+		    if (scale > 10.0 || scale < 0.10) {
+		        weprintf("WIN: scale out of range %s\n", word+2);
+			return (-1);
+		    }
+		} else if (strncasecmp(word, ":N", 2) == 0) {
+		    if(sscanf(word+2, "%d", &nest) != 1) {
+		        weprintf("WIN invalid nest level %s\n", word+2);
+			return(-1);
+		    }
+		    db_set_nest(nest);
+		} else {
+	    	     printf("WIN: bad option: %s\n", word);
+		}
+		break;
 	    case END:		/* end of file */
 		break;
 	    case CMD:		/* command */
-		/* token_unget(token, word); */
+		token_unget(token, word); 
+		done++;
 		break;
 	    case NUMBER: 	/* number */
 		strcat(buf,word);
 		strcat(buf," ");
 		break;
-	    case EOL:		/* newline or carriage return */
 	    case EOC:		/* end of command */
 		done++;
 		break;
+	    case EOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 		break;
 	    default:
@@ -946,15 +995,35 @@ char *arg;
     }
     if (debug) printf("xwin_window got %s\n",buf);
 
-    n = sscanf(buf, "%lf %lf %lf %lf",
-	&xmin, &ymin,
-	&xmax, &ymax
-    );
+    n = sscanf(buf, "%lf %lf %lf %lf", &x1, &y1, &x2, &y2);
+
+    xwin_window_get(&xmin, &ymin, &xmax, &ymax);
+
+    if (n==2) {
+	dx=(xmax-xmin);
+	dy=(ymax-ymin);
+	xmin=x1-dx/2.0;
+	ymin=y1-dx/2.0;
+	xmax=x1+dx/2.0;
+	ymax=y1+dx/2.0;
+    } else if (n==4) {
+    	xmin=x1;
+	ymin=y1;
+	xmax=x2;
+	ymax=y2;
+    } else if (n==0 || n== -1) {
+	xwin_window_get(&xmin, &ymin, &xmax, &ymax);
+    } else {
+	eprintf("WIN: bad number of points");
+	return(0);
+    }
 
     if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
-    if (n<=0) {
+
+    if (fit) {
 	db_bounds(&xmin, &ymin, &xmax, &ymax);
     }
+
     if (debug) printf("%g %g %g %g %d\n", xmin, ymin, xmax, ymax, n);
 
     if (xmax < xmin) {		/* canonicalize the selection rectangle */
@@ -964,14 +1033,22 @@ char *arg;
 	tmp = ymax; ymax = ymin; ymin = tmp;
     }
 
-    if (n<=0) {
+    if (fit) {
 	dx=(xmax-xmin);
 	dy=(ymax-ymin);
 	xmin-=dx/10.0;
 	xmax+=dx/10.0;
 	ymin-=dy/10.0;
 	ymax+=dy/10.0;
-    	n=4;
+    } 
+
+    if (scale != 1.0) {
+	dx=(xmax-xmin);
+	dy=(ymax-ymin);
+	xmin=((xmax+xmin)/2.0)-((dx*scale)/2.0);
+	xmax=((xmax+xmin)/2.0)+((dx*scale)/2.0);
+	ymin=((ymax+ymin)/2.0)-((dy*scale)/2.0);
+	ymax=((ymax+ymin)/2.0)+((dy*scale)/2.0);
     } 
 
     if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
@@ -979,7 +1056,7 @@ char *arg;
     if (xmin == 0 && ymin == 0 && xmax == 0 && ymax == 0) {
 	;	/* don't set the window to a null size */
     } else {
-	xwin_window(n,xmin,ymin,xmax,ymax);
+	xwin_window_set(xmin,ymin,xmax,ymax);
     }
     
 

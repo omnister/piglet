@@ -1,4 +1,5 @@
 #include "db.h"
+#include "lex.h"
 #include "xwin.h"
 #include "token.h"
 #include "rubber.h"
@@ -6,90 +7,12 @@
 #define NORM 0		/* drawing modes */
 #define RUBBER 1	 
 
-PAIR tmp_pair;
-static COORDS *first_pair, *last_pair; 
+static COORDS *CP;
 
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_LINE dbline;
 
-
-COORDS *coord_create(x,y)
-double x,y;
-{
-    COORDS *tmp;
-    tmp = (COORDS *) emalloc(sizeof(COORDS));
-    tmp->coord.x = x;
-    tmp->coord.y = y;
-    tmp->next = NULL;
-    tmp->prev = NULL;
-    return(tmp);
-}
-
-void coord_new(x,y)
-double x,y;
-{
-    COORDS *temp;
-    first_pair = last_pair = coord_create(x,y);
-}
-
-
-void coord_append(x,y)
-double x,y;
-{
-    COORDS *tmp;
-    tmp = last_pair;	/* save pointer to last coord */
-    last_pair->next = coord_create(x,y);
-    last_pair = last_pair->next;
-    last_pair->prev = tmp;
-}
-
-void coord_swap_last(x,y)
-double x,y;
-{
-    last_pair->coord.x = x;
-    last_pair->coord.y = y;
-}
-
-void coord_drop()
-{
-    COORDS *tmp;
-    tmp = last_pair;
-    last_pair = last_pair->prev;
-    last_pair->next = NULL;
-    free((COORDS *) tmp);
-}
-
-
-void print_pairs()
-{	
-    COORDS *tmp;
-    int i;
-
-    i=1;
-    tmp = first_pair;
-    while(tmp != NULL) {
-	printf(" %g,%g", tmp->coord.x, tmp->coord.y);
-	if ((tmp = tmp->next) != NULL && (++i)%4 == 0) {
-	    printf("\n");
-	}
-    }
-    printf(";\n");
-}		
-
-/* test harness */
-/*
-main() 
-{
-	coord_new(1.0,2.0);
-	coord_append(3.0, 4.0);
-	coord_append(5.0, 6.0);
-	coord_append(7.0, 8.0);
-	print_pairs();
-	coord_swap_last(9.0, 10.0);
-	print_pairs();
-}
-*/
 /*
  *
  *        +--------------+---------<--+---------------+
@@ -101,11 +24,13 @@ main()
  *                       +-(:FILL)----+
  */
 
+OPTS *opts;
+
 static double x1, y1;
 
 int add_line(int *layer)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
 
     int debug=0;
     int done=0;
@@ -115,7 +40,6 @@ int add_line(int *layer)
     char word[BUFSIZE];
     double x2,y2;
     static double xold, yold;
-    OPTS *opts;
 
 /*
  *   (this chain from HEAD is the cell definition symbol table)
@@ -157,16 +81,22 @@ int add_line(int *layer)
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(word); /* ignore for now */
-		    state = START;
+		    token_get(word); 
+		    if (opt_parse(word, "W", opts) == -1) {
+		    	state = END;
+		    } else {
+			state = START;
+		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just eat it up */
 		    state = START;
 		} else {
-		    state = END;	/* error */
-		}
+	            printf("ADD LINE: expected OPTION or XYPAIR, got: %s\n", 
+		        tok2str(token));
+		    state = END; 
+		} 
 		xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
@@ -179,6 +109,10 @@ int add_line(int *layer)
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
 		} else if (token == EOC) {
+		    state = END; 
+		} else {
+	            printf("ADD LINE: expected a number, got: %s\n", 
+		        tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -202,16 +136,20 @@ int add_line(int *layer)
 		    yold=y2;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 		    
-		    coord_new(x1,y1);
-		    coord_append(x1,y1);
+		    CP = coord_new(x1,y1);
+		    coord_append(CP, x1,y1);
 
-		    print_pairs();
+		    if (debug) coord_print(CP);
 
 		    rubber_set_callback(draw_line);
 		    state = NUM3;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
 		} else if (token == EOC) {
+		    state = END; 
+		} else {
+	            printf("ADD LINE: expected a number, got: %s\n", 
+		        tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -225,6 +163,10 @@ int add_line(int *layer)
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
 		} else if (token == EOC) {
+		    state = END; 
+		} else {
+	            printf("ADD LINE: expected a number, got: %s\n", 
+		        tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -259,11 +201,11 @@ int add_line(int *layer)
 			printf("error: a line must have finite length\n");
 			state = START;
 		    } else if (x2==xold && y2==yold) {
-		    	print_pairs();
+		    	if (debug) coord_print(CP);
 			printf("dropping coord\n");
-			coord_drop();  /* drop last coord */
-		    	print_pairs();
-			db_add_line(currep, *layer, opts, first_pair);
+			coord_drop(CP);  /* drop last coord */
+		    	if (debug) coord_print(CP);
+			db_add_line(currep, *layer, opts, CP);
 			modified = 1;
 			need_redraw++;
 			rubber_clear_callback();
@@ -271,7 +213,8 @@ int add_line(int *layer)
 		    } else {
 			rubber_clear_callback();
 			if (debug) printf("doing append\n");
-			coord_append(x2,y2);
+			coord_swap_last(CP, x2, y2);
+			coord_append(CP, x2,y2);
 			rubber_set_callback(draw_line);
 			rubber_draw(x2,y2);
 			state = NUM3;	/* loop till EOC */
@@ -281,10 +224,13 @@ int add_line(int *layer)
 		    token_get(word); /* just ignore it */
 		} else if (token == EOC) {
 		    state = END; 
+		} else {
+	            printf("ADD LINE: expected a number, got: %s\n", 
+		        tok2str(token));
+		    state = END; 
 		}
 		break;
 	    case END:
-	    default:
 		if (debug) printf("in end\n");
 		if (token == EOC) {
 			db_add_line(currep, *layer, opts, first_pair);
@@ -299,6 +245,8 @@ int add_line(int *layer)
 	    	rubber_clear_callback();
 		done++;
 		break;
+	    default:
+	    	break;
 	}
     }
     return(1);
@@ -327,9 +275,8 @@ int count; /* number of times called */
         dbdeflist.type = LINE;
 
         dbline.layer=1;
-        dbline.opts=opt_create();
-	dbline.opts->width = 10.0;
-        dbline.coords=first_pair;
+        dbline.opts=opts;
+        dbline.coords=CP;
 	
 	if (debug) {printf("in draw_line\n");}
 
@@ -341,7 +288,7 @@ int count; /* number of times called */
 	    jump(); /* erase old shape */
 	    do_line(&dbdeflist, 1);
 	    jump(); /* draw new shape */
-	    coord_swap_last(x2, y2);
+	    coord_swap_last(CP, x2, y2);
 	    do_line(&dbdeflist, 1);
 	} else {			/* last call, cleanup */
 	    jump(); /* erase old shape */

@@ -69,6 +69,15 @@ typedef struct coord_list {
     struct coord_list *prev;
 } COORDS;
 
+
+COORDS *coord_create(NUM x, NUM y);
+COORDS *coord_new(NUM x, NUM y);
+void coord_append(COORDS *CP, NUM x, NUM y);
+void coord_swap_last(COORDS *CP, NUM x, NUM y);
+void coord_drop(COORDS *CP);
+void coord_print(COORDS *CP);
+
+
 typedef struct xform {
      double r11;
      double r12;
@@ -280,6 +289,8 @@ extern int db_def_print(
 extern int db_def_archive(
 		DB_TAB *sp
 	    );
+
+extern void db_set_nest(int nest); 	/* set global display nest level */
 
 extern int db_render(
 		DB_TAB *cell,
