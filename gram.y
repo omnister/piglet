@@ -1,4 +1,5 @@
 %{
+
 #include <stdio.h>
 #include <math.h>
 #include "db.h"
@@ -102,13 +103,13 @@ command	        :	FILES file_name_list '$' ';'
 		|	ADD ARC option_list coord coord coord ';'
 				{
 				    db_add_arc(currep,
-					(int) $2, $4.x, $4.y,
+					(int) $2, $3, $4.x, $4.y,
 					$5.x, $5.y, $6.x,$6.y);
 				}
 		|	ADD CIRC option_list coord coord ';'
 				{
 				    db_add_circ(currep, 
-					(int) $2, $4.x, $4.y, $5.x, $5.y);
+					(int) $2, $3, $4.x, $4.y, $5.x, $5.y);
 				}
 		|	ADD LINE option_list coord_list ';'
 				{
@@ -122,12 +123,13 @@ command	        :	FILES file_name_list '$' ';'
 		|	ADD OVAL option_list coord coord coord ';'
 				{
 				    db_add_oval(currep,
-					(int) $2, $4.x, $4.y,
+					(int) $2, $3, $4.x, $4.y,
 					$5.x, $5.y, $6.x,$6.y);
 				}
 		|	ADD POLY option_list coord_list ';'
 				{
-				    db_add_poly(currep, (int) $2, $4);
+				    db_add_poly(currep, 
+					(int) $2, $3, $4);
 				}
 		|	ADD RECT option_list coord coord ';'
 				{
@@ -308,7 +310,7 @@ register char *s;
 	/* but there is a bug in /usr/lib/yacpar that doesn't */
 	/* increment the yynerrs variable on syntax errors    */
 
-	fprintf(yyerfp, "[error %d] ", ++yynerrs);
+	fprintf(yyerfp, "# [error %d] ", ++yynerrs);
 	yywhere();
 	fputs(s,yyerfp);
 	putc('\n', yyerfp);

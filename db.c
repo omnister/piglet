@@ -81,13 +81,13 @@ int db_print()           	/* print db */
     struct db_tab *sp;
 
     for (sp=HEAD; sp!=(struct db_tab *)0; sp=sp->next) {
-        printf("edit ");
+        printf("EDIT ");
         printf("%s;\n",sp->name);
 	if (sp->dbhead != (struct db_deflist *) 0) {
 	    db_def_print(sp->dbhead); 
 	}
-        printf("save;\n");
-        printf("exit;\n\n");
+        printf("SAVE;\n");
+        printf("EXIT;\n\n");
     }
     return 0;
 }
@@ -149,8 +149,8 @@ struct db_tab *dp;
     DB_DEFLIST *p; 
     int i;
 
-    fprintf(fp, "purge %s;\n", dp->name);
-    fprintf(fp, "edit ");
+    fprintf(fp, "PURGE %s;\n", dp->name);
+    fprintf(fp, "EDIT ");
     fprintf(fp, "%s;\n",dp->name);
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
@@ -161,7 +161,7 @@ struct db_tab *dp;
 
         case CIRC:  /* circle definition */
 
-	    fprintf(fp, "add c%d ", p->u.c->layer);
+	    fprintf(fp, "ADD C%d ", p->u.c->layer);
 
 	    db_print_opts(fp, p->u.c->opts);
 
@@ -175,7 +175,7 @@ struct db_tab *dp;
 
         case LINE:  /* line definition */
 
-	    fprintf(fp, "add l%d ", p->u.l->layer);
+	    fprintf(fp, "ADD L%d ", p->u.l->layer);
 
 	    db_print_opts(fp, p->u.l->opts);
 
@@ -193,7 +193,7 @@ struct db_tab *dp;
 
         case NOTE:  /* note definition */
 
-	    fprintf(fp, "add n%d ", p->u.n->layer); 
+	    fprintf(fp, "ADD N%d ", p->u.n->layer); 
 
 	    db_print_opts(fp, p->u.n->opts);
 
@@ -209,7 +209,7 @@ struct db_tab *dp;
 	    break;
 
         case POLY:  /* polygon definition */
-	    fprintf(fp, "add p%d", p->u.p->layer);
+	    fprintf(fp, "ADD P%d", p->u.p->layer);
 	    
 	    db_print_opts(fp, p->u.p->opts);
 
@@ -226,7 +226,7 @@ struct db_tab *dp;
 	    break;
 
 	case RECT:  /* rectangle definition */
-	    fprintf(fp, "add r%d ", p->u.r->layer);
+	    fprintf(fp, "ADD R%d ", p->u.r->layer);
 	    db_print_opts(fp, p->u.r->opts);
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
@@ -237,7 +237,7 @@ struct db_tab *dp;
 	    break;
 
         case TEXT:  /* text definition */
-	    fprintf(fp, "add t%d ", p->u.t->layer); 
+	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
 	    db_print_opts(fp, p->u.t->opts);
 	    fprintf(fp, "%s %g,%g;\n",
 		p->u.t->text,
@@ -247,7 +247,7 @@ struct db_tab *dp;
 	    break;
 
         case INST:  /* instance call */
-	    fprintf(fp, "add %s ", p->u.i->def->name);
+	    fprintf(fp, "ADD %s ", p->u.i->def->name);
 	    db_print_opts(fp, p->u.i->opts);
 	    fprintf(fp, "%g,%g;\n",
 		p->u.i->x,
@@ -262,8 +262,8 @@ struct db_tab *dp;
 	}
     }
 
-    fprintf(fp, "save;\n");
-    fprintf(fp, "exit;\n\n");
+    fprintf(fp, "SAVE;\n");
+    fprintf(fp, "EXIT;\n\n");
 }
 
 int db_print_opts(fp, opts)           	/* print options */
@@ -278,9 +278,10 @@ OPTS *opts;
     return 0;
 }
 
-int db_add_arc(cell, layer, x1,y1,x2,y2,x3,y3) 
+int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
 struct db_tab *cell;
 int layer;
+OPTS *opts;
 NUM x1,y1,x2,y2,x3,y3;
 {
     struct db_arc *ap;
@@ -302,6 +303,7 @@ NUM x1,y1,x2,y2,x3,y3;
     dp->type = ARC;
 
     ap->layer=layer;
+    ap->opts=opts;
     ap->x1=x1;
     ap->y1=y1;
     ap->x2=x2;
@@ -312,9 +314,10 @@ NUM x1,y1,x2,y2,x3,y3;
     return(0);
 }
 
-int db_add_circ(cell, layer,x1,y1,x2,y2)
+int db_add_circ(cell, layer, opts, x1,y1,x2,y2)
 struct db_tab *cell;
 int layer;
+OPTS *opts;
 NUM x1,y1,x2,y2;
 {
     struct db_circ *cp;
@@ -336,6 +339,7 @@ NUM x1,y1,x2,y2;
     dp->type = CIRC;
 
     cp->layer=layer;
+    cp->opts=opts;
     cp->x1=x1;
     cp->y1=y1;
     cp->x2=x2;
@@ -409,9 +413,10 @@ NUM x,y;
     return(0);
 }
 
-int db_add_oval(cell, layer, x1,y1,x2,y2,x3,y3) 
+int db_add_oval(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
 struct db_tab *cell;
 int layer;
+OPTS *opts;
 NUM x1,y1, x2,y2, x3,y3;
 {
     struct db_oval *op;
@@ -433,6 +438,7 @@ NUM x1,y1, x2,y2, x3,y3;
     dp->type = OVAL;
 
     op->layer=layer;
+    op->opts=opts;
     op->x1=x1;
     op->y1=y1;
     op->x2=x2;
@@ -443,9 +449,10 @@ NUM x1,y1, x2,y2, x3,y3;
     return(0);
 }
 
-int db_add_poly(cell, layer, coords)
+int db_add_poly(cell, layer, opts, coords)
 struct db_tab *cell;
 int layer;
+OPTS *opts;
 COORDS *coords;
 {
     struct db_poly *pp;
@@ -467,6 +474,7 @@ COORDS *coords;
     dp->type = POLY;
 
     pp->layer=layer;
+    pp->opts=opts;
     pp->coords=coords;
 
     return(0);
