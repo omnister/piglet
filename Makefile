@@ -1,18 +1,19 @@
 
 SRC = scan.l gram.y 
 OBJ = scan.o gram.o
-TARS = Makefile NOTEDATA.F db.c db.h gram.y readfont.c readfont.h scan.l
 
-pig: gram.o scan.o db.o readfont.o
-	cc -g gram.o scan.o db.o readfont.o -o pig -lfl -lm
+pig: gram.o scan.o db.o readfont.o eprintf.o
+	cc -g gram.o scan.o db.o readfont.o eprintf.o -o pig -ll -lm 
 
-db.o: db.h
+test: pig
+	#
+	# "you can plot any of the archives in the testblock directory"
+	# "like this:"
+	#
+	#pig < testblocks/CDRCFR_I | ap
+	#pig < testblocks/H20919M2_I | ap
+	pig < testblocks/SLIC_I	| ap
 
-readfont.o: readfont.h
-
-lexer: scan.o
-	cc  -g -DDEBUG lex.yy.c -o lexer -lfl
-	rm lex.yy.c
 
 clean: 
 	rm -f y.tab.c y.output *.o lex.yy.c pig lexer
@@ -20,7 +21,10 @@ clean:
 y.tab.h: gram.o
 
 scan.o: scan.l y.tab.h 
-	lex -ilI scan.l
+	# use -il for flex under linux
+	# omit for HPUX
+	# lex scan.l
+	lex  -il scan.l
 	#cc -DYYDEBUG -c lex.yy.c 
 	cc -g -c lex.yy.c 
 	rm lex.yy.c
@@ -32,6 +36,3 @@ gram.o: gram.y
 	cc -g -c y.tab.c
 	rm y.tab.c
 	mv y.tab.o gram.o
-
-pig.tar: $(TARS)
-	tar cvf - $(TARS) > pig.tar

@@ -5,43 +5,41 @@
    2  command_list : command
    3               | command_list command
 
-   4  command : FILES file_name_list '$' EOC
-   5          | EDIT FILE_NAME EOC
-   6          | SHOW ALL EOC
-   7          | LOCK NUMBER EOC
-   8          | GRID NUMBER NUMBER NUMBER ',' NUMBER EOC
-   9          | GRID NUMBER ',' NUMBER NUMBER ',' NUMBER EOC
-  10          | LEVEL NUMBER EOC
-  11          | WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER EOC
-  12          | ADD ARC option_list coord coord coord EOC
-  13          | ADD CIRC option_list coord coord EOC
-  14          | ADD LINE option_list coord_list EOC
-  15          | ADD NOTE option_list QUOTED coord EOC
-  16          | ADD OVAL option_list coord coord coord EOC
-  17          | ADD POLY option_list coord_list EOC
-  18          | ADD RECT option_list coord coord EOC
-  19          | ADD TEXT option_list QUOTED coord EOC
-  20          | ADD INST FILE_NAME option_list coord EOC
-  21          | ADD FILE_NAME option_list coord EOC
-  22          | SAVE EOC
-  23          | PURGE FILE_NAME EOC
-  24          | EXIT EOC
-  25          | error EOC
+   4  command : FILES file_name_list '$' ';'
+   5          | EDIT FILE_NAME ';'
+   6          | SHOW ALL ';'
+   7          | LOCK NUMBER ';'
+   8          | GRID NUMBER NUMBER NUMBER ',' NUMBER ';'
+   9          | GRID NUMBER ',' NUMBER NUMBER ',' NUMBER ';'
+  10          | LEVEL NUMBER ';'
+  11          | WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER ';'
+  12          | ADD ARC option_list coord coord coord ';'
+  13          | ADD CIRC option_list coord coord ';'
+  14          | ADD LINE option_list coord_list ';'
+  15          | ADD NOTE option_list QUOTED coord ';'
+  16          | ADD OVAL option_list coord coord coord ';'
+  17          | ADD POLY option_list coord_list ';'
+  18          | ADD RECT option_list coord coord ';'
+  19          | ADD TEXT option_list QUOTED coord ';'
+  20          | ADD INST FILE_NAME option_list coord ';'
+  21          | ADD FILE_NAME option_list coord ';'
+  22          | SAVE ';'
+  23          | PURGE FILE_NAME ';'
+  24          | '$' '$' '$' '$' FILE_NAME
+  25          | EXIT ';'
+  26          | error ';'
 
-  26  file_name_list : FILE_NAME
-  27                 | file_name_list ',' FILE_NAME
+  27  file_name_list : FILE_NAME
+  28                 | file_name_list ',' FILE_NAME
 
-  28  option_list :
-  29              | OPTION
-  30              | option_list OPTION
+  29  option_list :
+  30              | OPTION
+  31              | option_list OPTION
 
-  31  coord : NUMBER ',' NUMBER
+  32  coord : NUMBER ',' NUMBER
 
-  32  coord_list : coord coord
-  33             | coord_list coord
-
-  34  EOC :
-  35      | ';'
+  33  coord_list : coord coord
+  34             | coord_list coord
 
 state 0
 	$accept : . archive $end  (0)
@@ -58,37 +56,23 @@ state 0
 	SAVE  shift 10
 	EXIT  shift 11
 	PURGE  shift 12
+	'$'  shift 13
 	.  error
 
-	archive  goto 13
-	command_list  goto 14
-	command  goto 15
+	archive  goto 14
+	command_list  goto 15
+	command  goto 16
 
 
 state 1
-	command : error . EOC  (25)
-	EOC : .  (34)
+	command : error . ';'  (26)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 17
+	';'  shift 17
+	.  error
 
 
 state 2
-	command : FILES . file_name_list '$' EOC  (4)
+	command : FILES . file_name_list '$' ';'  (4)
 
 	FILE_NAME  shift 18
 	.  error
@@ -97,59 +81,59 @@ state 2
 
 
 state 3
-	command : EDIT . FILE_NAME EOC  (5)
+	command : EDIT . FILE_NAME ';'  (5)
 
 	FILE_NAME  shift 20
 	.  error
 
 
 state 4
-	command : SHOW . ALL EOC  (6)
+	command : SHOW . ALL ';'  (6)
 
 	ALL  shift 21
 	.  error
 
 
 state 5
-	command : LOCK . NUMBER EOC  (7)
+	command : LOCK . NUMBER ';'  (7)
 
 	NUMBER  shift 22
 	.  error
 
 
 state 6
-	command : GRID . NUMBER NUMBER NUMBER ',' NUMBER EOC  (8)
-	command : GRID . NUMBER ',' NUMBER NUMBER ',' NUMBER EOC  (9)
+	command : GRID . NUMBER NUMBER NUMBER ',' NUMBER ';'  (8)
+	command : GRID . NUMBER ',' NUMBER NUMBER ',' NUMBER ';'  (9)
 
 	NUMBER  shift 23
 	.  error
 
 
 state 7
-	command : LEVEL . NUMBER EOC  (10)
+	command : LEVEL . NUMBER ';'  (10)
 
 	NUMBER  shift 24
 	.  error
 
 
 state 8
-	command : WINDOW . NUMBER ',' NUMBER NUMBER ',' NUMBER EOC  (11)
+	command : WINDOW . NUMBER ',' NUMBER NUMBER ',' NUMBER ';'  (11)
 
 	NUMBER  shift 25
 	.  error
 
 
 state 9
-	command : ADD . ARC option_list coord coord coord EOC  (12)
-	command : ADD . CIRC option_list coord coord EOC  (13)
-	command : ADD . LINE option_list coord_list EOC  (14)
-	command : ADD . NOTE option_list QUOTED coord EOC  (15)
-	command : ADD . OVAL option_list coord coord coord EOC  (16)
-	command : ADD . POLY option_list coord_list EOC  (17)
-	command : ADD . RECT option_list coord coord EOC  (18)
-	command : ADD . TEXT option_list QUOTED coord EOC  (19)
-	command : ADD . INST FILE_NAME option_list coord EOC  (20)
-	command : ADD . FILE_NAME option_list coord EOC  (21)
+	command : ADD . ARC option_list coord coord coord ';'  (12)
+	command : ADD . CIRC option_list coord coord ';'  (13)
+	command : ADD . LINE option_list coord_list ';'  (14)
+	command : ADD . NOTE option_list QUOTED coord ';'  (15)
+	command : ADD . OVAL option_list coord coord coord ';'  (16)
+	command : ADD . POLY option_list coord_list ';'  (17)
+	command : ADD . RECT option_list coord coord ';'  (18)
+	command : ADD . TEXT option_list QUOTED coord ';'  (19)
+	command : ADD . INST FILE_NAME option_list coord ';'  (20)
+	command : ADD . FILE_NAME option_list coord ';'  (21)
 
 	FILE_NAME  shift 26
 	ARC  shift 27
@@ -165,63 +149,40 @@ state 9
 
 
 state 10
-	command : SAVE . EOC  (22)
-	EOC : .  (34)
+	command : SAVE . ';'  (22)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 36
+	';'  shift 36
+	.  error
 
 
 state 11
-	command : EXIT . EOC  (24)
-	EOC : .  (34)
+	command : EXIT . ';'  (25)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 37
+	';'  shift 37
+	.  error
 
 
 state 12
-	command : PURGE . FILE_NAME EOC  (23)
+	command : PURGE . FILE_NAME ';'  (23)
 
 	FILE_NAME  shift 38
 	.  error
 
 
 state 13
+	command : '$' . '$' '$' '$' FILE_NAME  (24)
+
+	'$'  shift 39
+	.  error
+
+
+state 14
 	$accept : archive . $end  (0)
 
 	$end  accept
 
 
-state 14
+state 15
 	archive : command_list .  (1)
 	command_list : command_list . command  (3)
 
@@ -237,1052 +198,791 @@ state 14
 	SAVE  shift 10
 	EXIT  shift 11
 	PURGE  shift 12
+	'$'  shift 13
 	$end  reduce 1
 
-	command  goto 39
+	command  goto 40
 
 
-state 15
+state 16
 	command_list : command .  (2)
 
 	.  reduce 2
 
 
-state 16
-	EOC : ';' .  (35)
-
-	.  reduce 35
-
-
 state 17
-	command : error EOC .  (25)
-
-	.  reduce 25
-
-
-state 18
-	file_name_list : FILE_NAME .  (26)
+	command : error ';' .  (26)
 
 	.  reduce 26
 
 
-state 19
-	command : FILES file_name_list . '$' EOC  (4)
-	file_name_list : file_name_list . ',' FILE_NAME  (27)
+state 18
+	file_name_list : FILE_NAME .  (27)
 
-	'$'  shift 40
-	','  shift 41
+	.  reduce 27
+
+
+state 19
+	command : FILES file_name_list . '$' ';'  (4)
+	file_name_list : file_name_list . ',' FILE_NAME  (28)
+
+	'$'  shift 41
+	','  shift 42
 	.  error
 
 
 state 20
-	command : EDIT FILE_NAME . EOC  (5)
-	EOC : .  (34)
+	command : EDIT FILE_NAME . ';'  (5)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 42
+	';'  shift 43
+	.  error
 
 
 state 21
-	command : SHOW ALL . EOC  (6)
-	EOC : .  (34)
+	command : SHOW ALL . ';'  (6)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 43
+	';'  shift 44
+	.  error
 
 
 state 22
-	command : LOCK NUMBER . EOC  (7)
-	EOC : .  (34)
+	command : LOCK NUMBER . ';'  (7)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 44
+	';'  shift 45
+	.  error
 
 
 state 23
-	command : GRID NUMBER . NUMBER NUMBER ',' NUMBER EOC  (8)
-	command : GRID NUMBER . ',' NUMBER NUMBER ',' NUMBER EOC  (9)
+	command : GRID NUMBER . NUMBER NUMBER ',' NUMBER ';'  (8)
+	command : GRID NUMBER . ',' NUMBER NUMBER ',' NUMBER ';'  (9)
 
-	NUMBER  shift 45
-	','  shift 46
+	NUMBER  shift 46
+	','  shift 47
 	.  error
 
 
 state 24
-	command : LEVEL NUMBER . EOC  (10)
-	EOC : .  (34)
+	command : LEVEL NUMBER . ';'  (10)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 47
-
-
-state 25
-	command : WINDOW NUMBER . ',' NUMBER NUMBER ',' NUMBER EOC  (11)
-
-	','  shift 48
+	';'  shift 48
 	.  error
 
 
-26: shift/reduce conflict (shift 49, reduce 28) on OPTION
+state 25
+	command : WINDOW NUMBER . ',' NUMBER NUMBER ',' NUMBER ';'  (11)
+
+	','  shift 49
+	.  error
+
+
+26: shift/reduce conflict (shift 50, reduce 29) on OPTION
 state 26
-	command : ADD FILE_NAME . option_list coord EOC  (21)
-	option_list : .  (28)
+	command : ADD FILE_NAME . option_list coord ';'  (21)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
-
-	option_list  goto 50
-
-
-27: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 27
-	command : ADD ARC . option_list coord coord coord EOC  (12)
-	option_list : .  (28)
-
-	OPTION  shift 49
-	NUMBER  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 51
 
 
-28: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 28
-	command : ADD CIRC . option_list coord coord EOC  (13)
-	option_list : .  (28)
+27: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 27
+	command : ADD ARC . option_list coord coord coord ';'  (12)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 52
 
 
-state 29
-	command : ADD INST . FILE_NAME option_list coord EOC  (20)
+28: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 28
+	command : ADD CIRC . option_list coord coord ';'  (13)
+	option_list : .  (29)
 
-	FILE_NAME  shift 53
+	OPTION  shift 50
+	NUMBER  reduce 29
+
+	option_list  goto 53
+
+
+state 29
+	command : ADD INST . FILE_NAME option_list coord ';'  (20)
+
+	FILE_NAME  shift 54
 	.  error
 
 
-30: shift/reduce conflict (shift 49, reduce 28) on OPTION
+30: shift/reduce conflict (shift 50, reduce 29) on OPTION
 state 30
-	command : ADD LINE . option_list coord_list EOC  (14)
-	option_list : .  (28)
+	command : ADD LINE . option_list coord_list ';'  (14)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
-
-	option_list  goto 54
-
-
-31: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 31
-	command : ADD NOTE . option_list QUOTED coord EOC  (15)
-	option_list : .  (28)
-
-	OPTION  shift 49
-	QUOTED  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 55
 
 
-32: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 32
-	command : ADD OVAL . option_list coord coord coord EOC  (16)
-	option_list : .  (28)
+31: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 31
+	command : ADD NOTE . option_list QUOTED coord ';'  (15)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
+	OPTION  shift 50
+	QUOTED  reduce 29
 
 	option_list  goto 56
 
 
-33: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 33
-	command : ADD POLY . option_list coord_list EOC  (17)
-	option_list : .  (28)
+32: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 32
+	command : ADD OVAL . option_list coord coord coord ';'  (16)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 57
 
 
-34: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 34
-	command : ADD RECT . option_list coord coord EOC  (18)
-	option_list : .  (28)
+33: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 33
+	command : ADD POLY . option_list coord_list ';'  (17)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 58
 
 
-35: shift/reduce conflict (shift 49, reduce 28) on OPTION
-state 35
-	command : ADD TEXT . option_list QUOTED coord EOC  (19)
-	option_list : .  (28)
+34: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 34
+	command : ADD RECT . option_list coord coord ';'  (18)
+	option_list : .  (29)
 
-	OPTION  shift 49
-	QUOTED  reduce 28
+	OPTION  shift 50
+	NUMBER  reduce 29
 
 	option_list  goto 59
 
 
+35: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 35
+	command : ADD TEXT . option_list QUOTED coord ';'  (19)
+	option_list : .  (29)
+
+	OPTION  shift 50
+	QUOTED  reduce 29
+
+	option_list  goto 60
+
+
 state 36
-	command : SAVE EOC .  (22)
+	command : SAVE ';' .  (22)
 
 	.  reduce 22
 
 
 state 37
-	command : EXIT EOC .  (24)
+	command : EXIT ';' .  (25)
 
-	.  reduce 24
+	.  reduce 25
 
 
 state 38
-	command : PURGE FILE_NAME . EOC  (23)
-	EOC : .  (34)
+	command : PURGE FILE_NAME . ';'  (23)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 60
+	';'  shift 61
+	.  error
 
 
 state 39
+	command : '$' '$' . '$' '$' FILE_NAME  (24)
+
+	'$'  shift 62
+	.  error
+
+
+state 40
 	command_list : command_list command .  (3)
 
 	.  reduce 3
 
 
-state 40
-	command : FILES file_name_list '$' . EOC  (4)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 61
-
-
 state 41
-	file_name_list : file_name_list ',' . FILE_NAME  (27)
+	command : FILES file_name_list '$' . ';'  (4)
 
-	FILE_NAME  shift 62
+	';'  shift 63
 	.  error
 
 
 state 42
-	command : EDIT FILE_NAME EOC .  (5)
+	file_name_list : file_name_list ',' . FILE_NAME  (28)
+
+	FILE_NAME  shift 64
+	.  error
+
+
+state 43
+	command : EDIT FILE_NAME ';' .  (5)
 
 	.  reduce 5
 
 
-state 43
-	command : SHOW ALL EOC .  (6)
+state 44
+	command : SHOW ALL ';' .  (6)
 
 	.  reduce 6
 
 
-state 44
-	command : LOCK NUMBER EOC .  (7)
+state 45
+	command : LOCK NUMBER ';' .  (7)
 
 	.  reduce 7
 
 
-state 45
-	command : GRID NUMBER NUMBER . NUMBER ',' NUMBER EOC  (8)
-
-	NUMBER  shift 63
-	.  error
-
-
 state 46
-	command : GRID NUMBER ',' . NUMBER NUMBER ',' NUMBER EOC  (9)
-
-	NUMBER  shift 64
-	.  error
-
-
-state 47
-	command : LEVEL NUMBER EOC .  (10)
-
-	.  reduce 10
-
-
-state 48
-	command : WINDOW NUMBER ',' . NUMBER NUMBER ',' NUMBER EOC  (11)
+	command : GRID NUMBER NUMBER . NUMBER ',' NUMBER ';'  (8)
 
 	NUMBER  shift 65
 	.  error
 
 
-state 49
-	option_list : OPTION .  (29)
+state 47
+	command : GRID NUMBER ',' . NUMBER NUMBER ',' NUMBER ';'  (9)
 
-	.  reduce 29
+	NUMBER  shift 66
+	.  error
+
+
+state 48
+	command : LEVEL NUMBER ';' .  (10)
+
+	.  reduce 10
+
+
+state 49
+	command : WINDOW NUMBER ',' . NUMBER NUMBER ',' NUMBER ';'  (11)
+
+	NUMBER  shift 67
+	.  error
 
 
 state 50
-	command : ADD FILE_NAME option_list . coord EOC  (21)
-	option_list : option_list . OPTION  (30)
+	option_list : OPTION .  (30)
 
-	NUMBER  shift 66
-	OPTION  shift 67
-	.  error
-
-	coord  goto 68
+	.  reduce 30
 
 
 state 51
-	command : ADD ARC option_list . coord coord coord EOC  (12)
-	option_list : option_list . OPTION  (30)
+	command : ADD FILE_NAME option_list . coord ';'  (21)
+	option_list : option_list . OPTION  (31)
 
-	NUMBER  shift 66
-	OPTION  shift 67
-	.  error
-
-	coord  goto 69
-
-
-state 52
-	command : ADD CIRC option_list . coord coord EOC  (13)
-	option_list : option_list . OPTION  (30)
-
-	NUMBER  shift 66
-	OPTION  shift 67
+	NUMBER  shift 68
+	OPTION  shift 69
 	.  error
 
 	coord  goto 70
 
 
-53: shift/reduce conflict (shift 49, reduce 28) on OPTION
+state 52
+	command : ADD ARC option_list . coord coord coord ';'  (12)
+	option_list : option_list . OPTION  (31)
+
+	NUMBER  shift 68
+	OPTION  shift 69
+	.  error
+
+	coord  goto 71
+
+
 state 53
-	command : ADD INST FILE_NAME . option_list coord EOC  (20)
-	option_list : .  (28)
+	command : ADD CIRC option_list . coord coord ';'  (13)
+	option_list : option_list . OPTION  (31)
 
-	OPTION  shift 49
-	NUMBER  reduce 28
-
-	option_list  goto 71
-
-
-state 54
-	command : ADD LINE option_list . coord_list EOC  (14)
-	option_list : option_list . OPTION  (30)
-
-	NUMBER  shift 66
-	OPTION  shift 67
+	NUMBER  shift 68
+	OPTION  shift 69
 	.  error
 
 	coord  goto 72
-	coord_list  goto 73
+
+
+54: shift/reduce conflict (shift 50, reduce 29) on OPTION
+state 54
+	command : ADD INST FILE_NAME . option_list coord ';'  (20)
+	option_list : .  (29)
+
+	OPTION  shift 50
+	NUMBER  reduce 29
+
+	option_list  goto 73
 
 
 state 55
-	command : ADD NOTE option_list . QUOTED coord EOC  (15)
-	option_list : option_list . OPTION  (30)
+	command : ADD LINE option_list . coord_list ';'  (14)
+	option_list : option_list . OPTION  (31)
 
-	QUOTED  shift 74
-	OPTION  shift 67
+	NUMBER  shift 68
+	OPTION  shift 69
 	.  error
+
+	coord  goto 74
+	coord_list  goto 75
 
 
 state 56
-	command : ADD OVAL option_list . coord coord coord EOC  (16)
-	option_list : option_list . OPTION  (30)
+	command : ADD NOTE option_list . QUOTED coord ';'  (15)
+	option_list : option_list . OPTION  (31)
 
-	NUMBER  shift 66
-	OPTION  shift 67
+	QUOTED  shift 76
+	OPTION  shift 69
 	.  error
-
-	coord  goto 75
 
 
 state 57
-	command : ADD POLY option_list . coord_list EOC  (17)
-	option_list : option_list . OPTION  (30)
+	command : ADD OVAL option_list . coord coord coord ';'  (16)
+	option_list : option_list . OPTION  (31)
 
-	NUMBER  shift 66
-	OPTION  shift 67
-	.  error
-
-	coord  goto 72
-	coord_list  goto 76
-
-
-state 58
-	command : ADD RECT option_list . coord coord EOC  (18)
-	option_list : option_list . OPTION  (30)
-
-	NUMBER  shift 66
-	OPTION  shift 67
+	NUMBER  shift 68
+	OPTION  shift 69
 	.  error
 
 	coord  goto 77
 
 
-state 59
-	command : ADD TEXT option_list . QUOTED coord EOC  (19)
-	option_list : option_list . OPTION  (30)
+state 58
+	command : ADD POLY option_list . coord_list ';'  (17)
+	option_list : option_list . OPTION  (31)
 
-	QUOTED  shift 78
-	OPTION  shift 67
+	NUMBER  shift 68
+	OPTION  shift 69
 	.  error
+
+	coord  goto 74
+	coord_list  goto 78
+
+
+state 59
+	command : ADD RECT option_list . coord coord ';'  (18)
+	option_list : option_list . OPTION  (31)
+
+	NUMBER  shift 68
+	OPTION  shift 69
+	.  error
+
+	coord  goto 79
 
 
 state 60
-	command : PURGE FILE_NAME EOC .  (23)
+	command : ADD TEXT option_list . QUOTED coord ';'  (19)
+	option_list : option_list . OPTION  (31)
+
+	QUOTED  shift 80
+	OPTION  shift 69
+	.  error
+
+
+state 61
+	command : PURGE FILE_NAME ';' .  (23)
 
 	.  reduce 23
 
 
-state 61
-	command : FILES file_name_list '$' EOC .  (4)
+state 62
+	command : '$' '$' '$' . '$' FILE_NAME  (24)
+
+	'$'  shift 81
+	.  error
+
+
+state 63
+	command : FILES file_name_list '$' ';' .  (4)
 
 	.  reduce 4
 
 
-state 62
-	file_name_list : file_name_list ',' FILE_NAME .  (27)
-
-	.  reduce 27
-
-
-state 63
-	command : GRID NUMBER NUMBER NUMBER . ',' NUMBER EOC  (8)
-
-	','  shift 79
-	.  error
-
-
 state 64
-	command : GRID NUMBER ',' NUMBER . NUMBER ',' NUMBER EOC  (9)
+	file_name_list : file_name_list ',' FILE_NAME .  (28)
 
-	NUMBER  shift 80
-	.  error
+	.  reduce 28
 
 
 state 65
-	command : WINDOW NUMBER ',' NUMBER . NUMBER ',' NUMBER EOC  (11)
-
-	NUMBER  shift 81
-	.  error
-
-
-state 66
-	coord : NUMBER . ',' NUMBER  (31)
+	command : GRID NUMBER NUMBER NUMBER . ',' NUMBER ';'  (8)
 
 	','  shift 82
 	.  error
 
 
-state 67
-	option_list : option_list OPTION .  (30)
+state 66
+	command : GRID NUMBER ',' NUMBER . NUMBER ',' NUMBER ';'  (9)
 
-	.  reduce 30
+	NUMBER  shift 83
+	.  error
+
+
+state 67
+	command : WINDOW NUMBER ',' NUMBER . NUMBER ',' NUMBER ';'  (11)
+
+	NUMBER  shift 84
+	.  error
 
 
 state 68
-	command : ADD FILE_NAME option_list coord . EOC  (21)
-	EOC : .  (34)
+	coord : NUMBER . ',' NUMBER  (32)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 83
+	','  shift 85
+	.  error
 
 
 state 69
-	command : ADD ARC option_list coord . coord coord EOC  (12)
+	option_list : option_list OPTION .  (31)
 
-	NUMBER  shift 66
-	.  error
-
-	coord  goto 84
+	.  reduce 31
 
 
 state 70
-	command : ADD CIRC option_list coord . coord EOC  (13)
+	command : ADD FILE_NAME option_list coord . ';'  (21)
 
-	NUMBER  shift 66
+	';'  shift 86
 	.  error
-
-	coord  goto 85
 
 
 state 71
-	command : ADD INST FILE_NAME option_list . coord EOC  (20)
-	option_list : option_list . OPTION  (30)
+	command : ADD ARC option_list coord . coord coord ';'  (12)
 
-	NUMBER  shift 66
-	OPTION  shift 67
-	.  error
-
-	coord  goto 86
-
-
-state 72
-	coord_list : coord . coord  (32)
-
-	NUMBER  shift 66
+	NUMBER  shift 68
 	.  error
 
 	coord  goto 87
 
 
-state 73
-	command : ADD LINE option_list coord_list . EOC  (14)
-	coord_list : coord_list . coord  (33)
-	EOC : .  (34)
+state 72
+	command : ADD CIRC option_list coord . coord ';'  (13)
 
-	NUMBER  shift 66
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
+	NUMBER  shift 68
+	.  error
 
 	coord  goto 88
-	EOC  goto 89
+
+
+state 73
+	command : ADD INST FILE_NAME option_list . coord ';'  (20)
+	option_list : option_list . OPTION  (31)
+
+	NUMBER  shift 68
+	OPTION  shift 69
+	.  error
+
+	coord  goto 89
 
 
 state 74
-	command : ADD NOTE option_list QUOTED . coord EOC  (15)
+	coord_list : coord . coord  (33)
 
-	NUMBER  shift 66
+	NUMBER  shift 68
 	.  error
 
 	coord  goto 90
 
 
 state 75
-	command : ADD OVAL option_list coord . coord coord EOC  (16)
+	command : ADD LINE option_list coord_list . ';'  (14)
+	coord_list : coord_list . coord  (34)
 
-	NUMBER  shift 66
+	NUMBER  shift 68
+	';'  shift 91
 	.  error
 
-	coord  goto 91
+	coord  goto 92
 
 
 state 76
-	command : ADD POLY option_list coord_list . EOC  (17)
-	coord_list : coord_list . coord  (33)
-	EOC : .  (34)
+	command : ADD NOTE option_list QUOTED . coord ';'  (15)
 
-	NUMBER  shift 66
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	coord  goto 88
-	EOC  goto 92
-
-
-state 77
-	command : ADD RECT option_list coord . coord EOC  (18)
-
-	NUMBER  shift 66
+	NUMBER  shift 68
 	.  error
 
 	coord  goto 93
 
 
-state 78
-	command : ADD TEXT option_list QUOTED . coord EOC  (19)
+state 77
+	command : ADD OVAL option_list coord . coord coord ';'  (16)
 
-	NUMBER  shift 66
+	NUMBER  shift 68
 	.  error
 
 	coord  goto 94
 
 
-state 79
-	command : GRID NUMBER NUMBER NUMBER ',' . NUMBER EOC  (8)
+state 78
+	command : ADD POLY option_list coord_list . ';'  (17)
+	coord_list : coord_list . coord  (34)
 
-	NUMBER  shift 95
+	NUMBER  shift 68
+	';'  shift 95
 	.  error
+
+	coord  goto 92
+
+
+state 79
+	command : ADD RECT option_list coord . coord ';'  (18)
+
+	NUMBER  shift 68
+	.  error
+
+	coord  goto 96
 
 
 state 80
-	command : GRID NUMBER ',' NUMBER NUMBER . ',' NUMBER EOC  (9)
+	command : ADD TEXT option_list QUOTED . coord ';'  (19)
 
-	','  shift 96
+	NUMBER  shift 68
 	.  error
+
+	coord  goto 97
 
 
 state 81
-	command : WINDOW NUMBER ',' NUMBER NUMBER . ',' NUMBER EOC  (11)
+	command : '$' '$' '$' '$' . FILE_NAME  (24)
 
-	','  shift 97
+	FILE_NAME  shift 98
 	.  error
 
 
 state 82
-	coord : NUMBER ',' . NUMBER  (31)
+	command : GRID NUMBER NUMBER NUMBER ',' . NUMBER ';'  (8)
 
-	NUMBER  shift 98
+	NUMBER  shift 99
 	.  error
 
 
 state 83
-	command : ADD FILE_NAME option_list coord EOC .  (21)
+	command : GRID NUMBER ',' NUMBER NUMBER . ',' NUMBER ';'  (9)
+
+	','  shift 100
+	.  error
+
+
+state 84
+	command : WINDOW NUMBER ',' NUMBER NUMBER . ',' NUMBER ';'  (11)
+
+	','  shift 101
+	.  error
+
+
+state 85
+	coord : NUMBER ',' . NUMBER  (32)
+
+	NUMBER  shift 102
+	.  error
+
+
+state 86
+	command : ADD FILE_NAME option_list coord ';' .  (21)
 
 	.  reduce 21
 
 
-state 84
-	command : ADD ARC option_list coord coord . coord EOC  (12)
-
-	NUMBER  shift 66
-	.  error
-
-	coord  goto 99
-
-
-state 85
-	command : ADD CIRC option_list coord coord . EOC  (13)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 100
-
-
-state 86
-	command : ADD INST FILE_NAME option_list coord . EOC  (20)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 101
-
-
 state 87
-	coord_list : coord coord .  (32)
+	command : ADD ARC option_list coord coord . coord ';'  (12)
 
-	.  reduce 32
-
-
-state 88
-	coord_list : coord_list coord .  (33)
-
-	.  reduce 33
-
-
-state 89
-	command : ADD LINE option_list coord_list EOC .  (14)
-
-	.  reduce 14
-
-
-state 90
-	command : ADD NOTE option_list QUOTED coord . EOC  (15)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 102
-
-
-state 91
-	command : ADD OVAL option_list coord coord . coord EOC  (16)
-
-	NUMBER  shift 66
+	NUMBER  shift 68
 	.  error
 
 	coord  goto 103
 
 
+state 88
+	command : ADD CIRC option_list coord coord . ';'  (13)
+
+	';'  shift 104
+	.  error
+
+
+state 89
+	command : ADD INST FILE_NAME option_list coord . ';'  (20)
+
+	';'  shift 105
+	.  error
+
+
+state 90
+	coord_list : coord coord .  (33)
+
+	.  reduce 33
+
+
+state 91
+	command : ADD LINE option_list coord_list ';' .  (14)
+
+	.  reduce 14
+
+
 state 92
-	command : ADD POLY option_list coord_list EOC .  (17)
+	coord_list : coord_list coord .  (34)
+
+	.  reduce 34
+
+
+state 93
+	command : ADD NOTE option_list QUOTED coord . ';'  (15)
+
+	';'  shift 106
+	.  error
+
+
+state 94
+	command : ADD OVAL option_list coord coord . coord ';'  (16)
+
+	NUMBER  shift 68
+	.  error
+
+	coord  goto 107
+
+
+state 95
+	command : ADD POLY option_list coord_list ';' .  (17)
 
 	.  reduce 17
 
 
-state 93
-	command : ADD RECT option_list coord coord . EOC  (18)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 104
-
-
-state 94
-	command : ADD TEXT option_list QUOTED coord . EOC  (19)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 105
-
-
-state 95
-	command : GRID NUMBER NUMBER NUMBER ',' NUMBER . EOC  (8)
-	EOC : .  (34)
-
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 106
-
-
 state 96
-	command : GRID NUMBER ',' NUMBER NUMBER ',' . NUMBER EOC  (9)
+	command : ADD RECT option_list coord coord . ';'  (18)
 
-	NUMBER  shift 107
+	';'  shift 108
 	.  error
 
 
 state 97
-	command : WINDOW NUMBER ',' NUMBER NUMBER ',' . NUMBER EOC  (11)
+	command : ADD TEXT option_list QUOTED coord . ';'  (19)
 
-	NUMBER  shift 108
+	';'  shift 109
 	.  error
 
 
 state 98
-	coord : NUMBER ',' NUMBER .  (31)
+	command : '$' '$' '$' '$' FILE_NAME .  (24)
 
-	.  reduce 31
+	.  reduce 24
 
 
 state 99
-	command : ADD ARC option_list coord coord coord . EOC  (12)
-	EOC : .  (34)
+	command : GRID NUMBER NUMBER NUMBER ',' NUMBER . ';'  (8)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 109
+	';'  shift 110
+	.  error
 
 
 state 100
-	command : ADD CIRC option_list coord coord EOC .  (13)
+	command : GRID NUMBER ',' NUMBER NUMBER ',' . NUMBER ';'  (9)
+
+	NUMBER  shift 111
+	.  error
+
+
+state 101
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' . NUMBER ';'  (11)
+
+	NUMBER  shift 112
+	.  error
+
+
+state 102
+	coord : NUMBER ',' NUMBER .  (32)
+
+	.  reduce 32
+
+
+state 103
+	command : ADD ARC option_list coord coord coord . ';'  (12)
+
+	';'  shift 113
+	.  error
+
+
+state 104
+	command : ADD CIRC option_list coord coord ';' .  (13)
 
 	.  reduce 13
 
 
-state 101
-	command : ADD INST FILE_NAME option_list coord EOC .  (20)
+state 105
+	command : ADD INST FILE_NAME option_list coord ';' .  (20)
 
 	.  reduce 20
 
 
-state 102
-	command : ADD NOTE option_list QUOTED coord EOC .  (15)
+state 106
+	command : ADD NOTE option_list QUOTED coord ';' .  (15)
 
 	.  reduce 15
 
 
-state 103
-	command : ADD OVAL option_list coord coord coord . EOC  (16)
-	EOC : .  (34)
+state 107
+	command : ADD OVAL option_list coord coord coord . ';'  (16)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 110
+	';'  shift 114
+	.  error
 
 
-state 104
-	command : ADD RECT option_list coord coord EOC .  (18)
+state 108
+	command : ADD RECT option_list coord coord ';' .  (18)
 
 	.  reduce 18
 
 
-state 105
-	command : ADD TEXT option_list QUOTED coord EOC .  (19)
+state 109
+	command : ADD TEXT option_list QUOTED coord ';' .  (19)
 
 	.  reduce 19
 
 
-state 106
-	command : GRID NUMBER NUMBER NUMBER ',' NUMBER EOC .  (8)
+state 110
+	command : GRID NUMBER NUMBER NUMBER ',' NUMBER ';' .  (8)
 
 	.  reduce 8
 
 
-state 107
-	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER . EOC  (9)
-	EOC : .  (34)
+state 111
+	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER . ';'  (9)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 111
+	';'  shift 115
+	.  error
 
 
-state 108
-	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER . EOC  (11)
-	EOC : .  (34)
+state 112
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER . ';'  (11)
 
-	';'  shift 16
-	$end  reduce 34
-	error  reduce 34
-	FILES  reduce 34
-	EDIT  reduce 34
-	SHOW  reduce 34
-	LOCK  reduce 34
-	GRID  reduce 34
-	LEVEL  reduce 34
-	WINDOW  reduce 34
-	ADD  reduce 34
-	SAVE  reduce 34
-	EXIT  reduce 34
-	PURGE  reduce 34
-
-	EOC  goto 112
+	';'  shift 116
+	.  error
 
 
-state 109
-	command : ADD ARC option_list coord coord coord EOC .  (12)
+state 113
+	command : ADD ARC option_list coord coord coord ';' .  (12)
 
 	.  reduce 12
 
 
-state 110
-	command : ADD OVAL option_list coord coord coord EOC .  (16)
+state 114
+	command : ADD OVAL option_list coord coord coord ';' .  (16)
 
 	.  reduce 16
 
 
-state 111
-	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER EOC .  (9)
+state 115
+	command : GRID NUMBER ',' NUMBER NUMBER ',' NUMBER ';' .  (9)
 
 	.  reduce 9
 
 
-state 112
-	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER EOC .  (11)
+state 116
+	command : WINDOW NUMBER ',' NUMBER NUMBER ',' NUMBER ';' .  (11)
 
 	.  reduce 11
 
@@ -1296,8 +996,8 @@ State 32 contains 1 shift/reduce conflict.
 State 33 contains 1 shift/reduce conflict.
 State 34 contains 1 shift/reduce conflict.
 State 35 contains 1 shift/reduce conflict.
-State 53 contains 1 shift/reduce conflict.
+State 54 contains 1 shift/reduce conflict.
 
 
-31 terminals, 9 nonterminals
-36 grammar rules, 113 states
+31 terminals, 8 nonterminals
+35 grammar rules, 117 states

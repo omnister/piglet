@@ -31,8 +31,6 @@ W		[\t ]*
 #define token(x)    x
 #endif DEBUG
 
-int layer=0;	/* default layer storage */
-
 %}
 
 %%
@@ -64,76 +62,36 @@ int layer=0;	/* default layer storage */
 ^WIN			return token(WINDOW);
 ^ADD			return token(ADD);
 
-A{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+A{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(ARC);
 			}
-C{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+C{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(CIRC);
 			}
-L{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+L{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(LINE);
 			}
-N{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+N{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(NOTE);
 			}	
-O{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+O{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(OVAL);
 			}
-P{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+P{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(POLY);
 			}
-R{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+R{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(RECT);
 			}
-T{D}*			{
-			    if (strlen(yytext) == 1) {
-				yylval.num = layer;
-			    } else {
-				sscanf(yytext+1, "%lf", &yylval.num);
-				layer = yylval.num;
-			    }
+T{D}+			{
+			    sscanf(yytext+1, "%lf", &yylval.num);
 			    return token(TEXT);
 			}
 
@@ -148,7 +106,7 @@ I			{
 ^PUR[G]			|
 ^PURG[E]		return token(PURGE);
 
-[.:@]{L}[^ \t\n]+	{
+[.:@]+{L}[^ \t\n]*	{
 			    yylval.name = strsave(yytext); 
 			    return token(OPTION);
 			}

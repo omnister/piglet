@@ -1434,10 +1434,11 @@ NUM x,y;	/* location in real coordinate space */
     xx = x*transform->r11 + y*transform->r21 + transform->dx;
     yy = x*transform->r12 + y*transform->r22 + transform->dy;
 
+    printf("%4.6g %4.6g\n",xx,yy);	/* autoplot output */
+
     if (X) {
 	if (nseg) {
-	    ;
-	    /* xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy); /* for X*/
+	    /* xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
 	}
 	xxold=xx;
 	yyold=yy;

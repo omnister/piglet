@@ -1,25 +1,20 @@
 #include <stdlib.h>
-#include <stdio.h>
 
 /* definition of hierarchical editor data structures */
 
 /*
  *   (this chain from HEAD is the cell definition symbol table)
  *
- *   all insertions are made at TAIL to avoid reversing definition order
- *   everytime an archive is made and retrieved (a classic HP Piglet bug)
- *
- *
  *                                              TAIL--|
  *                                                    v 
- *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
+ *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->0
  *                           |                |                  |
  *                           |               ...                ...
  *                           v
- *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->NULL
+ *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->0
  *                                  |    |    |
  *                                  |    |    v
- *                                  |    v  [db_inst] (recursive call)
+ *                                  |    v  [db_inst]
  *                                  v  [db_line]
  *                                [db_rect]
  *
@@ -59,9 +54,6 @@ typedef struct xform {
 
 typedef struct db_tab {
     char *name;             	/* cell name */
-    double minx,miny;		/* for bounding box computation */
-    double maxx,maxy;		/* ... */
-    int modified;		/* for EXIT/SAVE and bounding box usage */
     int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
@@ -146,118 +138,35 @@ typedef struct db_deflist {
     struct db_deflist *next;    /* to link to another */
 } DB_DEFLIST;
             
-extern char *strsave( char *string );
+extern char *emalloc();
+extern char *strsave();
 
-extern void append_pair( PAIR p );
-extern void discard_pairs( void );
-extern COORDS *pair_alloc( PAIR p );
+extern void append_pair();
+extern void discard_pairs();
+extern COORDS *pair_alloc();
 extern COORDS *first_pair, *last_pair; 
 
-extern void append_opt( char *s );
-extern void discard_opts( void );
-extern OPTS   *opt_alloc( char *s );
+extern void append_opt();
+extern void discard_opts();
+extern OPTS   *opt_alloc();
 extern OPTS   *first_opt, *last_opt; 
 
-extern DB_TAB *db_lookup( char *cellname );
-extern DB_TAB *db_install( char *cellname ); 
+extern DB_TAB *db_lookup();
+extern DB_TAB *db_install(); 
 
-extern int db_add_arc(  
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		NUM x1, NUM y1,
-		NUM x2, NUM y2,
-		NUM x3, NUM y3
-	    );
+extern int db_add_arc();
+extern int db_add_circ();
+extern int db_add_inst();
+extern int db_add_line();
+extern int db_add_note();
+extern int db_add_oval();
+extern int db_add_poly();
+extern int db_add_rect();
+extern int db_add_text();
 
-extern int db_add_circ(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		NUM x1, NUM y1,
-		NUM x2, NUM y2
-	    );
-
-extern int db_add_inst(
-		DB_TAB *cell, 
-		DB_TAB *subcell, 
-		OPTS *opts,
-		NUM x, NUM y
-	    );
-
-extern int db_add_line(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		COORDS *coords
-	    );
-
-extern int db_add_note(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		char *string,
-		NUM x, NUM y      
-	    );
-
-extern int db_add_oval(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		NUM x1, NUM y1, 
-		NUM x2, NUM y2, 
-		NUM x3, NUM y3
-	    );
-
-extern int db_add_poly(
-		DB_TAB *cell,
-                int layer,
-                OPTS *opts,
-                COORDS *coords    
-	    );
-
-extern int db_add_rect(
-		DB_TAB *cell,
-                int layer,
-                OPTS *opts,
-                NUM x1, NUM y1,
-                NUM x2, NUM y2
-	    );
-
-extern int db_add_text(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		char *string,
-		NUM x, NUM y      
-	    );
-
-extern int db_save(
-		DB_TAB *sp
-	    );
-
-extern int db_def_print(
-		FILE *fp,
-		DB_TAB *dp
-	    );
-
-extern int db_def_archive(
-		DB_TAB *sp
-	    );
-
-extern int db_render(
-		DB_TAB *cell,
-		XFORM *xf,      /* coordinate transform matrix */
-		int nest
-	    );
-
-extern void draw( NUM x, NUM y);
-extern void jump(void);
+extern int db_print();
+extern int db_def_print();
+extern int db_def_archive();
+extern int db_render();
 
 /********************************************************/
-/* keep track of current rep */
-/* extern DB_TAB *currep; */
-
-/* scratch pointer for new rep */
-/* extern DB_TAB *newrep; */
-
