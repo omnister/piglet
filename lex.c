@@ -1316,7 +1316,13 @@ char *arg;
 		printf("saved %s\n", currep->name);
 		currep->modified = 0;
 	    } else {
-		printf("SAVE: cell not modified - no save done\n");
+		/* printf("SAVE: cell not modified - no save done\n"); */
+		/* I decided to let the save proceed, to store window, lock and grid */
+		if (db_save(currep, currep->name)) {
+		    printf("unable to save %s\n", currep->name);
+		}
+		printf("saved %s\n", currep->name);
+		currep->modified = 0;
 	    }
 	} else {		/* save copy to a different name */
 	    if (db_save(currep, name)) {

@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.17 2004/01/26 03:06:36 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.18 2004/01/27 23:58:39 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -204,7 +204,7 @@ int initX()
     x=y=2*border_width;
 
     /* Size window */
-    top_width = dpy_width/2, top_height = dpy_height/2;
+    top_width = 4*dpy_width/5, top_height = 4*dpy_height/5;
 
     /* figure out menu sizes */
     string = menu_label[6];

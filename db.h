@@ -77,10 +77,10 @@ typedef struct db_tab {
     double minx,miny;		/* for bounding box computation */
     double maxx,maxy;		/* ... */
 
-    /* FIXME: put hooks to store grid settings in this structure */
-    /* the grid in use at time of SAVE should be put in the disk */
+    /* grid settings for each cell are stored in this structure  */
+    /* the grid in use at time of SAVE is put in the disk */
     /* archive with a GRID command.  When you edit a cell in memory */
-    /* the edit should automatically use the remembered grid */
+    /* the edit automatically re-uses the remembered grid */
 
     double grid_xd;
     double grid_yd;
@@ -123,6 +123,11 @@ extern void discard_opts( void );
 extern OPTS *opt_alloc( char *s );
 extern OPTS *first_opt, *last_opt; 
 
+#define MIRROR_OFF 0
+#define MIRROR_X   1
+#define MIRROR_Y   2
+#define MIRROR_XY  3
+
 typedef struct db_arc {
     int layer;
     OPTS *opts;
@@ -136,8 +141,7 @@ typedef struct db_circ {
 } DB_CIRC; 
 
 typedef struct db_inst {
-    /* struct db_tab *def; */
-    char *name;
+    char *name; 	    /* was struct db_tab *def; */
     OPTS *opts;
     NUM x,y;
 } DB_INST; 
@@ -173,8 +177,12 @@ typedef struct db_text {
     NUM x,y;
 } DB_TEXT; 
 
-
 /********************************************************/
+
+/* FIXME: I've added prev pointer to this structure, but the
+   associated support routines do not yet support a doubly linked list
+   structure.  They will need to be upgraded to allow easy deletes of
+   primitives in a cell structure */
 
 typedef struct db_deflist {
     short   type;
@@ -188,7 +196,9 @@ typedef struct db_deflist {
         DB_RECT *r;  /* rectangle definition */
         DB_TEXT *t;  /* text & note definition */
     } u;
+    NUM minx, miny, maxx, maxy; /* wrapper bounds for screening extents */
     struct db_deflist *next;    /* to link to another */
+    struct db_deflist *prev;    /* to link to another */
 } DB_DEFLIST;
             
 extern char *strsave( char *string );
@@ -197,11 +207,6 @@ extern void append_pair( PAIR p );
 extern void discard_pairs( void );
 extern COORDS *pair_alloc( PAIR p );
 extern COORDS *first_pair, *last_pair; 
-
-#define MIRROR_OFF 0
-#define MIRROR_X   1
-#define MIRROR_Y   2
-#define MIRROR_XY  3
 
 
 extern DB_TAB *db_lookup( char *cellname );
@@ -286,6 +291,7 @@ extern int db_def_archive(
 	    );
 
 extern void db_set_nest(int nest); 	/* set global display nest level */
+extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
 extern int db_render(
 		DB_TAB *cell,
