@@ -126,15 +126,3 @@ OPTS *popt;
     return(1);
 }
 
-/*
-  ADD Elayer [:Wwidth] [:Rres] xy1 xy2 xy3 EOC
-x ADD Clayer [:Wwidth] [:Rres] xy1 xy2 EOC
-x ADD Llayer [:Wwidth] xy1 xy2 [xy3 ...]  EOC
-x ADD Nlayer [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC
-  ADD Olayer [:Wwidth] [:Rres] xy1 xy2 xy3 EOC
-x ADD Player [:Wwidth] xy1 xy2 xy3 [xy4 ...] EOC
-x ADD Rlayer [:Wwidth] xy1 xy2 EOC
-x ADD Tlayer [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string"  xy1 EOC
-x ADD [I] devicename [:M] [:R] [:X] [:Y] [:Z] [:Snx ny xstep ystep] xy1 EOC
-*/
-

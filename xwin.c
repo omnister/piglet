@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.1 2004/01/16 12:00:00 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.13 2004/01/18 18:10:32 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -529,6 +529,9 @@ int line;
     int dash_offset;
     int line_style;
     char dash_list[5];
+
+    /* FIXME: line types are turned off for now .... */
+    line = 0;	/* for now turn off dashed line types */
 
     /* FIXME: should avoid accessing out of bounds of colors[]
      * also should cache different pen colors to avoid having to keep

@@ -40,56 +40,56 @@ typedef struct {
 COMMAND commands[] =
 {
     {"ADD", com_add, "add a component to the current device"},
-    {"ARChive", com_archive, "create an archive file of the specified device"},
-    {"AREa", com_area, "calculate and display the area of selected component"},
-    {"BACkground", com_background, "specified device for background overlay"},
+    {"ARChIVE", com_archive, "create an archive file of the specified device"},
+    {"AREA", com_area, "calculate and display the area of selected component"},
+    {"BACKGROUND", com_background, "specified device for background overlay"},
     {"BYE", com_bye, "terminate edit session"},
-    {"CHAnge", com_change, "change characteristics of selected components"},
-    {"COPy", com_copy, "copy a component from one location to another"},
-    {"DEFine", com_define, "define a macro"},
-    {"DELete", com_delete, "delete a component from the current device"},
-    {"DISplay", com_display, "turn the display on or off"},
-    {"DISTance", com_distance, "measure the distance between two points"},
-    {"EDIt", com_edit, "begin edit of an old or new device"},
-    {"EQUate", com_equate, "define characteristics of a mask layer"},
-    {"EXIt", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
-    {"$FILes", com_files, "purge named files"},
-    {"GRId", com_grid, "set grid spacing or turn grid on/off"},
-    {"GROup", com_group, "create a device from existing components"},
-    {"HELp", com_help, "print syntax diagram for the specified command"},
+    {"CHANGE", com_change, "change characteristics of selected components"},
+    {"COPY", com_copy, "copy a component from one location to another"},
+    {"DEFINE", com_define, "define a macro"},
+    {"DELETE", com_delete, "delete a component from the current device"},
+    {"DISPLAY", com_display, "turn the display on or off"},
+    {"DISTANCE", com_distance, "measure the distance between two points"},
+    {"EDIT", com_edit, "begin edit of an old or new device"},
+    {"EQUATE", com_equate, "define characteristics of a mask layer"},
+    {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
+    {"$FILES", com_files, "purge named files"},
+    {"GRID", com_grid, "set grid spacing or turn grid on/off"},
+    {"GROUP", com_group, "create a device from existing components"},
+    {"HELP", com_help, "print syntax diagram for the specified command"},
     {"?", com_help, "Synonym for HELP"},
-    {"IDEntify", com_identify, "identify named instances or components"},
-    {"INPut", com_input, "take command input from a file"},
-    {"INTerrupt", com_interrupt, "interrupt an ADD to issue another command"},
-    {"LAYer", com_layer, "set a default layer number"},
-    {"LEVel", com_level, "set the logical level of the current device"},
-    {"LISt", com_list, "list information about the current environment"},
-    {"LOCk", com_lock, "set the default lock angle"},
-    {"MACro", com_macro, "enter the MACRO subsystem"},
-    {"MENu", com_menu, "change or save the current menu"},
-    {"MOVe", com_move, "move a component from one location to another"},
-    {"PLOt", com_plot, "make a plot of the current device"},
-    {"POInt", com_point, "display the specified point on the screen"},
-    {"PROcess", com_process, "enter the PROCESS subsystem"},
-    {"PURge", com_purge, "remove device from memory and disk"},
-    {"QUIt", com_bye, "terminate edit session"},
-    {"RETrieve", com_retrieve, "read commands from an ARCHIVE file"},
-    {"SAVe", com_save, "save the current file or device to disk"},
-    {"SEArch", com_search, "modify the search path"},
+    {"IDENTIFY", com_identify, "identify named instances or components"},
+    {"INPUT", com_input, "take command input from a file"},
+    {"INTERRUPT", com_interrupt, "interrupt an ADD to issue another command"},
+    {"LAYER", com_layer, "set a default layer number"},
+    {"LEVEL", com_level, "set the logical level of the current device"},
+    {"LIST", com_list, "list information about the current environment"},
+    {"LOCK", com_lock, "set the default lock angle"},
+    {"MACRO", com_macro, "enter the MACRO subsystem"},
+    {"MENU", com_menu, "change or save the current menu"},
+    {"MOVE", com_move, "move a component from one location to another"},
+    {"PLOT", com_plot, "make a plot of the current device"},
+    {"POINT", com_point, "display the specified point on the screen"},
+    {"PROCESS", com_process, "enter the PROCESS subsystem"},
+    {"PURGE", com_purge, "remove device from memory and disk"},
+    {"QUIT", com_bye, "terminate edit session"},
+    {"RETRIEVE", com_retrieve, "read commands from an ARCHIVE file"},
+    {"SAVE", com_save, "save the current file or device to disk"},
+    {"SEARCH", com_search, "modify the search path"},
     {"SET", com_set, "set environment variables"},
-    {"SHEll", com_shell, "run a program from within the editor"},
+    {"SHELL", com_shell, "run a program from within the editor"},
     {"!", com_shell, "Synonym for `shell'"},
-    {"SHOw", com_show, "define which kinds of things to display"},
-    {"SMAsh", com_smash, "replace an instance with its components"},
-    {"SPLit", com_split, "cut a component into two halves"},
-    {"STEp", com_step, "copy a component in an array fashion"},
-    {"STRetch", com_stretch, "make a component larger or smaller"},
-    {"TRAce", com_trace, "highlight named signals"},
-    {"UNDo", com_undo, "undo the last command"},
-    {"UNIts", com_units, "set editor resolution and user unit type"},
-    {"VERsion", com_version, "identify the version number of program"},
-    {"WINdow", com_window, "change the current window parameters"},
-    {"WRAp", com_wrap, "create a new device using existing components"},
+    {"SHOW", com_show, "define which kinds of things to display"},
+    {"SMASH", com_smash, "replace an instance with its components"},
+    {"SPLIT", com_split, "cut a component into two halves"},
+    {"STEP", com_step, "copy a component in an array fashion"},
+    {"STRETCH", com_stretch, "make a component larger or smaller"},
+    {"TRACE", com_trace, "highlight named signals"},
+    {"UNDO", com_undo, "undo the last command"},
+    {"UNITS", com_units, "set editor resolution and user unit type"},
+    {"VERSION", com_version, "identify the version number of program"},
+    {"WINDOW", com_window, "change the current window parameters"},
+    {"WRAP", com_wrap, "create a new device using existing components"},
     {(char *) NULL, (Function *) NULL, (char *) NULL}
 };
 
@@ -332,6 +332,7 @@ com_add(LEXER *lp, char *arg)
 		    case 'N':
 			add_note(lp, &layer);
 			break;
+		    case 'E':	/* synonym for oval */
 		    case 'O':
 			add_oval(lp, &layer);
 			break;
@@ -848,37 +849,71 @@ char *arg;
 }
 
 /* Print out help for ARG, or for all commands if ARG is not present. */
+/* FIXME: needs to eat up options by itself.  arg is no longer provided */
+/* ....eat until ";" and give help synopsis for each name found */
+
 com_help(lp, arg)
 LEXER *lp;
 char *arg;
 {
+    TOKEN token;
+    int done=0;
+    int level;
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=1;
     register int i;
     int printed = 0;
+    int size;
 
-    for (i = 0; commands[i].name; i++) {
-	if (!*arg || (strcmp(arg, commands[i].name) == 0)) {
-	    printf("%-12s%s.\n", commands[i].name, commands[i].doc);
-	    printed++;
+	/* xxx */
+
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+	    case CMD:		/* command */
+		if (debug) printf("HELP: got %s\n", word);
+		size = strlen(word);
+		size = size > 2 ? size : 3;
+    
+		for (i = 0; commands[i].name; i++) {
+		    if (strncasecmp(word, commands[i].name, size) == 0) {
+			printf("    %-12s: %s.\n", 
+				commands[i].name, commands[i].doc);
+			printed++;
+		    }
+		} 
+	    	break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+		; /* eat em up! */
+	    	break;
 	}
     }
-
     if (!printed) {
-	printf("No commands match `%s'.  Possibilties are:\n", arg);
-
 	for (i = 0; commands[i].name; i++) {
 	    /* Print in six columns. */
 	    if (printed == 6) {
 		printed = 0;
 		printf("\n");
 	    }
-	    printf("%s\t", commands[i].name);
+	    printf("%-12s", commands[i].name);
 	    printed++;
 	}
-
 	if (printed)
 	    printf("\n");
     }
     return (0);
+
 }
 
 
