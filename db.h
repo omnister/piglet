@@ -204,7 +204,7 @@ typedef struct db_deflist {
         DB_RECT *r;  /* rectangle definition */
         DB_TEXT *t;  /* text & note definition */
     } u;
-    NUM minx, miny, maxx, maxy; /* wrapper bounds for screening extents */
+    NUM xmin, ymin, xmax, ymax; /* wrapper bounds for screening extents */
     struct db_deflist *next;    /* to link to another */
     struct db_deflist *prev;    /* to link to another */
 } DB_DEFLIST;

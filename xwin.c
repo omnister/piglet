@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.20 2004/02/05 03:47:26 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.21 2004/02/07 04:22:10 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -204,7 +204,7 @@ int initX()
     x=y=2*border_width;
 
     /* Size window */
-    top_width = 4*dpy_width/5, top_height = 4*dpy_height/5;
+    top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
 
     /* figure out menu sizes */
     string = menu_label[6];
@@ -813,6 +813,33 @@ int xorig,yorig;	/* grid origin */
     return(0);
 }
 
+void xwin_draw_point(x,y) 
+double x, y;
+{
+    double delta;
+    extern unsigned int width, height;
+    char buf[BUF_SIZE];
+
+    sprintf(buf,"%d,%d", (int) x, (int) y);
+
+    if (width > height) {
+	delta = (double) dpy_width/100;
+    } else {
+	delta = (double) dpy_height/100;
+    }
+
+    R_to_V(&x,&y);
+
+    XDrawLine(dpy, win, gcx, 
+	    (int)x, (int)(y-delta), (int)x, (int)(y+delta));
+    XDrawLine(dpy, win, gcx, 
+	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
+
+    XDrawImageString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
+
+    XFlush(dpy);
+}
+
 void snapxy(x,y)	/* snap to grid tick */
 double *x, *y;
 {
@@ -1238,3 +1265,90 @@ int mode;
         strlen(menu_label[win]));
 }
 
+
+dump_window(window, gc, width, height) 
+Window window;
+GC gc;
+unsigned int width, height;
+{
+    XImage *xi;
+    unsigned long pixelvalue1, pixelvalue2;
+    int x, y;
+    unsigned long pixel;
+    char buf[128];
+    int R,G,B;
+    int fd;
+    int i;
+
+    xi = XGetImage(dpy, win, 0,0, width, height, AllPlanes, ZPixmap);
+
+    printf("width  = %d\n", xi->width );
+    printf("height = %d\n", xi->height);
+
+    if (xi->byte_order == LSBFirst) {
+	printf("byte_order = LSBFirst\n");
+    } else if (xi->byte_order == MSBFirst) {
+	printf("byte_order = MSBFirst\n");
+    } else {
+	printf("unknown byte_order: %d\n", xi->byte_order);
+    }
+
+    printf("bitmap unit=%d\n", xi->bitmap_unit);
+
+    if (xi->bitmap_bit_order == LSBFirst) {
+	printf("bitmap_bit_order = LSBFirst\n");
+    } else if (xi->byte_order == MSBFirst) {
+	printf("bitmap_bit_order = MSBFirst\n");
+    } else {
+	printf("unknown bitmap_bit_order: %d\n", xi->bitmap_bit_order);
+    }
+
+    printf("bitmap pad = %d\n", xi->bitmap_pad);
+    printf("depth = %d\n", xi->depth);
+    printf("bytes_per_line = %d\n", xi->bytes_per_line);
+    printf("bit_per_pixel = %d\n", xi->bits_per_pixel);
+    printf("red mask= %d\n", xi->red_mask);
+    printf("green mask= %d\n", xi->green_mask);
+    printf("blue mask= %d\n", xi->blue_mask);
+
+    printf("dumping to dump.ppm ");
+    fflush(stdout);
+
+    fd = open("dump.ppm", O_WRONLY | O_CREAT | O_TRUNC );
+    sprintf(buf, "P6\n%d\n%d\n%d\n", width, height, 255);
+    write(fd, buf, strlen(buf));
+
+    i=0;
+    for (y=0; y<=height; y++) {
+	for (x=0; x<width; x++) {
+	   if (++i==10000) {
+	       i=0;
+	       printf(".");
+	       fflush(stdout);
+	   }
+	   pixel = XGetPixel(xi, x, y);	
+
+	   R=pixel & xi->red_mask;
+	   R = R>>10;
+	   buf[0] = (unsigned char) 255*R/64;
+
+	   G=pixel & xi->green_mask;
+	   G = G>>5;
+	   buf[1] = (unsigned char) 255*G/64;
+
+	   B=pixel & xi->blue_mask;
+	   buf[2] = (unsigned char) 255*B/32;
+
+	   write(fd, buf, 3);
+	}
+    }
+    printf("\n");
+    fflush(stdout);
+
+    close(fd);
+    XDestroyImage(xi);
+}
+
+void xwin_dump_graphics() {
+    dump_window(win, gca, width, height);
+}

@@ -42,6 +42,29 @@ main() {
 /* *************************************************** */
 
 char *prompt = (char *) NULL;
+char *saveprompt = (char *) NULL;
+
+void rl_saveprompt() {
+    if (prompt != (char *) NULL) {
+	 if (saveprompt != (char *) NULL) {
+	     free(saveprompt);
+	 }
+	 saveprompt = (char *) estrdup(prompt);
+    } else {
+	saveprompt = (char *) estrdup(">");
+    }
+}
+
+void rl_restoreprompt() {
+    if (saveprompt != (char *) NULL) {
+	if (prompt != (char *) NULL) {
+	    free(prompt);
+	}
+        prompt = (char *) estrdup(saveprompt);
+    } else {
+	prompt = (char *) estrdup(">");
+    }
+}
 
 rl_setprompt(char *str)
 {

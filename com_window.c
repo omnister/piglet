@@ -3,6 +3,7 @@
 #include "token.h"
 #include "rubber.h"
 #include "lex.h"
+#include "rlgetc.h"
 
 #define NORM   0	/* draw() modes */
 #define RUBBER 1
@@ -34,6 +35,7 @@ char *arg;
     int debug=0;
 
     if (debug) printf("com_window\n");
+    rl_saveprompt();
     rl_setprompt("WIN> ");
 
     opt_set_defaults(&opts);
@@ -205,7 +207,9 @@ char *arg;
 	    break;
 	case END:
 	default:
-	    if (token == EOC || token == CMD) {
+	    if (token == EOC) {
+		token_flush_EOL(lp);	/* don't leave a dangling EOL */
+	    } else if (token == CMD) {
 		;
 	    } else {
 		token_flush_EOL(lp);
@@ -215,6 +219,7 @@ char *arg;
 	}
     }
     rubber_clear_callback();
+    rl_restoreprompt();
     return(1);
 }
 

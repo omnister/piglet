@@ -54,3 +54,7 @@ void xwin_grid_pts(
 
 extern void xwin_window_set();
 extern void xwin_window_get();
+extern void xwin_dump_graphics();
+extern void xwin_draw_point(double x, double y);
+
+

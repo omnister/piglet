@@ -140,7 +140,7 @@ int *layer;
 		state = START;
 		db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		rubber_clear_callback();
-		need_redraw++;
+		need_redraw++; 
 	    } else if (token == EOL) {
 		token_get(lp,word); /* just ignore it */
 	    } else if (token == EOC || token == CMD) {

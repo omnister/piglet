@@ -971,41 +971,6 @@ char *s;
 /* db_bounds() accesses them for use in com_win();
 /********************************************************/
 
-/*
-
-	Here's the logic:
-
-	xwin.c exports a function R_to_V which converts real coordinates
-	into pixel coordinates.  
-
-	in xwin: db_render();
-	...
-
-	db_render() {
-	     switch(INST_TYPE) {
-		 ...
-		 case PRIMITIVES:
-		     draw() - using global_transform
-		     break;
-		 ...
-		 case INST:  - a recursive instance call
-
-                     !! SAVE = global_xform
-		     global_transform = compose(inst_xform, transform)
-		     db_render();
-		     free(global_transform);
-		     free(inst_xform);
-		     global_transform = SAVE;
-		     break;
-	    }
-	}
-
-	draw(x,y) {
-	    R_to_V(&x, &y);
-	    call XWIN_draw (x,y);
-	}
-*/
-
 void db_bounds(xxmin, yymin, xxmax, yymax)
 NUM *xxmin;
 NUM *yymin;
@@ -1121,6 +1086,8 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    break;
         case POLY:  /* polygon definition */
 	    do_poly(p, &childbb, mode);
+	    if (debug) printf("poly bounds = %g,%g %g,%g\n",
+	    	childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
 	    break;
 	case RECT:  /* rectangle definition */
 	    do_rect(p, &childbb, mode);
@@ -1191,6 +1158,11 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    childbb.init=0;
 	    db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
 
+	    p->xmin = childbb.xmin;
+	    p->xmax = childbb.xmax;
+	    p->ymin = childbb.ymin;
+	    p->ymax = childbb.ymax;
+
 	    /* don't draw anything below nestlevel */
 	    if (nest > nestlevel) { 
 		drawon = 0;
@@ -1225,6 +1197,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    return(1);
 	    break;
 	}
+
 	/* now pass bounding box back */
 	db_bounds_update(&mybb, &childbb);
     }

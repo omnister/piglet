@@ -19,7 +19,7 @@ static int layer=0; 	/* global for remembering default layer */
 
 int com_add(), com_archive(), com_area(), com_background();
 int com_bye(), com_change(), com_copy(), com_define();
-int com_delete(), com_display(), com_distance(), com_edit();
+int com_delete(), com_display(), com_distance(), com_dump(), com_edit();
 int com_equate(), com_exit(), com_files(), com_grid();
 int com_group(), com_help(),  com_identify();
 int com_input(), com_interrupt(), com_layer(), com_level();
@@ -50,6 +50,7 @@ COMMAND commands[] =
     {"DELETE", com_delete, "delete a component from the current device"},
     {"DISPLAY", com_display, "turn the display on or off"},
     {"DISTANCE", com_distance, "measure the distance between two points"},
+    {"DUMP", com_dump, "dump graphics window to file or printer"},
     {"EDIT", com_edit, "begin edit of an old or new device"},
     {"EQUATE", com_equate, "define characteristics of a mask layer"},
     {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
@@ -550,6 +551,15 @@ char *arg;
     return (0);
 }
 
+com_dump(lp, arg)	/* measure the distance between two points */
+LEXER *lp;
+char *arg;
+{
+    printf("    com_dump %s\n", arg);
+    xwin_dump_graphics();
+    return (0);
+}
+
 com_edit(lp, arg)		/* begin edit of an old or new device */
 LEXER *lp;
 char *arg;
@@ -965,7 +975,7 @@ char *arg;
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (nfiles == 0) {
-		    snprintf(buf, MAXFILENAME, "./cells/%s", word);
+		    snprintf(buf, MAXFILENAME, "%s", word);
 		    nfiles++;
 		    if (nfiles == 1) {
 			if((fp = fopen(buf, "r")) == 0) {
@@ -1187,13 +1197,8 @@ char *arg;
     return (0);
 }
 
-com_point(lp, arg)	/* display the specified point on the screen */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_point\n", arg);
-    return (0);
-}
+/* Now in com_point.c... */
+/* com_point(lp, arg)	display the specified point on the screen */
 
 com_process(lp, arg)	/* enter the PROCESS subsystem */
 LEXER *lp;
