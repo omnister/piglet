@@ -1,5 +1,5 @@
  
-OBJS= db.o xwin.o readfont.o rubber.o opt_parse.o \
+OBJS= db.o draw.o xwin.o readfont.o rubber.o opt_parse.o \
        eprintf.o geom_circle.o geom_rect.o geom_line.o \
        geom_poly.o geom_text.o geom_inst.o \
        rlgetc.o token.o lex.o coords.o com_distance.o com_ident.o \
@@ -7,7 +7,7 @@ OBJS= db.o xwin.o readfont.o rubber.o opt_parse.o \
 
 TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 changes com_distance.c com_ident.c com_point.c com_show.c com_window.c \
-coords.c db.c db.h eprintf.c eprintf.h eventnames.h geom_circle.c geom_inst.c \
+coords.c db.c db.h draw.c eprintf.c eprintf.h eventnames.h geom_circle.c geom_inst.c \
 geom_line.c  geom_poly.c geom_rect.c geom_text.c lex.c lex.h Makefile \
 MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h plan.EQUATE plan.MOVE \
 plan.SELECT plan.STATUS plan.TODO readfont.c readfont.h rlgetc.c \
@@ -23,6 +23,7 @@ pig: $(OBJS)
 
 coords.o:      db.h
 db.o:          db.h token.h xwin.h
+draw.o:        db.h token.h xwin.h
 eprintf.o:     eprintf.h
 com_ident.o:   db.h xwin.h token.h
 com_window.o:  db.h xwin.h token.h rubber.h

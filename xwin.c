@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.23 2004/10/13 22:46:24 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.24 2004/10/15 16:59:37 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -890,6 +890,10 @@ int color;
 	grid_color = color;
 	need_redraw++;
     }
+
+    if (currep != NULL) {
+    	currep->grid_color = color;
+    }
 }
 
 void xwin_display_set_state(state)
@@ -1009,6 +1013,7 @@ double yo;
 	    currep->grid_ys=ys;
 	    currep->grid_xo=xo;
 	    currep->grid_yo=yo;
+	    currep->grid_color=grid_color;
 	    /* currep->modified++; */
 	}
     }
@@ -1146,7 +1151,7 @@ init_colors()
 	"white",
 	"red",
 	"green",
-	"#7272ff",	/* brighten up our blues */
+	"#7272ff",	/* brighten up our blues a la Ken.P. :-)*/
 	"cyan",
 	"magenta",
 	"yellow"

@@ -112,6 +112,7 @@ typedef struct db_tab {
     double grid_ys;
     double grid_xo;
     double grid_yo;
+    int    grid_color;		/* FIXME: not used yet */
 
     int logical_level;
     double lock_angle;
@@ -203,11 +204,6 @@ typedef struct db_text {
 
 /********************************************************/
 
-/* FIXME: I've added prev pointer to this structure, but the
-   associated support routines do not yet support a doubly linked list
-   structure.  They will need to be upgraded to allow easy deletes of
-   primitives in a cell structure */
-
 typedef struct db_deflist {
     int type;
     union {
@@ -222,7 +218,7 @@ typedef struct db_deflist {
     } u;
     NUM xmin, ymin, xmax, ymax; /* wrapper bounds for screening extents */
     struct db_deflist *next;    /* to link to another */
-    struct db_deflist *prev;    /* to link to another */
+    struct db_deflist *prev;    /* and to the previous */
 } DB_DEFLIST;
             
 extern char *strsave( char *string );
@@ -340,3 +336,20 @@ extern int  show_check_modifiable(int comp, int layer);
 extern int  show_check_visible(int comp, int layer);
 
 /********************************************************/
+/* support routines */
+double max(), min();
+
+/* matrix routines */
+XFORM *compose();
+void mat_rotate();
+void mat_scale();
+void mat_slant();
+void mat_print();
+
+/* primitives for outputting autoplot,X primitives */
+void draw();
+void jump();
+void set_layer();
+void set_line();
+
+

@@ -407,11 +407,19 @@ com_add(LEXER *lp, char *arg)
 			}
 		    }
 		    if (debug) printf("calling add_inst with %s\n", word);
-		    add_inst(lp, word);
+		    if (!show_check_modifiable(INST, layer)) {
+			    printf("INST component is not modifiable!\n");
+		    } else {
+			add_inst(lp, word);
+		    }
 		}
 	    }
 	} else if (token == QUOTE) {
+	    if (!show_check_modifiable(INST, layer)) {
+		    printf("INST component is not modifiable!\n");
+	    } else {
 		add_inst(lp, word);
+	    }
 	} else if (token == CMD) { /* return control back to top */
 	    token_unget(lp, token, word);
 	    done++;
@@ -1151,7 +1159,6 @@ com_list(lp, arg)	/* list information about the current environment */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_list\n", arg);
     if (currep != NULL) 
 	db_list(currep);
     else 
