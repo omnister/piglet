@@ -16,8 +16,10 @@
 #define TEXT  65536
 #define ALL   87381   /* sum of all bits */
 
+#define ARC_OPTS  "WRY"
 #define CIRC_OPTS "WRY"
 #define LINE_OPTS "W"
+#define OVAL_OPTS "W"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
 #define NOTE_OPTS "MNRYZF"
@@ -75,6 +77,7 @@ void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP, NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
+int coord_count(COORDS *CP);
 
 typedef struct xform {
      double r11;
@@ -96,9 +99,14 @@ typedef struct bounds {
 /********************************************************/
 
 typedef struct db_tab {
-    char *name;             	/* cell name */
+    char *name;			/* cell name */
     double minx,miny;		/* for bounding box computation */
     double maxx,maxy;		/* ... */
+
+    double vp_xmin, vp_xmax;	/* for storing window parameters */
+    double vp_ymin, vp_ymax;
+    double scale;
+    double xoffset, yoffset;
 
     /* grid settings for each cell are stored in this structure  */
     /* the grid in use at time of SAVE is put in the disk */
@@ -116,7 +124,10 @@ typedef struct db_tab {
     int logical_level;
     double lock_angle;
 
+    int display_state;		/* turns X11 display on or off (see xwin.c)*/
+
     int modified;		/* for EXIT/SAVE and bounding box usage */
+    int being_edited;		/* flag to prevent recursive edits */
     int flag;			/* bookingkeeping flag for db_def_archive() */
 
     struct db_deflist *dbhead;  /* pointer to first cell definition */
@@ -309,8 +320,9 @@ extern int db_add_text(
 	    );
 
 extern int db_save(
+	/*	LEXER *lp,
 		DB_TAB *sp,
-		char *name
+		char *name */
 	    );
 
 extern int db_def_print(
@@ -338,6 +350,10 @@ DB_DEFLIST *db_ident(
 		char *name
 	    );
 
+extern double db_area(
+		DB_DEFLIST *component
+	    );
+
 extern int db_list(
 		DB_TAB *cell
 	    );
@@ -353,6 +369,11 @@ extern int db_render(
 DB_DEFLIST *db_copy_component();
 
 extern void db_move_component();
+extern void db_set_layer();
+extern int  db_list_unsaved();
+extern void db_draw_bounds();
+extern int  db_contains();
+
 extern int db_plot();			/* plot the device to a file */
 
 extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);

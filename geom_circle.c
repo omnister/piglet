@@ -27,7 +27,6 @@ int *layer;
     double x2,y2;
     int debug=0;
 
-
     opt_set_defaults(&opts);
     opts.rotation = 2.0; 	/* default degrees resolution */
     opts.width = 0.0;		/* default width */

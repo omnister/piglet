@@ -147,6 +147,12 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			    state = INOPT;
 			}
 			continue;
+		    case '@':
+			*w++ = c;
+			c = rlgetc(lp->token_stream);
+			rl_ungetc(c,lp->token_stream);
+			state = INOPT;
+			continue;
 		    case '.':
 			*w++ = c;
 			c = rlgetc(lp->token_stream);

@@ -173,38 +173,14 @@ int count; /* number of times called */
 	static double x1old, x2old, y1old, y2old;
 	BOUNDS bb;
 	bb.init=0;
-
+	
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
-	    draw(x1,y1, &bb, D_RUBBER);
-	    draw(x1,y2, &bb, D_RUBBER);
-	    draw(x2,y2, &bb, D_RUBBER);
-	    draw(x2,y1, &bb, D_RUBBER);
-	    draw(x1,y1, &bb, D_RUBBER);
-
+	    db_drawbounds(x1,y1,x2,y2,D_RUBBER); 		/* draw new shape */
 	} else if (count > 0) {		/* intermediate calls */
-
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y1old, &bb, D_RUBBER);
-
-	    jump(); /* draw new shape */
-	    draw(x1,y1, &bb, D_RUBBER);
-	    draw(x1,y2, &bb, D_RUBBER);
-	    draw(x2,y2, &bb, D_RUBBER);
-	    draw(x2,y1, &bb, D_RUBBER);
-	    draw(x1,y1, &bb, D_RUBBER);
-
+	    db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
+	    db_drawbounds(x1,y1,x2,y2,D_RUBBER); 		/* draw new shape */
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y1old, &bb, D_RUBBER);
+	    db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
 	}
 
 	/* save old values */

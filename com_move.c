@@ -334,7 +334,6 @@ com_move(LEXER *lp, char *arg)
 	;
 */
 
-
 void draw_bbox(x, y, count)
 double x, y;  /* offset */
 int count; /* number of times called */
@@ -350,60 +349,12 @@ int count; /* number of times called */
 	yy2=ymax+y-y2;
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    draw(xx1,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy1, &bb, D_RUBBER);
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    draw(xx2,yy2, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy1, &bb, D_RUBBER);
-
+	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
 	} else if (count > 0) {		/* intermediate calls */
-
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    jump();
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    jump();
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-
-	    jump(); /* draw new shape */
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    draw(xx1,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy1, &bb, D_RUBBER);
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    draw(xx2,yy2, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy1, &bb, D_RUBBER);
-
+	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
+	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy1, &bb, D_RUBBER);
-	    draw(xx2,yy2, &bb, D_RUBBER);
-	    jump();
-	    draw(xx1,yy2, &bb, D_RUBBER);
-	    draw(xx2,yy1, &bb, D_RUBBER);
+	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
 	}
 
 	/* save old values */
@@ -413,4 +364,3 @@ int count; /* number of times called */
 	y2old=yy2;
 	jump();
 }
-

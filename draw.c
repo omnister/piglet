@@ -2,6 +2,7 @@
 #include "rubber.h"
 #include "xwin.h"
 #include "postscript.h"
+#include <math.h>
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines are */
                         /* compared to minimum window dimension */
@@ -197,8 +198,8 @@ char *name;			/* instance name restrict or NULL */
     }
 
     /* pick fuzz should be a fraction of total window size */
-    xwin_window_get(&xmin, &ymin, &xmax, &ymax);
-    fuzz = max((xmax-xmin),(ymax-ymin))*FUZZBAND;
+    
+    fuzz = max((cell->maxx-cell->minx),(cell->maxy-cell->miny))*FUZZBAND;
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
@@ -324,27 +325,138 @@ char *name;			/* instance name restrict or NULL */
     return(p_best);
 }
 
-db_drawbounds(p)
-DB_DEFLIST *p;
+db_drawbounds(xmin, ymin, xmax, ymax, mode)
+double xmin, ymin, xmax, ymax;
+int mode;
 {
     BOUNDS childbb;
+
     childbb.init=0;
     set_layer(0,0);
 
-    jump();
-	/* a square bounding box outline in white */
-	draw(p->xmax, p->ymax, &childbb, D_RUBBER); 
-	draw(p->xmax, p->ymin, &childbb, D_RUBBER);
-	draw(p->xmin, p->ymin, &childbb, D_RUBBER);
-	draw(p->xmin, p->ymax, &childbb, D_RUBBER);
-	draw(p->xmax, p->ymax, &childbb, D_RUBBER);
-    jump();
-	/* and diagonal lines from corner to corner */
-	draw(p->xmax, p->ymax, &childbb, D_RUBBER);
-	draw(p->xmin, p->ymin, &childbb, D_RUBBER);
-    jump() ;
-	draw(p->xmin, p->ymax, &childbb, D_RUBBER);
-	draw(p->xmax, p->ymin, &childbb, D_RUBBER);
+    if (xmin == xmax) {
+        jump();
+	draw(xmax, ymin, &childbb, mode);
+	draw(xmax, ymax, &childbb, mode);
+    } else if (ymin == ymax) {
+        jump();
+	draw(xmin, ymin, &childbb, mode);
+	draw(xmax, ymin, &childbb, mode);
+    } else {
+	jump();
+	    /* a square bounding box outline in white */
+	    draw(xmax, ymax, &childbb, mode); 
+	    draw(xmax, ymin, &childbb, mode);
+	    draw(xmin, ymin, &childbb, mode);
+	    draw(xmin, ymax, &childbb, mode);
+	    draw(xmax, ymax, &childbb, mode);
+	jump();
+	    /* and diagonal lines from corner to corner */
+	    draw(xmax, ymax, &childbb, mode);
+	    draw(xmin, ymin, &childbb, mode);
+	jump() ;
+	    draw(xmin, ymax, &childbb, mode);
+	    draw(xmax, ymin, &childbb, mode);
+    }
+}
+
+double db_area(p)
+DB_DEFLIST *p;			/* return the area of component p */
+{
+
+    double area = 0.0;
+    double dx, dy, x,y, xstart, ystart, xold, yold, r2,w;
+    COORDS *coords;
+    int i, count;
+    int debug=0;
+    double len; 
+
+    if (p == NULL) {
+    	printf("db_area: no component!\n");
+	return(0);
+    }
+
+    switch (p->type) {
+    case ARC:  /* arc definition */
+	area = -1.0;
+	break;
+    case CIRC:  /* circle definition */
+	r2 = pow(p->u.c->x1 - p->u.c->x2, 2.0) +  pow(p->u.c->y2 - p->u.c->y1, 2.0);
+	area = M_PI*r2;
+	break;
+    case LINE:  /* line definition */
+	if (p->u.l->opts->width == 0.0) {
+	    area = 0.0;
+	} else {
+	    i=0;
+	    len=0.0;
+	    for (coords = p->u.l->coords; coords != NULL; coords = coords->next, i++) {
+		xold=x; x=coords->coord.x;
+		yold=y; y=coords->coord.y;
+	    	if (debug) printf("xy = %g %g, i=%d, len=%g\n", x,y,i,len);
+		if (i > 0) {
+		   len += sqrt(pow(x-xold,2.0)+pow(y-yold,2.0));
+		}
+	    }
+	    area = len * p->u.l->opts->width;
+	}
+	break;
+    case NOTE:  /* note definition */
+	/* return just area of bounding box */
+	area = fabs(p->xmax - p->xmin) * fabs(p->ymax - p->ymin);
+	break;
+    case OVAL:  /* oval definition */
+    	area = -1.0;
+	break;
+    case POLY:  /* polygon definition */
+
+	/* it is easy enough to calculate the area inline */
+	/* the following code works whether or not the last */
+	/* point is equal to the first point */
+
+	/* this looks like magic, but it is really just a */
+	/* textbook version of a poly area algorithm */
+	/* modified to work with a linked list */
+
+	coords = p->u.p->coords;
+	count = 0;
+	area = 0.0;
+	while(coords != NULL) {
+	    xold=x; x=coords->coord.x;
+	    yold=y; y=coords->coord.y; 
+	    if (count == 0) {
+		xstart=x;
+		ystart=y;
+	    } else if (count > 0) {
+		area += xold * y;
+		area -= yold * x;
+	    }
+	    coords = coords->next;
+	    count++;
+	}
+	area += x * ystart;
+	area -= y * xstart;
+	area /= 2.0;
+	area = (area<0.0)?-area:area;
+
+	break;
+    case RECT:  /* rectangle definition */
+	area = fabs(p->xmax - p->xmin) * fabs(p->ymax - p->ymin);
+	break;
+    case TEXT:  /* text definition */
+	/* return just area of bounding box */
+	area = fabs(p->xmax - p->xmin) * fabs(p->ymax - p->ymin);
+	break;
+    case INST:  /* instance call */
+	/* return just area of bounding box */
+	area = fabs(p->xmax - p->xmin) * fabs(p->ymax - p->ymin);
+	break;
+    default:
+	eprintf("unknown record type: %d in db_area\n", p->type);
+	area = -1.0;
+	break;
+    }
+    return(area);
 }
 
 int db_notate(p)
@@ -423,41 +535,34 @@ DB_DEFLIST *p;			/* component to display */
 
     childbb.init=0;
 
+    db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+
     switch (p->type) {
     case ARC:  /* arc definition */
-	db_drawbounds(p);
 	do_arc(p, &childbb, D_RUBBER);
 	break;
     case CIRC:  /* circle definition */
-	db_drawbounds(p);
 	do_circ(p, &childbb, D_RUBBER);
 	break;
     case LINE:  /* line definition */
-	db_drawbounds(p);
 	do_line(p, &childbb, D_RUBBER);
 	break;
     case NOTE:  /* note definition */
-	db_drawbounds(p);
 	do_note(p, &childbb, D_RUBBER);
 	break;
     case OVAL:  /* oval definition */
-	db_drawbounds(p);
 	do_oval(p, &childbb, D_RUBBER);
 	break;
     case POLY:  /* polygon definition */
-	db_drawbounds(p);
 	do_poly(p, &childbb, D_RUBBER);
 	break;
     case RECT:  /* rectangle definition */
-	db_drawbounds(p);
 	do_rect(p, &childbb, D_RUBBER);
 	break;
     case TEXT:  /* text definition */
-	db_drawbounds(p);
 	do_note(p, &childbb, D_RUBBER);
 	break;
     case INST:  /* instance call */
-	db_drawbounds(p);
 	break;
     default:
 	eprintf("unknown record type: %d in db_highlight\n", p->type);
@@ -479,7 +584,7 @@ DB_TAB *cell;
 	currep->grid_ys, currep->grid_xo, currep->grid_yo);
 
     printf("   logical level = %d\n", currep->logical_level);
-    printf("   lock angle    = %d\n", currep->lock_angle);
+    printf("   lock angle    = %g\n", currep->lock_angle);
     if (currep->modified) {
 	printf("   cell is modified\n");
     } else {
@@ -508,7 +613,7 @@ int db_plot() {
 
     X=0;				    /* turn X display off */
     ps_preamble(PLOT_FD, currep->name, "piglet version 0.5",
-	8.5, 11.0, currep->minx, currep->miny, currep->maxx, currep->maxy);
+	8.5, 11.0, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax);
     db_render(currep, 0, &bb, D_NORM);  /* dump plot */
     ps_postamble(PLOT_FD);
     X=1;				    /* turn X back on*/
@@ -539,6 +644,11 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     BOUNDS childbb;
     BOUNDS mybb;
     mybb.init=0; 
+
+    if (cell == NULL) {
+        printf("bad reference in db_render\n");
+    	return(0);
+    }
 
     if (nest == 0) {
 	unity_transform.r11 = 1.0;
@@ -662,7 +772,18 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    /* with a db_lookup() call */
 
 	    childbb.init=0;
-	    db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
+
+	    if (db_lookup(p->u.i->name) == NULL) {
+
+		printf("skipping reference to %s, no longer in memory\n", p->u.i->name);
+
+	    	/* FIXME try to reread the definition from disk */
+		/* this can only happen when a memory copy has */
+		/* been purged */
+
+	    } else {
+		db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
+	    }
 
 	    p->xmin = childbb.xmin;
 	    p->xmax = childbb.xmax;
@@ -678,20 +799,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 
             if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
 		set_layer(0,0);
-		jump();
-		    /* a square bounding box outline in white */
-		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB); 
-		    draw(childbb.xmax, childbb.ymin, &childbb, D_BB);
-		    draw(childbb.xmin, childbb.ymin, &childbb, D_BB);
-		    draw(childbb.xmin, childbb.ymax, &childbb, D_BB);
-		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB);
-		jump();
-		    /* and diagonal lines from corner to corner */
-		    draw(childbb.xmax, childbb.ymax, &childbb, D_BB);
-		    draw(childbb.xmin, childbb.ymin, &childbb, D_BB);
-		jump() ;
-		    draw(childbb.xmin, childbb.ymax, &childbb, D_BB);
-		    draw(childbb.xmax, childbb.ymin, &childbb, D_BB);
+		db_drawbounds(childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax, D_BB);
 	    }
 
 	    free(global_transform); free(xp);	
@@ -717,12 +825,14 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
  
     if (nest == 0) { 
 	jump();
+	/*
 	set_layer(12,0);
 	draw(bb->xmin, bb->ymax, &mybb, D_BB);
 	draw(bb->xmax, bb->ymax, &mybb, D_BB);
 	draw(bb->xmax, bb->ymin, &mybb, D_BB);
 	draw(bb->xmin, bb->ymin, &mybb, D_BB);
 	draw(bb->xmin, bb->ymax, &mybb, D_BB);
+	*/
 
 	/* update cell and globals for db_bounds() */
 	cell->minx =  bb->xmin;
@@ -770,7 +880,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	if (debug) printf("in draw, mode=%d\n", mode);
 	xx = x;
 	yy = y;
-    } else if (mode==D_NORM || mode==D_RUBBER || mode==D_PICK) {
+    } else if (mode==D_NORM || mode==D_RUBBER || mode==D_PICK || mode == D_READIN) {
 	/* compute transformed coordinates */
 	xx = x*global_transform->r11 + 
 	    y*global_transform->r21 + global_transform->dx;
@@ -782,7 +892,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	    yp = bb->ymin;
 	    R_to_V(&xp, &yp);
 	}
-	if (mode == D_NORM) {
+	if (mode == D_NORM || mode == D_READIN) {
 	    /* merge bounding boxes */
 	    if(bb->init == 0) {
 		bb->xmin=bb->xmax=xx;
@@ -809,33 +919,35 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     /* I was surprised that the range was not equal to the full 2^32 bit */
     /* range of an unsigned int (RCW) */
 
-    if (X) {
-	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
+    if (mode != D_READIN) {
+	if (X) {
+	    R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 
-	if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
-	    if (mode == D_PICK) {   /* no drawing just pick checking */
-		/* a bit of a hack, but we overload the bb structure */
-		/* to transmit the pick points ... pick comes in on */
-		/* xmin, ymin and a boolean 0,1 goes back on xmax */
-		bb->xmax += (double) pickcheck(xxold, yyold, xx, yy, xp, yp, 3.0);
-	    } else if (mode == D_RUBBER) { /* xor rubber band drawing */
-		if (showon && drawon) {
-		    xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
-                }
-	    } else {		/* regular drawing */
-		if (showon && drawon) {
-		    xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
- 		}
+	    if (nseg && clip(xxold, yyold, xx, yy, &x1, &y1, &x2, &y2)) {
+		if (mode == D_PICK) {   /* no drawing just pick checking */
+		    /* a bit of a hack, but we overload the bb structure */
+		    /* to transmit the pick points ... pick comes in on */
+		    /* xmin, ymin and a boolean 0,1 goes back on xmax */
+		    bb->xmax += (double) pickcheck(xxold, yyold, xx, yy, xp, yp, 3.0);
+		} else if (mode == D_RUBBER) { /* xor rubber band drawing */
+		    if (showon && drawon) {
+			xwin_xor_line((int)x1,(int)y1,(int)x2,(int)y2);
+		    }
+		} else {		/* regular drawing */
+		    if (showon && drawon) {
+			xwin_draw_line((int)x1,(int)y1,(int)x2,(int)y2);
+		    }
+		}
 	    }
-	}
-    } else {
-	if (nseg) {
-	    /* autoplot output */
-	    /* if (showon && drawon) fprintf(PLOT_FD, 
-	   	 "%4.6g %4.6g\n", xx,yy);*/	
-	    if (showon && drawon) ps_continue_line(PLOT_FD, xx, yy);
 	} else {
-	    if (showon && drawon) ps_start_line(PLOT_FD, xx, yy);
+	    if (nseg) {
+		/* autoplot output */
+		/* if (showon && drawon) fprintf(PLOT_FD, 
+		     "%4.6g %4.6g\n", xx,yy);*/	
+		if (showon && drawon) ps_continue_line(PLOT_FD, xx, yy);
+	    } else {
+		if (showon && drawon) ps_start_line(PLOT_FD, xx, yy);
+	    }
 	}
     }
     xxold=xx;
@@ -891,16 +1003,17 @@ double x1, y1, x2, y2;
 double *xc1, *yc1, *xc2, *yc2;
 {
 
-    double vp_xmin=0;
-    double vp_ymin=0;
-    double vp_xmax=(double) width;
-    double vp_ymax=(double) height;
+    double vp_xmin=0.0;
+    double vp_ymin=0.0;
+    double vp_xmax=(double) g_width;
+    double vp_ymax=(double) g_height;
     int debug=0;
     int done=0;
     int accept=0;
     int code1=0;
     int code2=0;
     double tmp;
+
 
     if (debug) printf("canonicalized: %.5g,%.5g %.5g,%.5g\n", x1, y1, x2, y2);
 

@@ -93,7 +93,6 @@ COMMAND commands[] =
     {(char *) NULL, (Function *) NULL, (char *) NULL}
 };
 
-static int numbyes=0;
 static int def_layer=0;
 
 #include <signal.h>
@@ -322,7 +321,6 @@ int add_oval(LEXER *lp, int *layer)
 
 com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
-    numbyes=0;
     need_redraw++; 
     int err;
 
@@ -360,11 +358,8 @@ com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 }
 
 
-com_area(LEXER *lp, char *arg)	  /* display area of selected component */
-{
-    printf("    com_area %s\n", arg);
-    return (0);
-}
+/* now in com_area.c */
+/* com_area(LEXER *lp, char *arg)	  /* display area of selected component */
 
 com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 {
@@ -380,22 +375,25 @@ char *arg;
     /* The user wishes to quit using this program */
     /* Just set quit_now non-zero. */
 
-    numbyes++;	/* number of com_bye() calls */
+    static int linenumber;	/* remember last request */
 
-    if (currep != NULL && currep->modified && numbyes==1) {
-	printf("    you have an unsaved instance (%s)!\n", currep->name);
+    /* FIXME, the next section should scan the db and print out the */
+    /* names of ALL unsaved cells */
+
+    if ( (lp->line != linenumber+1) && db_list_unsaved() ) {
+	printf("    you have an unsaved instance!\n");
+	printf("    typing either \"QUIT\" or \"BYE\" twice will force exit\n");
     } else {
 	quit_now++;
 	exit(0); 	/* for now just bail */
     }
+
+    linenumber = lp->line;
     return (0);
 }
 
-com_change(LEXER *lp, char *arg) /* change properties of selected components */
-{
-    printf("    com_change %s\n", arg);
-    return (0);
-}
+/* now in com_change.c */
+/* com_change(LEXER *lp, char *arg) /* change properties of selected components */
 
 /* now in com_copy.c */
 /* com_copy(LEXER *lp, char *arg)	/* copy component  */
@@ -467,8 +465,42 @@ com_dump(lp, arg)	/* dump graphics window to file or printer */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_dump %s\n", arg);
+    TOKEN token;
+    int done=0;
+    double angle;
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case NUMBER: 	/* number */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("DUMP: expected EOC, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    xwin_raise_window();
     xwin_dump_graphics();
+
     return (0);
 }
 
@@ -487,6 +519,7 @@ char *arg;
     FILE *fp;
     LEXER *my_lp;
     DB_TAB *save_rep;  
+    DB_TAB *new_rep;  
    
 
     if (debug) printf("    com_edit <%s>\n", arg); 
@@ -525,9 +558,14 @@ char *arg;
 	}
     }
 
-    if (lp->mode == MAIN || 
-        currep == NULL || 
+    if (lp->mode == MAIN || currep == NULL  ||
 	(lp->mode == EDI && !currep->modified)) {
+
+	if (lp->mode == EDI) {
+	    if (currep != NULL) {
+		currep->being_edited = 0;
+	    }
+	}
 
 	/* check for a name provided */
 	if (strlen(name) == 0) {
@@ -539,11 +577,9 @@ char *arg;
 
 	lp->mode = EDI;
     
-	/* don't destroy it if it's already in memory */
-	if ((currep=db_lookup(name)) == NULL) {
+	if ((new_rep=db_lookup(name)) == NULL) { /* Not already in memory */
 
 	    currep = db_install(name);  	/* create blank stub */
-	    do_win(4, -100.0, -100.0, 100.0, 100.0, 1.0);
 	    show_init();
 	    need_redraw++;
 
@@ -551,6 +587,9 @@ char *arg;
 	    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
 	    if((fp = fopen(buf, "r")) == 0) {
 		/* cannot find copy on disk */
+		/* so leave the user with an empty start */
+		if (debug) printf("calling dowin 1\n");
+		do_win(lp, 4, -100.0, -100.0, 100.0, 100.0, 1.0);
 	    } else {
 		/* read it in */
 		xwin_display_set_state(D_OFF);
@@ -558,46 +597,44 @@ char *arg;
 		my_lp->mode = EDI;
 		save_rep=currep;
 		printf ("reading %s from disk\n", name);
+		/* FIXME should save and restore show sets or store them in currep */
 		show_set_modify(ALL,0,1);
 		parse(my_lp);
 		token_stream_close(my_lp); 
+		if (debug) printf ("done reading %s from disk\n", name);
 		show_set_modify(ALL,0,0);
 		show_set_visible(ALL,0,1);
-		if (currep != NULL) {
-		    xwin_window_set(
-		    	currep->minx, 
-		    	currep->miny,
-			currep->maxx,
-			currep->maxy
-		    );
-		    currep->modified = 0;
-		}
+		xwin_display_set_state(D_ON);
 		
 		currep=save_rep;
-		xwin_display_set_state(D_ON);
+		if (debug) printf("calling dowin 2\n");
+		do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax, 1.0); 
+		currep->modified = 0;
+		currep->being_edited++;
 		show_init();
 		need_redraw++;
-		if ((currep=db_lookup(name)) == NULL) {
-		    printf("error in reading in %s\n", name);
-		}
 	    }
-	} else {
-	    if (currep != NULL) {
+	} else {			/* was already in memory */
+	    if (new_rep->being_edited) {
+	       printf("can't edit the same cell twice!\n");
+	       return(0);
+	    } else {
+		currep = new_rep;
 		xwin_window_set(
 		    currep->minx, 
 		    currep->miny,
 		    currep->maxx,
 		    currep->maxy
 		);
-		currep->modified = 0;
-	    }
-        }	
-
+		currep->being_edited = 1;
+	    } 
+	}	
     } else if (lp->mode == EDI) {
 	printf("    must SAVE current device before new EDIT\n");
     } else {
 	printf("    must EXIT before entering EDIT subsystem\n");
     }
+    if (debug) printf("leaving  com_edit <%s>\n", arg); 
     return (0);
 }
 
@@ -613,13 +650,26 @@ com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 LEXER *lp;
 char *arg;
 {
-    if (currep != NULL && currep->modified) {
-	printf("    must save before exiting\n");
+    int debug=0;
+    static int linenumber;	/* remember last request so that */
+    				/* two EXIts in a row will force exit */
+
+    if (debug) printf("line#: %d\n", lp->line);
+
+    if (lp->line != linenumber+1 && currep != NULL && currep->modified) {
+	printf("    current device is unsaved!");
+	printf("    typing \"EXIT\" a second time will force exit\n");
     } else {
 	lp->mode = MAIN;
-	currep = NULL;
+	if (currep != NULL) {
+	    /* can get here if someone purges the very cell */
+	    /* that they are editing and then does an EXIT */
+	    currep->being_edited = 0;
+	    currep = NULL;
+	}
 	need_redraw++;
     }
+    linenumber=lp->line;
     return (0);
 }
 
@@ -634,7 +684,7 @@ char *arg;
     char word[128];
     int nnums=0;
     double tmp;
-    int debug=1;
+    int debug=0;
 
     if (debug) printf("in com_files\n");
 
@@ -814,7 +864,7 @@ char *arg;
     char word[128];
     int nnums=0;
     double tmp;
-    int debug=1;
+    int debug=0;
     register int i;
     int printed = 0;
     int size;
@@ -882,7 +932,7 @@ char *arg;
     TOKEN token;
     char buf[MAXFILENAME];
     char word[MAXFILENAME];
-    int debug=1;
+    int debug=0;
     FILE *fp;
     int err=0;
     int done=0;
@@ -1107,7 +1157,13 @@ char *arg;
 		if(sscanf(word, "%lf", &angle) != 1) {
 		    weprintf("LOCK: invalid lock angle: %s\n", word);
 		    return(-1);
+		} else {
+		   if (angle > 90.0 || angle < 0.0) {
+		    weprintf("LOCK: invalid lock angle: %s\n", word);
+		    return(-1);
+		   }
 		}
+		angle = floor(angle*100.0 + 0.5)/100.0;
 		nnums++;
 		break;
 	    case CMD:		/* command */
@@ -1133,12 +1189,14 @@ char *arg;
     if (nnums==1) {		/* set the lock angle of currep */
 	if (currep != NULL) {
 	    currep->lock_angle=angle;
-	    currep->modified++;
+	    /* currep->modified++; */
         } 
     } else if (nnums==0) {	/* print the current lock angle */
 	if (currep != NULL) {
 	    printf("LOCK ANGLE = %g\n", currep->lock_angle);
-        } 
+        } else {
+	    printf("not editing anything...\n");
+	}
     } else {
        ; /* FIXME: a syntax error */
     }
@@ -1206,12 +1264,14 @@ char *arg;
     double tmp;
     int debug=0;
 
+    rl_saveprompt();
     rl_setprompt("PURGE> ");
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 	        db_purge(lp, word);
+		done++;
 	    	break;
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
@@ -1231,6 +1291,7 @@ char *arg;
 	    	break;
 	}
     }
+    rl_restoreprompt();
     return (0);
 }
 
@@ -1310,7 +1371,6 @@ com_save(lp, arg)	/* save the current file or device to disk */
 LEXER *lp;
 char *arg;
 {
-    numbyes=0;
     need_redraw++; 
     int err;
 
@@ -1365,25 +1425,29 @@ char *arg;
     if (currep != NULL) {
 	if (nfiles == 0) {	/* save current cell */
 	    if (currep->modified) {
-		if (db_save(currep, currep->name)) {
+		if (db_save(lp, currep, currep->name)) {
 		    printf("unable to save %s\n", currep->name);
+		} else {
+		    printf("saved %s\n", currep->name);
+		    currep->modified = 0;
 		}
-		printf("saved %s\n", currep->name);
-		currep->modified = 0;
 	    } else {
 		/* printf("SAVE: cell not modified - no save done\n"); */
 		/* I decided to let the save proceed, to store window, lock and grid */
-		if (db_save(currep, currep->name)) {
+		if (db_save(lp, currep, currep->name)) {
 		    printf("unable to save %s\n", currep->name);
+		} else {
+		    printf("saved %s\n", currep->name);
+		    currep->modified = 0;
 		}
-		printf("saved %s\n", currep->name);
-		currep->modified = 0;
 	    }
 	} else {		/* save copy to a different name */
-	    if (db_save(currep, name)) {
+	    if (db_save(lp, currep, name)) {
 		printf("unable to save %s\n", name);
+	    } else {
+		printf("saved %s as %s\n", currep->name, name);
+		/* currep->modified = 0; */
 	    }
-	    printf("saved %s as %s\n", currep->name, name);
 	}
 
     } else {

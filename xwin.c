@@ -27,38 +27,41 @@
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
 XFORM  unity_transform;
-XFORM  screen_transform;
-XFORM  *xp = &screen_transform;
+/*XFORM  screen_transform; */
+/*XFORM  *xp = &screen_transform; */
+
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.28 2004/11/12 21:09:37 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.29 2004/11/29 21:38:52 walker Exp $";
 
-unsigned int top_width, top_height;	/* main window pixel size */
-unsigned int width, height;		/* graphic window pixel size */
-unsigned int menu_width;		/* menu window pixel size */
-unsigned int dpy_width, dpy_height;	/* disply pixel size */
+unsigned int top_width, top_height;	/* main window pixel size    */
+unsigned int g_width, g_height;		/* graphic window pixel size */
+unsigned int menu_width;		/* menu window pixel size    */
+unsigned int dpy_width, dpy_height;	/* display pixel size        */
 
-double vp_xmin=-1000.0;     	/* world coordinates of viewport */ 
-double vp_ymin=-1000.0;
-double vp_xmax=1000.0;
-double vp_ymax=1000.0;	
-double scale = 1.0;		/* xform factors from real->viewport */
-double xoffset = 0.0;
+double vp_xmin, vp_ymin, vp_xmax, vp_ymax;
+double scale   = 1.0;			/* xform factors from real->viewport */
+double xoffset = 0.0;			
 double yoffset = 0.0;
 
+/* these grid variable are only used during MAIN opening screen */
+/* otherwise currep is the place for the current grid */
 double grid_xd = 10.0;	/* grid delta */
 double grid_yd = 10.0;
 double grid_xs = 2.0;	/* how often to display grid ticks */
 double grid_ys = 2.0;
 double grid_xo = 0.0; 	/* starting offset */
 double grid_yo = 0.0;
+
+
 GRIDSTATE grid_state = G_ON;		/* ON, OFF */
 DISPLAYSTATE display_state = D_ON;	/* ON, OFF */
 int grid_color = 1;	/* 1 through 6 for different colors */ 
 int grid_notified = 0;
 
 int need_redraw=0;
+int need_dump=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -219,19 +222,17 @@ int initX()
 
     x=y=0.0;
     border_width=1;
-    width=top_width-menu_width;
-    height=top_height;
+    g_width=top_width-menu_width;
+    g_height=top_height;
 
     /* Create opaque window for graphics */
     win = XCreateSimpleWindow(dpy, topwin,
-        (int) x,(int) y, width, height, border_width, 
+        (int) x,(int) y, g_width, g_height, border_width, 
 	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
-
-    width=top_width-menu_width;
 
     /* Create opaque window for menu */
     menuwin = XCreateSimpleWindow(dpy, topwin,
-        (width)+1, (int) y, menu_width-2, height,
+        (g_width)+1, (int) y, menu_width-2, g_height,
 	border_width, WhitePixel(dpy,scr), BlackPixel(dpy,scr));
 
     /* Create the menu boxes */
@@ -343,6 +344,7 @@ int initX()
     return(0);
 }
 
+
 int procXevent(fp)
 FILE *fp;
 {
@@ -352,7 +354,6 @@ FILE *fp;
     static int i = 0;
     int j;
     int debug=0;
-    BOUNDS bb;
 
     static char buf[BUF_SIZE];
     static char *s = NULL;
@@ -360,7 +361,7 @@ FILE *fp;
     static double x,y;
     static double xu,yu;
     static double xold,yold;
-    extern double vp_xmax, vp_xmin, vp_ymax, vp_ymin;
+    BOUNDS bb;
 
     static int charcount;
     static char keybuf[10];
@@ -388,17 +389,14 @@ FILE *fp;
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
 	    if (currep != NULL ) {
-	        bb.init=0;
+		bb.init=0;
 		db_render(currep,0,&bb,0); /* render the current rep */
-		grid_xd = currep->grid_xd;
-		grid_yd = currep->grid_yd;
-		grid_xs = currep->grid_xs;
-		grid_ys = currep->grid_ys;
-		grid_xo = currep->grid_xo;
-		grid_yo = currep->grid_yo;
+		draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+		    currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+	    } else {
+		draw_grid(win, gcx, grid_xd, grid_yd,
+		    grid_xs, grid_ys, grid_xo, grid_yo);
 	    }
-	    draw_grid(win, gcx, grid_xd, grid_yd,
-		grid_xs, grid_ys, grid_xo, grid_yo);
 	    /* DRAW_MENU */
 	}
 
@@ -432,12 +430,12 @@ FILE *fp;
 		    V_to_R(&x,&y);
 		    snapxy(&x,&y);
 		    sprintf(buf,"(%-8g,%-8g)", x, y);
-		    if (display_state == D_ON) {
+		    if (xwin_display_state() == D_ON) {
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
 		    }
 
 		    if (xold != x || yold != y) {
-	    		if (display_state==D_ON) {
+	    		if (xwin_display_state() == D_ON) {
 			    rubber_draw(x, y);
 			}
 			xold=x;
@@ -448,13 +446,26 @@ FILE *fp;
 		case Expose:
 		    if (debug) printf("EVENT LOOP: got Expose\n");
 
-		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    if (currep != NULL) {
+			xwin_window_set(
+		    	currep->vp_xmin, 
+			currep->vp_ymin,
+			currep->vp_xmax,
+			currep->vp_ymax );
+		    } else {
+			xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
+		    }
 
 		    if (xe.xexpose.count != 0)
 			break;
 		    if (xe.xexpose.window == win) {
-			draw_grid(win, gcx, grid_xd, grid_yd,
-			    grid_xs, grid_ys, grid_xo, grid_yo);
+	    		if (currep != NULL ) {
+			    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+				currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+			} else {
+			    draw_grid(win, gcx, grid_xd, grid_yd,
+				grid_xs, grid_ys, grid_xo, grid_yo);
+		    	}
 		    }  
 		
 		    for (j=1; j<=num_menus; j++) {
@@ -468,12 +479,19 @@ FILE *fp;
 		case ConfigureNotify:
 		    if (debug) printf("EVENT LOOP: got Config Notify\n");
 		    top_width = xe.xconfigure.width;
-		    height=top_height = xe.xconfigure.height;
-		    width=top_width-menu_width;
+		    g_height=top_height = xe.xconfigure.height;
+		    g_width=top_width-menu_width;
 		    XMoveWindow(dpy, menuwin, top_width-menu_width, 0);
-		    XResizeWindow(dpy, menuwin, menu_width, height);
-		    XResizeWindow(dpy, win, top_width-menu_width, height);
-		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
+		    XResizeWindow(dpy, menuwin, menu_width, g_height);
+		    XResizeWindow(dpy, win, top_width-menu_width, g_height);
+		    if (currep != NULL) {
+			xwin_window_set( currep->vp_xmin, 
+			                 currep->vp_ymin,
+				         currep->vp_xmax, 
+					 currep->vp_ymax );
+		    } else {
+			xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
+		    }
 		    break;
 		case ButtonRelease:
 		    button_down=0;
@@ -561,7 +579,12 @@ FILE *fp;
 		}
 
 	    }
-	} else if (FD_ISSET(in, &tset)) { 		/* pending stdin */
+	} 
+	if (need_dump) {
+	    need_dump=0;
+	    dump_window(win, gca, g_width, g_height);
+	}
+	if (FD_ISSET(in, &tset)) {	/* pending stdin */
 	    return(getc(stdin));
 	}
     }
@@ -620,10 +643,7 @@ XFontStruct **font_info;
 void xwin_xor_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
 {
-
-    extern DISPLAYSTATE display_state;
-
-    if (display_state == D_ON) {
+    if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gcx, x1, y1, x2, y2);
     }
 }
@@ -632,7 +652,7 @@ void xwin_draw_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
 {
     /* XSetFunction(dpy, gca, GXcopy);  */
-    if (display_state == D_ON) {
+    if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gca, x1, y1, x2, y2);
     }
 }
@@ -728,7 +748,7 @@ double dx,dy;		/* grid delta */
 double sx,sy;		/* grid skip number */
 double xorig,yorig;	/* grid origin */
 {
-    extern unsigned int width, height;
+    extern unsigned int g_width, g_height;
     extern GRIDSTATE grid_state;
     extern int grid_color;
     double delta;
@@ -743,12 +763,16 @@ double xorig,yorig;	/* grid origin */
     	dx, dy, sx, sy, xorig, yorig, grid_color);
 
     /* colored grid */
-    XSetForeground(dpy, gc, colors[grid_color]); /* RCW */
+    if (currep != NULL) {
+	XSetForeground(dpy, gc, colors[currep->grid_color]);
+    } else {
+	XSetForeground(dpy, gc, colors[grid_color]); 
+    }
 
     XSetFillStyle(dpy, gc, FillSolid);
 
     xstart=(double) 0;
-    ystart=(double) height;
+    ystart=(double) g_height;
 	if (debug) printf("starting with %g %g\n", xstart, ystart); 
     V_to_R(&xstart, &ystart);
 	if (debug) printf("V_to_R %g %g\n", xstart, ystart); 
@@ -756,7 +780,7 @@ double xorig,yorig;	/* grid origin */
     snapxy_major(&xstart,&ystart);
 	if (debug) printf("snap %g %g\n", xstart, ystart); 
 
-    xend=(double) width;
+    xend=(double) g_width;
     yend=(double) 0;
 	if (debug) printf("starting with %g %g\n", xend, yend); 
     V_to_R(&xend, &yend);
@@ -774,16 +798,16 @@ double xorig,yorig;	/* grid origin */
 
 	/* require at least 5 pixels between grid ticks */
 
-	if ( ((xend-xstart)/(dx*sx) >= (double) width/5) ||
-	     ((yend-ystart)/(dy*sx) >= (double) height/5) ) {
+	if ( ((xend-xstart)/(dx*sx) >= (double) g_width/5) ||
+	     ((yend-ystart)/(dy*sx) >= (double) g_height/5) ) {
 
 	    if (!grid_notified) {
 		printf("grid suppressed, too many points\n");
 		grid_notified++;
 	    }
 
-	} else if ( ((xend-xstart)/(dx) >= (double) width/5) ||
-	     ((yend-ystart)/(dy) >= (double) height/5) ) {
+	} else if ( ((xend-xstart)/(dx) >= (double) g_width/5) ||
+	     ((yend-ystart)/(dy) >= (double) g_height/5) ) {
 
 	    /* this is the old style grid - no fine ticks */
 
@@ -792,7 +816,7 @@ double xorig,yorig;	/* grid origin */
 		    xd=x;
 		    yd=y;
 		    R_to_V(&xd,&yd);
-		    if (grid_state == G_ON && display_state == D_ON) {
+		    if (grid_state == G_ON && xwin_display_state() == D_ON) {
 			XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
 		    }
 		}
@@ -806,7 +830,7 @@ double xorig,yorig;	/* grid origin */
 	    /* that we draw grid all the way to left margin even after */
 	    /* calling snap_major above */
 
-	    if (grid_state == G_ON && display_state == D_ON) {
+	    if (grid_state == G_ON && xwin_display_state() == D_ON) {
 		for (x=xstart-dx*sx; x<=xend; x+=dx*sx) {
 		    for (y=ystart-dy*sy; y<=yend; y+=dy*sy) {
 			for (i=0; i<sx; i++) {
@@ -815,7 +839,7 @@ double xorig,yorig;	/* grid origin */
 				    xd=x + (double) i*dx;
 				    yd=y + (double) j*dy;
 				    R_to_V(&xd,&yd);
-				    if (display_state == D_ON) {
+				    if (xwin_display_state() == D_ON) {
 				        XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
 				    }
 				}
@@ -828,7 +852,7 @@ double xorig,yorig;	/* grid origin */
 
 	/* now draw crosshair at 1/50 of largest display dimension */
 
-	if (width > height) {
+	if (g_width > g_height) {
 	    delta = (double) dpy_width/100;
 	} else {
 	    delta = (double) dpy_height/100;
@@ -837,7 +861,7 @@ double xorig,yorig;	/* grid origin */
 	/* conveniently reusing these variable names */
 	x=(double)0; y=0; R_to_V(&x,&y);
 
-	if (grid_state == G_ON && display_state == D_ON) {
+	if (grid_state == G_ON && xwin_display_state() == D_ON) {
 	    XDrawLine(dpy, win, gc, 
 		(int)x, (int)(y-delta), (int)x, (int)(y+delta));
 	    XDrawLine(dpy, win, gc, 
@@ -855,12 +879,12 @@ void xwin_draw_circle(x,y)
 double x, y;
 {
     double delta;
-    extern unsigned int width, height;
+    extern unsigned int g_width, g_height;
     char buf[BUF_SIZE];
 
     sprintf(buf,"%d,%d", (int) x, (int) y);
 
-    if (width > height) {
+    if (g_width > g_height) {
 	delta = (double) dpy_width/200;
     } else {
 	delta = (double) dpy_height/200;
@@ -906,12 +930,12 @@ void xwin_draw_point(x,y)
 double x, y;
 {
     double delta;
-    extern unsigned int width, height;
+    extern unsigned int g_width, g_height;
     char buf[BUF_SIZE];
 
-    sprintf(buf,"%d,%d", (int) x, (int) y);
+    sprintf(buf,"%g,%g", x, y);
 
-    if (width > height) {
+    if (g_width > g_height) {
 	delta = (double) dpy_width/100;
     } else {
 	delta = (double) dpy_height/100;
@@ -929,25 +953,39 @@ double x, y;
     XFlush(dpy);
 }
 
-void snapxy(x,y)	/* snap to grid tick */
+void snapxy(x,y)	/* snap world coordinates to grid ticks */
 double *x, *y;
 {
     extern double grid_xo, grid_xd;
     extern double grid_yo, grid_yd;
+    double xo, yo, xd, yd;
+
+    if (currep != NULL) {
+    	xo = currep->grid_xo;
+    	yo = currep->grid_yo;
+    	xd = currep->grid_xd;
+    	yd = currep->grid_yd;
+    } else {
+    	xo = grid_xo;
+    	yo = grid_yo;
+    	xd = grid_xd;
+    	yd = grid_yd;
+    }
+
     int debug=0;
 
     if (debug) printf("snap called with %g %g, and xo %g %g xd %g %g\n", 
-    	*x, *y,grid_xo, grid_yo, grid_xd, grid_yd);
+    	*x, *y,xo, yo, xd, yd);
 
 
     /* adapted from Graphic Gems, v1 p630 (round to nearest int fxn) */
 
     *x = (double) ((*x)>0 ? 
-	grid_xd*( (int) ((((*x)-grid_xo)/grid_xd)+0.5))+grid_xo :
-	grid_xd*(-(int) (0.5-(((*x)-grid_xo)/grid_xd)))+grid_xo);
+	xd*( (int) ((((*x)-xo)/xd)+0.5))+xo :
+	xd*(-(int) (0.5-(((*x)-xo)/xd)))+xo);
     *y = (double) ((*y)>0 ? 
-	grid_yd*( (int) ((((*y)-grid_yo)/grid_yd)+0.5))+grid_yo : 
-	grid_yd*(-(int) (0.5-(((*y)-grid_yo)/grid_yd)))+grid_yo);
+	yd*( (int) ((((*y)-yo)/yd)+0.5))+yo : 
+	yd*(-(int) (0.5-(((*y)-yo)/yd)))+yo);
 }
 
 void snapxy_major(x,y)	/* snap to grid ticks multiplied by ds,dy */
@@ -955,20 +993,37 @@ double *x, *y;
 {
     extern double grid_xo, grid_xd, grid_xs;
     extern double grid_yo, grid_yd, grid_ys;
+    double xo, yo, xd, yd, xs, ys;
+    double xdel, ydel;
 
-    double xd, yd;
+    if (currep != NULL) {
+    	xo = currep->grid_xo;
+    	yo = currep->grid_yo;
+    	xd = currep->grid_xd;
+    	yd = currep->grid_yd;
+    	xs = currep->grid_xs;
+    	ys = currep->grid_ys;
+    } else {
+    	xo = grid_xo;
+    	yo = grid_yo;
+    	xd = grid_xd;
+    	yd = grid_yd;
+    	xs = grid_xs;
+    	ys = grid_ys;
+    }
 
-    xd = grid_xd*grid_xs;
-    yd = grid_yd*grid_ys;
+
+    xdel = xd*xs;
+    ydel = yd*ys;
 
     /* adapted from Graphic Gems, v1 p630 (round to nearest int fxn) */
 
     *x = (double) ((*x)>0 ? 
-	xd*( (int) ((((*x)-grid_xo)/xd)+0.5))+grid_xo :
-	xd*(-(int) (0.5-(((*x)-grid_xo)/xd)))+grid_xo);
+	xdel*( (int) ((((*x)-xo)/xdel)+0.5))+xo :
+	xdel*(-(int) (0.5-(((*x)-xo)/xdel)))+xo);
     *y = (double) ((*y)>0 ? 
-	yd*( (int) ((((*y)-grid_yo)/yd)+0.5))+grid_yo : 
-	yd*(-(int) (0.5-(((*y)-grid_yo)/yd)))+grid_yo);
+	ydel*( (int) ((((*y)-yo)/ydel)+0.5))+yo : 
+	ydel*(-(int) (0.5-(((*y)-yo)/ydel)))+yo);
 }
 
 void xwin_grid_color(color) 
@@ -981,13 +1036,28 @@ int color;
     	printf("xwin_grid_color: old %d, new %d\n", grid_color, color);
     }
 
-    if (grid_color != color) {
-	grid_color = color;
-	need_redraw++;
+    if (currep != NULL) {
+	if (currep->grid_color != color) {
+	    currep->grid_color = color;
+	    need_redraw++;
+	}
+    } else {
+	if (grid_color != color) {
+	    grid_color = color;
+	    need_redraw++;
+	}
     }
 
+}
+
+int xwin_display_state()
+{
+    extern DISPLAYSTATE display_state;
+
     if (currep != NULL) {
-    	currep->grid_color = color;
+    	return (currep->display_state);
+    } else {
+    	return (display_state);
     }
 }
 
@@ -996,6 +1066,10 @@ DISPLAYSTATE state;
 {
     extern DISPLAYSTATE display_state;
     int debug=0;
+
+    if (currep != NULL) {
+    	display_state = currep->display_state;
+    }
 
     switch (state) {
     	case D_TOGGLE:
@@ -1026,6 +1100,9 @@ DISPLAYSTATE state;
 	    weprintf("bad state in xwin_display_set_state\n");
 	    break;
     }
+    if (currep != NULL) {
+    	currep->display_state = display_state;
+    }
 }
 
 void xwin_grid_state(state) 
@@ -1033,7 +1110,8 @@ GRIDSTATE state;
 {
     extern GRIDSTATE grid_state;
     int debug=0;
-
+ 
+    /* FIXME: grid state should be kept in currep */
     switch (state) {
     	case G_TOGGLE:
 	    if (debug) printf("toggling grid state\n");
@@ -1073,45 +1151,52 @@ double ys;
 double xo; 
 double yo;
 {
+    int debug = 0;
     extern double grid_xd;
     extern double grid_yd;
     extern double grid_xs;
     extern double grid_ys;
     extern double grid_xo;
     extern double grid_yo;
-    int debug = 0;
-   
-    printf("setting grid: xydelta=%g,%g xyskip=%g,%g xyoffset=%g,%g\n",
-	xd, yd, xs, ys, xo, yo);
 
-    /* only redraw if something has changed */
+    if (currep != NULL) {
+    	if (currep->grid_xd != xd ||
+	    currep->grid_yd != yd ||
+	    currep->grid_xs != xs ||
+	    currep->grid_ys != ys ||
+	    currep->grid_xo != xo ||
+	    currep->grid_yo != yo ) { /* only redraw if something has changed */
 
-    if (grid_xd !=  xd ||
-        grid_yd !=  yd ||
-	grid_xs !=  xs ||
-	grid_ys !=  ys ||
-	grid_xo !=  xo ||  
-	grid_yo !=  yo) {
-
-	grid_xd= xd; 
-	grid_yd= yd; 
-	grid_xs= xs; 
-	grid_ys= ys; 
-	grid_xo= xo; 
-	grid_yo= yo; 
-	need_redraw++;
-
-	if (currep != NULL) {
 	    currep->grid_xd=xd;
 	    currep->grid_yd=yd;
 	    currep->grid_xs=xs;
 	    currep->grid_ys=ys;
 	    currep->grid_xo=xo;
 	    currep->grid_yo=yo;
-	    currep->grid_color=grid_color;
 	    /* currep->modified++; */
+	    need_redraw++;
+	}
+    } else {
+    	if (grid_xd != xd ||
+	    grid_yd != yd ||
+	    grid_xs != xs ||
+	    grid_ys != ys ||
+	    grid_xo != xo ||
+	    grid_yo != yo ) { /* only redraw if something has changed */
+
+	    grid_xd=xd;
+	    grid_yd=yd;
+	    grid_xs=xs;
+	    grid_ys=ys;
+	    grid_xo=xo;
+	    grid_yo=yo;
+	    /* currep->modified++; */
+	    need_redraw++;
 	}
     }
+   
+    if (debug) printf("setting grid: xydelta=%g,%g xyskip=%g,%g xyoffset=%g,%g\n",
+	xd, yd, xs, ys, xo, yo);
 }
 
 /*
@@ -1122,21 +1207,10 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
     xy1,xy2 zooms in on selected region
 */
 
-void xwin_window_get(x1, y1, x2, y2) 
-double *x1,*y1,*x2,*y2;
-{
-    extern double vp_xmin, vp_ymin, vp_xmax, vp_ymax;
-    *x1 = vp_xmin;
-    *y1 = vp_ymin;
-    *x2 = vp_xmax;
-    *y2 = vp_ymax;
-}
-
 void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
 double x1,y1,x2,y2;
 {
     extern XFORM *xp;
-    extern double vp_xmin, vp_ymin, vp_xmax, vp_ymax;
     extern double scale,xoffset,yoffset;
     extern int grid_notified;
     double dratio,wratio;
@@ -1156,33 +1230,44 @@ double x1,y1,x2,y2;
     }
 
     if (currep != NULL) {
-	currep->minx=x1;
-	currep->miny=y1;
-	currep->maxx=x2;
-	currep->maxy=y2;
+	currep->vp_xmin=x1;
+	currep->vp_ymin=y1;
+	currep->vp_xmax=x2;
+	currep->vp_ymax=y2;
 	/* currep->modified++; */
+    } else {
+	vp_xmin=x1;
+	vp_ymin=y1;
+	vp_xmax=x2;
+	vp_ymax=y2;
     }
 
-    if (debug) printf("setting world window bounds to %g,%g %g,%g\n",
-    	x1,y1,x2,y2);
-    vp_xmin=x1;
-    vp_ymin=y1;
-    vp_xmax=x2;
-    vp_ymax=y2;
-
-    dratio = (double) height/ (double)width;
-    wratio = (vp_ymax-vp_ymin)/(vp_xmax-vp_xmin);
+    dratio = (double) g_height/ (double)g_width;
+    wratio = (y2-y1)/(x2-x1);
 
     if (wratio > dratio) {	/* world is taller,skinnier than display */
-	scale=((double) height)/(vp_ymax-vp_ymin);
+	if (currep != NULL) {
+	    currep->scale=((double) g_height)/(y2-y1);
+	} else {
+	    scale=((double) g_height)/(y2-y1);
+	}
     } else {			/* world is shorter,fatter than display */
-	scale=((double) width)/(vp_xmax-vp_xmin);
+	if (currep != NULL) {
+	    currep->scale=((double) g_width)/(x2-x1);
+	} else {
+	    scale=((double) g_height)/(y2-y1);
+	}
     }
 
-    xoffset = (((double) width)/2.0) -  ((vp_xmin+vp_xmax)/2.0)*scale;
-    yoffset = (((double) height)/2.0) + ((vp_ymin+vp_ymax)/2.0)*scale;
+    if (currep != NULL) {
+	currep->xoffset = (((double) g_width)/2.0) -  ((x1+x2)/2.0)*currep->scale;
+	currep->yoffset = (((double) g_height)/2.0) + ((y1+y2)/2.0)*currep->scale;
+    } else {
+	xoffset = (((double) g_width)/2.0) -  ((x1+x2)/2.0)*scale;
+	yoffset = (((double) g_height)/2.0) + ((y1+y2)/2.0)*scale;
+    }
 
-    if (debug) printf("screen width = %d, height=%d\n",width, height);
+    if (debug) printf("screen width = %d, height=%d\n",g_width, g_height);
     if (debug)  printf("scale = %g, xoffset=%g, yoffset=%g\n",
     	scale, xoffset, yoffset);
 
@@ -1192,18 +1277,20 @@ double x1,y1,x2,y2;
     if (debug)  printf("dy = yoffset - ry*scale;\n");
     if (debug)  printf("rx = (dx - xoffset)/scale;\n");
     if (debug)  printf("ry = (yoffset - dy)/scale;\n");
-    if (debug)  printf("xmin -> %d\n", (int) (xoffset + vp_xmin*scale));
-    if (debug)  printf("ymin -> %d\n", (int) (yoffset - vp_ymin*scale));
-    if (debug)  printf("xmax -> %d\n", (int) (xoffset + vp_xmax*scale));
-    if (debug)  printf("ymax -> %d\n", (int) (yoffset - vp_ymax*scale));
+    if (debug)  printf("xmin -> %d\n", (int) (xoffset + x1*scale));
+    if (debug)  printf("ymin -> %d\n", (int) (yoffset - y1*scale));
+    if (debug)  printf("xmax -> %d\n", (int) (xoffset + x2*scale));
+    if (debug)  printf("ymax -> %d\n", (int) (yoffset - y2*scale));
     */
     
+    /* 
     xp->r11 = scale;
     xp->r12 = 0.0;
     xp->r21 = 0.0;
     xp->r22 = -scale;
     xp->dx  = xoffset;
     xp->dy  = yoffset;
+    */
 
     need_redraw++;
 }
@@ -1214,8 +1301,13 @@ double *x;
 double *y;
 {
     extern double xoffset, yoffset, scale;
-    *x = (*x - xoffset)/scale;
-    *y = (yoffset - *y)/scale;
+    if (currep != NULL) {
+	*x = (*x - currep->xoffset)/currep->scale;
+	*y = (currep->yoffset - *y)/currep->scale;
+    } else {
+	*x = (*x - xoffset)/scale;
+	*y = (yoffset - *y)/scale;
+    }
 }
 
 /* convert real-world coordinates to viewport coords */
@@ -1224,8 +1316,13 @@ double *x;
 double *y;
 {
     extern double xoffset, yoffset, scale;
-    *x = xoffset + *x * scale;
-    *y = yoffset - *y * scale;
+    if (currep != NULL) {
+	*x = currep->xoffset + *x * currep->scale;
+	*y = currep->yoffset - *y * currep->scale;
+    } else {
+	*x = xoffset + *x * scale;
+	*y = yoffset - *y * scale;
+    }
 }
 
 static char *visual_class[] = {
@@ -1365,6 +1462,10 @@ int mode;
         strlen(menutab[win].text)); 
 }
 
+void xwin_raise_window()
+{
+    XRaiseWindow(dpy, topwin);
+}
 
 dump_window(window, gc, width, height) 
 Window window;
@@ -1379,37 +1480,46 @@ unsigned int width, height;
     int R,G,B;
     int fd;
     int i;
+    int debug=0;
 
-    xi = XGetImage(dpy, win, 0,0, width, height, AllPlanes, ZPixmap);
-
-    printf("width  = %d\n", xi->width );
-    printf("height = %d\n", xi->height);
-
-    if (xi->byte_order == LSBFirst) {
-	printf("byte_order = LSBFirst\n");
-    } else if (xi->byte_order == MSBFirst) {
-	printf("byte_order = MSBFirst\n");
-    } else {
-	printf("unknown byte_order: %d\n", xi->byte_order);
+    if (currep == NULL) {
+    	printf("nothing to dump, not editing any cell...\n");
+	return(0);
     }
 
-    printf("bitmap unit=%d\n", xi->bitmap_unit);
+    xi = XGetImage(dpy, window, 0,0, width, height, AllPlanes, ZPixmap);
 
-    if (xi->bitmap_bit_order == LSBFirst) {
-	printf("bitmap_bit_order = LSBFirst\n");
-    } else if (xi->byte_order == MSBFirst) {
-	printf("bitmap_bit_order = MSBFirst\n");
-    } else {
-	printf("unknown bitmap_bit_order: %d\n", xi->bitmap_bit_order);
+    if (debug) {
+
+	printf("width  = %d\n", xi->width );
+	printf("height = %d\n", xi->height);
+
+	if (xi->byte_order == LSBFirst) {
+	    printf("byte_order = LSBFirst\n");
+	} else if (xi->byte_order == MSBFirst) {
+	    printf("byte_order = MSBFirst\n");
+	} else {
+	    printf("unknown byte_order: %d\n", xi->byte_order);
+	}
+
+	printf("bitmap unit=%d\n", xi->bitmap_unit);
+
+	if (xi->bitmap_bit_order == LSBFirst) {
+	    printf("bitmap_bit_order = LSBFirst\n");
+	} else if (xi->byte_order == MSBFirst) {
+	    printf("bitmap_bit_order = MSBFirst\n");
+	} else {
+	    printf("unknown bitmap_bit_order: %d\n", xi->bitmap_bit_order);
+	}
+
+	printf("bitmap pad = %d\n", xi->bitmap_pad);
+	printf("depth = %d\n", xi->depth);
+	printf("bytes_per_line = %d\n", xi->bytes_per_line);
+	printf("bit_per_pixel = %d\n", xi->bits_per_pixel);
+	printf("red mask= %d\n", xi->red_mask);
+	printf("green mask= %d\n", xi->green_mask);
+	printf("blue mask= %d\n", xi->blue_mask);
     }
-
-    printf("bitmap pad = %d\n", xi->bitmap_pad);
-    printf("depth = %d\n", xi->depth);
-    printf("bytes_per_line = %d\n", xi->bytes_per_line);
-    printf("bit_per_pixel = %d\n", xi->bits_per_pixel);
-    printf("red mask= %d\n", xi->red_mask);
-    printf("green mask= %d\n", xi->green_mask);
-    printf("blue mask= %d\n", xi->blue_mask);
 
     sprintf(buf, "%s.ppm", currep->name);
 
@@ -1452,5 +1562,5 @@ unsigned int width, height;
 }
 
 void xwin_dump_graphics() {
-    dump_window(win, gca, width, height);
+    need_dump++;
 }

@@ -6,7 +6,44 @@ void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
+int  coord_count(COORDS *CP);
 
+int coord_get(CP, n, px, py) 	/* get nth set of x,y coords in list */
+COORDS *CP;
+int n;
+double *px, *py;
+{	
+    COORDS *tmp;
+    int i;
+    int err=0;
+
+    i=1;
+    tmp = CP;
+    while(i<n && (tmp = tmp->next) != NULL) {
+	i++;
+    }
+    if (i!=n) {
+    	err = -1;
+    } else {
+    	*px = tmp->coord.x;
+    	*py = tmp->coord.y;
+    }
+    return(err);
+}		
+
+int coord_count(CP) 	/* return number of coords in list */
+COORDS *CP;
+{	
+    COORDS *tmp;
+    int i;
+
+    i=1;
+    tmp = CP;
+    while((tmp = tmp->next) != NULL) {
+	i++;
+    }
+    return(i);
+}		
 
 COORDS *coord_new(x,y)
 double x,y;
@@ -89,11 +126,13 @@ COORDS *CP;
 }
 
 /* test harness */
+
 /*
 main() 
 {
     COORDS *CP;
     COORDS *NP;
+    double x,y;
 
     CP = coord_new(1.0,2.0);
     coord_append(CP,3.0, 4.0);
@@ -104,5 +143,12 @@ main()
     coord_swap_last(CP,9.0, 10.0);
     coord_print(CP);
     coord_print(coord_copy(CP));
+    printf("num coords = %d\n", coord_count(CP));
+    coord_get(CP, 1, &x, &y);
+    printf("1st coord is = %g,%g\n",x,y);
+    coord_get(CP, 2, &x, &y);
+    printf("2nd coord is = %g,%g\n",x,y);
+    coord_get(CP, 3, &x, &y);
+    printf("3rd coord is = %g,%g\n",x,y);
 }
 */

@@ -12,7 +12,7 @@ extern int procXevent();
 /* globals that should eventually be part of a */
 /* window structure to allow multiple viewports */
 
-extern unsigned int width, height; 
+extern unsigned int g_width, g_height; 
 
 /* xwin routines that should eventually also contain a viewport arg */
 
@@ -29,6 +29,7 @@ typedef enum {G_ON, G_OFF, G_TOGGLE} GRIDSTATE;
 void xwin_grid_state( GRIDSTATE state );
 void xwin_grid_color( int color );
 extern void xwin_window_set();
+extern void xwin_raise_window();
 extern void xwin_window_get();
 extern void xwin_dump_graphics();
 extern void xwin_draw_text(double x, double y, char *s);

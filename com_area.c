@@ -11,14 +11,13 @@
 
 static double x1, y1, x2, y2, x3, y3;
 static double xmin, ymin, xmax, ymax;
-void draw_cbox();
 
 /* 
-    copy a component in the current device.
-    COP <restrictor> { xysel xyref xynewref1 [xynewref2...] } <EOC>
+    measure the area of a component in the current device.
+    AREA <restrictor> { xysel } ... <EOC>
 */
 
-com_copy(LEXER *lp, char *arg)		
+com_area(LEXER *lp, char *arg)		
 {
 
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,END} state = START;
@@ -35,7 +34,9 @@ com_copy(LEXER *lp, char *arg)
     int i;
     int flag;
     DB_DEFLIST *p_best;
-    DB_DEFLIST *p_new = NULL;
+    DB_DEFLIST *p_prev;
+    double area;
+    double cum_area=0.0;
 
     int my_layer=0; 	/* internal working layer */
 
@@ -43,7 +44,7 @@ com_copy(LEXER *lp, char *arg)
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
-	printf("must do \"EDIT <name>\" before COPY\n");
+	printf("must do \"EDIT <name>\" before AREA\n");
 	token_flush_EOL(lp);
 	return(1);
     }
@@ -70,7 +71,7 @@ com_copy(LEXER *lp, char *arg)
 */
 
     rl_saveprompt();
-    rl_setprompt("COPY> ");
+    rl_setprompt("AREA> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -137,7 +138,7 @@ com_copy(LEXER *lp, char *arg)
 		    printf("looks like a descriptor to me: %s\n", word);
 		}
 	    } else {
-		token_err("COPY", lp, "expected DESC or NUMBER", token);
+		token_err("AREA", lp, "expected DESC or NUMBER", token);
 		state = END;	/* error */
 	    }
 	    break;
@@ -152,7 +153,7 @@ com_copy(LEXER *lp, char *arg)
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
+		token_err("AREA", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -164,7 +165,7 @@ com_copy(LEXER *lp, char *arg)
 		token_get(lp,word);
 		state = NUM2;
 	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
+		token_err("AREA", lp, "expected COMMA", token);
 	        state = END;
 	    }
 	    break;
@@ -175,128 +176,33 @@ com_copy(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep, x1,y1,1, my_layer, comp, 0)) != NULL) {
+
+		if (p_prev != NULL) {
+		    db_highlight(p_prev);	/* unhighlight it */
+		}
+
+		if ((p_best=db_ident(currep,
+			x1,y1,0,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
-		    xmin=p_best->xmin;
-		    xmax=p_best->xmax;
-		    ymin=p_best->ymin;
-		    ymax=p_best->ymax;
-		    state = NUM3;
+		    area = db_area(p_best);
+		    cum_area += area;
+		    if (area >= 0) {
+			printf("   area = %g, total = %g\n", area, cum_area );
+		    }
+		    p_prev=p_best;
+		    state = NUM1;
 		} else {
-		    printf("nothing here that is copyable... try SHO command?\n");
+		    printf("nothing here to measure... try SHO command?\n");
 		    state = START;
 		}
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("COPY: cancelling POINT\n");
+		printf("AREA: cancelling POINT\n");
 	        state = END;
 	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case NUM3:
-	    if (debug) printf("in NUM3\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x2);	/* scan it in */
-		state = COM2;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM2:		
-	    if (debug) printf("in COM2\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM4;
-	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM4:
-	    if (debug) printf("in NUM4\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y2);	/* scan it in */
-		db_highlight(p_best);		/* unhighlight */
-		rubber_set_callback(draw_cbox);
-		state = NUM5;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("COPY: cancelling POINT\n");
-	        state = END;
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case NUM5:
-	    if (debug) printf("in NUM5\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x3);	/* scan it in */
-		state = COM3;
-	    } else if (token == BACK) {
-		token_get(lp,word); 
-		if (p_new == NULL) {
-			;   /* just ignore it */
-		} else {
-		    db_unlink_component(currep, p_new);
-		    p_new=NULL;
-		    need_redraw++;
-		}
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM3:		
-	    if (debug) printf("in COM3\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM6;
-	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM6:
-	    if (debug) printf("in NUM6\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y3);	/* scan it in */
-		printf("got %g %g\n", x3, y3);
-		/* rubber_clear_callback(); */
-		p_new=db_copy_component(p_best);
-		db_move_component(p_new, x3-x2, y3-y2);
-		db_insert_component(currep, p_new);
-		need_redraw++;
-		state = NUM5;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("COPY: cancelling POINT\n");
-	        state = END;
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
+		token_err("AREA", lp, "expected NUMBER", token);
 		state = END; 
 	    }
 	    break;
@@ -342,37 +248,4 @@ com_copy(LEXER *lp, char *arg)
     } else {
 	;
 */
-
-
-
-void draw_cbox(x, y, count)
-double x, y;  /* offset */
-int count; /* number of times called */
-{
-	static double x1old, x2old, y1old, y2old;
-	static double xx1, yy1, xx2, yy2;
-	BOUNDS bb;
-	bb.init=0;
-
-	xx1=xmin+x-x2;
-	yy1=ymin+y-y2;
-	xx2=xmax+x-x2;
-	yy2=ymax+y-y2;
-
-	if (count == 0) {		/* first call */
-	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
-	} else if (count > 0) {		/* intermediate calls */
-	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
-	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
-	} else {			/* last call, cleanup */
-	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
-	}
-
-	/* save old values */
-	x1old=xx1;
-	y1old=yy1;
-	x2old=xx2;
-	y2old=yy2;
-	jump();
-}
 

@@ -27,8 +27,8 @@ int *layer;
     int debug=0;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_prev = NULL;
+    double area;
 
-    if (debug) printf("layer %d\n",*layer);
     rl_setprompt("IDENT> ");
 
     while (!done) {
@@ -85,12 +85,16 @@ int *layer;
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (p_prev != NULL) {
-		    db_highlight(p_best);	/* unhighlight it */
+		    db_highlight(p_prev);	/* unhighlight it */
 		}
 
 		if ((p_best=db_ident(currep, x1, y1, 0, 0, 0, 0)) != NULL) {
-		    db_notate(p_best);		/* print information */
 		    db_highlight(p_best);	
+		    db_notate(p_best);		/* print information */
+		    area = db_area(p_best);
+		    if (area >= 0) {
+			printf("   area = %g\n", db_area(p_best));
+		    }
 		    p_prev=p_best;
 		}
 
@@ -117,7 +121,7 @@ int *layer;
 	}
     }
     if (p_prev != NULL) {
-	db_highlight(p_best);	/* unhighlight any remaining component */
+	db_highlight(p_prev);	/* unhighlight any remaining component */
     }
     return(1);
 }

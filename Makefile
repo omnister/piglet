@@ -2,20 +2,21 @@
 OBJS= db.o draw.o xwin.o readfont.o rubber.o opt_parse.o \
        eprintf.o geom_circle.o geom_rect.o geom_line.o \
        geom_poly.o geom_text.o geom_inst.o \
-       rlgetc.o token.o lex.o coords.o \
+       rlgetc.o token.o lex.o coords.o com_change.o\
        com_add.o com_delete.o com_distance.o com_ident.o \
        com_copy.c com_move.c com_window.o com_point.o com_show.o postscript.o \
-       readmenu.o
+       com_area.c readmenu.o
 
 TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 changes com_add.c com_delete.c com_distance.c com_ident.c com_copy.c com_move.c \
 com_point.c com_show.c com_window.c coords.c db.c db.h draw.c \
 eprintf.c eprintf.h eventnames.h geom_circle.c geom_inst.c \
 geom_line.c  geom_poly.c geom_rect.c geom_text.c lex.c lex.h \
-Makefile MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h \
+Makefile MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h com_change.c \
 plan.EQUATE plan.MOVE plan.SELECT plan.STATUS plan.TODO readfont.c \
 readfont.h rlgetc.c rlgetc.h rubber.c rubber.h TEXTDATA.F token.c \
-token.h xwin.c xwin.h postscript.o readmenu.c web RCS
+token.h xwin.c xwin.h postscript.c pig postscript.h readmenu.c web RCS \
+com_area.c
 
 CC=cc -ggdb
 
@@ -34,6 +35,7 @@ draw.o:        db.h token.h xwin.h
 eprintf.o:     eprintf.h
 com_ident.o:   db.h xwin.h token.h
 com_add.o:     db.h token.h
+com_area.o:    db.h xwin.h token.h
 com_copy.o:    db.h token.h
 com_delete.o:  db.h token.h
 com_move.o:    db.h token.h

@@ -85,6 +85,7 @@ char *s;
     sp->grid_yo = 0.0;
     sp->grid_color = 3;		
 
+    sp->display_state=G_ON;
     sp->logical_level=1;
     sp->lock_angle=0.0;
     sp->modified = 0;
@@ -110,16 +111,22 @@ char    *s;
     char c;
     TOKEN token;
     char word[128];
+    char buf[128];
     int done=0;
 
-    printf("%s: (y/n)?\n", s);
+    rl_saveprompt();
+
+    sprintf(buf,"%s: (y/n)? ", s);
+    rl_setprompt(buf);
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "Y", 1) == 0) {
+    		    rl_restoreprompt();
 		    return(1);
 		} else if (strncasecmp(word, "N", 1) == 0) {
+    		    rl_restoreprompt();
 		    return(0);
 		} else {
 	    	     printf("please answer by typing \"yes\" or \"no\": ");
@@ -140,17 +147,21 @@ int db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
 char *s;
 {
+    DB_TAB *dp;
     DB_TAB *sp;
     DB_DEFLIST *p;
     int debug=0;
     char buf[MAXFILENAME];
     char buf2[MAXFILENAME];
+    int flag=0;
     FILE *fp;
 
     if ((sp=db_lookup(s))) { 	/* in memory */
 
         snprintf(buf, MAXFILENAME, "delete %s from memory", s);
         if (strcmp(lp->name, "STDIN") !=0 || ask(lp, buf)) {
+
+	    flag=1;
 
 	    if (debug) printf("db_purge: unlinking %s from db\n", s);
 
@@ -176,7 +187,7 @@ char *s;
 	}
 
 	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	    db_free_component(p->type);
+	    db_free_component(p);
 	}
     
 	free(sp);
@@ -190,11 +201,28 @@ char *s;
     snprintf(buf, MAXFILENAME, "./cells/%s.d", s);
     if ((access(buf,F_OK)) == 0)  {	/* exists? */
         if (debug) printf("inside exists\n");
-        sprintf(buf2, "delete %s from disk\n", buf);
+        sprintf(buf2, "delete %s from disk", buf);
         if (debug) printf("lexer name = %s", lp->name);
         if (strcmp(lp->name, "STDIN") !=0 || ask(lp, buf2)) {
 	    if (debug) printf("removing %s\n", buf);
+	    flag+=2;
 	    remove(buf);
+	}
+    }
+
+    /* we wiped out both memory and disk versions of the cell */
+    /* so we'd better scan the DB and wipe out all calls to it */
+
+    if (flag==3) {
+    	for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+	    for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+		if (p->type == INST && strcmp(p->u.i->name, s)==0) {
+		     /* this one has to go! */
+		     printf("unresolvable references to %s in %s\n",
+		     	s, p->u.i->name);
+		     	
+		}
+     	    }
 	}
     }
 }
@@ -205,7 +233,7 @@ DB_DEFLIST *p;
     struct db_deflist *dp;
 
     if (p==NULL) {
-    	printf("db_cup_component: can't dup a null component\n");
+    	printf("db_copy_component: can't copy a null component\n");
 	return(NULL);
     }
 
@@ -404,22 +432,46 @@ DB_DEFLIST *p;
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
 
-int db_save(sp, name)           	/* print db */
+int db_save(lp, sp, name)           	/* print db */
+LEXER *lp;
 DB_TAB *sp;
 char *name;
 {
 
     FILE *fp;
     char buf[MAXFILENAME];
+    char buf2[MAXFILENAME];
+
+    int debug=0;
+
     int err=0;
 
     mkdir("./cells", 0777);
     snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
-    err+=((fp = fopen(buf, "w+")) == 0); 
 
-    db_def_print(fp, sp, CELL); 
-    err+=(fclose(fp) != 0);
+    /* check to see if would overwrite ask permission before doing so */
+    /* but don't ask if device name matches save name */
 
+    if (debug) {
+	printf("in db_save, lp=%s\n", lp->name); 
+	printf("device name=%s, save name=%s\n", sp->name, name);
+	printf("access =%d\n", access(buf, F_OK));
+    }
+
+
+    if ((strcmp(sp->name, name) != 0) &&
+       		(strcmp(lp->name, "STDIN") == 0) &&
+       		(access(buf, F_OK) == 0)) {
+        snprintf(buf2, MAXFILENAME, "overwrite %s on disk", name);
+        if (ask(lp, buf2) == 0) {
+	    printf("aborting save.\n");
+	    return(1);
+	}
+    } else {
+	err+=((fp = fopen(buf, "w+")) == 0); 
+	db_def_print(fp, sp, CELL); 
+	err+=(fclose(fp) != 0);
+    }
     return(err);
 }
 
@@ -430,12 +482,18 @@ DB_TAB *sp;
     FILE *fp;
     char buf[MAXFILENAME];
     int err=0;
+    DB_TAB *dp;
 
     mkdir("./cells", 0777);
     snprintf(buf, MAXFILENAME, "./cells/%s_I", sp->name);
     err+=((fp = fopen(buf, "w+")) == 0); 
 
     fp = fopen(buf, "w+"); 
+
+    /* clear out all flag bits in cell definition headers */
+    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+	dp->flag=0;
+    }
 
     db_def_arch_recurse(fp,sp);
     db_def_print(fp, sp, ARCHIVE);
@@ -449,24 +507,88 @@ int db_def_arch_recurse(fp,sp)
 FILE *fp;
 DB_TAB *sp;
 {
-    DB_TAB *dp;
     DB_DEFLIST *p; 
 
-    /* clear out all flag bits in cell definition headers */
-    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
-	sp->flag=0;
-    }
-
     for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-
 	if (p->type == INST && !(db_lookup(p->u.i->name)->flag)) {
-
 	    db_def_arch_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
 	    ((db_lookup(p->u.i->name))->flag)++;
 	    db_def_print(fp, db_lookup(p->u.i->name), ARCHIVE);
 	}
     }
     return(0); 	
+}
+
+
+int db_list_unsaved()
+{
+    DB_TAB *dp;
+    int numunsaved=0;
+    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+    	if (dp->modified) {
+	    printf("    device <%s> is modified!\n", dp->name);
+	    numunsaved++;
+	}
+    }
+    return(numunsaved);
+}
+
+int db_contains(name1, name2) /* return 0 if sp contains no reference to "name" */
+char *name1;
+char *name2;
+{
+
+    DB_TAB *sp;
+    DB_TAB *dp;
+    DB_DEFLIST *p; 
+    int retval = 0;
+    int debug=0;
+	 
+    if ((sp=db_lookup(name1)) == NULL) {
+    	printf("error in db_contains\n");
+    }
+
+    /* clear out all flag bits in cell definition headers */
+    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+	dp->flag=0;
+    }
+
+    if (debug) printf("db_contains called with %s %s\n", name1, name2);
+
+    db_contains_body(sp, name2, &retval); /* recurse */
+    return (retval);
+}
+
+db_contains_body(sp,name,retval) 
+DB_TAB *sp;
+char *name;
+int *retval;
+{
+    DB_DEFLIST *p; 
+    int debug=0;
+
+    /* FIXME protect against db_lookup returning NULL */
+    /* which can happen if something is purged during an edit */
+    /* perhaps it would also be good to have PURGE delete all references */
+    /* to any PURGED cell? Also need to think about the policy for */
+    /* what happens when a cell is edited that references non-existant */
+    /* instances... */
+
+    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+	if (p->type == INST && 
+	    db_lookup(p->u.i->name) != NULL &&
+	    !(db_lookup(p->u.i->name)->flag)) {
+
+		db_contains_body(db_lookup(p->u.i->name), name, retval);
+		((db_lookup(p->u.i->name))->flag)++;
+
+		if (debug) printf("%s %s %s\n", sp->name, p->u.i->name, name); 
+
+		if (strcmp(p->u.i->name, name) == 0) {
+		    (*retval)++;
+		}
+	}
+    }
 }
 
 
@@ -661,6 +783,47 @@ struct db_deflist *dp;
     }
 
     cell->modified++;
+}
+
+void db_set_layer(p, new_layer) /* set the layer of any component */
+struct db_deflist *p;
+int new_layer;
+{
+    if (p == NULL) {
+    	printf("db_set_layer: can't change layer on null component!\n");
+    } else {
+	switch (p->type) {
+	    case ARC:
+		if (new_layer) p->u.a->layer = new_layer;
+		break;
+	    case CIRC:
+		if (new_layer) p->u.c->layer = new_layer;
+		break;
+	    case INST:
+		break;
+	    case LINE:
+		if (new_layer) p->u.l->layer = new_layer;
+		break;
+	    case NOTE:
+		if (new_layer) p->u.n->layer = new_layer;
+		break;
+	    case OVAL:
+		if (new_layer) p->u.o->layer = new_layer;
+		break;
+	    case POLY:
+		if (new_layer) p->u.p->layer = new_layer;
+		break;
+	    case RECT:
+		if (new_layer) p->u.r->layer = new_layer;
+		break;
+	    case TEXT:
+		if (new_layer) p->u.t->layer = new_layer;
+		break;
+	    default:
+		printf("db_change_layer: unknown case\n");
+		break;
+	}
+    }
 }
 
 void db_move_component(p, dx, dy) /* move any component by dx, dy */
@@ -1461,7 +1624,6 @@ int mode;
     if ((x1 != x2 || y1 != y2) && npts > 2) {
 	draw(x1, y1, bb, mode);
     }
-
 }
 
 

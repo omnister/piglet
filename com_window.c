@@ -82,7 +82,8 @@ char *arg;
 		token_get(lp, word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
-		 do_win(0, 0.0, 0.0, 0.0, 0.0, scale);
+		 if (debug) printf("calling do_win 1 inside com window\n");
+		 do_win(lp, 0, 0.0, 0.0, 0.0, 0.0, scale);
 		 fit = 0;
 		 scale = 1;
 		 state = END;
@@ -146,7 +147,8 @@ char *arg;
 		token_get(lp, word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("WIN: doing pan\n");
-		do_win(2, x1, y1, 0.0, 0.0, scale);
+		if (debug) printf("calling do_win 2 inside com window\n");
+		do_win(lp, 2, x1, y1, 0.0, 0.0, scale);
 		fit = 0;
 		scale = 1;
 	        state = END;
@@ -177,11 +179,13 @@ char *arg;
 		sscanf(word, "%lf", &y2);	/* scan it in */
 		rubber_clear_callback();
 		if (x1==x2 && y1==y2) {
-		    do_win(2, x1, y1, 0.0, 0.0, scale);  /* pan */
+		     if (debug) printf("calling do_win 3 inside com window\n");
+		    do_win(lp, 2, x1, y1, 0.0, 0.0, scale);  /* pan */
 		    fit = 0;
 		    scale = 1;
 		} else {
-		    do_win(4, x1, y1, x2, y2, scale);    /* zoom */
+		     if (debug) printf("calling do_win 4 inside com window\n");
+		    do_win(lp, 4, x1, y1, x2, y2, scale);    /* zoom */
 		    fit = 0;
 		    scale = 1;
 		}
@@ -214,13 +218,23 @@ char *arg;
     return(1);
 }
 
-do_win(int n, double x1, double y1, double x2, double y2, double scale) {
+do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale) {
 
     extern int fit, nest;
     double dx, dy, xmin, ymin, xmax, ymax, tmp;
     int debug=0;
 
-    xwin_window_get(&xmin, &ymin, &xmax, &ymax);
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+    } else {
+	xmin = -100.0;
+	ymin = -100.0;
+	xmax =  100.0;
+	ymax =  100.0;
+    }
 
     if (debug) printf("in do_win, %d %g %g %g %g %g\n",
     	n, x1, y1, x2, y2, scale);
@@ -232,13 +246,17 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
 	ymin=y1-dx/2.0;
 	xmax=x1+dx/2.0;
 	ymax=y1+dx/2.0;
-    } else if (n==4) {
+    } else if (n==4) {		/* this is how vp_xmin gets loaded during initial readin */
+	currep->vp_xmin=x1;
+	currep->vp_xmax=x2;
+	currep->vp_ymin=y1;
+	currep->vp_ymax=y2;
     	xmin=x1;
 	ymin=y1;
 	xmax=x2;
 	ymax=y2;
     } else if (n==0) {
-	xwin_window_get(&xmin, &ymin, &xmax, &ymax);
+    	;
     } else {
 	eprintf("WIN: bad number of points");
 	return(0);
@@ -254,10 +272,10 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
 	    xmax = currep->maxx;
 	    ymax = currep->maxy;
 	} else {
-	    xmin = -10.0;
-	    ymin = -10.0;
-	    xmax = 10.0;
-	    ymax = 10.0;
+	    xmin = -100.0;
+	    ymin = -100.0;
+	    xmax = 100.0;
+	    ymax = 100.0;
 	}
     }
 
@@ -297,8 +315,7 @@ do_win(int n, double x1, double y1, double x2, double y2, double scale) {
     } else {
 	xwin_window_set(xmin,ymin,xmax,ymax);
     }
-    
-
+    if (debug) printf("leaving dowin()\n");
 }
 
 void draw_bounds(x2, y2, count) 
