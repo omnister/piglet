@@ -20,6 +20,9 @@
 #include "eprintf.h"
 #include "rubber.h"
 #include "lex.h"
+#include "readmenu.h"
+
+#define MAX_MENU 256
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
@@ -29,7 +32,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.26 2004/11/10 23:24:49 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.27 2004/11/11 19:05:50 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size */
 unsigned int width, height;		/* graphic window pixel size */
@@ -114,27 +117,9 @@ GC gcx;
 #define BLACK 1
 #define WHITE 0
 
-static char *menu_label[] = {
-   "EDI  ",
-   "SHO#E;\n",
-   "WIN:F",
-   "ADD  ",
-   "MOV  ",
-   "COPY ",
-   "DEL  ",
-   "DUMP ",
-   "PLOT ",
-   "DIST ",
-   "IDEN ",
-   "GRID ",
-   "LOCK ",
-   "SAVE ",
-   "EXIT;"
-};
-#define MAX_CHOICE 15
-
 Window inverted_pane = NONE;
-Window panes[MAX_CHOICE];
+int num_menus;
+MENUENTRY menutab[MAX_MENU];
 
 XFontStruct *font_info;
 
@@ -178,7 +163,8 @@ int initX()
     int menu_height;
     XCharStruct overall;
     int winindex;
-
+    int linewidth;
+    int numrows;
 
     if (!(size_hints = XAllocSizeHints())) {
 	eprintf("failure allocating SizeHints memory");
@@ -210,19 +196,21 @@ int initX()
     /* Size window */
     top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
 
+
     /* figure out menu sizes */
-    string = menu_label[1];
+    string = "X";
     char_count = strlen(string);
 
     load_font(&font_info);
+    num_menus=loadmenu(menutab, MAX_MENU, "MENUDATA_V", &linewidth, &numrows);
 
     /* Determine the extent of each menu pane based on font size */
     XTextExtents(font_info, string, char_count, &direction, &ascent,
         &descent, &overall);
 
-    menu_width = overall.width + 4;
+    menu_width = overall.width*linewidth + 4;
     pane_height = overall.ascent + overall.descent + 4;
-    menu_height = pane_height * MAX_CHOICE;
+    menu_height = pane_height * numrows;
 
     /* create top level window for packing graphic and menu windows */
     topwin = XCreateSimpleWindow(dpy, RootWindow(dpy,scr),
@@ -247,13 +235,16 @@ int initX()
 	border_width, WhitePixel(dpy,scr), BlackPixel(dpy,scr));
 
     /* Create the menu boxes */
-    for (winindex = 0; winindex < MAX_CHOICE; winindex++) {
-        panes[winindex] = XCreateSimpleWindow(dpy, menuwin, 0,
-	    menu_height/MAX_CHOICE*winindex, menu_width,
-	    pane_height, border_width = 1,
+    for (winindex = 1; winindex <= num_menus; winindex++) {
+        menutab[winindex].pane = XCreateSimpleWindow(dpy, menuwin, 
+	    overall.width*menutab[winindex].xloc,			/*x*/
+	    pane_height*menutab[winindex].yloc, 			/*y*/
+	    overall.width*menutab[winindex].width,			/*width*/
+	    pane_height,						/*height*/
+	    border_width = 1,
 	    WhitePixel(dpy,scr),
 	    BlackPixel(dpy,scr));
-	XSelectInput(dpy, panes[winindex], ButtonPressMask |
+	XSelectInput(dpy, menutab[winindex].pane, ButtonPressMask |
 	    ButtonReleaseMask | ExposureMask);
     }
 
@@ -466,9 +457,9 @@ FILE *fp;
 			    grid_xs, grid_ys, grid_xo, grid_yo);
 		    }  
 		
-		    for (j=0; j<MAX_CHOICE; j++) {
-		         if (panes[j] == xe.xexpose.window) {
-			     paint_pane(xe.xexpose.window, panes, gca, gcb, BLACK);
+		    for (j=1; j<=num_menus; j++) {
+		         if (menutab[j].pane == xe.xexpose.window) {
+			     paint_pane(xe.xexpose.window, menutab, gca, gcb, BLACK);
 			 }
 		    }
 
@@ -527,11 +518,11 @@ FILE *fp;
 				break;
 			}
 		    } else {
-			for (j=0; j<MAX_CHOICE; j++) {
-			    if (panes[j] == xe.xbutton.window) {
+			for (j=1; j<=num_menus; j++) {
+			    if (menutab[j].pane == xe.xbutton.window) {
 				switch (xe.xbutton.button) {
 				case 1:
-				   s=menu_label[j];
+				   s=menutab[j].text;
 				   break;
 				case 2:	
 				   break;
@@ -1286,9 +1277,9 @@ init_colors()
 /* following routine originally from Xlib Programming Manual Vol I., */
 /* O'Reilly & associates, page 533.  */
 
-paint_pane(window, panes, ngc, rgc, mode) 
+paint_pane(window, menutab, ngc, rgc, mode) 
 Window window;
-Window panes[];
+MENUENTRY menutab[];
 GC ngc, rgc;
 int mode;
 {
@@ -1310,7 +1301,7 @@ int mode;
     XClearWindow(dpy, window);
 
     /* Find out winndex of window for label text */
-    for (win=0; window != panes[win]; win++) {
+    for (win=0; window != menutab[win].pane; win++) {
     	;
     }
 
@@ -1318,9 +1309,9 @@ int mode;
 
     /* The string length is necessary because strings 
      * for XDrawString may not be null terminated */
-    XSetForeground(dpy, gc, colors[2]);
-    XDrawString(dpy, window, gc, x, y, menu_label[win],
-        strlen(menu_label[win])); 
+    XSetForeground(dpy, gc, colors[menutab[win].color]);
+    XDrawString(dpy, window, gc, x, y, menutab[win].text,
+        strlen(menutab[win].text)); 
 }
 
 

@@ -4,7 +4,8 @@ OBJS= db.o draw.o xwin.o readfont.o rubber.o opt_parse.o \
        geom_poly.o geom_text.o geom_inst.o \
        rlgetc.o token.o lex.o coords.o \
        com_add.o com_delete.o com_distance.o com_ident.o \
-       com_copy.c com_move.c com_window.o com_point.o com_show.o postscript.o
+       com_copy.c com_move.c com_window.o com_point.o com_show.o postscript.o \
+       readmenu.o
 
 TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 changes com_add.c com_delete.c com_distance.c com_ident.c com_copy.c com_move.c \
@@ -14,7 +15,7 @@ geom_line.c  geom_poly.c geom_rect.c geom_text.c lex.c lex.h \
 Makefile MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h \
 plan.EQUATE plan.MOVE plan.SELECT plan.STATUS plan.TODO readfont.c \
 readfont.h rlgetc.c rlgetc.h rubber.c rubber.h TEXTDATA.F token.c \
-token.h xwin.c xwin.h postscript.o
+token.h xwin.c xwin.h postscript.o readmenu.c
 
 CC=cc -ggdb
 
@@ -49,11 +50,12 @@ lex.o:         rlgetc.h db.h token.h xwin.h lex.h
 opt_parse.o:   db.h opt_parse.h
 postscript.o:
 readfont.o:    db.h readfont.h
+readmenu.o:    db.h readmenu.h
 rlgetc.o:      db.h xwin.h eprintf.h
 rubber.o:      rubber.h
 token.o:       token.h xwin.h
 token.o:       token.h
-xwin.o:        db.h lex.h xwin.h eprintf.h rubber.h
+xwin.o:        db.h lex.h xwin.h eprintf.h rubber.h readmenu.h
 
 clean: 
 	rm -f *.o pig
