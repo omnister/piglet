@@ -30,7 +30,7 @@ int nestlevel=9;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 
 /* routines for expanding db entries into vectors */
-void do_arc(),  do_circ(), do_line(), do_note();
+void do_arc(),  do_circ(), do_line();
 void do_oval(), do_poly(), do_rect(), do_text();
 
 /* matrix routines */
@@ -38,6 +38,7 @@ XFORM *compose();
 void mat_rotate();
 void mat_scale();
 void mat_slant();
+void mat_print();
 
 /* primitives for outputting autoplot,X primitives */
 void draw();
@@ -176,15 +177,6 @@ char *s;
 	    }
 	    free(p->u.l->opts);
 	    free(p->u.l);
-	    free(p);
-	    break;
-
-        case NOTE:  /* note definition */
-
-	    if (debug) printf("db_purge: freeing note\n");
-	    free(p->u.n->opts);
-	    free(p->u.n->text);
-	    free(p->u.n);
 	    free(p);
 	    break;
 
@@ -331,8 +323,13 @@ int mode;
 
     fprintf(fp, "LOCK %g;\n", dp->lock_angle);
     fprintf(fp, "LEVEL %d;\n", dp->logical_level);
-    fprintf(fp, "GRID ON;\n");
-    fprintf(fp, "WIN %g,%g %g,%g;\n", dp->minx, dp->miny, dp->maxx, dp->maxy);
+    fprintf(fp, "GRID %g %g %g %g %g %g;\n", 
+    	dp->grid_xd, dp->grid_yd,
+	dp->grid_xs, dp->grid_ys,
+	dp->grid_xo, dp->grid_yo);
+
+    fprintf(fp, "WIN %g,%g %g,%g;\n",
+    	dp->minx, dp->miny, dp->maxx, dp->maxy);
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	switch (p->type) {
@@ -370,18 +367,6 @@ int mode;
 
 	    break;
 
-        case NOTE:  /* note definition */
-
-	    fprintf(fp, "ADD N%d ", p->u.n->layer); 
-	    db_print_opts(fp, p->u.n->opts, "MRYZF");
-
-	    fprintf(fp, "\"%s\" %g,%g;\n",
-		p->u.n->text,
-		p->u.n->x,
-		p->u.n->y
-	    );
-	    break;
-
         case OVAL:  /* oval definition */
 
 	    fprintf(fp, "#add OVAL not inplemented yet\n");
@@ -417,10 +402,15 @@ int mode;
 	    );
 	    break;
 
-        case TEXT:  /* text definition */
+        case TEXT:  /* text and note definition */
 
-	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
-	    db_print_opts(fp, p->u.t->opts, "MRYZF");
+	    if (p->u.t->opts->font_num%2) {
+		fprintf(fp, "ADD T%d ", p->u.t->layer); 	/* 1,3,5.. = text */
+		db_print_opts(fp, p->u.t->opts, "MNRYZF");
+	    } else {
+		fprintf(fp, "ADD N%d ", p->u.t->layer); 	/* 0,2,4.. = note */
+		db_print_opts(fp, p->u.t->opts, "MNRYZF");
+	    }
 
 	    fprintf(fp, "\"%s\" %g,%g;\n",
 		p->u.t->text,
@@ -553,42 +543,6 @@ COORDS *coords;
     lp->layer=layer;
     lp->opts=opts;
     lp->coords=coords;
-
-    return(0);
-}
-
-int db_add_note(cell, layer, opts, string ,x,y) 
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-char *string;
-NUM x,y;
-{
-    struct db_note *np;
-    struct db_deflist *dp;
-
-    cell->modified++;
- 
-    np = (struct db_note *) emalloc(sizeof(struct db_note));
-    dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
-    dp->next = NULL;
-
-    /* add definition at *end* of list */
-    if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
-    } else {
-	cell->dbtail->next = dp;
-	cell->dbtail = dp;
-    }
-
-    dp->u.n = np;
-    dp->type = NOTE;
-
-    np->layer=layer;
-    np->text=string;
-    np->opts=opts;
-    np->x=x;
-    np->y=y;
 
     return(0);
 }
@@ -827,6 +781,7 @@ OPTS *opt_copy(OPTS *opts)
     
     /* set defaults */
     tmp->font_size = opts->font_size;
+    tmp->font_num = opts->font_num;
     tmp->mirror = opts->mirror;
     tmp->rotation = opts->rotation;
     tmp->width = opts->width;
@@ -843,6 +798,7 @@ OPTS *opt_set_defaults(OPTS *opts)
 {
     opts->font_size = 10.0;       /* :F<font_size> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
+    opts->font_num=0;		  /* :N<font_num> */
     opts->rotation = 0.0;         /* :R<rotation,resolution> */
     opts->width = 0.0;            /* :W<width> */
     opts->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
@@ -866,7 +822,7 @@ int db_print_opts(fp, popt, validopts) /* print options */
 FILE *fp;
 OPTS *popt;
 /* validopts is a string which sets which options are printed out */
-/* an example for a line is "W", a note uses "MRYZF" */
+/* an example for a line is "W", text uses "MNRYZF" */
 char *validopts;
 {
     char *p;
@@ -900,6 +856,11 @@ char *validopts;
 		    default:
 	    		weprintf("invalid mirror case\n");
 		    	break;	
+		}
+	    	break;
+	    case 'N':
+		if (popt->font_num != 0.0 && popt->font_num != 1.0) {
+		    fprintf(fp, ":N%g ", popt->font_num);
 		}
 	    	break;
 	    case 'R':
@@ -1067,9 +1028,6 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
         case LINE:  /* line definition */
 	    do_line(p, mode);
 	    break;
-        case NOTE:  /* note definition */
-	    do_note(p, mode);
-	    break;
         case OVAL:  /* oval definition */
 	    do_oval(p, mode);
 	    break;
@@ -1079,7 +1037,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	case RECT:  /* rectangle definition */
 	    do_rect(p, mode);
 	    break;
-        case TEXT:  /* text definition */
+        case TEXT:  /* text and note definition */
 	    do_text(p, mode);
 	    break;
         case INST:  /* recursive instance call */
@@ -1127,7 +1085,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
 	    mat_scale(xp, p->u.i->opts->scale, p->u.i->opts->scale); 
-	    mat_scale(xp, 1.0, p->u.i->opts->aspect_ratio); 
+	    mat_scale(xp, 1.0/p->u.i->opts->aspect_ratio, 1.0); 
 	    mat_slant(xp,  p->u.i->opts->slant); 
 	    mat_rotate(xp, p->u.i->opts->rotation);
 
@@ -1512,62 +1470,6 @@ int mode; 	/* drawing mode */
     } while(temp != NULL);
 }
 
-
-/* ADD Nmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] 
-[:Ffontsize] "string" coord    */
-
-void do_note(def,mode)
-DB_DEFLIST *def;
-int mode;
-{
-
-    extern XFORM *transform;
-    XFORM *xp, *xf;
-    NUM x,y;
-    OPTS  *op;
-    double optval;
-
-    /* create a unit xform matrix */
-    xp = (XFORM *) emalloc(sizeof(XFORM));  
-    xp->r11 = 1.0; xp->r12 = 0.0;
-    xp->r21 = 0.0; xp->r22 = 1.0;
-    xp->dx  = 0.0; xp->dy  = 0.0;
-
-    /* NOTE: To work properly, these transformations have to */
-    /* occur in the proper order, for example, rotation must come */
-    /* after slant transformation or else it wont work properly */
-
-    switch (def->u.n->opts->mirror) {
-	case MIRROR_OFF:
-	    break;
-	case MIRROR_X:
-	    xp->r22 *= -1.0;
-	    break;
-	case MIRROR_Y:
-	    xp->r11 *= -1.0;
-	    break;
-	case MIRROR_XY:
-	    xp->r11 *= -1.0;
-	    xp->r22 *= -1.0;
-	    break;
-    }
-
-    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
-    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
-    mat_slant(xp, def->u.n->opts->slant);
-    mat_rotate(xp, def->u.n->opts->rotation);
-
-    jump(); set_pen(def->u.n->layer);
-
-    xp->dx += def->u.n->x;
-    xp->dy += def->u.n->y;
-
-    writestring(def->u.n->text, xp,0);
-
-    free(xp);
-}
-
-
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
 
 void do_oval(def, mode)
@@ -1665,8 +1567,8 @@ int mode;	/* drawing mode */
 
 
 
-/* ADD Tmask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
- *             [:Zslant] [:Ffontsize] "string" coord  
+/* ADD [TN]mask [.cname] [:Mmirror] [:Rrot] [:Yyxratio]
+ *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
  */
 
 void do_text(def, mode)
@@ -1680,23 +1582,17 @@ int mode;
     OPTS  *op;
     double optval;
 
-    /* printf("# rendering text as a note (not fully implemented)\n"); */
-
     /* create a unit xform matrix */
 
     xp = (XFORM *) emalloc(sizeof(XFORM));  
-    xp->r11 = 1.0;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = 1.0;
-    xp->dx  = 0.0;
-    xp->dy  = 0.0;
+    xp->r11 = 1.0; xp->r12 = 0.0; xp->r21 = 0.0;
+    xp->r22 = 1.0; xp->dx  = 0.0; xp->dy  = 0.0;
 
     /* NOTE: To work properly, these transformations have to */
     /* occur in the proper order, for example, rotation must come */
     /* after slant transformation or else it wont work properly */
 
-    switch (def->u.n->opts->mirror) {
+    switch (def->u.t->opts->mirror) {
 	case MIRROR_OFF:
 	    break;
 	case MIRROR_X:
@@ -1711,17 +1607,17 @@ int mode;
 	    break;
     }
 
-    mat_scale(xp, def->u.n->opts->font_size, def->u.n->opts->font_size);
-    mat_scale(xp, 1.0, def->u.n->opts->aspect_ratio);
-    mat_slant(xp, def->u.n->opts->slant);
-    mat_rotate(xp, def->u.n->opts->rotation);
+    mat_scale(xp, def->u.t->opts->font_size, def->u.t->opts->font_size);
+    mat_scale(xp, 1.0/def->u.t->opts->aspect_ratio, 1.0);
+    mat_slant(xp, def->u.t->opts->slant);
+    mat_rotate(xp, def->u.t->opts->rotation);
 
     jump(); set_pen(def->u.t->layer);
 
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
 
-    writestring(def->u.t->text, xp,1);
+    writestring(def->u.t->text, xp, def->u.t->opts->font_num, mode);
 
     free(xp);
 }
@@ -1787,13 +1683,23 @@ XFORM *xp;
 double theta;
 {
     double s,c,t;
+    double a;
+
+    int debug = 0;
+    if (debug) printf("in mat_slant with theta=%g\n", theta);
+    if (debug) mat_print(xp);
+
     s=sin(2.0*M_PI*theta/360.0);
     c=cos(2.0*M_PI*theta/360.0);
+    a=s/c;
 
-    xp->r21 += s/c;
+    xp->r21 += a*xp->r11;
+    xp->r22 += a*xp->r12;
+
+    if (debug) mat_print(xp);
 }
 
-void printmat(xa)
+void mat_print(xa)
 XFORM *xa;
 {
      printf("\n");

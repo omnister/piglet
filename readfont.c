@@ -14,27 +14,33 @@ int xdef[2][5000];
 int ydef[2][5000];
 
 
-writestring(s,xf,id)
+writestring(s,xf, id, mode)
 char *s;
 XFORM *xf;
 int id; 	/* font id */
+int mode;
 {
     double offset=0.0;
+    int debug=0;
+    
+    if (debug) printf("in writestring id=%d\n", id);
 
     while(*s != 0) {
 	writechar(*s,
-		(((double)(dx[id]))*0.80*offset)/((double)(dy[id])),0.0,xf,id);
+		(((double)(dx[id]))*0.80*offset)/((double)(dy[id])),
+		0.0,xf,id, mode);
 	offset+=1.0;
 	++s;
     }
 }
 
-writechar(c,x,y,xf,id)
+writechar(c,x,y,xf,id,mode)
 int c;
 double x;
 double y;
 XFORM *xf;
 int id;			/* font id */
+int mode;		/* drawing mode */
 {
     int i;
     double xp,yp,xt,yt;
@@ -57,7 +63,7 @@ int id;			/* font id */
 	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
 	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
 
-	    draw(xt,yt, 0); 
+	    draw(xt,yt, mode); 
 
 	} else {
 	    

@@ -6,35 +6,52 @@
 
 #define NORM   0	/* draw() modes */
 #define RUBBER 1
+DB_TAB dbtab; 
+DB_DEFLIST dbdeflist;
+DB_TEXT dbtext;
 
 static double x1, y1;
+char str[BUFSIZE];
+void draw_text(); 
 
 OPTS opts;
 
+
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
-int add_text(lp, layer)
+int add_text(lp, layer, font_num)
 LEXER *lp;
 int *layer;
+int font_num;
 {
     enum {START,NUM1,COM1,NUM2,END} state = START;
 
+    char word[BUFSIZE];
     int done=0;
     int error=0;
     TOKEN token;
-    char word[BUFSIZE];
-    char str[BUFSIZE];
     double x2,y2;
     int debug=0;
+    int nargs=0;
+    char *type;
 
     DB_TAB *ed_rep;
 
     opt_set_defaults( &opts );
+    opts.font_num = font_num;
 
-    rl_setprompt("ADD_TEXT> ");
     str[0] = 0;
 
     while (!done) {
+
+	if ((opts.font_num)%2) {
+	    rl_setprompt("ADD_TEXT> ");
+	    type="TEXT";
+	} else {
+	    rl_setprompt("ADD_NOTE> ");
+	    type="NOTE";
+	}
+
 	token = token_look(lp, word);
 
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
@@ -46,15 +63,28 @@ int *layer;
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
 		    token_get(lp, word); 
-		    if (opt_parse(word, "MRYZF", &opts) == -1) {
+		    if (nargs > 1) {
+			rubber_clear_callback();
+		    }
+		    if (opt_parse(word, "MNRYZF", &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;
 		    }
+		    if (nargs > 1) {
+			rubber_set_callback(draw_text);
+			nargs++;
+		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == QUOTE) {
-		    token_get(lp, str); 
+		    nargs++;
+		    if (debug) printf("nargs = %d\n");
+		    if (nargs > 1) {
+		    	rubber_clear_callback();
+		    }
+		    token_get(lp,str); 
+		    rubber_set_callback(draw_text);
 		    state = START;
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just eat it up */
@@ -62,8 +92,8 @@ int *layer;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	/* error */
 		} else {
-		    token_err("TEXT", lp, "expected OPT or NUMBER", token);
-		    token_get(lp, word);
+		    token_err(type, lp, "expected OPT or NUMBER", token);
+		    state = END; 
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
@@ -74,10 +104,10 @@ int *layer;
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
-		    printf("ADD TEXT: cancelling ADD TEXT\n");
+		    printf(" cancelling ADD %s\n", type);
 		    state = END; 
 		} else {
-		    token_err("TEXT", lp, "expected NUMBER", token);
+		    token_err(type, lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -88,7 +118,7 @@ int *layer;
 		    token_get(lp, word);
 		    state = NUM2;
 		} else {
-		    token_err("TEXT", lp, "expected COMMA", token);
+		    token_err(type, lp, "expected COMMA", token);
 		    state = END;	
 		}
 		break;
@@ -98,20 +128,24 @@ int *layer;
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 
 		    if (strlen(str) == 0) {
-		    	printf("ADD TEXT: no string given\n");
+		    	printf("ADD %s: no string given\n", type);
 			state = START;
 		    } else {
+
+			rubber_clear_callback();
 			db_add_text(currep, *layer, opt_copy(&opts),
 			    strsave(str), x1, y1);
+			rubber_set_callback(draw_text);
 			need_redraw++;
 			state = START;
 	            }
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
+		    printf(" cancelling ADD %s\n", type);
 		    state = END; 
 		} else {
-		    token_err("TEXT", lp, "expected NUMBER", token);
+		    token_err(type, lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
@@ -122,10 +156,73 @@ int *layer;
 		} else {
 		    token_flush_EOL(lp);
 		}
+
+		/* FIXME, maybe I need a rubber_cleanup() which does */
+		/* a clear_callback only if needed?  Bailing out from*/
+		/* a bad option leaves a "ghost" on the screen */
+
+		rubber_clear_callback();
 		done++;
 		break;
 	}
     }
     return(1);
+}
+
+
+void draw_text(x2, y2, count) 
+double x2, y2;
+int count; /* number of times called */
+{
+	static double xold, yold;
+	int i;
+
+	int debug=0;
+
+	/* DB_TAB dbtab;  */
+	/* DB_DEFLIST dbdeflist; */
+	/* DB_text dbtext; */
+
+
+        dbtab.dbhead = &dbdeflist;
+        dbtab.dbtail = &dbdeflist;
+        dbtab.next = NULL;
+	dbtab.name = "callback";
+
+        dbdeflist.u.t = &dbtext;
+        dbdeflist.type = TEXT;
+
+        dbtext.layer=1;
+        dbtext.opts=&opts;
+	dbtext.text=str;
+	
+	if (debug) {printf("in draw_text\n");}
+
+	if (count == 0) {		/* first call */
+	    jump(); /* draw new shape */
+	    dbtext.x=x2;
+	    dbtext.y=y2;
+	    do_text(&dbdeflist, 1);
+
+	} else if (count > 0) {		/* intermediate calls */
+	    jump(); /* erase old shape */
+	    dbtext.x=xold;
+	    dbtext.y=yold;
+	    do_text(&dbdeflist, 1);
+	    jump(); /* draw new shape */
+	    dbtext.x=x2;
+	    dbtext.y=y2;
+	    do_text(&dbdeflist, 1);
+	} else {			/* last call, cleanup */
+	    jump(); /* erase old shape */
+	    dbtext.x=xold;
+	    dbtext.y=yold;
+	    do_text(&dbdeflist, 1);
+	}
+
+	/* save old values */
+	xold=x2;
+	yold=y2;
+	jump();
 }
 

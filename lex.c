@@ -329,8 +329,8 @@ com_add(LEXER *lp, char *arg)
 		    case 'L':
 			add_line(lp, &layer);
 			break;
-		    case 'N':
-			add_note(lp, &layer);
+		    case 'N':	/* last arg is font # */
+			add_text(lp, &layer, 0);  
 			break;
 		    case 'E':	/* synonym for oval */
 		    case 'O':
@@ -342,8 +342,8 @@ com_add(LEXER *lp, char *arg)
 		    case 'R':
 			add_rect(lp, &layer);
 			break;
-		    case 'T':
-			add_text(lp, &layer);
+		    case 'T':	/* last arg is font # */
+			add_text(lp, &layer, 1);
 			break;
 		    default:
 			printf("invalid comp name\n");
@@ -636,6 +636,12 @@ char *arg;
 		token_stream_close(my_lp); 
 		if (currep != NULL) {
 		    currep->modified = 0;
+		    xwin_window_set(
+		    	currep->minx, 
+		    	currep->miny,
+			currep->maxx,
+			currep->maxy
+		    );
 		}
 		
 		currep=save_rep;
@@ -697,8 +703,8 @@ char *arg;
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
-		/* FIXME: this should eventually purge */
-		/* all named files */
+		/* FIXME: this needs to purge memory + disk files */
+	        db_purge(word);
 	    	break;      
 	    case EOC:		/* end of command */
 		done++;
@@ -849,8 +855,6 @@ char *arg;
 }
 
 /* Print out help for ARG, or for all commands if ARG is not present. */
-/* FIXME: needs to eat up options by itself.  arg is no longer provided */
-/* ....eat until ";" and give help synopsis for each name found */
 
 com_help(lp, arg)
 LEXER *lp;
@@ -1119,13 +1123,32 @@ char *arg;
 		return(-1);
 	    	break;
 	}
-	if (nnums==1) {
-	   ; /* FIXME: this is where we set the level of currep */
-	} else {
-	   ; /* FIXME: with no args, we print out the current lock angle */
-	}
+    }
+    if (nnums==1) {		/* set the lock angle of currep */
+	if (currep != NULL) {
+	    currep->lock_angle=angle;
+	    currep->modified++;
+        } 
+    } else if (nnums==0) {	/* print the current lock angle */
+	if (currep != NULL) {
+	    printf("LOCK ANGLE = %g\n", currep->lock_angle);
+        } 
+    } else {
+       ; /* FIXME: a syntax error */
     }
     return (0);
+
+    if (currep != NULL) {
+	if (currep->modified) {
+	    if (db_save(currep)) {
+		printf("unable to save %s\n", currep->name);
+	    }
+	    printf("saved %s\n", currep->name);
+	    currep->modified = 0;
+        } else {
+	    ; /* silently refuse to write non-modified cell */
+	}
+   }
 }
 
 com_macro(lp, arg)		/* enter the MACRO subsystem */

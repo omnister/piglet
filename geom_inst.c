@@ -53,10 +53,10 @@ int add_inst(LEXER *lp, char *inst_name)
 	    my_lp = token_stream_open(fp, buf);
 	    save_rep = currep;
 
-	    xwin_display_set_state(D_OFF);
+	    /* xwin_display_set_state(D_OFF); */
 	    currep = ed_rep;
 	    parse(my_lp);
-	    xwin_display_set_state(D_ON);
+	    /* xwin_display_set_state(D_ON); */
 
 	    token_stream_close(my_lp); 
 	    currep = save_rep;

@@ -105,6 +105,7 @@ typedef struct db_tab {
 typedef struct opt_list {
     double font_size;       /* :F<font_size> */
     int mirror;             /* :M<x,xy,y>    */
+    int font_num;           /* :N<font_number> */
     double rotation;        /* :R<rotation,resolution> */
     double width;           /* :W<width> */
     double scale; 	    /* :X<scale> */
@@ -147,13 +148,6 @@ typedef struct db_line {
     COORDS *coords;
 } DB_LINE; 
 
-typedef struct db_note {
-    int layer;
-    OPTS *opts;
-    char *text;
-    NUM x,y;
-} DB_NOTE; 
-
 typedef struct db_oval {
     int layer;
     OPTS *opts;
@@ -189,11 +183,10 @@ typedef struct db_deflist {
         DB_CIRC *c;  /* circle definition */
         DB_INST *i;  /* instance call */
         DB_LINE *l;  /* line definition */
-        DB_NOTE *n;  /* note definition */
         DB_OVAL *o;  /* oval definition */
         DB_POLY *p;  /* polygon definition */
         DB_RECT *r;  /* rectangle definition */
-        DB_TEXT *t;  /* text definition */
+        DB_TEXT *t;  /* text & note definition */
     } u;
     struct db_deflist *next;    /* to link to another */
 } DB_DEFLIST;
@@ -243,14 +236,6 @@ extern int db_add_line(
 		int layer,
 		OPTS *opts,
 		COORDS *coords
-	    );
-
-extern int db_add_note(
-		DB_TAB *cell,
-		int layer,
-		OPTS *opts,
-		char *string,
-		NUM x, NUM y      
 	    );
 
 extern int db_add_oval(

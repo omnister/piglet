@@ -20,6 +20,7 @@ OPTS *popt;
 {
 
     double optval;
+    int i;
 
     if (optstring[0] == '.') {
 	/* got a component name */
@@ -59,6 +60,18 @@ OPTS *popt;
 		    weprintf("unknown mirror option %s\n", optstring); 
 		    return(ERR);
 		}
+		break;
+	    case 'N': 		/* :N(font_num) */
+		if(sscanf(optstring+2, "%lf", &optval) != 1) {
+		    weprintf("invalid option argument: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		i = (int) optval;
+		if (i !=0 && i != 1) {
+		    weprintf("font_num must be 0 or 1: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		popt->font_num = i;
 		break;
 	    case 'R':		/* resolution or rotation angle +/- 180 */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {
@@ -100,6 +113,10 @@ OPTS *popt;
 	    case 'Y':		/* yx ratio */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {
 		    weprintf("invalid option argument: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		if (optval < 0.01 || optval > 100.0 ) {
+		    weprintf("out of range (0.01 < Y < 100.0): %s\n", optstring+2); 
 		    return(ERR);
 		}
 		popt->aspect_ratio = optval;

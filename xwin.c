@@ -29,7 +29,7 @@ XFORM  *xp = &screen_transform;
 
 int quit_now; /* When!=0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.13 2004/01/18 18:10:32 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.15 2004/01/19 21:59:15 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -678,7 +678,9 @@ int xorig,yorig;	/* grid origin */
 				    xd=x + (double) i*dx;
 				    yd=y + (double) j*dy;
 				    R_to_V(&xd,&yd);
-				    XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+				    if (display_state == D_ON) {
+				        XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+				    }
 				}
 			    }
 			}
@@ -874,8 +876,17 @@ double yo;
 	grid_xo=(int) (xo); 
 	grid_yo=(int) (yo); 
 	need_redraw++;
-    }
 
+	if (currep != NULL) {
+	    currep->grid_xd=xd;
+	    currep->grid_yd=yd;
+	    currep->grid_xs=xs;
+	    currep->grid_ys=ys;
+	    currep->grid_xo=xo;
+	    currep->grid_yo=yo;
+	    currep->modified++;
+	}
+    }
 }
 
 /*
@@ -915,6 +926,14 @@ double x1,y1,x2,y2;
     }
     if (y2 < y1) {
 	tmp = y2; y2 = y1; y1 = tmp;
+    }
+
+    if (currep != NULL) {
+	currep->minx=x1;
+	currep->miny=y1;
+	currep->maxx=x2;
+	currep->maxy=y2;
+	currep->modified++;
     }
 
     /* printf("setting user window to %g,%g %g,%g\n",x1,y1,x2,y2); */
