@@ -42,23 +42,6 @@
 /* typedef NUM int; */
 typedef double NUM;
 
-typedef struct opt_list {
-    double font_size;       /* :F<font_size> */
-    int mirror;             /* :M<x,xy,y>    */
-    double rotation;        /* :R<rotation,resolution> */
-    double width;           /* :W<width> */
-    double scale; 	    /* :X<scale> */
-    double aspect_ratio;    /* :Y<aspect_ratio> */
-    double slant;           /* :Z<slant> */
-} OPTS;
-
-#define MIRROR_OFF 0
-#define MIRROR_X   1
-#define MIRROR_Y   2
-#define MIRROR_XY  3
-
-OPTS *opt_create();
-
 typedef struct coord_pair {
     NUM x,y;
 } PAIR;
@@ -106,6 +89,9 @@ typedef struct db_tab {
     double grid_xo;
     double grid_yo;
 
+    int logical_level;
+    double lock_angle;
+
     int modified;		/* for EXIT/SAVE and bounding box usage */
     int flag;			/* bookingkeeping flag for db_def_archive() */
     struct db_deflist *dbhead;  /* pointer to first cell definition */
@@ -115,6 +101,25 @@ typedef struct db_tab {
 
 /********************************************************/
 
+typedef struct opt_list {
+    double font_size;       /* :F<font_size> */
+    int mirror;             /* :M<x,xy,y>    */
+    double rotation;        /* :R<rotation,resolution> */
+    double width;           /* :W<width> */
+    double scale; 	    /* :X<scale> */
+    double aspect_ratio;    /* :Y<aspect_ratio> */
+    double slant;           /* :Z<slant> */
+    char *sname;	    /* signal name */
+    char *cname;	    /* signal name */
+} OPTS;
+
+extern OPTS *opt_create();
+extern OPTS *opt_set_defaults( OPTS *opts  );
+extern OPTS *opt_copy( OPTS *opts);
+extern void append_opt( char *s );
+extern void discard_opts( void );
+extern OPTS *opt_alloc( char *s );
+extern OPTS *first_opt, *last_opt; 
 
 typedef struct db_arc {
     int layer;
@@ -154,7 +159,7 @@ typedef struct db_oval {
 } DB_OVAL; 
 
 typedef struct db_poly {
-    NUM layer;
+    int layer;
     OPTS *opts;
     COORDS *coords;
 } DB_POLY; 
@@ -198,10 +203,11 @@ extern void discard_pairs( void );
 extern COORDS *pair_alloc( PAIR p );
 extern COORDS *first_pair, *last_pair; 
 
-extern void append_opt( char *s );
-extern void discard_opts( void );
-extern OPTS   *opt_alloc( char *s );
-extern OPTS   *first_opt, *last_opt; 
+#define MIRROR_OFF 0
+#define MIRROR_X   1
+#define MIRROR_Y   2
+#define MIRROR_XY  3
+
 
 extern DB_TAB *db_lookup( char *cellname );
 extern DB_TAB *db_install( char *cellname ); 
@@ -294,7 +300,6 @@ extern void db_set_nest(int nest); 	/* set global display nest level */
 
 extern int db_render(
 		DB_TAB *cell,
-		XFORM *xf,      /* coordinate transform matrix */
 		int nest,
 		int mode
 	    );

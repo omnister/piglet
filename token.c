@@ -3,14 +3,28 @@
 
 #include "token.h"
 
+#include "db.h"
+#include "xwin.h"
+
 /* need token_look() */
 
 int bufp = 0;		/* next free position in buf */
+
+static FILE *token_stream;
 
 struct savetok {
     char *word;
     TOKEN tok;
 } tokbuf[BUFSIZE];
+
+FILE *token_get_stream() {
+    return (token_stream);
+}
+
+void token_set_stream(FILE *fp)  {
+    extern FILE *token_stream;
+    token_stream = fp;
+}
 
 /* lookahead to see the next token */
 TOKEN token_look(word)
@@ -50,6 +64,9 @@ TOKEN token_get(char *word) /* collect and classify token */
     enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM} state = NEUTRAL;
     int c;
     char *w;
+    extern FILE *token_stream;
+    int debug=0;
+
     
     if (bufp > 0) {
 	strcpy(word, tokbuf[--bufp].word);
@@ -59,7 +76,7 @@ TOKEN token_get(char *word) /* collect and classify token */
     }
 
     w=word;
-    while((c=rlgetc(stdin)) != EOF) {
+    while((c=rlgetc(token_stream)) != EOF) {
 	switch(state) {
 	    case NEUTRAL:
 		switch(c) {
@@ -70,13 +87,21 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    case '\r':
 			*w++ = c;
 			*w = '\0';
+			if (debug) printf("returning EOL: %s \n", word);
 			return(EOL);
 		    case ',':
 			*w++ = c;
 			*w = '\0';
+			if (debug) printf("returning COMMA: %s \n", word);
 			return(COMMA);
 		    case '"':
 			state = INQUOTE;
+			continue;
+		    case '^':
+			*w++ = c;
+			*w = '\0';
+			if (debug) printf("returning BACK: %s \n", word);
+			return(BACK);
 			continue;
 		    case ':':
 			state = INOPT;
@@ -85,6 +110,7 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    case ';':
 			*w++ = c;
 			*w = '\0';
+			if (debug) printf("returning EOC: %s \n", word);
 			return(EOC);
 		    case '0':
 		    case '1':
@@ -103,12 +129,12 @@ TOKEN token_get(char *word) /* collect and classify token */
 			continue;
 		    case '.':
 			*w++ = c;
-			c = rlgetc(stdin);
+			c = rlgetc(token_stream);
 			if (isdigit(c)) {
-			    rl_ungetc(c,stdin);
+			    rl_ungetc(c,token_stream);
 			    state = INNUM;
 			} else {
-			    rl_ungetc(c,stdin);
+			    rl_ungetc(c,token_stream);
 			    state = INOPT;
 			}
 			continue;	
@@ -122,8 +148,9 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,stdin);
+		    rl_ungetc(c,token_stream);
 		    *w = '\0';
+		    if (debug) printf("returning NUMBER: %s \n", word);
 		    return(NUMBER);
 		}
 	    case INOPT:
@@ -134,29 +161,33 @@ TOKEN token_get(char *word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,stdin);
+		    rl_ungetc(c,token_stream);
 		    *w = '\0';
+		    if (debug) printf("returning OPT: %s \n", word);
 		    return(OPT);
 		}
 	    case INQUOTE:
 		switch(c) {
 		    case '\\':
-			*w++ = rlgetc(stdin);
+			*w++ = rlgetc(token_stream);
 			continue;
 		    case '"':
 			*w = '\0';
+			if (debug) printf("returning QUOTE: %s \n", word);
 			return(QUOTE);
 		    default:
 			*w++ = c;
 			continue;
 		}
 	    case INWORD:
-		if (!isalnum(c)) {
-		    rl_ungetc(c,stdin);
+		if (!isalnum(c) && (c!='_') ) {
+		    rl_ungetc(c,token_stream);
 		    *w = '\0';
 		    if (lookup_command(word)) {
+		        if (debug) printf("lookup returns CMD: %s\n", word);
 			return(CMD);
 		    } else {
+		        if (debug) printf("lookup returns IDENT: %s\n", word);
 			return(IDENT);
 		    }
 		}
@@ -168,43 +199,28 @@ TOKEN token_get(char *word) /* collect and classify token */
 		break;
 	} /* switch state */
     } /* while loop */
-    return(EOF);
+    if (token_stream != stdin) {
+	xwin_display_set_state(D_ON);
+	token_set_stream(stdin);
+    } else {
+	return(EOF);
+    }
 }
 
 char *tok2str(token)
 TOKEN token;
 {
     switch (token) {
-	case IDENT:
-	    return("IDENT");
-	    break;
-	case CMD:
-	    return("CMD");
-	    break;
-	case QUOTE:
-	    return("QUOTE");
-	    break;
-	case NUMBER:
-	    return("NUMBER");
-	    break;
-	case OPT:
-	    return("OPT");
-	    break;
-	case EOL:
-	    return("EOL");
-	    break;
-	case EOC:
-	    return("EOC");
-	    break;
-	case COMMA:
-	    return("COMMA");
-	    break;
-	case END:
-	    return("END");
-	    break;
-	default:
-	    return("UNKNOWN");
-	    break;
-	}
+	case IDENT: return("IDENT"); 	break;
+	case CMD: return("CMD"); 	break;
+	case QUOTE: return("QUOTE"); 	break;
+	case NUMBER: return("NUMBER"); 	break;
+	case OPT: return("OPT"); 	break;
+	case EOL: return("EOL"); 	break;
+	case EOC: return("EOC"); 	break;
+	case COMMA: return("COMMA"); 	break;
+	case BACK:  return("BACK");	break;
+	case END: return("END"); 	break;
+	default: return("UNKNOWN"); 	break;
+    }
 }
-

@@ -1,4 +1,9 @@
 
+extern void V_to_R();
+extern void R_to_V(); 
+extern void snapxy();
+extern void snapxy_major();
+
 extern int initX();
 extern int procXevent();
 extern int need_redraw;
@@ -22,12 +27,11 @@ void xwin_clear_rubber_callback();
 /* globals for interacting with db.c */
 extern DB_TAB *currep;
 extern DB_TAB *newrep;			/* scratch pointer for new rep */
-extern OPTS   *opts;
 extern XFORM  screen_transform;
 extern XFORM  *xp;
 
 /* When non-zero, this global means the user is done using this program. */
-extern int done;
+extern int quit_now;
 
 extern unsigned int width, height;	/* window pixel size */
 
@@ -51,8 +55,10 @@ extern int need_redraw;
 
 extern char version[];
 
-typedef enum {ON, OFF, TOGGLE} GRIDSTATE;
+typedef enum {D_ON, D_OFF, D_TOGGLE} DISPLAYSTATE;
+void xwin_display_set_state( DISPLAYSTATE state );
 
+typedef enum {G_ON, G_OFF, G_TOGGLE} GRIDSTATE;
 void xwin_grid_state( GRIDSTATE state );
 
 void xwin_grid_color( int color );

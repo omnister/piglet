@@ -70,8 +70,9 @@ void rubber_clear_callback()
 void rubber_draw(x,y)
 double x, y;
 {
+    int debug=0;
     if (rubber_callback != NULL) {
-	/* printf("drawing: %g %g %d\n", x,y, count); */
+	if (debug) printf("rubber_draw: drawing: %g %g %d\n", x,y, count); 
 	(*(rubber_callback)) (x, y, count);
 	count++;
     }

@@ -11,8 +11,9 @@
 #include "xwin.h" 	
 #include "lex.h"
 
-
 char prompt[128];
+
+static int layer=0; 	/* global for remembering default layer */
 
 /* The names of functions that actually do the manipulation. */
 
@@ -48,57 +49,57 @@ typedef struct {
 
 COMMAND commands[] =
 {
-    {"add", com_add, "add a component to the current device"},
-    {"archive", com_archive, "create an archive file of the specified device"},
-    {"area", com_area, "calculate and display the area of selected component"},
-    {"background", com_background, "specified device for background overlay"},
-    {"bye", com_bye, "terminate edit session"},
-    {"change", com_change, "change characteristics of selected components"},
-    {"copy", com_copy, "copy a component from one location to another"},
-    {"define", com_define, "define a macro"},
-    {"delete", com_delete, "delete a component from the current device"},
-    {"display", com_display, "turn the display on or off"},
-    {"distance", com_distance, "measure the distance between two points"},
-    {"edit", com_edit, "begin edit of an old or new device"},
-    {"equate", com_equate, "define characteristics of a mask layer"},
-    {"exit", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
-    {"files", com_files, "purge named files"},
-    {"grid", com_grid, "set grid spacing or turn grid on/off"},
-    {"group", com_group, "create a device from existing components"},
-    {"help", com_help, "print syntax diagram for the specified command"},
-    {"?", com_help, "Synonym for `help'"},
-    {"identify", com_identify, "identify named instances or components"},
-    {"input", com_input, "take command input from a file"},
-    {"interrupt", com_interrupt, "interrupt an ADD to issue another command"},
-    {"layer", com_layer, "set a default layer number"},
-    {"level", com_level, "set the logical level of the current device"},
-    {"list", com_list, "list information about the current environment"},
-    {"lock", com_lock, "set the default lock angle"},
-    {"macro", com_macro, "enter the MACRO subsystem"},
-    {"menu", com_menu, "change or save the current menu"},
-    {"move", com_move, "move a component from one location to another"},
-    {"plot", com_plot, "make a plot of the current device"},
-    {"point", com_point, "display the specified point on the screen"},
-    {"process", com_process, "enter the PROCESS subsystem"},
-    {"purge", com_purge, "remove device from memory and disk"},
-    {"quit", com_bye, "terminate edit session"},
-    {"retrieve", com_retrieve, "read commands from an ARCHIVE file"},
-    {"save", com_save, "save the current file or device to disk"},
-    {"search", com_search, "modify the search path"},
-    {"set", com_set, "set environment variables"},
-    {"shell", com_shell, "run a program from within the editor"},
+    {"ADD", com_add, "add a component to the current device"},
+    {"ARChive", com_archive, "create an archive file of the specified device"},
+    {"AREa", com_area, "calculate and display the area of selected component"},
+    {"BACkground", com_background, "specified device for background overlay"},
+    {"BYE", com_bye, "terminate edit session"},
+    {"CHAnge", com_change, "change characteristics of selected components"},
+    {"COPy", com_copy, "copy a component from one location to another"},
+    {"DEFine", com_define, "define a macro"},
+    {"DELete", com_delete, "delete a component from the current device"},
+    {"DISplay", com_display, "turn the display on or off"},
+    {"DISTance", com_distance, "measure the distance between two points"},
+    {"EDIt", com_edit, "begin edit of an old or new device"},
+    {"EQUate", com_equate, "define characteristics of a mask layer"},
+    {"EXIt", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
+    {"FILes", com_files, "purge named files"},
+    {"GRId", com_grid, "set grid spacing or turn grid on/off"},
+    {"GROup", com_group, "create a device from existing components"},
+    {"HELp", com_help, "print syntax diagram for the specified command"},
+    {"?", com_help, "Synonym for HELP"},
+    {"IDEntify", com_identify, "identify named instances or components"},
+    {"INPut", com_input, "take command input from a file"},
+    {"INTerrupt", com_interrupt, "interrupt an ADD to issue another command"},
+    {"LAYer", com_layer, "set a default layer number"},
+    {"LEVel", com_level, "set the logical level of the current device"},
+    {"LISt", com_list, "list information about the current environment"},
+    {"LOCk", com_lock, "set the default lock angle"},
+    {"MACro", com_macro, "enter the MACRO subsystem"},
+    {"MENu", com_menu, "change or save the current menu"},
+    {"MOVe", com_move, "move a component from one location to another"},
+    {"PLOt", com_plot, "make a plot of the current device"},
+    {"POInt", com_point, "display the specified point on the screen"},
+    {"PROcess", com_process, "enter the PROCESS subsystem"},
+    {"PURge", com_purge, "remove device from memory and disk"},
+    {"QUIt", com_bye, "terminate edit session"},
+    {"RETrieve", com_retrieve, "read commands from an ARCHIVE file"},
+    {"SAVe", com_save, "save the current file or device to disk"},
+    {"SEArch", com_search, "modify the search path"},
+    {"SET", com_set, "set environment variables"},
+    {"SHEll", com_shell, "run a program from within the editor"},
     {"!", com_shell, "Synonym for `shell'"},
-    {"show", com_show, "define which kinds of things to display"},
-    {"smash", com_smash, "replace an instance with its components"},
-    {"split", com_split, "cut a component into two halves"},
-    {"step", com_step, "copy a component in an array fashion"},
-    {"stretch", com_stretch, "make a component larger or smaller"},
-    {"trace", com_trace, "highlight named signals"},
-    {"undo", com_undo, "undo the last command"},
-    {"units", com_units, "set editor resolution and user unit type"},
-    {"version", com_version, "identify the version number of program"},
-    {"window", com_window, "change the current window parameters"},
-    {"wrap", com_wrap, "create a new device using existing components"},
+    {"SHOw", com_show, "define which kinds of things to display"},
+    {"SMAsh", com_smash, "replace an instance with its components"},
+    {"SPLit", com_split, "cut a component into two halves"},
+    {"STEp", com_step, "copy a component in an array fashion"},
+    {"STRetch", com_stretch, "make a component larger or smaller"},
+    {"TRAce", com_trace, "highlight named signals"},
+    {"UNDo", com_undo, "undo the last command"},
+    {"UNIts", com_units, "set editor resolution and user unit type"},
+    {"VERsion", com_version, "identify the version number of program"},
+    {"WINdow", com_window, "change the current window parameters"},
+    {"WRAp", com_wrap, "create a new device using existing components"},
     {(char *) NULL, (Function *) NULL, (char *) NULL}
 };
 
@@ -115,6 +116,7 @@ char **argv;
     COMMAND *command;
     COMMAND * find_command();
     int i; /* scratch variable */
+    int debug=0;
 
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
@@ -127,7 +129,9 @@ char **argv;
     rl_pending_input='\n';
     rl_setprompt("INIT> ");
     
+    token_set_stream(stdin);
     while((token=token_get(word)) != EOF) {
+        if (debug) printf("IN MAIN: got %s: %s\n", tok2str(token), word);
 	switch (mode) {
 	    case MAIN:
 		rl_setprompt("MAIN> ");
@@ -161,6 +165,7 @@ char **argv;
 		    printf(" bad command\n");
 		    token_flush();
 		} else {
+		    if (debug) printf("MAIN: found command\n");
 		    retcode = ((*(command->func)) (""));
 		}
 		break;
@@ -168,7 +173,8 @@ char **argv;
 	    case EOC:
 		break;
 	    default:
-		printf(" expected COMMAND\n");
+		printf(" expected COMMAND, got %s: %s\n",
+			tok2str(token), word);
 		token_flush();
 		break;
 	}
@@ -182,13 +188,18 @@ COMMAND * find_command(name)
 char *name;
 {
     register int i, size;
+    int debug=0;
 
     size = strlen(name);
     size = size > 2 ? size : 3;
     
     for (i = 0; commands[i].name; i++)
-	if (strncasecmp(name, commands[i].name, size) == 0)
+	if (strncasecmp(name, commands[i].name, size) == 0) {
+	    if (debug) {
+	    	;
+	    }
 	    return (&commands[i]);
+	}
 
     return ((COMMAND *) NULL);
 }
@@ -233,8 +244,12 @@ char *arg;	/* currently unused */
     int nnum=0;
     int state;
     int retval;
+    int valid_comp=0;
+    int i;
+    int flag;
 
-    int layer;
+    extern int layer;
+
     int comp;
     double x1,y1,x2,y2;
     int debug=0;
@@ -270,14 +285,37 @@ char *arg;	/* currently unused */
 */
 
     while(!done) {
+	rl_setprompt("ADD> ");
 	token = token_get(word);
 	if (token == IDENT) { 	
-	    /* check to see if is a valid comp descriptor */
-  	    comp = toupper(word[0]);
-	    retval = sscanf(&word[1], "%d", &layer);
-	    if (debug) printf("layer=%d\n",layer);
 
-	    if (index("ACLNOPRT", comp) && retval==1)  {
+	    /* check to see if is a valid comp descriptor */
+	    valid_comp=0;
+	    comp=toupper(word[0]);
+	    if (index("ACLNOPRT", comp)) {
+	    	if (strlen(word) == 1) {
+		    if (debug) printf("using default layer=%d\n",layer);
+		    valid_comp++;			/* no layer given */
+		} else {
+		    valid_comp=1;
+		    /* check for any non-digit characters */
+		    /* to allow instance names like "L1234b" */
+		    for (i=0; i<strlen(&word[1]); i++) {
+			if (!isdigit(word[1+i])) {
+			    valid_comp=0;
+			}
+		    }
+		    if (valid_comp) {
+			if(sscanf(&word[1], "%d", &layer) == 1) {
+			    if (debug) printf("given layer=%d\n",layer);
+			} else {
+			    valid_comp=0;
+			}
+		    } 
+		}
+	    } 
+
+	    if (valid_comp) {
 		switch (comp) {
 		    case 'A':
 			add_arc(&layer);
@@ -308,7 +346,7 @@ char *arg;	/* currently unused */
 			break;
 		}
 	    } else {  /* must be a identifier */
-		printf("calling add_inst with %s\n", word);
+		if (debug) printf("calling add_inst with %s\n", word);
 		add_inst(word);
 	    }
 	} else if (token == QUOTE) {
@@ -336,36 +374,10 @@ int add_arc(int *layer)
     return(1);
 }
 
-
-int add_note(int *layer)
-{
-    rl_setprompt("ADD_NOTE> ");
-    printf("in add_note (unimplemented)\n");
-    token_flush();
-    return(1);
-}
-
 int add_oval(int *layer)
 {
     rl_setprompt("ADD_OVAL> ");
     printf("in add_oval (unimplemented)\n");
-    token_flush();
-    return(1);
-}
-
-int add_poly(int *layer)
-{
-    rl_setprompt("ADD_POLY> ");
-    printf("in add_poly (unimplemented)\n");
-    token_flush();
-    return(1);
-}
-
-
-int add_text(int *layer)
-{
-    rl_setprompt("ADD_TEXT> ");
-    printf("in add_text (unimplemented)\n");
     token_flush();
     return(1);
 }
@@ -430,14 +442,14 @@ com_bye(arg)		/* terminate edit session */
 char *arg;
 {
     /* The user wishes to quit using this program */
-    /* Just set DONE non-zero. */
+    /* Just set quit_now non-zero. */
 
     numbyes++;	/* number of com_bye() calls */
 
     if (currep != NULL && modified && numbyes==1) {
 	printf("    you have an unsaved instance (%s)!\n", currep->name);
     } else {
-	done = 1;
+	quit_now++;
 	fprintf(stderr, "    com_bye %s\n", arg);
 	exit(1); 	/* for now just bail */
     }
@@ -475,7 +487,47 @@ char *arg;
 com_display(arg)	/* turn the display on or off */
 char *arg;
 {
-    printf("    com_display %s\n", arg);
+    TOKEN token;
+    int done=0;
+    char buf[128];
+    char word[128];
+    DISPLAYSTATE display_state = D_TOGGLE;	
+    int nopts=0;
+    double tmp;
+    int debug=0;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		if (strncasecmp(word, "ON", 2) == 0) {
+		    display_state=D_ON;
+		} else if (strncasecmp(word, "OFF", 2) == 0) {
+		    display_state=D_OFF;
+		} else {
+	    	     printf("bad argument to DISP: %s\n", word);
+		}
+		break;
+	    case CMD:		/* command */
+		token_unget(token, word);
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    default:
+		printf("DISP: expected ON/OFF, got %s\n", tok2str(token));
+		return(-1);
+		break;
+	}
+    }
+
+    xwin_display_set_state(display_state);
     return (0);
 }
 
@@ -491,21 +543,50 @@ char *arg;
 {
     TOKEN token;
     int done=0;
-    char buf[128];
+    char word[128];
     char name[128];
     int error=0;
+    int debug=0;
 
     /* printf("    com_edit <%s>\n", arg); */
+
+    name[0]=0;
+    while(!done && (token=token_get(word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		strncpy(name, word, 128);
+	    	break;
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case COMMA:		/* comma */
+		printf("expected IDENT: got %s\n", tok2str(token));
+	    	break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case CMD:		/* command */
+	    	token_unget(token, word);
+		done++;
+		break;
+	    default:
+		eprintf("bad case in com_edi");
+		break;
+	}
+    }
 
     if (mode == MAIN || (mode == EDI && !modified)) {
 
 	/* check for a name provided */
-	if (token=token_get(name) != IDENT) {
+	if (strlen(name) == 0) {
 	    printf("    must provide a name: EDIT <name>\n");
 	    return (0);
 	} 
 
-	/* printf("got %s\n", name); */
+	if (debug) printf("got %s\n", name); 
 
 	mode = EDI;
     
@@ -542,7 +623,6 @@ char *arg;
 com_exit(arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 char *arg;
 {
-    printf("    com_exit %s\n", arg);
     if (modified) {
 	printf("    must save before exiting\n");
     } else {
@@ -572,7 +652,7 @@ char *arg;
     char buf[128];
     char word[128];
     int gridcolor=0;
-    GRIDSTATE grid_state = TOGGLE;	
+    GRIDSTATE grid_state = G_TOGGLE;	
     double pts[6] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
     int npts=0;
     int nopts=0;
@@ -584,10 +664,10 @@ char *arg;
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "ON", 2) == 0) {
-		    grid_state=ON;
+		    grid_state=G_ON;
 		    xwin_grid_state(grid_state);
 		} else if (strncasecmp(word, "OFF", 2) == 0) {
-		    grid_state=OFF;
+		    grid_state=G_OFF;
 		    xwin_grid_state(grid_state);
 		} else {
 	    	     printf("bad argument to GRID: %s\n", word);
@@ -624,12 +704,12 @@ char *arg;
 		switch (npts) {
 		    case 0:
 		    case 1:
-		    case 2:
-		    case 3:
-		    	if (tmp <= 0) {
-			    weprintf("GRID STEPs, SKIPs must be positive integers\n");
+		    	if (tmp < 0) {
+			    weprintf("GRID SPACING/MULT must be positive integers\n");
 			    return(-1);
 			}
+		    case 2:
+		    case 3:
 		    case 4:
 		    case 5:
 		    	break;
@@ -654,9 +734,17 @@ char *arg;
 	}
     }
 
-    if (npts == 2 || npts == 4 || npts == 6 ) {
+    if (npts == 2) {
 	if (debug) printf("setting grid ON\n");
-	xwin_grid_state(ON);
+	xwin_grid_state(G_ON);
+	xwin_grid_pts(pts[0], pts[0], pts[1], pts[1], pts[4], pts[5]);
+    } else if (npts == 4) {
+	if (debug) printf("setting grid ON\n");
+	xwin_grid_state(G_ON);
+	xwin_grid_pts(pts[0], pts[0], pts[1], pts[1], pts[2], pts[3]);
+    } else if (npts == 6) {
+	if (debug) printf("setting grid ON\n");
+	xwin_grid_state(G_ON);
 	xwin_grid_pts(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
     } else if (npts == 0) { 	/* no points */
     	if( nopts == 0) { 	/* and no options */
@@ -688,8 +776,60 @@ char *arg;
 com_input(arg)		/* take command input from a file */
 char *arg;
 {
-    printf("    com_input\n", arg);
-    return (0);
+    TOKEN token;
+    char buf[MAXFILENAME];
+    char word[MAXFILENAME];
+    int debug=1;
+    FILE *fp;
+    int err=0;
+    int done=0;
+    int nfiles=0;
+
+    if (debug) printf("in com_input\n");
+    rl_setprompt("INP> ");
+
+    buf[0]='\0';
+    while(!done && (token=token_get(word)) != EOF) {
+	if (debug) printf("COM_INPUT: got %s: %s\n",
+			tok2str(token), word);
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		if (nfiles == 0) {
+		    snprintf(buf, MAXFILENAME, "./cells/%s.d", word);
+		    nfiles++;
+		    if (nfiles == 1) {
+			if((fp = fopen(buf, "r")) == 0) {
+			     printf("COM_INPUT: could not open %s\n", buf);
+			     return(1);
+			} else {
+			     xwin_display_set_state(D_OFF);
+			     token_set_stream(fp);
+			}
+		    } else {
+			printf("INPUT: wrong number of args\n");
+			return(-1);
+		    }
+		} 
+		break;
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+	    	break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case CMD:		/* command */
+	    	token_unget(token,word);
+		done++;
+		break;
+	    default:
+		eprintf("bad case in com_input");
+		break;
+	}
+    }
 }
 
 com_interrupt(arg)	/* interrupt an ADD to issue another command */
@@ -709,7 +849,61 @@ char *arg;
 com_level(arg)		/* set the logical level of the current device */
 char *arg;
 {
-    printf("    com_level\n", arg);
+    TOKEN token;
+    int done=0;
+    int level;
+    char buf[128];
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%d", &level) != 1) {
+		    weprintf("LEVEL invalid level number: %s\n", word);
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("LEVEL: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    if (currep != NULL) {
+	if (nnums==1) {
+	     currep->logical_level = level;
+	} else if (nnums==0) {
+	     printf("LEVEL: %s is at level %d\n", 
+	     	currep->name, currep->logical_level);
+	} else {
+	    printf("LEVEL: wrong number of arguments\n");
+	    return(-1);
+	}
+    } else {
+	printf("LEVEL: can't set level, not editing any cell\n");
+	return(-1);
+    }
+
     return (0);
 }
 
@@ -723,8 +917,48 @@ char *arg;
 com_lock(arg)		/* set the default lock angle */
 char *arg;
 {
-    printf("    com_lock\n", arg);
-    return (0);
+    TOKEN token;
+    int done=0;
+    double angle;
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+    while(!done && (token=token_get(word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%lf", &angle) != 1) {
+		    weprintf("LOCK: invalid lock angle: %s\n", word);
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("LOCK: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+	if (nnums==1) {
+	   ; /* FIXME: this is where we set the level of currep */
+	} else {
+	   ; /* FIXME: with no args, we print out the current lock angle */
+	}
+    }
     return (0);
 }
 
@@ -862,7 +1096,37 @@ char *arg;
 com_show(arg)		/* define which kinds of things to display */
 char *arg;
 {
-    printf("    com_show\n", arg);
+    /* FIXME: this is just a hack to eat up any SHOW commands */
+
+    TOKEN token;
+    int done=0;
+    int level;
+    char word[128];
+    int nnums=0;
+    double tmp;
+    int debug=0;
+
+    while(!done && (token=token_get(word)) != EOF) {
+	switch(token) {
+	    case CMD:		/* command */
+		token_unget(token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case NUMBER: 	/* number */
+	    case EOL:		/* newline or carriage return */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+		; /* eat em up! */
+	    	break;
+	}
+    }
     return (0);
 }
 
@@ -1077,8 +1341,6 @@ char *arg;
 {
     register int i;
     int printed = 0;
-
-    printf("    com_help\n", arg);
 
     for (i = 0; commands[i].name; i++) {
 	if (!*arg || (strcmp(arg, commands[i].name) == 0)) {

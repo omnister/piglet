@@ -9,40 +9,34 @@
 
 static double x1, y1;
 
-/* :Mmirror :Rrot :Xscale :Yyxratio :Z */
+OPTS opts;
 
-int add_inst(inst_name)
-char *inst_name;
+/* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
+
+int add_note(int *layer)
 {
     enum {START,NUM1,COM1,NUM2,END} state = START;
 
     int done=0;
     int error=0;
     TOKEN token;
-    OPTS opts;
     char word[BUFSIZE];
+    char str[BUFSIZE];
     double x2,y2;
     int debug=0;
 
     DB_TAB *ed_rep;
 
-    opt_set_defaults(&opts);
+    opt_set_defaults( &opts );
 
-    rl_setprompt("ADD_INST> ");
-
-    if ((ed_rep = db_lookup(inst_name)) == 0) {
-    	printf("ADD INST: instance not found: %s\n", inst_name );
-	return(-1);
-    }
-
-    if (strcmp(inst_name, currep->name) == 0) {
-    	printf("ADD INST: can't recursively add instance\n" );
-	return(-1);
-    }
+    rl_setprompt("ADD_NOTE> ");
+    str[0] = 0;
 
     while (!done) {
 	token = token_look(word);
-	/* printf("got %s: %s\n", tok2str(token), word); */
+
+	if (debug) printf("got %s: %s\n", tok2str(token), word); 
+
 	if (token==CMD) {
 	    state=END;
 	} 
@@ -50,20 +44,23 @@ char *inst_name;
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
 		    token_get(word); 
-		    if (opt_parse(word, "MRXYZ", &opts) == -1) {
+		    if (opt_parse(word, "MRYZF", &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
+		} else if (token == QUOTE) {
+		    token_get(str); 
+		    state = START;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just eat it up */
 		    state = START;
-		} else if (token == EOC  || token == CMD) {
-		    state = END; 
+		} else if (token == EOC || token == CMD) {
+		    state = END;	/* error */
 		} else {
-		    printf("   expected OPT or NUMBER, got: %s\n", 
+		    printf("    expected TOKEN or COORD, got: %s\n",
 		    	tok2str(token));
 		    state = END; 
 		}
@@ -75,10 +72,11 @@ char *inst_name;
 		    state = COM1;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
-		} else if (token == EOC  || token == CMD) {
+		} else if (token == EOC || token == CMD) {
+		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER, got: %s\n", 
+		    printf("    expected NUMBER, got: %s\n",
 		    	tok2str(token));
 		    state = END; 
 		}
@@ -90,7 +88,8 @@ char *inst_name;
 		    token_get(word);
 		    state = NUM2;
 		} else {
-		    printf("    expected COMMA, got: %s\n", tok2str(token));
+		    printf("    expected COMMA, got: %s\n",
+		    	tok2str(token));
 		    state = END;	
 		}
 		break;
@@ -98,15 +97,23 @@ char *inst_name;
 		if (token == NUMBER) {
 		    token_get(word);
 		    sscanf(word, "%lf", &y1);	/* scan it in */
-		    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
-		    need_redraw++;
-		    state = START;
+
+		    if (strlen(str) == 0) {
+		    	printf("ADD NOTE: no string given\n");
+			state = START;
+		    } else {
+			db_add_note(currep, *layer, opt_copy(&opts),
+			    strsave(str), x1, y1);
+			need_redraw++;
+			state = START;
+	            }
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
-		} else if (token == EOC  || token == CMD) {
+		} else if (token == EOC || token == CMD) {
+		    printf(" cancelling ADD NOTE\n");
 		    state = END; 
 		} else {
-		    printf("   expected NUMBER, got: %s\n", 
+		    printf("    expected NUMBER, got: %s\n",
 		    	tok2str(token));
 		    state = END; 
 		}
@@ -114,7 +121,7 @@ char *inst_name;
 	    case END:
 	    default:
 		if (token == EOC || token == CMD) {
-		    ;
+			;
 		} else {
 		    token_flush();
 		}

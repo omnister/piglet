@@ -21,14 +21,23 @@
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
-DB_TAB *newrep = NULL;		/* scratch pointer for new rep */
 OPTS   *opts;
+XFORM  unity_transform;
 XFORM  screen_transform;
 XFORM  *xp = &screen_transform;
 
-int done; /* When non-zero, this global means the user is done using this program. */
+/*
+$Log: xwin.c,v $
+Revision 1.9  2004/01/05 23:05:27  walker
+testing rcs functions
 
-char version[] = "$Header: /home/walker/piglet/piglet/date/foo/RCS/xwin.c,v 1.5 2004/01/01 09:09:07 walker Exp $"; 
+Revision 1.8  2004/01/05 23:03:30  walker
+added rcs comments and eliminating unnecessary globals
+*/
+
+int quit_now; /* When!=0 ,  means the user is done using this program. */
+
+char version[] = "$Id: xwin.c,v 1.9 2004/01/05 23:05:27 walker Exp $";
 
 unsigned int width, height;		/* window pixel size */
 unsigned int dpy_width, dpy_height;	/* disply pixel size */
@@ -47,7 +56,8 @@ int grid_xs = 2;	/* how often to display grid ticks */
 int grid_ys = 2;
 int grid_xo = 0; 	/* starting offset */
 int grid_yo = 0;
-GRIDSTATE grid_state = ON;	/* ON, OFF */
+GRIDSTATE grid_state = G_ON;		/* ON, OFF */
+DISPLAYSTATE display_state = D_ON;	/* ON, OFF */
 int grid_color = 1;	/* 1 through 6 for different colors */ 
 
 int modified=0;
@@ -91,12 +101,6 @@ static char stip_bits[] = {	/* 8x diagonal crosshatch */
 
 extern char *getwd();
 extern char *xmalloc();
-
-void V_to_R();
-void R_to_V(); 
-void snapxy();
-void snapxy_major();
-
 
 Display *dpy; int scr;
 
@@ -245,9 +249,18 @@ int initX()
 
     xwin_grid_pts(10.0, 10.0, 2.0, 2.0, 0.0, 0.0);
     xwin_grid_color(1);
-    xwin_grid_state(ON);
+    xwin_grid_state(G_ON);
+    xwin_display_set_state(G_ON);
     xwin_window_set(-100.0,-100.0, 100.0, 100.0);
     sprintf(buf,"");
+
+    /* initialize unitytransform */
+    unity_transform.r11 = 1.0;
+    unity_transform.r12 = 0.0;
+    unity_transform.r21 = 0.0;
+    unity_transform.r22 = 1.0;
+    unity_transform.dx  = 0.0;
+    unity_transform.dy  = 0.0;
 
     return(0);
 }
@@ -259,6 +272,7 @@ FILE *fp;
     static int button_down=0;
     XEvent xe;
     static int i = 0;
+    int debug=0;
 
     static char buf[BUF_SIZE];
     static char *s = NULL;
@@ -279,7 +293,6 @@ FILE *fp;
     struct timeval *timer = (struct timeval *) 0;
     fd_set rset, tset;
     unsigned long all = 0xffffffff;
-    static int dbug=0;
 
     /* courtesy g_plt_X11.c code from gnuplot */
     cn = ConnectionNumber(dpy);
@@ -295,10 +308,11 @@ FILE *fp;
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
 	    if (currep != NULL ) {
-		db_render(currep,xp,0,0); /* render the current rep */
+		db_render(currep,0,0); /* render the current rep */
 	    }
 	    draw_grid(win, gcx, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
+	    /* DRAW_MENU */
 	}
 
 	/* some event resulted in text in buffer 's' */
@@ -324,37 +338,28 @@ FILE *fp;
 	    while (XCheckMaskEvent(dpy, all, &xe)) {
 		switch (xe.type) {
 		case MotionNotify:
-		    debug("got Motion",dbug);
-		    /* if(button_down) { */
-		    if(1) {
+		    if (debug) printf("EVENT LOOP: got Motion\n");
 
-			x = (double) xe.xmotion.x;
-			y = (double) xe.xmotion.y;
-			V_to_R(&x,&y);
-			snapxy(&x,&y);
-			sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
+		    x = (double) xe.xmotion.x;
+		    y = (double) xe.xmotion.y;
+		    V_to_R(&x,&y);
+		    snapxy(&x,&y);
+		    sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
+		    if (display_state == D_ON) {
 			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-
-			if (xold != x || yold != y) {
-			    rubber_draw(x, y);
-			    xold=x;
-			    yold=y;
-			} 
-
-		    } else {		/* must be button up */
-
-			xu = (double) xe.xmotion.x;
-			yu = (double) xe.xmotion.y;
-			V_to_R(&xu,&yu);
-			snapxy(&xu,&yu);
-			sprintf(buf,"(%5d,%5d)         ", (int) x, (int) y);
-			XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
-			
-			rubber_draw(xu, yu);
 		    }
+
+		    if (xold != x || yold != y) {
+	    		if (display_state==D_ON) {
+			    rubber_draw(x, y);
+			}
+			xold=x;
+			yold=y;
+		    } 
+
 		    break;
 		case Expose:
-		    debug("got Expose",dbug);
+		    if (debug) printf("EVENT LOOP: got Expose\n");
 
 		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 
@@ -367,19 +372,14 @@ FILE *fp;
 		    break;
 
 		case ConfigureNotify:
-		    debug("got Configure Notify",dbug);
+		    if (debug) printf("EVENT LOOP: got Config Notify\n");
 		    width = xe.xconfigure.width;
 		    height = xe.xconfigure.height;
 		    xwin_window_set(vp_xmin, vp_ymin, vp_xmax, vp_ymax);
 		    break;
 		case ButtonRelease:
 		    button_down=0;
-		    /* x = (double) xe.xmotion.x;
-		     * y = (double) xe.xmotion.y;
-		     * V_to_R(&x,&y);
-		     * snapxy(&x,&y);
-		     */
-		    debug("got ButtonRelease",dbug);
+		    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
 		    break;
 		case ButtonPress:
 		    switch (xe.xbutton.button) {
@@ -394,7 +394,7 @@ FILE *fp;
 			    sprintf(buf," %d, %d\n", (int) x, (int) y);
 			    s = buf;
 
-			    debug("got ButtonPress",dbug);
+			    if (debug) printf("EVENT LOOP: got ButtonPress\n");
 			    break;
 			case 2:	/* middle button */
 			    break;
@@ -410,7 +410,7 @@ FILE *fp;
 		    }
 		    break;
 		case KeyPress:
-		    debug("got KeyPress",dbug);
+		    if (debug) printf("EVENT LOOP: got KeyPress\n");
 	            charcount = XLookupString((XKeyEvent * ) &xe, keybuf, 
 		                    keybufsize, &keysym, &compose);
 
@@ -489,14 +489,21 @@ XFontStruct **font_info;
 void xwin_xor_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
 {
+
+    extern DISPLAYSTATE display_state;
+
+    if (display_state == D_ON) {
 	XDrawLine(dpy, win, gcx, x1, y1, x2, y2);
+    }
 }
 
 void xwin_draw_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
 {
     /* XSetFunction(dpy, gca, GXcopy);  */
-    XDrawLine(dpy, win, gca, x1, y1, x2, y2);
+    if (display_state == D_ON) {
+	XDrawLine(dpy, win, gca, x1, y1, x2, y2);
+    }
 }
 
 void xwin_set_pen(pen)
@@ -548,26 +555,26 @@ int line;
     /* there are two switches here because even if you XSetDashes(),
      * the drawn line will still be solid *unless* you also change
      * the line style to LineOnOffDash or LineDoubleDash.  So we set
-     * line one to be LineSolid and all the rest to LineOnOffDash
+     * line zero to be LineSolid and all the rest to LineOnOffDash
      * and then the XSetDashes will take effect.  (45 minutes to debug!)
      * - with much appreciation to Ken P. for an example of this in 
      * autoplot(1) code.
      */
 
     switch (line) {
-       case 0:     line_style = LineOnOffDash; break;
-       case 1:     line_style = LineSolid; break;
-       case 2:
-       case 3:
+       case 0:     line_style = LineSolid;     break;
+       case 1:     line_style = LineOnOffDash; break;
+       case 2:     line_style = LineOnOffDash; break;
+       case 3:     line_style = LineOnOffDash; break;
        case 4:     line_style = LineOnOffDash; break;
        default:
 	   eprintf("line type %d out of range.", line);
     }        
     
     switch (line) {
-       case 0:     dash_list[0]=7; dash_list[1]=2;
+       case 0:
+       case 1:     dash_list[0]=7; dash_list[1]=2;
                    dash_list[2]=1; dash_list[3]=2; dash_n=4; break;
-       case 1:
        case 2:     dash_list[0]=7; dash_list[1]=5; dash_n=2; break;
        case 3:     dash_list[0]=2; dash_list[1]=2; dash_n=2; break;
        case 4:     dash_list[0]=7; dash_list[1]=2;
@@ -607,20 +614,20 @@ int xorig,yorig;	/* grid origin */
 
     xstart=(double) 0;
     ystart=(double) height;
-	/* printf("starting with %g %g\n", xstart, ystart); */
+	if (debug) printf("starting with %g %g\n", xstart, ystart); 
     V_to_R(&xstart, &ystart);
-	/* printf("V_to_R %g %g\n", xstart, ystart); */
+	if (debug) printf("V_to_R %g %g\n", xstart, ystart); 
 
     snapxy_major(&xstart,&ystart);
-	/* printf("snap %g %g\n", xstart, ystart); */
+	if (debug) printf("snap %g %g\n", xstart, ystart); 
 
     xend=(double) width;
     yend=(double) 0;
-	/* printf("starting with %g %g\n", xend, yend); */
+	if (debug) printf("starting with %g %g\n", xend, yend); 
     V_to_R(&xend, &yend);
-	/* printf("V_to_R %g %g\n", xend, yend); */
+	if (debug) printf("V_to_R %g %g\n", xend, yend); 
     snapxy_major(&xend,&yend);
-	/* printf("snap %g %g\n", xend, yend); */
+	if (debug) printf("snap %g %g\n", xend, yend); 
 
     if ( sx == 0 || sy == 0) {
 	printf("grid x,y step must be a positive integer\n");
@@ -647,7 +654,9 @@ int xorig,yorig;	/* grid origin */
 		    xd=x;
 		    yd=y;
 		    R_to_V(&xd,&yd);
-		    XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+		    if (grid_state == G_ON && display_state == D_ON) {
+			XDrawPoint(dpy, win, gc, (int)xd, (int)yd);
+		    }
 		}
 	    }
 
@@ -659,7 +668,7 @@ int xorig,yorig;	/* grid origin */
 	    /* that we draw grid all the way to left margin even after */
 	    /* calling snap_major above */
 
-	    if (grid_state == ON) {
+	    if (grid_state == G_ON && display_state == D_ON) {
 		for (x=xstart-(double) dx*sx; x<=xend; x+=(double) dx*sx) {
 		    for (y=ystart-(double) dy*sy; y<=yend; y+=(double) dy*sy) {
 			for (i=0; i<sx; i++) {
@@ -675,7 +684,6 @@ int xorig,yorig;	/* grid origin */
 		    }
 		}
 	    }
-
 	}
 
 	/* now draw crosshair at 1/50 of largest display dimension */
@@ -689,12 +697,13 @@ int xorig,yorig;	/* grid origin */
 	/* conveniently reusing these variable names */
 	x=(double)0; y=0; R_to_V(&x,&y);
 
-	XDrawLine(dpy, win, gc, 
-	    (int)x, (int)(y-delta), (int)x, (int)(y+delta));
-	XDrawLine(dpy, win, gc, 
-	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y));
-
-	XFlush(dpy);
+	if (grid_state == G_ON && display_state == D_ON) {
+	    XDrawLine(dpy, win, gc, 
+		(int)x, (int)(y-delta), (int)x, (int)(y+delta));
+	    XDrawLine(dpy, win, gc, 
+		(int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
+	    XFlush(dpy);
+	}
 
     } else {
 	printf("grid arguments out of range\n");
@@ -739,16 +748,6 @@ double *x, *y;
 	yd*(-(int) (0.5-(((*y)-grid_yo)/yd)))+grid_yo);
 }
 
-debug(s,dbug)
-char *s;
-int dbug;
-{
-    if (dbug) {
-	weprintf("%s", s);
-    }
-}
-
-
 void xwin_grid_color(color) 
 int color;
 {
@@ -765,6 +764,43 @@ int color;
     }
 }
 
+void xwin_display_set_state(state)
+DISPLAYSTATE state;
+{
+    extern DISPLAYSTATE display_state;
+    int debug=0;
+
+    switch (state) {
+    	case D_TOGGLE:
+	    if (debug) printf("toggling display state\n");
+	    if (display_state==D_OFF) {
+	    	display_state=D_ON;
+		need_redraw++;
+	    } else {
+	    	display_state=D_OFF;
+		need_redraw++;
+	    }
+	    break;
+	case D_ON:
+	    if (debug) printf("display on\n");
+	    if (state != display_state) {
+		display_state=D_ON;
+		need_redraw++;
+	    }
+	    break;
+	case D_OFF:
+	    if (debug) printf("display off\n");
+	    if (state != display_state) {
+		display_state=D_OFF;
+		need_redraw++;
+	    }
+	    break;
+	default:
+	    weprintf("bad state in xwin_display_set_state\n");
+	    break;
+    }
+}
+
 void xwin_grid_state(state) 
 GRIDSTATE state;
 {
@@ -772,27 +808,27 @@ GRIDSTATE state;
     int debug=0;
 
     switch (state) {
-    	case TOGGLE:
+    	case G_TOGGLE:
 	    if (debug) printf("toggling grid state\n");
-	    if (grid_state==OFF) {
-	    	grid_state=ON;
+	    if (grid_state==G_OFF) {
+	    	grid_state=G_ON;
 		need_redraw++;
 	    } else {
-	    	grid_state=OFF;
+	    	grid_state=G_OFF;
 		need_redraw++;
 	    }
 	    break;
-	case ON:
+	case G_ON:
 	    if (debug) printf("grid on\n");
 	    if (state != grid_state) {
-		grid_state=ON;
+		grid_state=G_ON;
 		need_redraw++;
 	    }
 	    break;
-	case OFF:
+	case G_OFF:
 	    if (debug) printf("grid off\n");
 	    if (state != grid_state) {
-		grid_state=OFF;
+		grid_state=G_OFF;
 		need_redraw++;
 	    }
 	    break;
@@ -919,6 +955,7 @@ double x1,y1,x2,y2;
     need_redraw++;
 }
 
+/* convert viewport coordinates to real-world coords */
 void V_to_R(x,y) 
 double *x;
 double *y;
@@ -928,6 +965,7 @@ double *y;
     *y = (yoffset - *y)/scale;
 }
 
+/* convert real-world coordinates to viewport coords */
 void R_to_V(x,y) 
 double *x;
 double *y;
@@ -951,7 +989,7 @@ init_colors()
     int default_depth;
     Visual *default_visual;
     static char *name[] = {
-	"black",
+	"white",        /* FIXME: eventually should be black */
 	"white",
 	"red",
 	"green",

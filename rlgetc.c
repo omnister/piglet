@@ -52,6 +52,10 @@ rl_setprompt(char *str)
 }
 
 
+/* prototype for working with a pure file input */
+/* the real rlgetc() is a co-routine with procXevent */
+/* and gets characters from both mouse and keyboard */
+
 xrlgetc(fd) 
 FILE *fd;
 {

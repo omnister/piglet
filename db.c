@@ -17,13 +17,14 @@ COORDS *first_pair, *last_pair;
 OPTS   *first_opt, *last_opt;
 
 /* global drawing variables */
-XFORM *transform;	/* global xform matrix */
-NUM xmax, ymax; 	/* globals for finding bounding boxes */
+XFORM unity_transform;
+XFORM *global_transform = &unity_transform;  /* global xform matrix */
+NUM xmax, ymax; 	   /* globals for finding bounding boxes */
 NUM xmin, ymin;
 double max(), min();
-int drawon=1;		/* 0 = dont draw, 1 = draw */
+int drawon=1;		  /* 0 = dont draw, 1 = draw */
 int nestlevel=9;
-int X=1;		/* 1 = draw to X, 0 = emit autoplot commands */
+int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 
 /* routines for expanding db entries into vectors */
 void do_arc(),  do_circ(), do_line(), do_note();
@@ -70,8 +71,23 @@ char *s;
     sp->next   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
+
+    sp->minx = 0.0; 
+    sp->miny = 0.0; 
     sp->maxx = 0.0; 
     sp->maxy = 0.0; 
+
+    sp->grid_xd = 10.0;
+    sp->grid_yd = 10.0;
+    sp->grid_xs = 1.0;
+    sp->grid_ys = 1.0;
+    sp->grid_xo = 0.0;
+    sp->grid_yo = 0.0;
+
+    sp->logical_level=1;
+    sp->lock_angle=0.0;
+    sp->modified = 0;
+    sp->flag = 0;
 
     if (HEAD ==(DB_TAB *) 0) {	/* first element */
 	HEAD = TAIL = sp;
@@ -168,9 +184,11 @@ DB_TAB *dp;
     int i;
 
     fprintf(fp, "PURGE %s;\n", dp->name);
-    fprintf(fp, "EDIT ");
-    fprintf(fp, "%s;\n",dp->name);
-    fprintf(fp, "WIN %g,%g %g,%g\n", dp->minx, dp->miny, dp->maxx, dp->maxy);
+    fprintf(fp, "EDIT %s;\n",dp->name);
+    fprintf(fp, "LOCK %g;\n", dp->lock_angle);
+    fprintf(fp, "LEVEL %d;\n", dp->logical_level);
+    fprintf(fp, "GRID ON;\n");
+    fprintf(fp, "WIN %g,%g %g,%g;\n", dp->minx, dp->miny, dp->maxx, dp->maxy);
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	switch (p->type) {
@@ -181,7 +199,6 @@ DB_TAB *dp;
         case CIRC:  /* circle definition */
 
 	    fprintf(fp, "ADD C%d ", p->u.c->layer);
-
 	    db_print_opts(fp, p->u.c->opts, "WR");
 
 	    fprintf(fp, "%g,%g %g,%g;\n",
@@ -195,14 +212,13 @@ DB_TAB *dp;
         case LINE:  /* line definition */
 
 	    fprintf(fp, "ADD L%d ", p->u.l->layer);
-
 	    db_print_opts(fp, p->u.l->opts, "W");
 
 	    i=1;
 	    coords = p->u.l->coords;
 	    while(coords != NULL) {
 		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%4 == 0) {
+		if ((coords = coords->next) != NULL && (++i)%7 == 0) {
 		    fprintf(fp,"\n");
 		}
 	    }
@@ -213,7 +229,6 @@ DB_TAB *dp;
         case NOTE:  /* note definition */
 
 	    fprintf(fp, "ADD N%d ", p->u.n->layer); 
-
 	    db_print_opts(fp, p->u.n->opts, "MRYZF");
 
 	    fprintf(fp, "\"%s\" %g,%g;\n",
@@ -224,19 +239,20 @@ DB_TAB *dp;
 	    break;
 
         case OVAL:  /* oval definition */
+
 	    fprintf(fp, "#add OVAL not inplemented yet\n");
 	    break;
 
         case POLY:  /* polygon definition */
-	    fprintf(fp, "ADD P%d", p->u.p->layer);
-	    
+
+	    fprintf(fp, "ADD P%d ", p->u.p->layer);
 	    db_print_opts(fp, p->u.p->opts, "W");
 
 	    i=1;
 	    coords = p->u.p->coords;
 	    while(coords != NULL) {
 		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%4 == 0) {
+		if ((coords = coords->next) != NULL && (++i)%7 == 0) {
 		    fprintf(fp,"\n");
 		}
 	    }
@@ -245,8 +261,10 @@ DB_TAB *dp;
 	    break;
 
 	case RECT:  /* rectangle definition */
+
 	    fprintf(fp, "ADD R%d ", p->u.r->layer);
 	    db_print_opts(fp, p->u.r->opts, "W");
+
 	    fprintf(fp, "%g,%g %g,%g;\n",
 		p->u.r->x1,
 		p->u.r->y1,
@@ -256,8 +274,10 @@ DB_TAB *dp;
 	    break;
 
         case TEXT:  /* text definition */
+
 	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
 	    db_print_opts(fp, p->u.t->opts, "MRYZF");
+
 	    fprintf(fp, "%s %g,%g;\n",
 		p->u.t->text,
 		p->u.t->x,
@@ -282,71 +302,6 @@ DB_TAB *dp;
 
     fprintf(fp, "SAVE;\n");
     fprintf(fp, "EXIT;\n\n");
-}
-
-
-int db_print_opts(fp, popt, validopts) /* print options */
-FILE *fp;
-OPTS *popt;
-/* validopts is a string which sets which options are printed out */
-/* an example for a line is "W", a note uses "MRYZF" */
-char *validopts;
-{
-    char *p;
-
-    for (p=validopts; *p != '\0'; p++) {
-    	switch(toupper(*p)) {
-	    case 'F':
-		fprintf(fp, ":F%g ", popt->font_size);
-	    	break;
-	    case 'M':
-		switch(popt->mirror) {
-		    case MIRROR_OFF:
-		    	break;
-		    case MIRROR_X:
-	    		fprintf(fp, ":MX ");
-			break;
-		    case MIRROR_Y:
-	    		fprintf(fp, ":MY ");
-			break;
-		    case MIRROR_XY:
-	    		fprintf(fp, ":MXY ");
-			break;
-		    default:
-	    		weprintf("invalid mirror case\n");
-		    	break;	
-		}
-	    	break;
-	    case 'R':
-		if (popt->rotation != 0.0) {
-		    fprintf(fp, ":R%g ", popt->rotation);
-		}
-	    	break;
-	    case 'W':
-		if (popt->width != 0.0) {
-		    fprintf(fp, ":W%g ", popt->width);
-		}
-	    	break;
-	    case 'X':
-		if (popt->scale != 1.0) {
-		    fprintf(fp, ":X%g ", popt->scale);
-		}
-	    	break;
-	    case 'Y':
-		if (popt->aspect_ratio != 1.0) {
-		    fprintf(fp, ":Y%g ", popt->aspect_ratio);
-		}
-	    	break;
-	    case 'Z':
-		if (popt->slant != 0.0) {
-		    fprintf(fp, ":Z%g ", popt->slant);
-		}
-	    	break;
-	    default:
-		weprintf("invalid option %c\n", *p); 
-	    	break;
-	}
-    }
 }
 
 
@@ -529,6 +484,7 @@ COORDS *coords;
 {
     struct db_poly *pp;
     struct db_deflist *dp;
+    int debug = 0;
  
     pp = (struct db_poly *) emalloc(sizeof(struct db_poly));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -545,6 +501,7 @@ COORDS *coords;
     dp->u.p = pp;
     dp->type = POLY;
 
+    if (debug) printf("db_add_poly: setting poly layer %d\n", layer);
     pp->layer=layer;
     pp->opts=opts;
     pp->coords=coords;
@@ -699,22 +656,119 @@ void discard_pairs()
     last_pair = NULL;
 }		
 
-OPTS *opt_create()
+OPTS *opt_copy(OPTS *opts)
 {
     OPTS *tmp;
     tmp = (OPTS *) emalloc(sizeof(OPTS));
     
     /* set defaults */
-    tmp->font_size = 10.0;       /* :F<font_size> */
-    tmp->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
-    tmp->rotation = 0.0;         /* :R<rotation,resolution> */
-    tmp->width = 0.0;            /* :W<width> */
-    tmp->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
-    tmp->scale=1.0;              /* :X<scale> */
-    tmp->slant=0.0;              /* :Z<slant_degrees> */
+    tmp->font_size = opts->font_size;
+    tmp->mirror = opts->mirror;
+    tmp->rotation = opts->rotation;
+    tmp->width = opts->width;
+    tmp->aspect_ratio = opts->aspect_ratio;
+    tmp->scale = opts->scale;
+    tmp->slant = opts->slant;
+    tmp->cname = opts->cname;
+    tmp->sname = opts->sname;
 
     return(tmp);
 }     
+
+OPTS *opt_set_defaults(OPTS *opts)
+{
+    opts->font_size = 10.0;       /* :F<font_size> */
+    opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
+    opts->rotation = 0.0;         /* :R<rotation,resolution> */
+    opts->width = 0.0;            /* :W<width> */
+    opts->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
+    opts->scale=1.0;              /* :X<scale> */
+    opts->slant=0.0;              /* :Z<slant_degrees> */
+    opts->cname= (char *) NULL;   /* component name */
+    opts->sname= (char *) NULL;   /* signal name */
+}
+
+OPTS *opt_create()
+{
+    OPTS *tmp;
+    tmp = (OPTS *) emalloc(sizeof(OPTS));
+    
+    opt_set_defaults(tmp);
+
+    return(tmp);
+}     
+
+int db_print_opts(fp, popt, validopts) /* print options */
+FILE *fp;
+OPTS *popt;
+/* validopts is a string which sets which options are printed out */
+/* an example for a line is "W", a note uses "MRYZF" */
+char *validopts;
+{
+    char *p;
+
+    if (popt->cname != NULL) {
+    	fprintf(fp, "%s ", popt->cname);
+    }
+
+    if (popt->sname != NULL) {
+    	fprintf(fp, "%s ", popt->sname);
+    }
+
+    for (p=validopts; *p != '\0'; p++) {
+    	switch(toupper(*p)) {
+	    case 'F':
+		fprintf(fp, ":F%g ", popt->font_size);
+	    	break;
+	    case 'M':
+		switch(popt->mirror) {
+		    case MIRROR_OFF:
+		    	break;
+		    case MIRROR_X:
+	    		fprintf(fp, ":MX ");
+			break;
+		    case MIRROR_Y:
+	    		fprintf(fp, ":MY ");
+			break;
+		    case MIRROR_XY:
+	    		fprintf(fp, ":MXY ");
+			break;
+		    default:
+	    		weprintf("invalid mirror case\n");
+		    	break;	
+		}
+	    	break;
+	    case 'R':
+		if (popt->rotation != 0.0) {
+		    fprintf(fp, ":R%g ", popt->rotation);
+		}
+	    	break;
+	    case 'W':
+		if (popt->width != 0.0) {
+		    fprintf(fp, ":W%g ", popt->width);
+		}
+	    	break;
+	    case 'X':
+		if (popt->scale != 1.0) {
+		    fprintf(fp, ":X%g ", popt->scale);
+		}
+	    	break;
+	    case 'Y':
+		if (popt->aspect_ratio != 1.0) {
+		    fprintf(fp, ":Y%g ", popt->aspect_ratio);
+		}
+	    	break;
+	    case 'Z':
+		if (popt->slant != 0.0) {
+		    fprintf(fp, ":Z%g ", popt->slant);
+		}
+	    	break;
+	    default:
+		weprintf("invalid option %c\n", *p); 
+	    	break;
+	}
+    }
+}
 
 
 char *strsave(s)   /* save string s somewhere */
@@ -732,6 +786,41 @@ char *s;
 /* db_render() sets globals xmax, ymax, xmin, ymin;
 /* db_bounds() accesses them for use in com_win();
 /********************************************************/
+
+/*
+
+	Here's the logic:
+
+	xwin.c exports a function R_to_V which converts real coordinates
+	into pixel coordinates.  
+
+	in xwin: db_render();
+	...
+
+	db_render() {
+	     switch(INST_TYPE) {
+		 ...
+		 case PRIMITIVES:
+		     draw() - using global_transform
+		     break;
+		 ...
+		 case INST:  - a recursive instance call
+
+                     !! SAVE = global_xform
+		     global_transform = compose(inst_xform, transform)
+		     db_render();
+		     free(global_transform);
+		     free(inst_xform);
+		     global_transform = SAVE;
+		     break;
+	    }
+	}
+
+	draw(x,y) {
+	    R_to_V(&x, &y);
+	    call XWIN_draw (x,y);
+	}
+*/
 
 void db_bounds(xxmin, yymin, xxmax, yymax)
 NUM *xxmin;
@@ -755,16 +844,18 @@ int nest;
     nestlevel = nest;
 }
 
-int db_render(cell,xf, nest, mode)
+
+int db_render(cell, nest, mode)
 DB_TAB *cell;
-XFORM *xf; 	/* coordinate transform matrix */
 int nest;	/* nesting level */
 int mode; 	/* 0=regular rendering, 1=xor rubberband */
 {
     DB_DEFLIST *p;
     OPTS *op;
     XFORM *xp, *xa;
-    extern XFORM *transform;
+    extern XFORM *global_transform;
+    extern XFORM unity_transform;
+    XFORM *save_transform;
     extern int nestlevel;
     double optval;
     int debug=0;
@@ -773,6 +864,16 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
     double yminsave;
     double ymaxsave;
 
+    if (nest == 0) {
+	unity_transform.r11 = 1.0;
+	unity_transform.r12 = 0.0;
+	unity_transform.r21 = 0.0;
+	unity_transform.r22 = 1.0;
+	unity_transform.dx  = 0.0;
+	unity_transform.dy  = 0.0;
+        global_transform = &unity_transform;
+    }
+
     if (debug) printf ("#rendering %s at level %d\n", cell->name, nest); 
 
     if (!X && (nest == 0)) {	/* autoplot output */
@@ -780,9 +881,6 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	printf("isotropic\n");
 	printf("back\n");
     }
-
-    transform = xf; 		/* set global transform */
-    				/* gets used in draw() */
 
     if (nest == 0) {
         if (debug) printf("initializing global bounding box to 0\n");
@@ -861,7 +959,8 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    xp->dx += p->u.i->x;
 	    xp->dy += p->u.i->y;
 
-	    transform = compose(xp,xf);		/* set global transform */
+	    save_transform = global_transform;
+	    global_transform = compose(xp,global_transform);
 
             /* save old min/max values for currep */
 
@@ -884,7 +983,7 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 	    }
 
 	    /* render instance */
-	    db_render(p->u.i->def, transform, nest+1, mode);
+	    db_render(p->u.i->def, nest+1, mode);
 	    if (debug) printf("# in db_render at level %d\n", nest); 
 
 	    /* don't draw anything below nestlevel */
@@ -911,8 +1010,8 @@ int mode; 	/* 0=regular rendering, 1=xor rubberband */
 		    draw(xmax,ymin,mode);
 	    }
 
-	    free(transform); free(xp);
-	    transform = xf;		/* set transform back */
+	    free(global_transform); free(xp);	
+	    global_transform = save_transform;	/* set transform back */
 
 	    /* now pass bounding box back */
 	    xmin=min(xminsave, xmin+p->u.i->x);
@@ -969,9 +1068,15 @@ int mode;		/* drawing mode */
 {
     int i;
     double r,theta,x,y,x1,y1,x2,y2;
+    double theta_start;
+    int res;
 
-    /* FIXME: should eventually parse resolution */
-    int res=64;	/* resolution */
+
+    if ((def->u.c->opts->rotation) != 0.0) {
+	res = (int) (360.0/def->u.c->opts->rotation);	/* resolution */
+    } else {
+    	res = 64;
+    }
 
     /* printf("# rendering circle\n"); */
 
@@ -984,11 +1089,12 @@ int mode;		/* drawing mode */
     jump();
     set_pen(def->u.c->layer);
 
-    x = (double) (x1-x2);
-    y = (double) (y1-y2);
+    x = (double) (x2-x1);
+    y = (double) (y2-y1);
     r = sqrt(x*x+y*y);
+    theta_start = atan2(x,y);
     for (i=0; i<=res; i++) {
-	theta = ((double) i)*2.0*M_PI/((double) res);
+	theta = theta_start+((double) i)*2.0*M_PI/((double) res);
 	x = r*sin(theta);
 	y = r*cos(theta);
 	draw(x1+x, y1+y,mode);
@@ -1273,23 +1379,47 @@ DB_DEFLIST *def;
 int mode;
 {
     COORDS *temp;
+    int debug=0;
+    int npts=0;
+    double x1, y1;
+    double x2, y2;
     
-    /* printf("# rendering polygon\n"); */
+    if (debug) printf("# rendering polygon\n"); 
     
-    jump();
+    if (debug) printf("# setting pen %d\n", def->u.p->layer); 
     set_pen(def->u.p->layer);
 
-    temp = def->u.p->coords;
     
     /* FIXME: should eventually check for closure here and probably */
     /* at initial entry of points into db.  If last point != first */
     /* point, then the polygon should be closed automatically and an */
     /* error message generated */
 
+    temp = def->u.p->coords;
+    x1=temp->coord.x; y1=temp->coord.y;
+
+    jump();
     while(temp != NULL) {
-	    draw(temp->coord.x, temp->coord.y, mode);
-	    temp = temp->next;
+	x2=temp->coord.x; y2=temp->coord.y;
+	if (temp->prev->coord.x == x2 && temp->prev->coord.y == y2) {
+	    ;
+	} else {
+	    npts++;
+	    draw(x2, y2, mode);
+	}
+	temp = temp->next;
     }
+    
+    /* when rubber banding, it is important not to redraw over a */
+    /* line because it will erase it.  This can occur when only */
+    /* two points have been drawn so far.  In this case, we should */
+    /* not automatically close the polygon.  So we only execute the  */
+    /* next bit of code when npts > 2 */
+
+    if ((x1 != x2 || y1 != y2) && npts > 2) {
+	draw(x1, y1, mode);
+    }
+
 }
 
 
@@ -1469,16 +1599,35 @@ XFORM *xa;
  * autoplot, so has a long history.
  */
 
+
+/* FIXME: currently transform gets seeded at the top of the render
+tree in db_render by XWIN based on real->screen relationship.  This makes the
+whole pipeline tangled up with graphical window size.  This was done to make
+the transform maximally efficient.  It would be cleaner to always seed the
+render pipeline with the unit transform and pass transform as an explicit
+argument down the pipe.  That way, drawing is always done in real-world coords
+with no admixture of screen transformations.  That requires draw to
+concatenate the screen transform at the last possible moment just before
+calling the X plotting funcions.  */
+
 static int nseg=0;
 
-
 void draw(x, y, mode)	/* draw x,y transformed by extern global xf */
-NUM x,y;			/* location in real coordinate space */
+NUM x,y;		/* location in real coordinate space */
 int mode;
 {
-    extern XFORM *transform;	/* global for efficiency */
+    extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     static NUM xxold, yyold;
+    int debug=0;
+
+    /* now compute transformed coordinates */
+
+    xx = x*global_transform->r11 + 
+         y*global_transform->r21 + global_transform->dx;
+
+    yy = x*global_transform->r12 + 
+         y*global_transform->r22 + global_transform->dy;
 
     /* globals for computing bounding boxes */
     /* NOTE: This must be done prior to conversion into screen space */
@@ -1487,16 +1636,17 @@ int mode;
     ymax = max(y,ymax);
     ymin = min(y,ymin);
 
-    /* now compute coordinates in screen space */
-    xx = x*transform->r11 + y*transform->r21 + transform->dx;
-    yy = x*transform->r12 + y*transform->r22 + transform->dy;
-
     if (X) {
+	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 	if (nseg) {
 	    if (mode == 0) { 	/* regular drawing */
-		if (drawon) xwin_draw_line((int) xxold, (int) yyold, (int) xx, (int) yy);
+		if (drawon) {
+		    xwin_draw_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+                }
 	    } else {		/* rubber band drawing */
-		if (drawon) xwin_xor_line((int) xxold, (int) yyold, (int) xx, (int) yy);
+		if (drawon) {
+		    xwin_xor_line((int)xxold,(int)yyold,(int)xx,(int)yy);
+ 		}
 	    }
 	}
 	xxold=xx;
@@ -1520,18 +1670,18 @@ void set_pen(pnum)
 int pnum;
 {
     if (X) {
-	xwin_set_pen((pnum%7));		/* for X */
+	xwin_set_pen((pnum%8));		/* for X */
     } else {
-	if (drawon) printf("pen %d\n", (pnum%7));	/* autoplot */
+	if (drawon) printf("pen %d\n", (pnum%8));	/* autoplot */
     }
-    set_line((((int)(pnum/7))%5));
+    set_line((((int)(pnum/8))%5));
 }
 
 void set_line(lnum)
 int lnum;
 {
     if (X) {
-	xwin_set_line((lnum%5)+1);		/* for X */
+	xwin_set_line((lnum%5));		/* for X */
     } else {
 	if (drawon) printf("line %d\n", (lnum%5)+1);	/* autoplot */
     }

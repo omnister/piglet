@@ -12,23 +12,28 @@ static double x1, y1;
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_CIRC dbcirc;
-int add_circ(int *layer)
 
+OPTS opts;
+
+
+int add_circ(int *layer)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     int done=0;
     int error=0;
     TOKEN token;
-    OPTS *opts;
     char word[BUFSIZE];
     double x2,y2;
     int debug=0;
 
+
+    opt_set_defaults(&opts);
+    opts.rotation = 2.0; 	/* default degrees resolution */
+    opts.width = 0.0;		/* default width */
+
     if (debug) printf("layer %d\n",*layer);
     rl_setprompt("ADD_CIRCLE> ");
-
-    opts = opt_create();
 
     while (!done) {
 	token = token_look(word);
@@ -40,13 +45,22 @@ int add_circ(int *layer)
 	    case START:		/* get option or first xy pair */
 		if (token == OPT ) {
 		    token_get(word); /* ignore for now */
-		    state = START;
+		    /* FIXME: do bound checking on opts */
+		    if (opt_parse(word, "WR", &opts) == -1) {
+		    	state = END;
+		    } else {
+			state = START;
+		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just eat it up */
 		    state = START;
+		} else if (token == EOC || token == CMD) {
+		    state = END;	
 		} else {
+		    printf("   expected OPT or NUMBER, got: %s\n",
+		    	tok2str(token));
 		    state = END;	/* error */
 		}
 		break;
@@ -57,7 +71,11 @@ int add_circ(int *layer)
 		    state = COM1;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
-		} else if (token == EOC) {
+		} else if (token == EOC || token == CMD) {
+		    state = END; 
+		} else {
+		    printf("   expected NUMBER, got: %s\n",
+		    	tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -68,7 +86,7 @@ int add_circ(int *layer)
 		    token_get(word);
 		    state = NUM2;
 		} else {
-		    printf("    1: expected a comma!\n");
+		    printf("    expected COMMA, got %s\n", tok2str(token));
 		    state = END;	
 		}
 		break;
@@ -80,7 +98,11 @@ int add_circ(int *layer)
 		    state = NUM3;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
-		} else if (token == EOC) {
+		} else if (token == EOC || token == CMD) {
+		    state = END; 
+		} else {
+		    printf("   expected NUMBER got: %s\n",
+		    	tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -91,7 +113,11 @@ int add_circ(int *layer)
 		    state = COM2;
 		} else if (token == EOL) {
 		    token_get(word); 	/* just ignore it */
-		} else if (token == EOC) {
+		} else if (token == EOC || token == CMD) {
+		    state = END; 
+		} else {
+		    printf("   expected NUMBER got: %s\n",
+		    	tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -104,7 +130,7 @@ int add_circ(int *layer)
 		} else if (token == EOL) {
 		    token_get(word); /* just ignore it */
 		} else {
-		    printf("  2: expected a comma!, got:%s\n", tok2str(token));
+		    printf("  expected COMMA, got:%s\n", tok2str(token));
 		    state = END;	
 		}
 		break;
@@ -114,12 +140,16 @@ int add_circ(int *layer)
 		    sscanf(word, "%lf", &y2);	/* scan it in */
 		    state = START;
 		    modified = 1;
-		    db_add_circ(currep, *layer, opts, x1, y1, x2, y2);
+		    db_add_circ(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		    rubber_clear_callback();
 		    need_redraw++;
 		} else if (token == EOL) {
 		    token_get(word); /* just ignore it */
-		} else if (token == EOC) {
+		} else if (token == EOC || token == CMD) {
+		    state = END; 
+		} else {
+		    printf("   expected NUMBER, got: %s\n",
+		    	tok2str(token));
 		    state = END; 
 		}
 		break;
@@ -157,6 +187,7 @@ int count; /* number of times called */
 
         dbcirc.layer=1;
         dbcirc.x1 = x1; dbcirc.y1 = y1;
+        dbcirc.opts = &opts;
 	
 	if (debug) {printf("in draw_circle\n");}
 
