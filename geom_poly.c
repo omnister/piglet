@@ -3,6 +3,9 @@
 #include "lex.h"
 #include "xwin.h"
 #include "rubber.h"
+#include "rlgetc.h"
+#include "opt_parse.h"
+#include <string.h>
 
 #define NORM 0		/* drawing modes */
 #define RUBBER 1	 
@@ -46,7 +49,6 @@ int *layer;
 
     int debug=0;
     int done=0;
-    int error=0;
     int nsegs;
     TOKEN token;
     char word[BUFSIZE];
@@ -57,6 +59,7 @@ int *layer;
     opt_set_defaults(&opts);
 
     if (debug) {printf("in geom_poly: layer %d\n",*layer);}
+    rl_saveprompt();
     rl_setprompt("ADD_POLY> ");
 
     while (!done) {
@@ -219,6 +222,7 @@ int *layer;
 	    	break;
 	}
     }
+    rl_restoreprompt();
     rubber_clear_callback();
     return(1);
 }
@@ -230,7 +234,6 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
-	int i;
 	BOUNDS bb;
 
 	bb.init=0;
@@ -257,17 +260,17 @@ int count; /* number of times called */
 	if (debug) {printf("in draw_poly\n");}
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    do_poly(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_poly(&dbdeflist, &bb, D_RUBBER);
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
 	    do_poly(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_poly(&dbdeflist, &bb, D_RUBBER);
 	}
 
@@ -276,6 +279,6 @@ int count; /* number of times called */
 	y1old=y1;
 	x2old=x2;
 	y2old=y2;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 

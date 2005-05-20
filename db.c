@@ -1,14 +1,19 @@
-#include "db.h"		/* hierarchical database routines */
-#include "eprintf.h"	/* error reporting functions */
-
+#include <sys/stat.h>	/* for mkdir() */
+#include <sys/types.h>	/* for mkdir() */
 #include <stdio.h>
 #include <math.h>
+#include <string.h>	/* for strnlen... */
+#include <ctype.h> 	/* for toupper() */
+#include <unistd.h>     /* for access() */
+
+#include "db.h"		/* hierarchical database routines */
+#include "eprintf.h"	/* error reporting functions */
+#include "rlgetc.h"
 #include "token.h"
 #include "xwin.h"       /* for snapxy() */
-
+#include "readfont.h"	/* for writestring() */
 #include "rubber.h"
 
-#include "unistd.h"     /* for access() */
 
 #define EPS 1e-6
 
@@ -24,11 +29,11 @@ static DB_TAB *TAIL = 0;
 XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 
-/* routines for expanding db entries into vectors */
-void do_arc(),  do_circ(), do_line(), do_note();
-void do_oval(), do_poly(), do_rect(), do_text();
-
 void db_free_component(); 		/* recycle memory for component */
+int getbits();
+int db_def_arch_recurse();
+void db_contains_body(); 
+void db_def_print();
 
 /********************************************************/
 
@@ -65,6 +70,8 @@ int level;
     }
     if (maxlevel > level) {
 	printf("fatal error in db_edit_pop()\n"); 
+	printf("db_edit_pop(): returning pointer to %s %d %d\n", sp_best->name, maxlevel, level); 
+	return(NULL);
     } else if (maxlevel > 0) {
 	if (debug) printf("db_edit_pop(): returning pointer to %s\n", sp_best->name); 
         return (sp_best);	
@@ -157,7 +164,6 @@ int ask(lp, s) /* ask a y/n question */
 LEXER *lp;
 char    *s;
 {
-    char c;
     TOKEN token;
     char word[128];
     char buf[128];
@@ -189,10 +195,11 @@ char    *s;
 		 break;
         }
     }
+    return(-1);
 }
 
 
-int db_purge(lp, s)			/* remove all definitions for s */
+void db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
 char *s;
 {
@@ -203,7 +210,6 @@ char *s;
     char buf[MAXFILENAME];
     char buf2[MAXFILENAME];
     int flag=0;
-    FILE *fp;
 
     if ((sp=db_lookup(s))) { 	/* in memory */
 
@@ -268,7 +274,8 @@ char *s;
 		if (p->type == INST && strcmp(p->u.i->name, s)==0) {
 		     /* this one has to go! */
 		     printf("unresolvable references to %s in %s\n",
-		     	s, p->u.i->name);
+		     	s, dp->name);
+			/* p->u.i->name); */
 		     	
 		}
      	    }
@@ -589,7 +596,6 @@ char *name2;
 
     DB_TAB *sp;
     DB_TAB *dp;
-    DB_DEFLIST *p; 
     int retval = 0;
     int debug=0;
 	 
@@ -608,7 +614,7 @@ char *name2;
     return (retval);
 }
 
-db_contains_body(sp,name,retval) 
+void db_contains_body(sp,name,retval) 
 DB_TAB *sp;
 char *name;
 int *retval;
@@ -641,7 +647,7 @@ int *retval;
 }
 
 
-int db_def_print(fp, dp, mode) 
+void db_def_print(fp, dp, mode) 
 FILE *fp;
 DB_TAB *dp;
 int mode;
@@ -670,7 +676,19 @@ int mode;
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	switch (p->type) {
         case ARC:  /* arc definition */
-	    fprintf(fp, "#add ARC not inplemented yet\n");
+
+	    fprintf(fp, "ADD A%d ", p->u.a->layer);
+	    db_print_opts(fp, p->u.a->opts, ARC_OPTS);
+
+	    fprintf(fp, "%g,%g %g,%g %g,%g;\n",
+		p->u.a->x1,
+		p->u.a->y1,
+		p->u.a->x2,
+		p->u.a->y2,
+		p->u.a->x3,
+		p->u.a->y3
+	    );
+
 	    break;
 
         case CIRC:  /* circle definition */
@@ -883,7 +901,12 @@ double dx, dy;
 
     switch (p->type) {
     case ARC:  /* arc definition */
-        /* FIXME: Not implemented */
+	p->u.a->x1 += dx;
+	p->u.a->y1 += dy;
+	p->u.a->x2 += dx;
+	p->u.a->y2 += dy;
+	p->u.a->x3 += dx;
+	p->u.a->y3 += dy;
 	break;
     case CIRC:  /* circle definition */
 	p->u.c->x1 += dx;
@@ -1221,7 +1244,7 @@ OPTS *opt_copy(OPTS *opts)
     return(tmp);
 }     
 
-OPTS *opt_set_defaults(OPTS *opts)
+void opt_set_defaults(OPTS *opts)
 {
     opts->font_size = 10.0;       /* :F<font_size> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
@@ -1245,7 +1268,7 @@ OPTS *opt_create()
     return(tmp);
 }     
 
-int db_print_opts(fp, popt, validopts) /* print options */
+void db_print_opts(fp, popt, validopts) /* print options */
 FILE *fp;
 OPTS *popt;
 /* validopts is a string which sets which options are printed out */
@@ -1286,8 +1309,8 @@ char *validopts;
 		}
 	    	break;
 	    case 'N':
-		if (popt->font_num != 0.0 && popt->font_num != 1.0) {
-		    fprintf(fp, ":N%g ", popt->font_num);
+		if (popt->font_num != 0 && popt->font_num != 1) {
+		    fprintf(fp, ":N%d ", popt->font_num);
 		}
 	    	break;
 	    case 'R':
@@ -1335,15 +1358,23 @@ char *s;
 
 /******************** plot geometries *********************/
 
-/* ADD Emask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord */ 
+/* ADD Amask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord */ 
 void do_arc(def, bb, mode)
 DB_DEFLIST *def;
 BOUNDS *bb;
 int mode;
 {
     NUM x1,y1,x2,y2,x3,y3;
+    int res;
+    double seg;
+    double nseg;
+    double dtheta3, theta1, dtheta2, theta;
+    double q, r, x0, y0;
+    int debug=0;
 
-    /* printf("# rendering arc  (not implemented)\n"); */
+    COORDS *cp;
+    DB_DEFLIST *dp;
+    struct db_line *lp;
 
     x1=def->u.a->x1;	/* #1 end point */
     y1=def->u.a->y1;
@@ -1354,6 +1385,104 @@ int mode;
     x3=def->u.a->x3;	/* point on curve */
     y3=def->u.a->y3;
 
+    jump(bb,mode); set_layer(def->u.a->layer, ARC);
+
+    if ((def->u.a->opts->rotation) != 0.0) {
+	res = (int) (360.0/def->u.a->opts->rotation);	/* resolution */
+    } else {
+    	res = 64;
+    }
+
+/*
+    Given two points:  p1:x1,y1 p2:x2,y2 at the ends of a circular arc and
+    a third point p3:x3,y3 on the arc itself, then find the center of
+    the circle and the radius.
+
+    Note that a perpendicular from the center of the line segment
+    drawn between p1 and p2, will intersect the perpendicular extended
+    from the center of the line segment p2p3 at the center of the circle.
+
+    Center points:
+	{ (x1+x2)/2 , (y1+y2)/2 }
+	{ (x2+x3)/2 , (y3+y3)/2 }
+
+    Perpendiculars are constructed by computing dx and dy and then taking
+    these as the vector { -dy, dx }.
+
+    So the equation for the center of the circle is found by finding P,Q
+    such that:
+	{ (x1+x2)/2 , (y1+y2)/2 } + P * { y1-y2, x2-x1 } =
+	{ (x2+x3)/2 , (y2+y3)/2 } + Q * { y2-y3, x3-x2 }
+*/
+
+    q = ((y1-y2)*((y2+y3)/2 - (y1+y2)/2) - (x2-x1)*((x2+x3)/2 - (x1+x2)/2));
+    q /= ((y2-y3)*(x2-x1) - (x3-x2)*(y1-y2));
+
+    x0 = (x2+x3)/2 + q*(y2-y3);
+    y0 = (y2+y3)/2 + q*(x3-x2);   
+
+    /* FIXME: Arc fails to degenerate properly if xy1, xy2, xy3 are colinear */
+
+    r = sqrt(pow((x3-x0),2.0)  +pow((y3-y0),2.0));
+
+    theta1 = atan2(y1-y0, x1-x0);
+    dtheta2 = atan2(y2-y0, x2-x0) - theta1;
+    dtheta3 = atan2(y3-y0, x3-x0) - theta1;
+
+    if (dtheta2 < 0.0) {
+        dtheta2 += 2.0*M_PI;
+    }
+    if (dtheta3 < 0.0) {
+        dtheta3 += 2.0*M_PI;
+    }
+
+
+    if ((dtheta3 > dtheta2)) {
+	nseg = res-fabs(floor(res*(dtheta2)/(2.0*M_PI)));
+	if (debug) printf("YY t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
+		theta1, dtheta2, dtheta3, nseg);
+    } else {
+	nseg = fabs(floor(res*(dtheta2)/(2.0*M_PI)));
+	if (debug) printf("XX t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
+		theta1, dtheta2, dtheta3, nseg);
+    }
+    if (debug) fflush(stdout);
+
+    if( def->u.a->opts->width != 0.0) {
+        /* render with width using the line drawing routine */
+	dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+	dp->next = NULL;
+	dp->prev = NULL;
+	dp->type = LINE;
+        lp = (struct db_line *) emalloc(sizeof(struct db_line));
+	dp->u.l = lp;
+	dp->u.l->layer=def->u.a->layer;
+	dp->u.l->opts=opt_create();
+        dp->u.l->opts->width = def->u.a->opts->width;
+    }
+
+    for (seg=0; seg<=nseg; seg++) {
+	if ((dtheta3 > dtheta2)) {
+	    theta=dtheta2+theta1+seg*(2.0*M_PI-dtheta2)/nseg; 
+	} else {
+	    theta=theta1+seg*(dtheta2)/nseg; 
+	}
+	if( def->u.a->opts->width == 0.0) {
+	    draw(x0+r*cos(theta), y0+r*sin(theta), bb, mode);
+	} else {
+	    if (seg==0) {
+	    	cp = coord_new(x0+r*cos(theta), y0+r*sin(theta));
+		dp->u.l->coords=cp;
+	    } else {
+	    	coord_append(cp, x0+r*cos(theta), y0+r*sin(theta));
+	    }
+	}
+    }
+
+    if( def->u.a->opts->width != 0.0) {
+    	do_line(dp, bb, mode);		/* draw it */
+	db_free_component(dp);		/* now destroy it */
+    }
 }
 
 /* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
@@ -1367,6 +1496,9 @@ int mode;		/* drawing mode */
     double theta_start;
     int res;
 
+    COORDS *cp;
+    DB_DEFLIST *dp;
+    struct db_line *lp;
 
     if ((def->u.c->opts->rotation) != 0.0) {
 	res = (int) (360.0/def->u.c->opts->rotation);	/* resolution */
@@ -1381,9 +1513,13 @@ int mode;		/* drawing mode */
 
     x2 = (double) def->u.c->x2;	/* point on circumference */
     y2 = (double) def->u.c->y2;
+
+    if (mode==D_RUBBER) {
+    	xwin_draw_circle(x1,y1);
+    	xwin_draw_circle(x2,y2);
+    }
     
-    jump();
-    set_layer(def->u.c->layer, CIRC);
+    jump(bb,mode); set_layer(def->u.c->layer, CIRC);
 
     x = (double) (x2-x1);
     y = (double) (y2-y1);
@@ -1399,16 +1535,46 @@ int mode;		/* drawing mode */
     r2 = (1.0-def->u.c->opts->aspect_ratio)*sqrt(x*x+y*y)/2.0;
 
     theta_start = atan2(x,y);
+    if( def->u.c->opts->width != 0.0) {
+        /* render a circle with width using the line drawing routine */
+	dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+	dp->next = NULL;
+	dp->prev = NULL;
+	dp->type = LINE;
+        lp = (struct db_line *) emalloc(sizeof(struct db_line));
+	dp->u.l = lp;
+	dp->u.l->layer=def->u.c->layer;
+	dp->u.l->opts=opt_create();
+        dp->u.l->opts->width = def->u.c->opts->width;
+    } else {
+	startpoly(bb,mode);
+    }
+
     for (i=0; i<=res; i++) {
 	theta = ((double) i)*2.0*M_PI/((double) res);
 	x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
 	y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
-	draw(x1+x, y1+y, bb, mode);
+	if( def->u.c->opts->width == 0.0) {
+	    draw(x1+x, y1+y, bb, mode);
+	} else {
+	    if (i==0) {
+	    	cp = coord_new(x1+x, y1+y);
+		dp->u.l->coords=cp;
+	    } else {
+		coord_append(cp, x1+x, y1+y);
+	    }
+	}
+    }
+    if( def->u.c->opts->width != 0.0) {
+    	do_line(dp, bb, mode);		/* draw it */
+	db_free_component(dp);		/* now destroy it */
+    } else {
+        endpoly(bb,mode);	
     }
 }
 
+
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
-  
 
 void do_line(def, bb, mode)
 DB_DEFLIST *def;
@@ -1416,9 +1582,8 @@ BOUNDS *bb;
 int mode; 	/* drawing mode */
 {
     COORDS *temp;
-    OPTS *op;
 
-    double x1,y1,x2,y2,x3,y3,dx,dy,d,a;
+    double x1,y1,x2,y2,x3,y3,dx,dy,a;
     double xa,ya,xb,yb,xc,yc,xd,yd;
     double k,dxn,dyn;
     double width=0.0;
@@ -1460,10 +1625,18 @@ int mode; 	/* drawing mode */
     y2=temp->coord.y;
     temp = temp->next;
 
+    if (mode==D_RUBBER) {
+	xwin_draw_circle(x2,y2);
+    }
+
     segment = 0;
     do {
 	x1=x2; x2=temp->coord.x;
 	y1=y2; y2=temp->coord.y;
+
+	if (mode==D_RUBBER) {
+	    xwin_draw_circle(x2,y2);
+	}
 
 	if (width != 0) {
 	    if (segment == 0) {
@@ -1568,7 +1741,7 @@ int mode; 	/* drawing mode */
 		}
 	    }
 
-	    jump();
+	    jump(bb,mode);
 	
 	    draw(xa, ya, bb, mode);
 	    draw(xb, yb, bb, mode);
@@ -1591,10 +1764,10 @@ int mode; 	/* drawing mode */
 		xd = xc; yd = yc;
 	    }
 	} else {		/* width == 0 */
-	    jump();
+	    jump(bb,mode);
 	    draw(x1,y1, bb, mode);
 	    draw(x2,y2, bb, mode);
-	    jump();
+	    jump(bb,mode);
 	}
 
 	temp = temp->next;
@@ -1652,9 +1825,17 @@ int mode;
     temp = def->u.p->coords;
     x1=temp->coord.x; y1=temp->coord.y;
 
-    jump();
+    if (mode==D_RUBBER) {
+    	xwin_draw_circle(x1,y1);
+    }
+
+    jump(bb,mode);
+    startpoly(bb,mode);
     while(temp != NULL) {
 	x2=temp->coord.x; y2=temp->coord.y;
+	if (mode==D_RUBBER) {
+	    xwin_draw_circle(x2,y2);
+	}
 	if (npts && temp->prev->coord.x==x2 && temp->prev->coord.y==y2) {
 	    ;
 	} else {
@@ -1671,8 +1852,12 @@ int mode;
     /* next bit of code when npts > 2 */
 
     if ((x1 != x2 || y1 != y2) && npts > 2) {
+        if (mode==D_RUBBER) {
+	    xwin_draw_circle(x1,y1);
+	}
 	draw(x1, y1, bb, mode);
     }
+    endpoly(bb,mode);
 }
 
 
@@ -1684,6 +1869,9 @@ BOUNDS *bb;
 int mode;	/* drawing mode */
 {
     double x1,y1,x2,y2;
+    COORDS *cp;
+    DB_DEFLIST *dp;
+    struct db_line *lp;
 
     /* printf("# rendering rectangle\n"); */
 
@@ -1692,12 +1880,42 @@ int mode;	/* drawing mode */
     x2 = (double) def->u.r->x2;
     y2 = (double) def->u.r->y2;
     
-    jump();
+    jump(bb,mode);
 
     set_layer(def->u.r->layer, RECT);
-    draw(x1, y1, bb, mode); draw(x1, y2, bb, mode);
-    draw(x2, y2, bb, mode); draw(x2, y1, bb, mode);
-    draw(x1, y1, bb, mode);
+
+    if (def->u.r->opts->width == 0.0) {
+	startpoly(bb,mode);
+	draw(x1, y1, bb, mode); draw(x1, y2, bb, mode);
+	draw(x2, y2, bb, mode); draw(x2, y1, bb, mode);
+	draw(x1, y1, bb, mode);
+	endpoly(bb,mode);
+	jump(bb,mode);
+    } else { 
+    
+        /* render a rectangle with width using the line drawing routine */
+	dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
+	dp->next = NULL;
+	dp->prev = NULL;
+	dp->type = LINE;
+        lp = (struct db_line *) emalloc(sizeof(struct db_line));
+	dp->u.l = lp;
+	dp->u.l->layer=def->u.r->layer;
+	dp->u.l->opts=opt_create();
+        dp->u.l->opts->width = def->u.r->opts->width;
+
+	cp = coord_new(x1, (y1+y2)/2.0);
+	dp->u.l->coords=cp;
+
+	coord_append(cp, x1, y2);
+	coord_append(cp, x2, y2);
+	coord_append(cp, x2, y1);
+	coord_append(cp, x1, y1);
+	coord_append(cp, x1, (y1+y2)/2.0);
+    	do_line(dp, bb, mode);
+
+	db_free_component(dp);		/* now destroy it */
+    }
 
     if (mode==D_RUBBER) {
     	xwin_draw_circle(x1,y1);
@@ -1717,9 +1935,6 @@ int mode;
 {
 
     XFORM *xp;
-    NUM x,y;
-    OPTS  *op;
-    double optval;
 
     /* create a unit xform matrix */
 
@@ -1751,7 +1966,7 @@ int mode;
     mat_slant(xp, def->u.n->opts->slant);
     mat_rotate(xp, def->u.n->opts->rotation);
 
-    jump(); set_layer(def->u.n->layer, NOTE);
+    jump(bb,mode); set_layer(def->u.n->layer, NOTE);
 
     xp->dx += def->u.n->x;
     xp->dy += def->u.n->y;
@@ -1772,9 +1987,6 @@ int mode;
 {
 
     XFORM *xp;
-    NUM x,y;
-    OPTS  *op;
-    double optval;
 
     /* create a unit xform matrix */
 
@@ -1806,7 +2018,7 @@ int mode;
     mat_slant(xp, def->u.t->opts->slant);
     mat_rotate(xp, def->u.t->opts->rotation);
 
-    jump(); set_layer(def->u.t->layer, TEXT);
+    jump(bb,mode); set_layer(def->u.t->layer, TEXT);
 
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
@@ -1861,8 +2073,6 @@ void mat_scale(xp, sx, sy)
 XFORM *xp;
 double sx, sy;
 {
-    double t;
-
     xp->r11 *= sx;
     xp->r12 *= sy;
     xp->r21 *= sx;
@@ -1876,7 +2086,7 @@ void mat_slant(xp, theta)
 XFORM *xp;
 double theta;
 {
-    double s,c,t;
+    double s,c;
     double a;
 
     int debug = 0;
@@ -1903,14 +2113,16 @@ XFORM *xa;
 }   
 
 
-show_list(layer) 
+void show_list(currep, layer) 
+DB_TAB *currep;
+int layer;
 {
     int i,j;
     printf("\n");
     i=layer;
     printf("%d ",i);
     for (j=((sizeof(i)*8)-1); j>=0; j--) {
-	if (getbits(show[i], j, 1)) {
+	if (getbits(currep->show[i], j, 1)) {
 	    printf("1");
 	} else {
 	    printf("0");
@@ -1919,21 +2131,21 @@ show_list(layer)
     printf("\n");
 }
 
-getbits(x,p,n)	/* get n bits from position p */ 
+int getbits(x,p,n)	/* get n bits from position p */ 
 unsigned int x, p, n;
 {
     return((x >> (p+1-n)) & ~(~0 << n));
 }
 
-show_init() { /* set everyone visible, but RO */
+void show_init(DB_TAB *currep) { /* set everyone visible, but RO */
     int i;
     /* default is all visible, none modifiable. */
     for (i=0; i<MAX_LAYER; i++) {
-    	show[i]=0|ALL;  /* visible */
+    	currep->show[i]=0|ALL;  /* visible */
     }
 }
 
-void show_set_visible(int comp, int layer, int state) {
+void show_set_visible(DB_TAB *currep, int comp, int layer, int state) {
 
     int lstart, lstop, i;
     int debug=0;
@@ -1948,18 +2160,17 @@ void show_set_visible(int comp, int layer, int state) {
 
     for (i=lstart; i<=lstop; i++) {
 	if (state) {
-	    show[i] |= comp;
+	    currep->show[i] |= comp;
 	} else {
-	    show[i] &= ~(comp);
+	    currep->show[i] &= ~(comp);
 	}
     }
      
     if (debug) printf("setting layer %d, comp %d, state %d db %d\n",
-    	layer, comp, state,  show_check_visible(comp, layer));
+    	layer, comp, state,  show_check_visible(currep, comp, layer));
 }
 
-void show_set_modify(int comp, int layer, int state) {
-
+void show_set_modify(DB_TAB *currep, int comp, int layer, int state) {
     int lstart, lstop, i;
     int debug=0;
 
@@ -1973,33 +2184,33 @@ void show_set_modify(int comp, int layer, int state) {
 
     for (i=lstart; i<=lstop; i++) {
 	if (state) {
-	    show[i] |= (comp*2);
+	    currep->show[i] |= (comp*2);
 	} else {
-	    show[i] &= ~(comp*2);
+	    currep->show[i] &= ~(comp*2);
 	}
     }
 
     if (debug) printf("setting layer %d, comp %d, state %d db %d\n",
-    	layer, comp, state,  show_check_modifiable(comp, layer));
+    	layer, comp, state,  show_check_modifiable(currep, comp, layer));
 }
 
 /* check modifiability */
-int show_check_modifiable(int comp, int layer) {
+int show_check_modifiable(DB_TAB *currep, int comp, int layer) {
 
     int debug=0;
-    if (debug) show_list(layer);
+    if (debug) show_list(currep, layer);
 
-    return (show[layer] & (comp*2));
+    return (currep->show[layer] & (comp*2));
 }
 
 /* check visibility */
-int show_check_visible(int comp, int layer) {
+int show_check_visible(DB_TAB *currep, int comp, int layer) {
 
     int debug=0;
-    if (debug) show_list(layer);
+    if (debug) show_list(currep, layer);
     if (debug) printf("checking vis, comp %d, layer %d, returning %d\n",
-    	comp, layer, show[layer] & comp);
+    	comp, layer, currep->show[layer] & comp);
 
-    return (show[layer] & (comp));
+    return (currep->show[layer] & (comp));
 }
 

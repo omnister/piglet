@@ -3,7 +3,9 @@
 #include "token.h"
 #include "rubber.h"
 #include "opt_parse.h"
-
+#include "rlgetc.h"
+#include "lex.h"
+#include <string.h>
 
 /* :Mmirror :Rrot :Xscale :Yyxratio :Zslant */
 
@@ -16,12 +18,10 @@ int add_inst(LEXER *lp, char *inst_name)
 
     double x1, y1;
     int done=0;
-    int error=0;
     TOKEN token;
     OPTS opts;
     char word[BUFSIZE];
     char buf[BUFSIZE];
-    double x2,y2;
     int debug=0;
     FILE *fp;
     LEXER *my_lp;
@@ -33,6 +33,7 @@ int add_inst(LEXER *lp, char *inst_name)
 
     opt_set_defaults(&opts);
 
+    rl_saveprompt();
     rl_setprompt("ADD_INST> ");
 
     if (debug) printf("currep = %s\n", currep->name);
@@ -56,7 +57,10 @@ int add_inst(LEXER *lp, char *inst_name)
 
 	    currep = ed_rep;
 	    xwin_display_set_state(D_OFF);
+	    show_set_modify(currep, ALL, 0,1);		/* make rep modifiable */
 	    parse(my_lp);
+	    show_set_modify(currep, ALL, 0,0);		/* set rep not modifiable */
+	    show_set_visible(currep, ALL, 0,1);		/* and make it visible */
 	    currep->modified = 0;
     	    bb.init=0;
 	    db_render(currep, 0, &bb, D_READIN); 	/* set boundbox, etc */
@@ -166,6 +170,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	}
     }
     rubber_clear_callback();
+    rl_restoreprompt();
     return(1);
 }
 
@@ -189,6 +194,6 @@ int count; /* number of times called */
 	/* save old values */
 	xold=x;
 	yold=y;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 

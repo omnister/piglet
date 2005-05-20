@@ -8,34 +8,27 @@
 #include "xwin.h" 	
 #include "lex.h"
 
-static double x1, y1;
-
 /* 
     delete a component from the current device.
 */
 
-com_delete(LEXER *lp, char *arg)		
+int com_delete(LEXER *lp, char *arg)		
 {
 
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
-    char *line;
     TOKEN token;
     char word[BUFSIZE];
-    char buf[BUFSIZE];
     int debug=1;
     int done=0;
-    int nnum=0;
-    int retval;
     int valid_comp=0;
     int i;
-    int flag;
     DB_DEFLIST *p_best;
 
-    int my_layer; 	/* internal working layer */
+    int my_layer=0; 	/* internal working layer */
 
     int comp=ALL;
-    double x1,y1,x2,y2;
+    double x1,y1;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -90,7 +83,7 @@ com_delete(LEXER *lp, char *arg)
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
-		if (comp = is_comp(toupper(word[0]))) {
+		if ((comp = is_comp(toupper(word[0])))) {
 		    if (strlen(word) == 1) {
 			my_layer = default_layer();
 			printf("using default layer=%d\n",my_layer);
@@ -118,7 +111,7 @@ com_delete(LEXER *lp, char *arg)
 				valid_comp=0;
 				done++;
 			    }
-			    if (!show_check_modifiable(comp, my_layer)) {
+			    if (!show_check_modifiable(currep, comp, my_layer)) {
 				printf("layer %d is not modifiable!\n",
 				    my_layer);
 				token_flush_EOL(lp);
@@ -167,11 +160,10 @@ com_delete(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep,
-			x1,y1,1,my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
-		    /* db_highlight(p_best); */	
-		    db_unlink_component(currep, p_best);
+		    /* db_highlight(p_best); */
+		    db_unlink_component(currep, p_best); 
 		    need_redraw++;
 		} else {
 		    printf("nothing here to delete...try SHO command?\n");
@@ -202,8 +194,7 @@ com_delete(LEXER *lp, char *arg)
     return(1);
 }
 
-
-com_undo(LEXER *lp, char *arg)		
+int com_undo(LEXER *lp, char *arg)		
 {
     /* check that we are editing a rep */
     printf("in UNDO\n");
@@ -238,7 +229,7 @@ com_undo(LEXER *lp, char *arg)
 		}
 	    }
 	    if (debug) printf("calling del_inst with %s\n", word);
-	    if (!show_check_modifiable(INST, my_layer)) {
+	    if (!show_check_modifiable(currep, INST, my_layer)) {
 		    printf("INST component is not modifiable!\n");
 	    } else {
 		;
@@ -246,7 +237,7 @@ com_undo(LEXER *lp, char *arg)
 	}
     }
 } else if (token == QUOTE) {
-    if (!show_check_modifiable(INST, my_layer)) {
+    if (!show_check_modifiable(currep, INST, my_layer)) {
 	    printf("INST component is not modifiable!\n");
     } else {
 	;

@@ -3,6 +3,8 @@
 #include <pwd.h> 
 #include <sys/types.h> 
 #include <unistd.h>
+#include <math.h>
+
 #include "postscript.h"
 
 #define MAXBUF 256
@@ -162,9 +164,9 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     fprintf(fp,"$Pig2psBegin\n");
     fprintf(fp,"10 setmiterlimit\n");
     fprintf(fp,"1 slj 1 slc\n");
-    fprintf(fp,"1 slw\n");
+    fprintf(fp,"0.1 slw\n");
     fprintf(fp,"%%BeginPageSetup\n");
-    fprintf(fp,"%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
+    fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
     if (landscape) {
     	fprintf(fp,"%g %g scale\n", scale, scale);
 	fprintf(fp,"%g %g translate\n", ury, -llx);

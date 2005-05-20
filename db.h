@@ -16,10 +16,10 @@
 #define TEXT  65536
 #define ALL   87381   /* sum of all bits */
 
-#define ARC_OPTS  "WRY"
+#define ARC_OPTS  "WR"
 #define CIRC_OPTS "WRY"
 #define LINE_OPTS "W"
-#define OVAL_OPTS "W"
+#define OVAL_OPTS "WR"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
 #define NOTE_OPTS "MNRYZF"
@@ -78,6 +78,7 @@ COORDS *coord_new(NUM x, NUM y);
 COORDS *coord_copy(COORDS *CP);
 void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP, NUM x, NUM y);
+int coord_get(COORDS *CP, int n, NUM *x, NUM *y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
 int coord_count(COORDS *CP);
@@ -110,6 +111,8 @@ typedef struct db_tab {
     double vp_ymin, vp_ymax;
     double scale;
     double xoffset, yoffset;
+
+    int show[MAX_LAYER];	/* each component has its own show set */
 
     /* grid settings for each cell are stored in this structure  */
     /* the grid in use at time of SAVE is put in the disk */
@@ -161,7 +164,7 @@ typedef struct opt_list {
 } OPTS;
 
 extern OPTS *opt_create();
-extern OPTS *opt_set_defaults( OPTS *opts  );
+extern void opt_set_defaults( OPTS *opts  );
 extern OPTS *opt_copy( OPTS *opts);
 extern void append_opt( char *s );
 extern void discard_opts( void );
@@ -332,7 +335,7 @@ extern int db_save(
 		char *name */
 	    );
 
-extern int db_def_print(
+extern void db_def_print(
 		FILE *fp,
 		DB_TAB *dp,
 		int mode
@@ -378,19 +381,24 @@ DB_DEFLIST *db_copy_component();
 extern void db_move_component();
 extern void db_set_layer();
 extern int  db_list_unsaved();
-extern void db_draw_bounds();
+extern void db_drawbounds();
 extern int  db_contains();
+extern void db_notate();
+extern void db_highlight();
+extern void db_print_opts();
+extern void db_insert_component();
+extern void db_purge();
 
 extern int db_plot();			/* plot the device to a file */
 
 extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);
-extern void jump(void);
+extern void jump(BOUNDS *bb, int MODE);
 
-extern void show_set_visible(int comp, int layer, int state);
-extern void show_set_modify(int comp, int layer, int state);
-extern int  show_check_modifiable(int comp, int layer);
-
-extern int  show_check_visible(int comp, int layer);
+extern void show_set_visible(DB_TAB *currep, int comp, int layer, int state);
+extern void show_set_modify(DB_TAB *currep, int comp, int layer, int state);
+extern int  show_check_modifiable(DB_TAB *currep, int comp, int layer);
+extern int  show_check_visible(DB_TAB *currep, int comp, int layer);
+extern void show_init(DB_TAB *currep);
 
 /********************************************************/
 /* support routines */
@@ -408,6 +416,10 @@ void draw();
 void jump();
 void set_layer();
 void set_line();
+void startpoly();
+void endpoly();
 
-
+/* routines for expanding db entries into vectors */
+void do_arc(),  do_circ(), do_line(), do_note();
+void do_oval(), do_poly(), do_rect(), do_text();
 

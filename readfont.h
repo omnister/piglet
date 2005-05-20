@@ -1,2 +1,2 @@
-extern int writestring();
-extern int loadfont();
+extern void writestring();
+extern void loadfont();

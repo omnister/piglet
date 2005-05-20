@@ -3,6 +3,8 @@
 #include "token.h"
 #include "rubber.h"
 #include "lex.h"
+#include "rlgetc.h"
+#include "opt_parse.h"
 
 /*
  *
@@ -29,13 +31,13 @@ int *layer;
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     int done=0;
-    int error=0;
     TOKEN token;
     char word[BUFSIZE];
     double x2,y2;
     int debug=0;
 
     if (debug) printf("layer %d\n",*layer);
+    rl_saveprompt();
     rl_setprompt("ADD_RECT> ");
 
     opt_set_defaults(&opts);
@@ -49,8 +51,12 @@ int *layer;
 	switch(state) {	
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
-		state = START;
+		token_get(lp,word); 
+		if (opt_parse(word, LINE_OPTS, &opts) == -1) {
+		    state = END;
+		} else {
+		    state = START;
+		}
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
@@ -163,6 +169,7 @@ int *layer;
 	}
     }
     rubber_clear_callback();
+    rl_restoreprompt();
     return(1);
 }
 
@@ -188,6 +195,6 @@ int count; /* number of times called */
 	y1old=y1;
 	x2old=x2;
 	y2old=y2;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 

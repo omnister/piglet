@@ -1,3 +1,6 @@
+#define _GNU_SOURCE
+#include <stdio.h>
+
 #include "readmenu.h"
 #include "db.h"
 
@@ -45,7 +48,7 @@ int *mr;		/* max rows */
 
 
     if ((fp = fopen(s, "r")) == NULL) {
-	printf("can't open menu file %s\n");
+	printf("can't open menu file %s\n", s);
     	exit(1);
     }
 

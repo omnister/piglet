@@ -18,22 +18,17 @@ void draw_bbox();
     MOV <restrictor> { xysel xyref xynewref } ... <EOC>
 */
 
-com_move(LEXER *lp, char *arg)		
+int com_move(LEXER *lp, char *arg)		
 {
 
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,END} state = START;
 
-    char *line;
     TOKEN token;
     char word[BUFSIZE];
-    char buf[BUFSIZE];
     int debug=0;
     int done=0;
-    int nnum=0;
-    int retval;
     int valid_comp=0;
     int i;
-    int flag;
     DB_DEFLIST *p_best;
 
     int my_layer=0; 	/* internal working layer */
@@ -94,7 +89,7 @@ com_move(LEXER *lp, char *arg)
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
-		if (comp = is_comp(toupper(word[0]))) {
+		if ((comp = is_comp(toupper(word[0])))) {
 		    if (strlen(word) == 1) {
 			my_layer = default_layer();
 			printf("using default layer=%d\n",my_layer);
@@ -122,7 +117,7 @@ com_move(LEXER *lp, char *arg)
 				valid_comp=0;
 				done++;
 			    }
-			    if (!show_check_modifiable(comp, my_layer)) {
+			    if (!show_check_modifiable(currep, comp, my_layer)) {
 				printf("layer %d is not modifiable!\n",
 				    my_layer);
 				token_flush_EOL(lp);
@@ -174,8 +169,7 @@ com_move(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep,
-			x1,y1,1,my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
 		    xmin=p_best->xmin;
@@ -320,7 +314,7 @@ com_move(LEXER *lp, char *arg)
 		}
 	    }
 	    if (debug) printf("calling del_inst with %s\n", word);
-	    if (!show_check_modifiable(INST, my_layer)) {
+	    if (!show_check_modifiable(currep, INST, my_layer)) {
 		    printf("INST component is not modifiable!\n");
 	    } else {
 		;
@@ -328,7 +322,7 @@ com_move(LEXER *lp, char *arg)
 	}
     }
 } else if (token == QUOTE) {
-    if (!show_check_modifiable(INST, my_layer)) {
+    if (!show_check_modifiable(currep, INST, my_layer)) {
 	    printf("INST component is not modifiable!\n");
     } else {
 	;
@@ -362,5 +356,5 @@ int count; /* number of times called */
 	y1old=yy1;
 	x2old=xx2;
 	y2old=yy2;
-	jump();
+	jump(&bb, D_RUBBER);
 }

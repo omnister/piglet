@@ -57,12 +57,7 @@ HELP
 You can get a list of all commands by typing "?" or "HELP".  You can get a
 summary on just one command by typing "HELP <command>".  
 
-There is documentation of the commercial versions of piglet in the
-sub-directory "doc".  All these manual pages are copyright either
-HP or DurstCad.  Please don't distribute these any further.  I'm sharing
-these with potential developers because they provide a blueprint for
-developing the code.  They will not be distributed with the public
-release of PD_piglet.
+There are also UNIX style man pages in the ./web/man1p directory.
 
 EDIT
 -----

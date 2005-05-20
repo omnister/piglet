@@ -3,6 +3,8 @@
 #include "token.h"
 #include "rubber.h"
 #include "opt_parse.h"
+#include "rlgetc.h"
+#include <string.h>
 
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
@@ -14,13 +16,15 @@ void draw_text();
 
 OPTS opts;
 
+int add_annotation();
+
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
-int add_note(lp, layer) {
+void add_note(lp, layer) {
     add_annotation(lp, layer, 0);
 }
 
-int add_text(lp, layer) {
+void add_text(lp, layer) {
     add_annotation(lp, layer, 1);
 }
 
@@ -33,14 +37,10 @@ int mode;
 
     char word[BUFSIZE];
     int done=0;
-    int error=0;
     TOKEN token;
-    double x2,y2;
     int debug=0;
     int nargs=0;
     char *type;
-
-    DB_TAB *ed_rep;
 
     opt_set_defaults( &opts );
     opts.font_num = mode;	/* default note font=0, text=1 */
@@ -48,6 +48,8 @@ int mode;
     str[0] = 0;
 
     while (!done) {
+
+	rl_saveprompt();
 
 	if (mode) {
 	    rl_setprompt("ADD_TEXT> ");
@@ -86,7 +88,7 @@ int mode;
 		    state = NUM1;
 		} else if (token == QUOTE) {
 		    nargs++;
-		    if (debug) printf("nargs = %d\n");
+		    if (debug) printf("nargs = %d\n", nargs);
 		    if (nargs > 1) {
 		    	rubber_clear_callback();
 		    }
@@ -178,6 +180,7 @@ int mode;
 		break;
 	}
     }
+    rl_restoreprompt();
     return(1);
 }
 
@@ -187,7 +190,6 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double xold, yold;
-	int i;
 	static BOUNDS bb;
 
 	bb.init=0;
@@ -213,22 +215,22 @@ int count; /* number of times called */
 	if (debug) {printf("in draw_text\n");}
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
 	    do_text(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
 	    do_text(&dbdeflist, &bb, D_RUBBER);
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbtext.x=x2;
 	    dbtext.y=y2;
 	    do_text(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    dbtext.x=xold;
 	    dbtext.y=yold;
 	    do_text(&dbdeflist, &bb, D_RUBBER);
@@ -237,6 +239,6 @@ int count; /* number of times called */
 	/* save old values */
 	xold=x2;
 	yold=y2;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 

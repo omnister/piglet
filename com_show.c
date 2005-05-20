@@ -1,4 +1,7 @@
+#include <string.h>
+#include <ctype.h>
 #include <stdio.h>
+
 #include "db.h"
 #include "xwin.h"
 #include "token.h"
@@ -26,17 +29,13 @@ SHOW {+|-|#}[EACILN0PRT]<layer>
    layer : layer number, "0" or omitted for all layers.
 */
 
-com_show(lp, arg)		/* define which kinds of things to display */
+int com_show(lp, arg)		/* define which kinds of things to display */
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     int done=0;
-    int level;
     char word[128];
-    int nnums=0;
-    double tmp;
-    int debug=0;
 
     int visible=0;
     int modifiable=0;
@@ -128,8 +127,8 @@ char *arg;
 			}
 		    }
 		    if (!done) {
-			show_set_visible(comp, show_layer, visible);
-			show_set_modify(comp, show_layer, modifiable);
+			show_set_visible(currep, comp, show_layer, visible);
+			show_set_modify(currep, comp, show_layer, modifiable);
 		    }
 	        break;
 
@@ -148,7 +147,7 @@ char *arg;
 	    case QUOTE: 	/* quoted string */
 	    case END:		/* end of file */
 	    default:
-		printf("SHOW: expected OPT, got %s\n", tok2str(token), word);
+		printf("SHOW: expected OPT, got %s %s\n", tok2str(token), word);
 		done++;
 	    	break;
 	}

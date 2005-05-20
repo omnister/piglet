@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include "db.h"
 #include "opt_parse.h"
+#include "eprintf.h"
+#include <string.h>
+#include <ctype.h>
 
 #define MIRROR_OFF 0
 #define MIRROR_X   1

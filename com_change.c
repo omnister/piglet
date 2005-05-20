@@ -8,36 +8,34 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "lex.h"
+#include "eprintf.h"
+#include "opt_parse.h"
 
 
 /* 
     change options for a component in the current device.
 */
 
-com_change(LEXER *lp, char *arg)		
+int com_change(LEXER *lp, char *arg)		
 {
 
     enum {START,NUM1,COM1,NUM2,OPT,NUM3,COM2,NUM4,END} state = START;
 
-    char *line;
     TOKEN token;
     char word[BUFSIZE];
-    char buf[BUFSIZE];
     int debug=1;
     int done=0;
-    int nnum=0;
     int retval;
     int valid_comp=0;
     double optval;
     int i;
-    int flag;
     DB_DEFLIST *p_best;
 
     int my_layer = 0; 	/* internal working layer */
     int new_layer;	 
 
     int comp=ALL;
-    static double x1,y1,x2,y2;
+    static double x1,y1;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -94,7 +92,7 @@ com_change(LEXER *lp, char *arg)
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
-		if (comp = is_comp(toupper(word[0]))) {
+		if ((comp = is_comp(toupper(word[0])))) {
 		    if (strlen(word) == 1) {
 			my_layer = default_layer();
 			printf("using default layer=%d\n",my_layer);
@@ -122,7 +120,7 @@ com_change(LEXER *lp, char *arg)
 				valid_comp=0;
 				done++;
 			    }
-			    if (!show_check_modifiable(comp, my_layer)) {
+			    if (!show_check_modifiable(currep, comp, my_layer)) {
 				printf("layer %d is not modifiable!\n",
 				    my_layer);
 				token_flush_EOL(lp);
@@ -171,8 +169,7 @@ com_change(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep,
-			x1,y1,1, my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
 		} else {

@@ -8,7 +8,9 @@
 #include "xwin.h"
 #include "rubber.h"
 #include <math.h>
-
+#include <string.h>	/* for strncmp */
+#include "rlgetc.h"
+#include "opt_parse.h"
 static COORDS *CP;
 
 DB_TAB dbtab; 
@@ -35,7 +37,6 @@ static double xsnap, ysnap;
 void setlockpoint(x,y) 
 double x, y;
 {
-    extern double xsnap, ysnap;
     int debug = 0;
 
     if (debug) printf("setting snap to %g %g\n", x, y);
@@ -48,9 +49,7 @@ void lockpoint(px, py, lock)
 double *px, *py;
 double lock;
 {
-    int code = 0;
     double dx, dy;
-    extern double xsnap, ysnap;
     double theta;
     double locktheta;
     double snaptheta;
@@ -94,7 +93,6 @@ int *layer;
 
     int debug=0;
     int done=0;
-    int error=0;
     int count;
     int nsegs;
     TOKEN token;
@@ -103,6 +101,7 @@ int *layer;
     static double xold, yold;
 
     if (debug) {printf("layer %d\n",*layer);}
+    rl_saveprompt();
     rl_setprompt("ADD_LINE> ");
 
     opt_set_defaults(&opts);
@@ -310,6 +309,7 @@ int *layer;
 	    	break;
 	}
     }
+    rl_restoreprompt();
     return(1);
 }
 
@@ -319,7 +319,6 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
-	int i;
 	BOUNDS bb;
 
 	bb.init=0;
@@ -347,17 +346,17 @@ int count; /* number of times called */
 	if (debug) {printf("in draw_line\n");}
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 	}
 
@@ -366,6 +365,6 @@ int count; /* number of times called */
 	y1old=yy1;
 	x2old=x2;
 	y2old=y2;
-	jump();
+	jump(&bb, D_RUBBER);
 }
 

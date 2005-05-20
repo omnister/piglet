@@ -1,4 +1,5 @@
-
+#include <unistd.h> 	/* exit() */
+#include <stdlib.h>	/* malloc() */
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

@@ -42,5 +42,6 @@ extern int    token_unget(LEXER *lp, TOKEN token, char *word);
 extern LEXER *token_stream_open( FILE *fp, char *name );
 extern int    token_stream_close( LEXER *lp );
 extern int    token_flush(LEXER *lp);
+extern int    token_flush_EOL(LEXER *lp);
 extern int    token_err(char *module, LEXER *lp, char *expected, TOKEN token);
 extern char  *tok2str(TOKEN token);

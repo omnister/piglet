@@ -24,6 +24,15 @@
 
 #define MAX_MENU 256
 
+void load_font();
+int init_colors();
+void xwin_doXevent();
+void getGC();
+int draw_grid();
+void paint_pane(); 
+int dump_window(); 
+int xwin_display_state();
+
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
 XFORM  unity_transform;
@@ -33,7 +42,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.31 2004/12/14 08:12:45 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.32 2005/05/20 14:14:22 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -80,15 +89,63 @@ static char icon_bitmap_bits[] = {
 #define STIPW 8
 #define STIPH 8 
 
+static char stip_bits3[] = {	/* 8x+4 negative slope diagonal */
+    0x20, 0x10,
+    0x08, 0x04, 
+    0x02, 0x01,
+    0x80, 0x40
+};
+
+static char stip_bits2[] = {	/* 8x+4 negative slope diagonal */
+    0x08, 0x04,
+    0x02, 0x01,
+    0x80, 0x40,
+    0x20, 0x10
+};
+
 static char stip_bits1[] = {	/* 8x negative slope diagonal */
-    0x80, 0x40, 0x20, 0x10,
-    0x08, 0x04, 0x02, 0x01
+    0x80, 0x40,
+    0x20, 0x10,
+    0x08, 0x04,
+    0x02, 0x01
 };
 
 static char stip_bits[] = {	/* 8x diagonal crosshatch */
     0x82, 0x44, 0x28, 0x10,
     0x28, 0x44, 0x82, 0x01
 };
+
+static char stip_bits4[] = {	/* 8x+4 negative slope diagonal */
+    0x02, 0x01,
+    0x80, 0x40,
+    0x20, 0x10,
+    0x08, 0x04
+};
+
+
+#define three_width 3
+#define three_height 3
+
+static unsigned char three_bits0[] = {
+   0x01, 0x00, 0x00};
+static unsigned char three_bits1[] = {
+   0x02, 0x00, 0x00};
+static unsigned char three_bits2[] = {
+   0x04, 0x00, 0x00};
+static unsigned char three_bits3[] = {
+   0x00, 0x01, 0x00};
+static unsigned char three_bits4[] = {
+   0x00, 0x02, 0x00};
+static unsigned char three_bits5[] = {
+   0x00, 0x04, 0x00};
+static unsigned char three_bits6[] = {
+   0x00, 0x00, 0x01};
+static unsigned char three_bits7[] = {
+   0x00, 0x00, 0x02};
+static unsigned char three_bits8[] = {
+   0x00, 0x00, 0x04};
+
+Pixmap stipple[128];
 
 /* for select in XEvent loop */
 #ifndef FD_SET
@@ -132,15 +189,11 @@ unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 int initX()
 {
     double x,y;
-    double xu,yu;
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
-    unsigned int icon_width, icon_height;
     char *window_name = "RHOE: Rick's Hierarchical Object Editor";
     char *icon_name = "rigel";
-    char buf[BUF_SIZE];
     Pixmap icon_pixmap;
-    Pixmap stipple;
     XSizeHints *size_hints;
     XIconSize *size_list;
     XWMHints *wm_hints;
@@ -149,13 +202,10 @@ int initX()
     XSetWindowAttributes attr;
     int icount;
     char *dpy_name = NULL;
-    int window_size = 0;    /* either BIG_ENOUGH or
-                    TOO_SMALL to display contents */
 
     int debug=0;
-    int i;
-    int c;
-    char *s;
+    int i,j;
+    char a;
 
     /* menu stuff */
     char *string;
@@ -252,9 +302,9 @@ int initX()
 
     /* Get available icon sizes from window manager */
 
-    if (XGetIconSizes(dpy, RootWindow(dpy, scr), &size_list, &icount) == 0)
+    if (XGetIconSizes(dpy, RootWindow(dpy, scr), &size_list, &icount) == 0) {
         if (debug) weprintf("WM didn't set icon sizes - using default.");
-    else {
+    } else {
         /* should eventually create a pixmap here */
         ;
     }
@@ -300,7 +350,6 @@ int initX()
         ButtonPressMask | ButtonReleaseMask | 
 	Button1MotionMask | PointerMotionMask );
 
-
     init_colors();
 
     /* Create GC for text and drawing */
@@ -308,11 +357,57 @@ int initX()
     getGC(win, &gcb, font_info);
     getGC(win, &gcx, font_info);
 
-    stipple = XCreateBitmapFromData(dpy, win, stip_bits, 
+    stipple[0] = XCreateBitmapFromData(dpy, win, stip_bits, 
 	(unsigned int) STIPW, (unsigned int) STIPH);
-    XSetStipple(dpy, gcx, stipple);
+    stipple[1] = XCreateBitmapFromData(dpy, win, stip_bits1, 
+	(unsigned int) STIPW, (unsigned int) STIPH);
+    stipple[2] = XCreateBitmapFromData(dpy, win, stip_bits2, 
+	(unsigned int) STIPW, (unsigned int) STIPH);
+    stipple[3] = XCreateBitmapFromData(dpy, win, stip_bits3, 
+	(unsigned int) STIPW, (unsigned int) STIPH);
+    stipple[4] = XCreateBitmapFromData(dpy, win, stip_bits4, 
+	(unsigned int) STIPW, (unsigned int) STIPH);
+
+    for (i=0; i<=9; i++) {	/* make random stipples */
+    	for (j=0; j<STIPW; j++) {
+	    a = (unsigned char) (drand48()*255.0);
+	    a &= (unsigned char) (drand48()*255.0);
+
+/*
+	    a &= (unsigned char) (drand48()*255.0);
+	    a &= (unsigned char) (drand48()*255.0);
+	    a &= (unsigned char) (drand48()*255.0);
+*/
+	    stip_bits[j] = (unsigned char) a;
+	}
+	stipple[i] = XCreateBitmapFromData(dpy, win, stip_bits, 
+	    (unsigned int) STIPW, (unsigned int) STIPH);
+    }
+
+    stipple[0] = XCreateBitmapFromData(dpy, win, three_bits0,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[1] = XCreateBitmapFromData(dpy, win, three_bits1,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[2] = XCreateBitmapFromData(dpy, win, three_bits2,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[3] = XCreateBitmapFromData(dpy, win, three_bits3, 
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[4] = XCreateBitmapFromData(dpy, win, three_bits4,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[5] = XCreateBitmapFromData(dpy, win, three_bits5,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[6] = XCreateBitmapFromData(dpy, win, three_bits6,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[7] = XCreateBitmapFromData(dpy, win, three_bits7,
+	(unsigned int) three_width, (unsigned int) three_height);
+    stipple[8] = XCreateBitmapFromData(dpy, win, three_bits8,
+	(unsigned int) three_width, (unsigned int) three_height);
+
     XSetFillStyle(dpy, gcx, FillStippled);
     XSetFunction(dpy, gcx, GXxor);
+
+    XSetStipple(dpy, gcb, stipple[0]);		/* use gcb for polygon filling */
+    XSetFillStyle(dpy, gcb, FillStippled);
 
     /* dpy windows */
     XMapWindow(dpy, topwin);
@@ -330,7 +425,6 @@ int initX()
     xwin_grid_state(G_ON);
     xwin_display_set_state(G_ON);
     xwin_window_set(-100.0,-100.0, 100.0, 100.0);
-    sprintf(buf,"");
 
     /* initialize unitytransform */
     unity_transform.r11 = 1.0;
@@ -374,6 +468,7 @@ FILE *fp;
 		db_render(currep,0,&bb,0); /* render the current rep */
 		draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
 		    currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+		XFlush(dpy);
 	    } else {
 		draw_grid(win, gcx, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
@@ -410,19 +505,16 @@ FILE *fp;
     }
 }
 
-xwin_doXevent(s)
+void xwin_doXevent(s)
 char **s;
 {
     static int button_down=0;
     XEvent xe;
-    static int i = 0;
     int j;
     int debug=0;
 
     static char buf[BUF_SIZE];
-    static char *t = NULL;
     static double x,y;
-    static double xu,yu;
     static double xold,yold;
     unsigned long all = 0xffffffff;
 
@@ -558,7 +650,7 @@ char **s;
 			*s = buf;
 			break;
 		    default:
-			eprintf("unexpected button event: %d",
+			printf("a: unexpected button event: %d",
 			    xe.xbutton.button);
 			break;
 		}
@@ -577,7 +669,7 @@ char **s;
 			   *s = buf;
 			   break;
 			default:
-			   eprintf("unexpected button event: %d",
+			   printf("b: unexpected button event: %d",
 				xe.xbutton.button);
 			   break;
 			}
@@ -607,7 +699,7 @@ char **s;
     }
 }
 
-getGC(win, gc, font_info)
+void getGC(win, gc, font_info)
 Window win;
 GC *gc;
 XFontStruct *font_info;
@@ -643,7 +735,7 @@ XFontStruct *font_info;
     XSetDashes(dpy, *gc, dash_offset, dash_list, list_length); 
 }
 
-load_font(font_info)
+void load_font(font_info)
 XFontStruct **font_info;
 {
     char *fontname = "9x15";
@@ -674,6 +766,15 @@ int x1,y1,x2,y2;
     }
 }
 
+void xwin_fill_poly(poly, n) /* call XFillPolygon with saved points */
+XPoint *poly;
+int n;
+{
+    if (xwin_display_state() == D_ON) {
+	XFillPolygon(dpy, win, gcb, poly, n, Complex, CoordModeOrigin);
+    }
+}
+
 void xwin_set_pen(pen)
 int pen;
 {
@@ -693,7 +794,9 @@ int pen;
 	pen = 0;
     }
 
-    XSetForeground(dpy, gca, colors[pen]);
+    XSetForeground(dpy, gca, colors[pen]);	/* for lines */
+    XSetForeground(dpy, gcb, colors[pen]);	/* for polygon fill */
+    XSetStipple(dpy, gcb, stipple[pen%8]);	/* use gcb for polygon filling */
 }
 
 void xwin_set_line(line)
@@ -758,7 +861,7 @@ int line;
 }    
 
 
-draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
+int draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
 Window win;
 GC gc;
 double dx,dy;		/* grid delta */
@@ -897,40 +1000,41 @@ double x, y;
 {
     double delta;
     extern unsigned int g_width, g_height;
-    char buf[BUF_SIZE];
 
-    sprintf(buf,"%d,%d", (int) x, (int) y);
+    if (xwin_display_state() == D_ON) {
 
-    if (g_width > g_height) {
-	delta = (double) dpy_width/200;
-    } else {
-	delta = (double) dpy_height/200;
+	if (g_width > g_height) {
+	    delta = (double) dpy_width/200;
+	} else {
+	    delta = (double) dpy_height/200;
+	}
+
+	R_to_V(&x,&y);
+
+	XDrawLine(dpy, win, gcx, 
+	    (int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y+delta*0.7));
+	XDrawLine(dpy, win, gcx, 
+	    (int)(x+delta*0.7), (int)(y+delta*0.7), 
+	    (int)x, (int)(y+delta));
+	XDrawLine(dpy, win, gcx, 
+	    (int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y+delta*0.7));
+	XDrawLine(dpy, win, gcx, 
+	    (int)(x-delta*0.7), (int)(y+delta*0.7), (int)x,
+	    (int)(y+delta));
+	XDrawLine(dpy, win, gcx, 
+	    (int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y-delta*0.7));
+	XDrawLine(dpy, win, gcx, 
+	    (int)(x-delta*0.7), (int)(y-delta*0.7), (int)x,
+	    (int)(y-delta));
+	XDrawLine(dpy, win, gcx, 
+	    (int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y-delta*0.7));
+	XDrawLine(dpy, win, gcx, 
+	    (int)(x+delta*0.7), (int)(y-delta*0.7), (int)x,
+	    (int)(y-delta));
+
+	XFlush(dpy);
+
     }
-
-    R_to_V(&x,&y);
-
-    XDrawLine(dpy, win, gcx, 
-	(int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y+delta*0.7));
-    XDrawLine(dpy, win, gcx, 
-	(int)(x+delta*0.7), (int)(y+delta*0.7), 
-	(int)x, (int)(y+delta));
-    XDrawLine(dpy, win, gcx, 
-	(int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y+delta*0.7));
-    XDrawLine(dpy, win, gcx, 
-	(int)(x-delta*0.7), (int)(y+delta*0.7), (int)x,
-	(int)(y+delta));
-    XDrawLine(dpy, win, gcx, 
-	(int)x-delta, (int)(y), (int)(x-delta*0.7), (int)(y-delta*0.7));
-    XDrawLine(dpy, win, gcx, 
-	(int)(x-delta*0.7), (int)(y-delta*0.7), (int)x,
-	(int)(y-delta));
-    XDrawLine(dpy, win, gcx, 
-	(int)x+delta, (int)(y), (int)(x+delta*0.7), (int)(y-delta*0.7));
-    XDrawLine(dpy, win, gcx, 
-	(int)(x+delta*0.7), (int)(y-delta*0.7), (int)x,
-	(int)(y-delta));
-
-    XFlush(dpy);
 }
 
 void xwin_draw_text(x,y,s) 
@@ -1227,7 +1331,6 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
 void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
 double x1,y1,x2,y2;
 {
-    extern XFORM *xp;
     extern double scale,xoffset,yoffset;
     extern int grid_notified;
     double dratio,wratio;
@@ -1351,7 +1454,7 @@ static char *visual_class[] = {
     "DirectColor"
 };
 
-init_colors() 
+int init_colors() 
 {
     int default_depth;
     Visual *default_visual;
@@ -1442,7 +1545,7 @@ init_colors()
 /* following routine originally from Xlib Programming Manual Vol I., */
 /* O'Reilly & associates, page 533.  */
 
-paint_pane(window, menutab, ngc, rgc, mode) 
+void paint_pane(window, menutab, ngc, rgc, mode) 
 Window window;
 MENUENTRY menutab[];
 GC ngc, rgc;
@@ -1455,11 +1558,11 @@ int mode;
     if (mode == BLACK) {
     	XSetWindowBackground(dpy, window, 
 	    BlackPixel(dpy, scr));
-	gc = rgc;
+	gc = ngc;
     } else {
     	XSetWindowBackground(dpy, window, 
 	    WhitePixel(dpy, scr));
-	gc = ngc;
+	gc = rgc;
     }
 
     /* Clearing repaints the background */
@@ -1484,13 +1587,12 @@ void xwin_raise_window()
     XRaiseWindow(dpy, topwin);
 }
 
-dump_window(window, gc, width, height) 
+int dump_window(window, gc, width, height) 
 Window window;
 GC gc;
 unsigned int width, height;
 {
     XImage *xi;
-    unsigned long pixelvalue1, pixelvalue2;
     int x, y;
     unsigned long pixel;
     char buf[128];
@@ -1535,9 +1637,9 @@ unsigned int width, height;
 	printf("depth = %d\n", xi->depth);
 	printf("bytes_per_line = %d\n", xi->bytes_per_line);
 	printf("bit_per_pixel = %d\n", xi->bits_per_pixel);
-	printf("red mask= %d\n", xi->red_mask);
-	printf("green mask= %d\n", xi->green_mask);
-	printf("blue mask= %d\n", xi->blue_mask);
+	printf("red mask= %d\n", (int) xi->red_mask);
+	printf("green mask= %d\n", (int) xi->green_mask);
+	printf("blue mask= %d\n", (int) xi->blue_mask);
     }
 
     sprintf(buf, "%s.ppm", currep->name);
@@ -1578,6 +1680,7 @@ unsigned int width, height;
 
     close(fd);
     XDestroyImage(xi);
+    return(1);
 }
 
 void xwin_dump_graphics() {

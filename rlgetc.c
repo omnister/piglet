@@ -66,7 +66,7 @@ void rl_restoreprompt() {
     }
 }
 
-rl_setprompt(char *str)
+void rl_setprompt(char *str)
 {
     if (prompt != (char *) NULL) {
 	free(prompt);
@@ -79,7 +79,7 @@ rl_setprompt(char *str)
 /* the real rlgetc() is a co-routine with procXevent */
 /* and gets characters from both mouse and keyboard */
 
-xrlgetc(fd) 
+int xrlgetc(fd) 
 FILE *fd;
 {
     int c;
@@ -88,7 +88,7 @@ FILE *fd;
     return (c);
 }
 
-xrl_ungetc(c,fd)
+int xrl_ungetc(c,fd)
 int c;
 FILE *fd;
 {
@@ -109,7 +109,7 @@ int s, n;
     return (r);
 }
 
-rl_ungetc(c,fd) 
+int rl_ungetc(c,fd) 
 int c;
 FILE *fd;
 {
@@ -162,7 +162,7 @@ char *prompt;
     return (lineread);
 }
 
-initialize_readline()
+void initialize_readline()
 {
     /* Allow conditional parsing of the ~/.inputrc file. */
     rl_readline_name = (char *) estrdup(progname());
@@ -180,7 +180,7 @@ initialize_readline()
 }
 
 
-rlgetc(fd)
+int rlgetc(fd)
 FILE *fd;
 {
     int c;

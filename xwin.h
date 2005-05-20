@@ -22,6 +22,7 @@ extern void snapxy();
 extern void snapxy_major();
 void xwin_draw_line(int x1, int y1, int x2, int y2);
 void xwin_xor_line(int x1, int y1, int x2, int y2);
+void xwin_fill_poly();
 void xwin_set_pen(int pen);
 typedef enum {D_ON, D_OFF, D_TOGGLE} DISPLAYSTATE;
 void xwin_display_set_state( DISPLAYSTATE state );
@@ -35,13 +36,14 @@ extern void xwin_dump_graphics();
 extern void xwin_draw_text(double x, double y, char *s);
 extern void xwin_draw_point(double x, double y);
 extern void xwin_draw_circle(double x, double y);
+extern void xwin_set_line();
 void xwin_grid_pts( 
     double xd, double yd,
     double xs, double ys, 
     double xo, double yo
 );
 
-extern int xwin_doXevent();
+extern void xwin_doXevent();
 
 /* to set up rubber band routine */
 

@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <string.h>             /* for strchr() */
+#include <ctype.h>
 
 #include "token.h"
 #include "eprintf.h"
 #include "db.h"
 #include "xwin.h"
+#include "rlgetc.h"
+#include "lex.h" 	/* for lookup_command() */
 
 
 LEXER *token_stream_open(FILE *fp, char *name)  {
@@ -64,7 +67,7 @@ int token_flush_EOL(LEXER *lp)
 {
     char word[BUFSIZE];
     TOKEN token;
-    while (token=token_get(lp, word) != EOL) {
+    while ((token=token_get(lp, word) != EOL)) {
 	;
     }
     return(0);

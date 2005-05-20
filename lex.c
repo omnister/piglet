@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
@@ -11,8 +12,8 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "lex.h"
-
-char prompt[128];
+#include "eprintf.h"
+#include "readfont.h"
 
 /* The names of functions that actually do the manipulation. */
 
@@ -99,13 +100,11 @@ static int def_layer=0;
 #define MAXSIGNAL 31	/* biggest signal under linux */
 void sighandler(); 	/* catch signal */
 
-main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
-    int debug=0;
     LEXER *lp;		/* lexer struct for main cmd loop */
-    int i;
     int err=0;
 
 
@@ -119,7 +118,10 @@ char **argv;
     err+=(signal(3, &sighandler) == SIG_ERR);
     err+=(signal(15, &sighandler) == SIG_ERR);
     err+=(signal(20, &sighandler) == SIG_ERR);
-    if (err) printf("main() had difficulty setting sighandler\n");
+    if (err) {
+    	printf("main() had difficulty setting sighandler\n");
+	return(err);
+    }
 
     initX();
 
@@ -133,9 +135,10 @@ char **argv;
 
     lp = token_stream_open(stdin,"STDIN");
     parse(lp);
+    return(1);
 }
 
-parse(lp)
+void parse(lp)
 LEXER *lp;
 {
     int debug=0;
@@ -145,7 +148,6 @@ LEXER *lp;
     int retcode;
     COMMAND *command;
     COMMAND * find_command();
-    int i; /* scratch variable */
 
     while((token=token_get(lp, word)) != EOF) {
         if (debug) printf("%s, line %d: IN MAIN: got %s: %s\n", 
@@ -266,7 +268,6 @@ char *name;
 
 int is_comp(char c)
 {
-    int ret;
 
     switch(toupper(c)) {
     	case 'A':
@@ -303,13 +304,10 @@ int is_comp(char c)
 com_add(LEXER *lp, char *arg)		
 */
 
+
+/* now in geom_arc.c...
 int add_arc(LEXER *lp, int *layer)
-{
-    rl_setprompt("ADD_ARC> ");
-    printf("in add_arc (unimplemented)\n");
-    token_flush_EOL(lp);
-    return(1);
-}
+*/
 
 int add_oval(LEXER *lp, int *layer)
 {
@@ -319,10 +317,9 @@ int add_oval(LEXER *lp, int *layer)
     return(1);
 }
 
-com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
+int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
     need_redraw++; 
-    int err;
 
     if (currep != NULL) {
 	if (db_def_archive(currep)) {
@@ -359,16 +356,16 @@ com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 
 
 /* now in com_area.c */
-/* com_area(LEXER *lp, char *arg)	  /* display area of selected component */
+/* com_area(LEXER *lp, char *arg) */	  /* display area of selected component */
 
-com_background(LEXER *lp, char *arg)	/* use device for background overlay */
+int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 {
     printf("    com_background %s\n", arg);
     return (0);
 }
 
 
-com_bye(lp, arg)		/* terminate edit session */
+int com_bye(lp, arg)		/* terminate edit session */
 LEXER *lp;
 char *arg;
 {
@@ -393,23 +390,23 @@ char *arg;
 }
 
 /* now in com_change.c */
-/* com_change(LEXER *lp, char *arg) /* change properties of selected components */
+/* com_change(LEXER *lp, char *arg) */ /* change properties of selected components */
 
 /* now in com_copy.c */
-/* com_copy(LEXER *lp, char *arg)	/* copy component  */
+/* com_copy(LEXER *lp, char *arg) */	/* copy component  */
 
-com_define(lp, arg)		/* define a macro */
+int com_define(lp, arg)		/* define a macro */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_define %s\n", arg);
+    printf("    com_define\n");
     return (0);
 }
 
 /* now in com_delete.c */
-/*com_delete(lp, arg)  	/* delete component from currep */
+/*com_delete(lp, arg) */ 	/* delete component from currep */
 
-com_display(lp, arg)	/* turn the display on or off */
+int com_display(lp, arg)	/* turn the display on or off */
 LEXER *lp;
 char *arg;
 {
@@ -418,9 +415,6 @@ char *arg;
     char buf[128];
     char word[128];
     DISPLAYSTATE display_state = D_TOGGLE;	
-    int nopts=0;
-    double tmp;
-    int debug=0;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -458,19 +452,16 @@ char *arg;
 }
 
 /* now in com_distance.c */
-/* com_distance(lp, arg)  measure the distance between two points */
+/* com_distance(lp, arg) */ /* measure the distance between two points */
 
 
-com_dump(lp, arg)	/* dump graphics window to file or printer */
+int com_dump(lp, arg)	/* dump graphics window to file or printer */
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     int done=0;
-    double angle;
     char word[128];
-    int nnums=0;
-    double tmp;
     int debug=0;
     char *s = NULL;
     int i;
@@ -516,19 +507,19 @@ char *arg;
 }
 
 /* now in com_edit.c */
-/* com_edit(lp, arg)		/* begin edit of an old or new device */
+/* com_edit(lp, arg) */		/* begin edit of an old or new device */
 
 
-com_equate(lp, arg)		/* define characteristics of a mask layer */
+int com_equate(lp, arg)		/* define characteristics of a mask layer */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_equate %s\n", arg);
+    printf("    com_equate\n");
     return (0);
 }
 
 
-com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
+int com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 LEXER *lp;
 char *arg;
 {
@@ -565,17 +556,14 @@ char *arg;
     return (0);
 }
 
-com_files(lp, arg)		/* purge named files */
+int com_files(lp, arg)		/* purge named files */
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     int done=0;
-    int level;
     char buf[128];
     char word[128];
-    int nnums=0;
-    double tmp;
     int debug=0;
 
     if (debug) printf("in com_files\n");
@@ -610,7 +598,7 @@ char *arg;
 /* "GRID [ON | OFF] [:Ccolor] [spacing mult [xypnt]]" */
 /* com_grid(STATE, color, spacing, mult, x, y) */
 
-com_grid(lp, arg)		/* change or redraw grid */
+int com_grid(lp, arg)		/* change or redraw grid */
 LEXER *lp;
 char *arg;
 {
@@ -623,10 +611,10 @@ char *arg;
     double pts[6] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
     int npts=0;
     int nopts=0;
-    double tmp;
     int debug=0;
     int i;
     double UNITS=100.0;
+    double tmp;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -652,6 +640,8 @@ char *arg;
 		    }
 		    nopts++;
 		    if (debug) printf("setting color: %d\n", (gridcolor%8));
+		    grid_state=G_ON;
+		    xwin_grid_state(grid_state);
 		    xwin_grid_color((gridcolor%8));
 		} else {
 	    	    weprintf("bad option to GRID: %s\n", word);
@@ -733,10 +723,29 @@ char *arg;
 	return(-1);
     }
 
+    if (currep != NULL && (strcmp(lp->name, "STDIN") == 0)) {
+	printf("   grid ");
+    	if (currep->grid_xd == currep->grid_yd) {
+	    printf("delta=%.5g ", currep->grid_xd);
+	} else {
+	    printf("dx=%.5g dy=%.5g ", currep->grid_xd, currep->grid_yd);
+	}
+    	if (currep->grid_xs == currep->grid_ys) {
+	    printf("skip=%.5g ", currep->grid_xs);
+	} else {
+	    printf("xskip=%.5g yskip=%.5g ", currep->grid_xs, currep->grid_ys);
+	}
+
+    	if (currep->grid_xo != 0.0 || currep->grid_yo != 0.0) {
+	    printf("origin=%.5g,%.5g ", currep->grid_xo, currep->grid_yo);
+	}
+	printf("\n");
+    }
+
     return (0);
 }
 
-com_group(lp, arg)	/* create a device from existing components */
+int com_group(lp, arg)	/* create a device from existing components */
 LEXER *lp;
 char *arg;
 {
@@ -746,22 +755,17 @@ char *arg;
 
 /* Print out help for ARG, or for all commands if ARG is not present. */
 
-com_help(lp, arg)
+int com_help(lp, arg)
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     int done=0;
-    int level;
     char word[128];
-    int nnums=0;
-    double tmp;
     int debug=0;
     register int i;
     int printed = 0;
     int size;
-
-	/* xxx */
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
@@ -815,9 +819,9 @@ char *arg;
 
 
 /* now in com_ident.c */
-/* com_identify(lp, arg)	identify named instances or components */
+/* com_identify(lp, arg) */  /*	identify named instances or components */
 
-com_input(lp, arg)		/* take command input from a file */
+int com_input(lp, arg)		/* take command input from a file */
 LEXER *lp;
 char *arg;
 {
@@ -826,13 +830,14 @@ char *arg;
     char word[MAXFILENAME];
     int debug=0;
     FILE *fp;
-    int err=0;
     int done=0;
     int nfiles=0;
     LEXER *my_lp;
     DB_TAB *save_rep;
 
     if (debug) printf("in com_input\n");
+
+    rl_saveprompt();
     rl_setprompt("INP> ");
 
     buf[0]='\0';
@@ -854,14 +859,14 @@ char *arg;
 			    my_lp->mode = EDI;
 			    save_rep=currep;
 			    printf ("reading %s from disk\n", buf);
-			    show_set_modify(ALL,0,1);
+			    show_set_modify(currep, ALL,0,1);
 			    /* FIXME: here and one other place */
 			    /* create a way to do show_set_save and restore */
 			    /* reading archive files should not affect currep's show set */
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
-			    show_set_modify(ALL,0,0);
-			    show_set_visible(ALL,0,1);
+			    show_set_modify(currep, ALL,0,0);
+			    show_set_visible(currep, ALL,0,1);
 			    currep=save_rep;
 			    xwin_display_set_state(D_ON);
 			}
@@ -890,17 +895,19 @@ char *arg;
 		break;
 	}
     }
+    rl_restoreprompt();
+    return(0);
 }
 
-com_interrupt(lp, arg)	/* interrupt an ADD to issue another command */
+int com_interrupt(lp, arg)	/* interrupt an ADD to issue another command */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_interrupt\n", arg);
+    printf("    com_interrupt\n");
     return (0);
 }
 
-com_layer(lp, arg)		/* set a default layer number */
+int com_layer(lp, arg)		/* set a default layer number */
 LEXER *lp;
 char *arg;
 {
@@ -912,8 +919,6 @@ char *arg;
     char buf[128];
     char word[128];
     int nnums=0;
-    double tmp;
-    int debug=0;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -962,7 +967,7 @@ char *arg;
     return (0);
 }
 
-com_level(lp, arg)	/* set the logical level of the current device */
+int com_level(lp, arg)	/* set the logical level of the current device */
 LEXER *lp;
 char *arg;
 {
@@ -972,8 +977,6 @@ char *arg;
     char buf[128];
     char word[128];
     int nnums=0;
-    double tmp;
-    int debug=0;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -1024,7 +1027,7 @@ char *arg;
     return (0);
 }
 
-com_list(lp, arg)	/* list information about the current environment */
+int com_list(lp, arg)	/* list information about the current environment */
 LEXER *lp;
 char *arg;
 {
@@ -1035,7 +1038,7 @@ char *arg;
     return (0);
 }
 
-com_lock(lp, arg)		/* set the default lock angle */
+int com_lock(lp, arg)		/* set the default lock angle */
 LEXER *lp;
 char *arg;
 {
@@ -1044,8 +1047,6 @@ char *arg;
     double angle;
     char word[128];
     int nnums=0;
-    double tmp;
-    int debug=0;
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
@@ -1099,11 +1100,11 @@ char *arg;
     return (0);
 }
 
-com_macro(lp, arg)		/* enter the MACRO subsystem */
+int com_macro(lp, arg)		/* enter the MACRO subsystem */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_macro\n", arg);
+    printf("    com_macro\n");
     if (lp->mode == MAIN) {
 	lp->mode = MAC;
     } else {
@@ -1112,34 +1113,34 @@ char *arg;
     return (0);
 }
 
-com_menu(lp, arg)		/* change or save the current menu */
+int com_menu(lp, arg)		/* change or save the current menu */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_menu\n", arg);
+    printf("    com_menu\n");
     return (0);
 }
 
 /* now in com_move.c */
-/* com_move(lp, arg)	/* move a component from one location to another */
+/* com_move(lp, arg) */	/* move a component from one location to another */
 
-com_plot(lp, arg)		/* make a plot of the current device */
+int com_plot(lp, arg)		/* make a plot of the current device */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_plot\n", arg);
+    printf("    com_plot\n");
     db_plot();
     return (0);
 }
 
 /* Now in com_point.c... */
-/* com_point(lp, arg)	display the specified point on the screen */
+/* com_point(lp, arg) */ /*	display the specified point on the screen */
 
-com_process(lp, arg)	/* enter the PROCESS subsystem */
+int com_process(lp, arg)	/* enter the PROCESS subsystem */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_process\n", arg);
+    printf("    com_process\n");
     if (lp->mode == MAIN) {
 	lp->mode = PRO;
     } else {
@@ -1148,17 +1149,13 @@ char *arg;
     return (0);
 }
 
-com_purge(lp, arg)		/* remove device from memory and disk */
+int com_purge(lp, arg)		/* remove device from memory and disk */
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     int done=0;
-    int level;
     char word[128];
-    int nnums=0;
-    double tmp;
-    int debug=0;
 
     rl_saveprompt();
     rl_setprompt("PURGE> ");
@@ -1191,22 +1188,22 @@ char *arg;
     return (0);
 }
 
-com_retrieve(lp, arg)	/* read commands from an ARCHIVE file */
+int com_retrieve(lp, arg)	/* read commands from an ARCHIVE file */
 LEXER *lp;
 char *arg;
 {
     TOKEN token;
     char buf[MAXFILENAME];
     char word[MAXFILENAME];
-    int debug=1;
+    int debug=0;
     FILE *fp;
-    int err=0;
     int done=0;
     int nfiles=0;
     LEXER *my_lp;
     DB_TAB *save_rep;
 
     if (debug) printf("in com_retrieve\n");
+    rl_saveprompt();
     rl_setprompt("RET> ");
 
     buf[0]='\0';
@@ -1228,11 +1225,8 @@ char *arg;
 			    my_lp->mode = EDI;
 			    save_rep=currep;
 			    printf ("reading %s from disk\n", buf);
-			    show_set_modify(ALL,0,1);
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
-			    show_set_modify(ALL,0,0);
-			    show_set_visible(ALL,0,1);
 			    currep=save_rep;
 			    xwin_display_set_state(D_ON);
 			}
@@ -1261,26 +1255,22 @@ char *arg;
 		break;
 	}
     }
+    rl_restoreprompt();
+    return(0);
 }
 
-com_save(lp, arg)	/* save the current file or device to disk */
+int com_save(lp, arg)	/* save the current file or device to disk */
 LEXER *lp;
 char *arg;
 {
     need_redraw++; 
-    int err;
 
     TOKEN token;
     int done=0;
     char word[128];
     char name[128];
-    char buf[128];
-    int error=0;
     int debug=0;
     int nfiles=0;
-    FILE *fp;
-    LEXER *my_lp;
-    DB_TAB *save_rep;  
    
     if (debug) printf("    com_save <%s>\n", arg); 
 
@@ -1352,11 +1342,11 @@ char *arg;
     return (0);
 }
 
-com_search(lp, arg)		/* modify the search path */
+int com_search(lp, arg)		/* modify the search path */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_search\n", arg);
+    printf("    com_search\n");
 
     if (lp->mode == MAIN) {
 	lp->mode = SEA;
@@ -1366,76 +1356,71 @@ char *arg;
     return (0);
 }
 
-com_set(lp, arg)		/* set environment variables */
+int com_set(lp, arg)		/* set environment variables */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_set\n", arg);
+    printf("    com_set\n");
     return (0);
 }
 
-com_shell(lp, arg)		/* run a program from within the editor */
+int com_shell(lp, arg)		/* run a program from within the editor */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_shell\n", arg);
+    printf("    com_shell\n");
     return (0);
 }
 
 /* com_show(lp, arg)		define which kinds of things to display */
 
-com_smash(lp, arg)	/* replace an instance with its components */
+int com_smash(lp, arg)	/* replace an instance with its components */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_smash\n", arg);
+    printf("    com_smash\n");
     return (0);
 }
 
-com_split(lp, arg)		/* cut a component into two halves */
+int com_split(lp, arg)		/* cut a component into two halves */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_split\n", arg);
+    printf("    com_split\n");
     return (0);
 }
 
-com_step(lp, arg)	/* copy a component in an array fashion */
+int com_step(lp, arg)	/* copy a component in an array fashion */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_step\n", arg);
+    printf("    com_step\n");
     return (0);
 }
 
-com_stretch(lp, arg)	/* make a component larger or smaller */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_stretch\n", arg);
-    return (0);
-}
+/* moved to com_stretch.c */
+/* com_stretch(lp, arg) */	/* make a component larger or smaller */
 
-com_trace(lp, arg)		/* highlight named signals */
+int com_trace(lp, arg)		/* highlight named signals */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_trace\n", arg);
+    printf("    com_trace\n");
     return (0);
 }
 
 /* now in com_delete.c */
-/* com_undo(lp, arg)		/* undo the last command */
+/* com_undo(lp, arg) */ 	/* undo the last command */
 
-com_units(lp, arg)	/* set editor resolution and user unit type */
+int com_units(lp, arg)	/* set editor resolution and user unit type */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_units\n", arg);
+    printf("    com_units\n");
     return (0);
 }
 
-com_version(lp, arg)	/* identify the version number of program */
+int com_version(lp, arg)	/* identify the version number of program */
 LEXER *lp;
 char *arg;
 {
@@ -1445,11 +1430,11 @@ char *arg;
 
 /* com_window(lp, arg)	  (defined in com_window.c) */
 
-com_wrap(lp, arg)	/* create a new device using existing components*/
+int com_wrap(lp, arg)	/* create a new device using existing components*/
 LEXER *lp;
 char *arg;
 {
-    printf("    com_wrap\n", arg);
+    printf("    com_wrap\n");
     return (0);
 }
 

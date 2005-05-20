@@ -1,6 +1,12 @@
+#include <ctype.h>
+#include <stdio.h>
+
 #include "readfont.h"
 #include "db.h"
-#include <stdio.h>
+
+int getxy();
+int eatwhite();
+int getint();
 
     /* int getc(FILE *stream); */
     /* int ungetc(int c, FILE *stream); */
@@ -13,8 +19,57 @@ int fonttab[2][256];
 int xdef[2][5000];
 int ydef[2][5000];
 
+int fillable[2] = {0,0};
 
-writestring(s,xf, id, bb, mode)
+void writechar(c,x,y,xf,id,bb,mode)
+int c;
+double x;
+double y;
+XFORM *xf;
+int id;			/* font id */
+BOUNDS *bb;
+int mode;		/* drawing mode */
+{
+    int i;
+    double xp,yp,xt,yt;
+
+    /* printf("# %c %d\n",c); */
+    
+    if (c==' ') {
+	return;
+    }
+
+    i = fonttab[id][c];
+
+    jump(bb, mode);
+    if (fillable[id]) {
+	startpoly(bb,mode);
+    }
+    while (xdef[id][i] != -64 || ydef[id][i] != -64) {		/* -64,-64 == END */
+	if (xdef[id][i] != -64) {				/* end of polygon */
+	    xp = x + (0.8 * ( (double) xdef[id][i] / (double) dy[id]));
+	    yp = y + (0.8 * ( (double) ydef[id][i] / (double) dy[id]));
+	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
+	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
+	    draw(xt,yt, bb, mode); 
+	} else {
+	    if (fillable[id]) {
+		endpoly(bb,mode);
+	    }
+	    jump(bb, mode);
+	    if (fillable[id]) {
+		 startpoly(bb,mode);
+	    }
+	}
+	i++;
+    }
+    if (fillable[id]) {
+	endpoly(bb,mode);
+    }
+}
+
+
+void writestring(s,xf, id, bb, mode)
 char *s;
 XFORM *xf;
 int id; 	/* font id */
@@ -35,47 +90,7 @@ int mode;
     }
 }
 
-writechar(c,x,y,xf,id,bb,mode)
-int c;
-double x;
-double y;
-XFORM *xf;
-int id;			/* font id */
-BOUNDS *bb;
-int mode;		/* drawing mode */
-{
-    int i;
-    double xp,yp,xt,yt;
-
-    /* printf("# %c %d\n",c); */
-    
-    if (c==' ') {
-	return(0);
-    }
-
-    i = fonttab[id][c];
-
-    jump();
-    while (xdef[id][i] != -64 || ydef[id][i] != -64) {
-	if (xdef[id][i] != -64) {
-
-	    xp = x + (0.8 * ( (double) xdef[id][i] / (double) dy[id]));
-	    yp = y + (0.8 * ( (double) ydef[id][i] / (double) dy[id]));
-
-	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
-	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
-
-	    draw(xt,yt, bb, mode); 
-
-	} else {
-	    
-	    jump();
-	}
-	i++;
-    }
-}
-
-loadfont(file, id)
+void loadfont(file, id)
 char *file;
 int id;
 {
@@ -115,11 +130,9 @@ int id;
     y=-64;
 
     while (!done) {
-
 	if (next == '\n') {
 	    line++;
 	    getc(fp);
-
 	    if (x==-64 && y==-64) {
 		if ((lit=eatwhite(fp)) != EOF) {
 		    /* printf("lit=%c\n",lit); */
@@ -129,7 +142,6 @@ int id;
 		    done++;
 		}
 	    }
-
 	} else if (next == EOF) {
 	    done++;
 	}
@@ -145,7 +157,7 @@ int id;
 }
 
 
-getxy(fp,px,py)
+int getxy(fp,px,py)
 FILE *fp;
 int *px;
 int *py;
@@ -175,7 +187,7 @@ int *py;
     return(eatwhite(fp));
 }
 
-eatwhite(fp)
+int eatwhite(fp)
 FILE *fp;
 {
     int c;

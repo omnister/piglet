@@ -14,23 +14,16 @@
     and dispatches control the the appropriate add_<comp> subroutine
 */
 
-com_add(LEXER *lp, char *arg)		
+int com_add(LEXER *lp, char *arg)		
 {
-    char *line;
     TOKEN token;
     char word[BUFSIZE];
-    char buf[BUFSIZE];
     int done=0;
-    int nnum=0;
-    int state;
-    int retval;
     int valid_comp=0;
     int i;
-    int flag;
     int layer;
 
     int comp;
-    double x1,y1,x2,y2;
     int debug=0;
 
     /* check that we are editing a rep */
@@ -69,7 +62,7 @@ com_add(LEXER *lp, char *arg)
 
 	    /* check to see if is a valid comp descriptor */
 	    valid_comp=0;
-	    if (comp = is_comp(toupper(word[0]))) {
+	    if ((comp = is_comp(toupper(word[0])))) {
 	    	if (strlen(word) == 1) {
 		    layer=default_layer();
 		    printf("using default layer=%d\n",layer);
@@ -98,7 +91,7 @@ com_add(LEXER *lp, char *arg)
 			    valid_comp=0;
 			    done++;
 			}
-			if (!show_check_modifiable(comp, layer)) {
+			if (!show_check_modifiable(currep, comp, layer)) {
 			    printf("layer %d is not modifiable!\n",
 				layer);
 			    token_flush_EOL(lp);
@@ -149,7 +142,7 @@ com_add(LEXER *lp, char *arg)
 			}
 		    }
 		    if (debug) printf("calling add_inst with %s\n", word);
-		    if (!show_check_modifiable(INST, 0)) {
+		    if (!show_check_modifiable(currep, INST, 0)) {
 			    printf("INST component is not modifiable!\n");
 		    } else {
 			add_inst(lp, word);
@@ -157,7 +150,7 @@ com_add(LEXER *lp, char *arg)
 		}
 	    }
 	} else if (token == QUOTE) {
-	    if (!show_check_modifiable(INST, 0)) {
+	    if (!show_check_modifiable(currep, INST, 0)) {
 		    printf("INST component is not modifiable!\n");
 	    } else {
 		add_inst(lp, word);
@@ -178,5 +171,6 @@ com_add(LEXER *lp, char *arg)
 	}
     }
     rl_restoreprompt();
+    return(0);
 }
 

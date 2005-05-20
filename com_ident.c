@@ -2,6 +2,7 @@
 #include "xwin.h"
 #include "token.h"
 #include "lex.h"
+#include "rlgetc.h"
 
 /*
  *
@@ -20,15 +21,15 @@ int *layer;
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     int done=0;
-    int error=0;
     TOKEN token;
     char word[BUFSIZE];
-    double x2,y2;
     int debug=0;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_prev = NULL;
     double area;
 
+    
+    rl_saveprompt();
     rl_setprompt("IDENT> ");
 
     while (!done) {
@@ -88,7 +89,7 @@ int *layer;
 		    db_highlight(p_prev);	/* unhighlight it */
 		}
 
-		if ((p_best=db_ident(currep, x1, y1, 0, 0, 0, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,0, 0, 0, 0)) != NULL) {
 		    db_highlight(p_best);	
 		    db_notate(p_best);		/* print information */
 		    area = db_area(p_best);
@@ -123,5 +124,6 @@ int *layer;
     if (p_prev != NULL) {
 	db_highlight(p_prev);	/* unhighlight any remaining component */
     }
+    rl_restoreprompt();
     return(1);
 }

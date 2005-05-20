@@ -1,9 +1,12 @@
+#include <strings.h>
+
 #include "db.h"
 #include "xwin.h"
 #include "token.h"
 #include "rubber.h"
 #include "lex.h"
 #include "rlgetc.h"
+#include "eprintf.h"
 
 static double x1, y1;
 int fit=0;		/* don't fit */
@@ -12,6 +15,7 @@ int bounds=0;		/* default pick boundary display level */
 
 OPTS opts;
 void draw_bounds();
+int do_win();
 
 int com_window(lp, arg)
 LEXER *lp;
@@ -22,15 +26,11 @@ char *arg;
     extern int fit, nest;
     double scale=1.0;	/* default scale */
     
-    double dx, dy, xmin, ymin, xmax, ymax, tmp;
-    double x2, y2;
-    int n;
-
     TOKEN token;
     int done=0;
-    int error=0;
     char word[BUFSIZE];
     int debug=0;
+    double x2, y2;
 
     if (debug) printf("com_window\n");
     rl_saveprompt();
@@ -218,7 +218,7 @@ char *arg;
     return(1);
 }
 
-do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale) {
+int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale) {
 
     extern int fit, nest;
     double dx, dy, xmin, ymin, xmax, ymax, tmp;
@@ -299,7 +299,7 @@ do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scal
     } 
 
     if (scale != 1.0) {
-	if (debug) printf("%doing scale \n");
+	if (debug) printf("doing scale \n");
 	dx=(xmax-xmin);
 	dy=(ymax-ymin);
 	xmin=((xmax+xmin)/2.0)-((dx*scale)/2.0);
@@ -316,6 +316,7 @@ do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scal
 	xwin_window_set(xmin,ymin,xmax,ymax);
     }
     if (debug) printf("leaving dowin()\n");
+    return(0);
 }
 
 void draw_bounds(x2, y2, count) 
@@ -323,39 +324,39 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
-	BOUNDS bounds;
+	BOUNDS bb;
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
-	    draw(x1,y1, &bounds, D_RUBBER);
-	    draw(x1,y2, &bounds, D_RUBBER);
-	    draw(x2,y2, &bounds, D_RUBBER);
-	    draw(x2,y1, &bounds, D_RUBBER);
-	    draw(x1,y1, &bounds, D_RUBBER);
+	    jump(&bb, D_RUBBER); /* draw new shape */
+	    draw(x1,y1, &bb, D_RUBBER);
+	    draw(x1,y2, &bb, D_RUBBER);
+	    draw(x2,y2, &bb, D_RUBBER);
+	    draw(x2,y1, &bb, D_RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
 
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bounds, D_RUBBER);
-	    draw(x1old,y2old, &bounds, D_RUBBER);
-	    draw(x2old,y2old, &bounds, D_RUBBER);
-	    draw(x2old,y1old, &bounds, D_RUBBER);
-	    draw(x1old,y1old, &bounds, D_RUBBER);
+	    jump(&bb, D_RUBBER); /* erase old shape */
+	    draw(x1old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
 
-	    jump(); /* draw new shape */
-	    draw(x1,y1, &bounds, D_RUBBER);
-	    draw(x1,y2, &bounds, D_RUBBER);
-	    draw(x2,y2, &bounds, D_RUBBER);
-	    draw(x2,y1, &bounds, D_RUBBER);
-	    draw(x1,y1, &bounds, D_RUBBER);
+	    jump(&bb, D_RUBBER); /* draw new shape */
+	    draw(x1,y1, &bb, D_RUBBER);
+	    draw(x1,y2, &bb, D_RUBBER);
+	    draw(x2,y2, &bb, D_RUBBER);
+	    draw(x2,y1, &bb, D_RUBBER);
+	    draw(x1,y1, &bb, D_RUBBER);
 
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
-	    draw(x1old,y1old, &bounds, D_RUBBER);
-	    draw(x1old,y2old, &bounds, D_RUBBER);
-	    draw(x2old,y2old, &bounds, D_RUBBER);
-	    draw(x2old,y1old, &bounds, D_RUBBER);
-	    draw(x1old,y1old, &bounds, D_RUBBER);
+	    jump(&bb, D_RUBBER); /* erase old shape */
+	    draw(x1old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y2old, &bb, D_RUBBER);
+	    draw(x2old,y1old, &bb, D_RUBBER);
+	    draw(x1old,y1old, &bb, D_RUBBER);
 	}
 
 	/* save old values */
@@ -363,6 +364,6 @@ int count; /* number of times called */
 	y1old=y1;
 	x2old=x2;
 	y2old=y2;
-	jump();
+	jump(&bb, D_RUBBER); 
 }
 

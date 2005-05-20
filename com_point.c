@@ -2,6 +2,7 @@
 #include "xwin.h"
 #include "token.h"
 #include "lex.h"
+#include "rlgetc.h"
 
 /*
  *
@@ -20,14 +21,14 @@ int *layer;
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     int done=0;
-    int error=0;
     TOKEN token;
     char word[BUFSIZE];
-    double x2,y2;
     int debug=0;
 
     if (debug) printf("layer %d\n",*layer);
+    rl_saveprompt();
     rl_setprompt("POINT> ");
+
 
     while (!done) {
 	token = token_look(lp,word);
@@ -104,5 +105,6 @@ int *layer;
 	    break;
 	}
     }
+    rl_restoreprompt();
     return(1);
 }

@@ -11,7 +11,7 @@ int  coord_count(COORDS *CP);
 int coord_get(CP, n, px, py) 	/* get nth set of x,y coords in list */
 COORDS *CP;
 int n;
-double *px, *py;
+NUM *px, *py;
 {	
     COORDS *tmp;
     int i;
@@ -109,7 +109,6 @@ COORDS *CP;
 {
     COORDS *p;
     COORDS *new_coords; 
-    int i;
 
     if (CP == NULL) {
     	printf("coord_copy: can't copy null coordinate list\n");

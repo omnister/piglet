@@ -3,7 +3,8 @@
 #include "token.h"
 #include "rubber.h"
 #include "lex.h"
-
+#include "rlgetc.h"
+#include "opt_parse.h"
 static double x1, y1;
 
 DB_TAB dbtab; 
@@ -21,7 +22,6 @@ int *layer;
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     int done=0;
-    int error=0;
     TOKEN token;
     char word[BUFSIZE];
     double x2,y2;
@@ -32,7 +32,9 @@ int *layer;
     opts.width = 0.0;		/* default width */
 
     if (debug) printf("layer %d\n",*layer);
+    rl_saveprompt();
     rl_setprompt("ADD_CIRCLE> ");
+
 
     while (!done) {
 	token = token_look(lp, word);
@@ -158,6 +160,7 @@ int *layer;
 		break;
 	}
     }
+    rl_restoreprompt();
     return(1);
 }
 
@@ -165,9 +168,6 @@ void draw_circle(x2, y2, count)
 double x2, y2;
 int count; /* number of times called */
 {
-	static double x1old, x2old, y1old, y2old;
-	int i;
-
 	int debug=0;
 	BOUNDS bb;
 
@@ -188,21 +188,21 @@ int count; /* number of times called */
 	if (debug) {printf("in draw_circle\n");}
 
 	if (count == 0) {		/* first call */
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbcirc.x2 = x2; dbcirc.y2 = y2;
 	    do_circ(&dbdeflist, &bb, D_RUBBER);
 
 	} else if (count > 0) {		/* intermediate calls */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_circ(&dbdeflist, &bb, D_RUBBER);
-	    jump(); /* draw new shape */
+	    jump(&bb, D_RUBBER); /* draw new shape */
 	    dbcirc.x2 = x2; dbcirc.y2 = y2;
 	    do_circ(&dbdeflist, &bb, D_RUBBER);
 	} else {			/* last call, cleanup */
-	    jump(); /* erase old shape */
+	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_circ(&dbdeflist, &bb, D_RUBBER);
 	}
 
-	jump();
+	jump(&bb, D_RUBBER);
 }
 
