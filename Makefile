@@ -7,7 +7,7 @@ OBJS= db.o draw.o xwin.o readfont.o rubber.o opt_parse.o \
        rlgetc.o token.o lex.o coords.o com_change.o\
        com_add.o com_delete.o com_distance.o com_ident.o \
        com_copy.o com_move.c com_window.o com_point.o com_show.o postscript.o \
-       com_area.o readmenu.o com_edit.o com_stretch.o
+       com_area.o readmenu.o com_edit.o com_stretch.o stack.o
 
 TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I cells/PLAN_I cells/ALL_I\
 changes com_add.c com_delete.c com_distance.c com_ident.c com_copy.c \
@@ -18,7 +18,7 @@ Makefile MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h com_change.c \
 plan.EQUATE plan.MOVE plan.SELECT plan.STATUS plan.TODO readfont.c \
 readfont.h rlgetc.c rlgetc.h rubber.c rubber.h TEXTDATA.F token.c \
 token.h xwin.c xwin.h postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
-man/makemans man/seeallso com_area.c com_edit.c com_stretch.c
+man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h stack.c
 
 CC=cc -ggdb -Wall
 

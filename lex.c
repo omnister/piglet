@@ -833,7 +833,7 @@ char *arg;
     int done=0;
     int nfiles=0;
     LEXER *my_lp;
-    DB_TAB *save_rep;
+    char *save_rep;
 
     if (debug) printf("in com_input\n");
 
@@ -857,7 +857,13 @@ char *arg;
 			    xwin_display_set_state(D_OFF);
 			    my_lp = token_stream_open(fp, buf);
 			    my_lp->mode = EDI;
-			    save_rep=currep;
+
+			    if (currep != NULL) {
+				save_rep=strsave(currep->name);
+			    } else {
+				save_rep=NULL;
+			    }
+
 			    printf ("reading %s from disk\n", buf);
 			    show_set_modify(currep, ALL,0,1);
 			    /* FIXME: here and one other place */
@@ -867,7 +873,14 @@ char *arg;
 			    token_stream_close(my_lp); 
 			    show_set_modify(currep, ALL,0,0);
 			    show_set_visible(currep, ALL,0,1);
-			    currep=save_rep;
+
+			    if (save_rep != NULL) {
+				currep=db_lookup(save_rep);
+				free(save_rep);
+			    } else {
+				currep=NULL;
+			    }
+
 			    xwin_display_set_state(D_ON);
 			}
 		    } else {
@@ -1200,7 +1213,7 @@ char *arg;
     int done=0;
     int nfiles=0;
     LEXER *my_lp;
-    DB_TAB *save_rep;
+    char *save_rep;
 
     if (debug) printf("in com_retrieve\n");
     rl_saveprompt();
@@ -1223,11 +1236,24 @@ char *arg;
 			    xwin_display_set_state(D_OFF);
 			    my_lp = token_stream_open(fp, buf);
 			    my_lp->mode = EDI;
-			    save_rep=currep;
+
+			    if (currep != NULL) {
+				save_rep=strsave(currep->name);
+			    } else {
+				save_rep=NULL;
+			    }
+
 			    printf ("reading %s from disk\n", buf);
 			    parse(my_lp);
 			    token_stream_close(my_lp); 
-			    currep=save_rep;
+
+			    if (save_rep != NULL) {
+				currep=db_lookup(save_rep);
+				free(save_rep);
+			    } else {
+				currep=NULL;
+			    }
+
 			    xwin_display_set_state(D_ON);
 			}
 		    } else {

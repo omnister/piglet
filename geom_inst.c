@@ -27,7 +27,7 @@ int add_inst(LEXER *lp, char *inst_name)
     LEXER *my_lp;
 
     DB_TAB *ed_rep;
-    DB_TAB *save_rep;
+    char *save_rep;
 
     BOUNDS bb;
 
@@ -53,7 +53,12 @@ int add_inst(LEXER *lp, char *inst_name)
 	    ed_rep = db_install(inst_name);  /* create blank stub */
 	    printf("reading %s from disk\n", buf);
 	    my_lp = token_stream_open(fp, buf);
-	    save_rep = currep;
+
+	    if (currep != NULL) {
+		save_rep=strsave(currep->name);
+	    } else {
+		save_rep=NULL;
+	    }
 
 	    currep = ed_rep;
 	    xwin_display_set_state(D_OFF);
@@ -67,7 +72,13 @@ int add_inst(LEXER *lp, char *inst_name)
 	    xwin_display_set_state(D_ON);
 	    
 	    token_stream_close(my_lp); 
-	    currep = save_rep;
+
+	    if (save_rep != NULL) {
+		currep=db_lookup(save_rep);
+		free(save_rep);
+	    } else {
+		currep=NULL;
+	    }
 
 	    bb_xmin=ed_rep->minx;
 	    bb_xmax=ed_rep->maxx;

@@ -27,7 +27,7 @@ char *arg;
     int nfiles=0;
     FILE *fp;
     LEXER *my_lp;
-    DB_TAB *save_rep;  
+    char *save_rep;  
     DB_TAB *new_rep;  
     DB_TAB *old_rep = NULL;  
     double x1, y1;
@@ -171,15 +171,18 @@ char *arg;
 	    
 		if ((new_rep=db_lookup(name)) == NULL) { /* Not already in memory */
 
-		    currep = db_install(name);  	/* create blank stub */
+		    currep = db_install(name);  	 /* create blank stub */
 		    show_init(currep);
 		    need_redraw++;
 
-		    /* now check if on disk */
+		  /* 
+		  should decompose this into routines
+		  FILE *search(char *cellname);
+    		  readin(FILE *fp); 
+		  */
+
 		    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
-		    if((fp = fopen(buf, "r")) == 0) {
-			/* cannot find copy on disk */
-			/* so leave the user with an empty start */
+		    if((fp = fopen(buf, "r")) == 0) {   /* cannot find copy on disk */
 			if (debug) printf("calling dowin 1\n");
 			do_win(lp, 4, -100.0, -100.0, 100.0, 100.0, 1.0);
 			if (old_rep == NULL ) {
@@ -188,22 +191,33 @@ char *arg;
 			    /* push the stack */
 			    currep->being_edited = old_rep->being_edited+1;
 			}
-		    } else {
-			/* read it in */
+		    } else { 	/* found copy on disk so read it in */
 			xwin_display_set_state(D_OFF);
 			my_lp = token_stream_open(fp, buf);
 			my_lp->mode = EDI;
-			save_rep=currep;
+
+			if (currep != NULL) {
+			    save_rep=strsave(currep->name);
+			} else {
+			    save_rep=NULL;
+			}
+
 			printf ("xreading %s from disk\n", name);
 			show_set_modify(currep, ALL,0,1);	/* make all layers modifiable */
 			parse(my_lp);
 			token_stream_close(my_lp); 
 			if (debug) printf ("done reading %s from disk\n", name);
-			show_set_modify(currep, ALL,0,0);
-			show_set_visible(currep, ALL,0,1);
+			show_set_modify(currep, ALL,0,0);	/* now shut off modifiability */
+			show_set_visible(currep, ALL,0,1);	/* but leave everything visible */
 			xwin_display_set_state(D_ON);
-			
-			currep=save_rep;
+
+			if (save_rep != NULL) {
+			    currep=db_lookup(save_rep);
+			    free(save_rep);
+			} else {
+			    currep=NULL;
+			}
+
 			if (debug) printf("calling dowin 2\n");
 			do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax, 1.0); 
 			currep->modified = 0;
