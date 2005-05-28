@@ -1,0 +1,114 @@
+cat commandlist | awk '
+    BEGIN {
+    	version = "0.6"
+	author = "Rick Walker (walker AT omnisterra DOT com)"
+	webhome = "http://www.omnisterra.com/walker/linux/piglet/intro.htm"
+	inblank=0
+	intext=0
+    }
+
+    /^T:/ {
+    	intext++;
+	next;
+    }
+
+    /^}/ {
+    	intext=0;
+	next;
+    }
+
+    // {
+    	if (intext) {
+	    if (text) {
+		text = text "\n" $0
+	    } else {
+	    	text = $0
+	    }
+	}
+    }
+
+    /^N:/ {	# name
+	inblank=0
+    	sub("^N:[ ]*", "");
+	name = $0
+	next;
+    }
+
+    /^D:/ {	# one line description
+	inblank=0
+    	sub("^D:[ ]*", "");
+	desc = $0
+	next;
+    }
+
+
+    /^S:/ {	# implementating status
+	inblank=0
+    	sub("^S:[ ]*", "");
+	stat = $0
+	next;
+    }
+
+    /^U:/ {	# usage
+	inblank=0
+    	sub("^U:[ ]*", "");
+	usage = $0
+	next;
+    }
+
+    /^$/ {
+	if (!inblank && !intext) {
+	    if (name != "") {
+		abbrevname=name
+		fullname=toupper(name)
+		manname=tolower(fullname) ".1p"
+		manref=tolower(fullname) "(1p)"
+		print manref >> "seeallso.tmp"
+		dumpman()
+		name=""
+		stat=""
+		usage=""
+		desc=""
+		text=""
+		inblank++
+	    }
+	} else {
+	    if (intext) {
+		#text = text "\n" 
+	    }
+	}
+    }
+
+function dumpman() {
+    	print ".TH " fullname, "1P \"PD Piglet Users Manual\"" > manname
+	print ".ad b" >> manname
+	print ".SH NAME" >> manname
+	print fullname, desc >> manname
+	print ".SH SYNOPSIS" >> manname
+	print "\\fB" usage "\\fR">>manname
+	print ".SH DESCRIPTION" >> manname
+	print text >> manname
+	#print ".SS OPTIONS" >> manname
+	#print ".SH FEATURES" >> manname
+	#print ".SH ADMINISTRATION" >> manname
+	print ".SH SEE ALSO" >> manname
+	while (getline foo <"seeallso") {
+	    print foo >> manname
+	}
+	close("seeallso");
+	#print ".SH DIAGNOSTICS" >> manname
+	print ".SH AUTHOR" >> manname
+	print author >> manname
+	print "\nThe PD Piglet homepage is at " webhome "." >> manname
+	close(manname)
+	command="man2html -r " manname ">" tolower(manname) ".html"
+	system(command)
+}
+
+END {
+	system ("mv seeallso.tmp seeallso")
+}
+
+'
+
+exit 0

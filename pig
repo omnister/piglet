@@ -16,6 +16,9 @@ echo "yes"   >> pig.tmp.$$
 echo "quit"  >> pig.tmp.$$
 echo "yes"   >> pig.tmp.$$
 
-gdb -batch -q -command pig.tmp.$$ pig.bin | tee pigtrace
+gdb --batch  -q -command pig.tmp.$$ pig.bin | tee pigtrace
+
+cat pigtrace  | col -b > pig.trace.$$
+mv pig.trace.$$ pigtrace
 
 rm pig.tmp.$$

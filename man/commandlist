@@ -1,0 +1,1219 @@
+N: PIGLET
+U: pig
+D: execute the piglet graphical editor under X11
+T: {
+Piglet is started by typing "pig" in a terminal window.  Piglet then
+creates an associated graphical window under X11.  The editor scans
+both the graphic window and the original shell window that you used to
+start piglet.  You can either type coordinates, or click them with the
+mouse.  The shell window should have a prompt "MAIN>" at which commands
+may be typed.  
+
+When entering points with the mouse, the clicks ALWAYS snap to the grid,
+giving a powerful way to enter precise coordinates.
+
+All the piglet built-in commands can be abbreviated to just three
+letters with one exception.  DISPLAY must be entered as "DISP" or "disp"
+to distinguish it from "DIStance". 
+
+Anything typed at the command line goes into a readline buffer.  
+A vi command history binding can be obtained by adding the lines
+
+.ti +4
+\fBset editing-mode vi\fR
+.ti +4
+\fBset keymap vi\fR
+
+to the file "~/.inputrc".  See the GNU readline(1) man page for more
+details about commandline editing.
+
+.SS FILES
+
+Piglet requires several configuration files in the current working directory.
+
+The TEXT font is defined in the file "./TEXTDATA.F" and the NOTE font is defined
+in the file "./NOTEDATA.F".  The format for both files is plain ASCII.  The file
+starts with two integers separated by a comma.  The first gives the height of each
+character definition and the second, the width.  Each character is then listed in
+printed form and the glyph is defined by a set of vector coordinates.  It is assumed that
+each successive x,y coordinate pair is connected by a stroke unless the path is broken
+by the special coordinate "-64,0".  Each definition is terminated by the special coordinate
+"-64,-64".  Here is an example of the first three definitions in "NOTEDATA.F" for the characters
+<exclam>, <double-quote>, and <pound>:
+
+.nf
+16,12
+! 6,2 6,3 -64,0 6,5 6,14 -64,-64
+" 4,14 4,10 -64,0 8,14 8,10 -64,-64
+# 2,6 10,6 -64,0 2,10 10,10 -64,0 4,2 4,14 -64,0 8,2 8,14 -64,-64
+...
+.fi
+
+Piglet's menu is also defined by a customizable file "./MENUDATA_V".  The default
+menu is defined as:
+
+.nf
+ayyyyy|ADD |R|P|L|N|T|
+ayyygg|SHO |C|A|I|+|-|
+ayyggg|GRI |#|^|1|2|3|
+ayyggg|WIN |;|!|4|5|6|
+yyyggg|:F|:V|:Z|7|8|9|
+yyyggg|:D|:S|:V|,|0|.|
+yyyyyy|:W|:M|:N|:O|:R|
+yyaaaw|:X|:Y|X|Y|@|XY|
+ww    |      |       |
+aaa   |WRA |SMA |GRO |
+aaa   |MOV |COP |STR |
+ypy   |IDE |POI |LIS |
+ygg   |DIST |DISP |  |
+ggg   |DUM |PLO |LOC |
+ggy   |ARC |RET |INP |
+gw    |CHA |         |
+rrr   |UND |BYE |DEL |
+yyr   |SAV |EDI |EXI |
+.fi
+
+The file consists of fields separated by "|" characters.  The first field consists of
+some combination of the characters "wrgbapy" which denote the colors white, red, green,
+blue, aqua, purple and yellow.  There should be as many color designators as remaining
+fields.  The subsequent fields on each line will be displayed exactly as shown, rendered
+in the corresponding color.  The vertical bars are replaced with white bounding boxes.
+
+When using the editor, any mouse picks on the menu boxes inject the menu text directly
+into the parse stream.  The menu designer should take care to leave extra spaces after
+command names so that any combination of mouse picks results in intelligible commands.
+}
+
+N: ADD_ARC
+U: ADD A<layer> [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>
+D: Add an arc to the current device
+S: complete
+T: {
+Add an arc.  The coords are starting <xy1>, ending point <xy2>
+plus a point on the circumference <xy3>.  After the first two
+coords are drawn, a "rubber-banded" arc will be drawn until
+the final coordinate terminates the command and draws the arc. 
+Multiple arcs can be draw with the same command until an EOC is encounterd.
+
+The arc will be solid unless a non-zero width is specified, in which
+case it will be hollow with a wall-thickness of <width>. 
+
+NOTE: Arcs with width are implemented by drawing a line with width
+along the path of the arc.  This means that the finished
+arc has an effective radius <width>/2.0 larger than drawn. 
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width>
+line width
+.TP
+.I <res>
+arc resolution angle (in degrees) (default = 2 degrees)
+}
+
+N: ADD_CIRCLE
+U: ADD C<layer> [:W<width>] [:R<resolution>] [:Y<yxratio>] <xy1> <xy2>... EOC
+D: Add a circle to the current device
+S: complete
+T: {
+Add a circle.  Center point <xy1> and a point on the circumference <xy2>
+must be specfied.  After adding the centerpoint, a "rubber-banded"
+circle is shown on the screen, creating a circle with a radius
+coincident with the current mouse position.  Entering the second point
+terminates the command and draws the circle. 
+
+The circle will be solid unless a non-zero width is specified, in which
+case it will be hollow with a wall-thickness of <width>. 
+
+NOTE: Circles with width are implemented by drawing a line with width
+along the perimeter of the circle.  This means that the finished
+circle has an outside dimension <width> larger than drawn. 
+
+The <yxratio> argument creates an ellipse with a specified ratio between
+major and minor axes.  In this case, point <xy1> places the center of the
+oval, and point <xy2> places the extreme of the major axis.  Since the major
+axis follows the second point, the oval can be placed at any arbitrary
+rotation or size.  See "ADD_OVAL" for a method of creating ovals based on
+foci and radius. 
+
+The ":R<resolution>" option gives the resolution in degrees.  This is
+handy for making regular polygons.  For instance "ADD C7 :R72" will
+create a perfect pentagon.  The pentagon rotates during rubberband
+drawing such that the second point, <xy2>, is always on one of the
+vertices.  "ADD C7 :R90" is a way to add a rotated square.  "ADD C7
+:R120" adds an equilateral triangle. 
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width>
+width of line
+.TP
+.I <resolution>
+angle (in degrees) circle resolution (default = 2 degrees)
+.TP
+.I <yxratio>
+y-to-x major/minor ratio for creating ovals  (default = 1)
+.TP
+.I <xy1>
+center of the circle.
+.TP
+.I <xy2>
+a point on the radius, or on the major axis if <yxratio>!=1
+}
+
+N: ADD_INSTANCE
+U: ADD [I] <device> [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... EOC
+D: Add an instance (sub-cell) to the current device
+S: good
+T: {
+Add a device instance with rotation, scaling, shearing and mirroring. 
+<mirror> can take the values "X","Y", or "XY" for mirroring about the X
+axis, Y axis, or both.  <rotation> is the rotation angle in decimal
+degrees in the range -180.00 to +180.00 with 0.01 degree increment. 
+Multiple devices can be placed with multiple <xy> points.  EOC (or
+double click) is required to terminate the command. 
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <mirror>
+one of "X" "Y" or "XY", for mirroring around a specified axis
+.TP
+.I <rotation>
+angle (in degrees) of instance rotation
+.TP
+.I <x>
+scale factor for instance
+.TP
+.I <yxratio>
+y-to-x ratio for creating a "stretched" instance
+.TP
+.I <slant>
+slant angle (degrees) for "shearing" the instance
+.TP
+.I <xy>
+the location of the instance.
+}
+
+N: ADD_LINE
+D: Add a line to the current device
+U: ADD L<layer> [:W<width>] <xy1> <xy2> [<xy3> ...]  EOC
+S: good
+T: {
+Add a line.  Lines are added with "ADD L<layer_number>".  Coordinates
+are added with the left-mouse button.  Double-clicking on the same point
+will terminate the current line while still allowing new lines to be
+created.  Right-clicking or typing ";" will terminate both the line and
+the command. 
+
+The LOCK command may be used to constrain line placement.  When
+extending a line using the mouse, the mouse coordinate is modified such
+that the angle of each new segment is snapped to the closest multiple of
+the LOCK angle, consistent with the current drawing grid.  In practice,
+this produces precise angles for 45 and 90 degrees, but may result in
+slight angle errors for other settings, especially on coarse grids. 
+A lock angle of 0 turns off all restrictions on line placement. 
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width>
+width of line (default=0) (FIXME: not currently subject to resolution setting>
+}
+
+N: ADD_NOTE
+D: Add a note to the current device
+U: ADD N<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+S: good
+T: {
+Add a note.  A note is zero width text.  <Rotation> is in
+degrees with counterclockwise rotations being positive. 
+<Slant> is in the range -90.00 to +90.00 degrees with 0.01
+resolution, and specifies how many degrees the y-axis of the
+character is slanted with respect to the x-axis.  The note
+is scaled to have adequate clearance when packed into
+single-spaced lines which are <fontsize> apart.  The
+<yxratio> is used to proportionally stretch or shrink the
+text to fill less horizontal space.  (Note: this is a change
+from HP Piglet which keeps width constant while changing
+height). 
+
+The font is defined in NOTEDATA.F and is easily
+changed.  New fonts can be easily derived from the Hershey
+font database.  The format is documented in readfont.c.
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <mirror>
+one of "X" "Y" or "XY", for mirroring around a specified axis
+.TP
+.I <rotation>
+angle (in degrees) for note rotation
+.TP
+.I <yxratio>
+y-to-x ratio for creating "stretched" text
+.TP
+.I <slant>
+slant angle (degrees) for creating italic text
+.TP
+.I <fontsize>
+font is scaled to permit single-spaced text at a y-delta of <fontsize>
+.TP
+.I "string"
+The string to be added as a note component.  Should be in quotes.
+.TP
+.I <xy>
+The location of the note.
+}
+
+N: ADD_OVAL
+D: Add an oval to the current device (unimplemented)
+U: ADD O<layer> [:W<width>] [:R<resolution>] <xy1> <xy2> <xy3>... EOC
+S: unimplemented (easy)
+T: {
+Add an oval (or more precisely, an ellipse).  Three points are required. 
+The first two are focal points, and the third coordinate is a point on
+the circumference.  Like the circle, if no width is given, then the
+figure is drawn solid.  With a non-zero width, the oval is drawn with a
+wall thickness of specified width, and with a hollow interior.  Another
+way to create an ellipse is to use "ADD C :Y<xyratio>", which allows
+specification of the ratio between major and minor axes. 
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width>
+width of line
+.TP
+.I <resolution>
+resolution (in degrees) for oval approximation
+}
+
+N: ADD_POLYGON
+D: Add a polygon to the current device
+U: ADD P<layer> [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] EOC
+S: good
+T: {
+Add a polygon.  If the last vertex is not the same as the
+first, then an error message will be given, and the polygon
+will be completed for you.  Normally, the polygon is solid,
+unless a non-zero width is specified, which results in
+a hollow figure with a wall thickness of <width>.
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width> 
+linewidth of polygon (unimplemented)
+}
+
+N: ADD_RECTANGLE
+D: Add a rectangle to the current device
+U: ADD R<layer> [:W<width>] <xy1> <xy2> EOC
+S: good
+T: {
+Add a rectangle.  The rectangle will be solid unless a
+non-zero width is specified, in which case it will be hollow
+with a wall-thickness of <width>.  
+
+NOTE: Rectangles with width are implemented by drawing a line with width
+along the perimeter of the rectangle.  This means that the finished
+rectangle has an outside dimension <width> larger than drawn. 
+
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <width>
+width of line
+}
+
+N: ADD_TEXT
+D: Add text to the current device
+U: ADD T<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+S: good
+T: {
+Add a text annotation to the drawing.  Text is a fillable
+polygon font with line width.  <Rotation> is in degrees with
+counterclockwise rotations being positive.  <Slant> is in
+the range -90.00 to +90.00 degrees with 0.01 resolution, and
+specifies how many degrees the y-axis of the character is
+slanted with respect to the x-axis.  The text is scaled to
+have adequate clearance when packed into single-spaced lines
+which are <fontsize> apart.  The <yxratio> is used to
+proportionally stretch or shrink the text to fill less
+horizontal space.  (Note: this is a change from HP Piglet
+which keeps width constant while changing height). 
+
+The font is defined in TEXTDATA.F and is easily
+changed.  New fonts can be easily derived from the Hershey
+font database.  The format is documented in readfont.c.
+.SS OPTIONS
+.TP
+.I <layer>
+layer number for component
+.TP
+.I <mirror>
+one of "X" "Y" or "XY", for mirroring around a specified axis
+.TP
+.I <rotation>
+angle (in degrees) for text rotation
+.TP
+.I <yxratio>
+y-to-x ratio for creating "stretched" text
+.TP
+.I <slant>
+slant angle (degrees) for creating italic text
+.TP
+.I <fontsize>
+font is scaled to permit single-spaced text at a y-delta of <fontsize>
+.TP
+.I "string"
+The string to be added as a text component.  Should be in quotes.
+.TP
+.I <xy>
+The location of the text.
+}
+
+N: ARChive
+D: Create archive file of specified device
+S: good
+T: {
+Creates an human readable ASCII file containing all the commands
+needed to reconstruct the current device and any sub-cells.  The archive file 
+contains definitions of all the sub-cells used in the drawing, thereby
+preserving the hierarchy.
+}
+
+N: AREa
+D: Compute and display area of selected component
+S: complete
+U: ARE [<component>[<layer>]] xysel [xysel ...] <EOC>
+T: {
+Calculates and displays the area of the selected component.  The area of
+a circle is that of an ideal circle, not the polygonal approximation. 
+The area of notes, text and instances is the area of the bounding box. 
+
+The area of lines with width is computed by multiplying the total line
+length by the line width.  This gives an exact result for lines that do
+not cross themselves. 
+
+The area given for rectangles and polygons is exact.  
+
+Both the area of each component and the cumulative area of all selected
+components is displayed after each pick. 
+
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text.
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+.TP
+.I <xysel>
+A point to select the component to be measured.
+}
+
+N: BACkground
+D: Specify  a  background bitmap for the editor
+S: unimplemented
+
+N: BYE
+D: Terminate the edit session
+U: BYE <EOC>
+S: complete
+T: {
+Quit the editing session.
+If the user attempts to QUIt or leave the editor with BYE, a list of all
+currently modified devices in memory will be printed warning the user
+that the devices have not been properly saved.  If a second BYE or QUIT
+is typed, the editor will be killed and all unsaved changes will be
+permanently lost.   BYE and QUIT are synonyms.
+}
+
+N: CHAnge
+D: Change characteristics  of  selected components
+U: CHA [<component>[<layer>]] {xysel [<comp_options>|"string"|:L<newlayer>]}... <EOC>
+S: working
+T: {
+Changes characteristics of selected components.  Can be optionally
+restricted to specified <component> and <layer>.  In any case, only
+components which have been made modifiable by the SHOW command can be
+changed. 
+
+An <xysel> point selects and highlights the component to be changed.  A summary
+of the current non-default component options is printed to the text window.  The user
+can then enter any valid option for the selected component type.  The new option
+replaces the old value and the device is redisplayed.  Any number of valid options
+may be typed until a new <xysel> is given.
+
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text. 
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+.TP
+.I <xysel>
+A point to select the component to be changed.
+.TP
+.I :L<newlayer>
+A new layer number to replace existing layer
+.TP
+.I <comp_options>
+Any option normally allowed for the selected component type.
+.TP
+.I "\'"'string\'"'"
+A new string for NOTE and TEXT components
+}
+
+N: COPy
+D: Copy  a  component  from  one  location to another
+U: COP [<component>[<layer>]] xysel xyref xynewref [ xynewref2...] <EOC>
+S: complete
+T: {
+Copies a component in the current device.  Can be optionally restricted
+to copy only a specified <component> and <layer>.  In any case, only
+components which have been made modifiable by the SHOW command can be
+copied.  
+
+An <xysel> point selects and highlights the component to be copied.  A
+bounding box is displayed after the <xyref> reference point is given. 
+The box tracks the mouse until the final location of the reference point
+is given by <xynewref>.  Multiple copies can be placed by simply entering
+more coordinates before terminating the command. 
+
+Double clicking on <xyref> will terminate the current copy allowing the
+selection and copying of a new component. 
+
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text.
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+.TP
+.I <xysel>
+A point to select the component to be moved.
+.TP
+.I <xyref>
+A reference point on the component.
+.TP
+.I <xynewref>
+The location for the reference point of the new copy.
+}
+
+N: DEFine
+D: Define a macro
+S: unimplemented (moderate)
+
+N: DELete
+D: Delete a component
+S: works
+U: DEL [<component>[<layer>]] xy1... <EOC>
+T: {
+Deletes a component from the current device.  Optionally can be restricted
+to only delete a specified <component> and <layer>.  In any case, only
+components which have been made modifiable by the SHOW command can be
+deleted.  The most recent deleted component can be restored by the UNDO
+command.
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text.
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+.TP
+.I <xy1>
+A point to select the component to be deleted.
+
+.SS IMPLEMENTATION DETAILS
+Both classic Piglet and Graffy allow DEL to be restricted to a particular
+instance name.  The stubs are in place to extend DEL to include this
+function, but have not yet been implemented.
+}
+
+N: DISPlay
+U: DISP [ON|OFF]
+D: Turn X11 Display on/off
+S: complete
+T: {
+Turns the display on or off.  If given no argument, the display state
+is toggled.
+}
+
+N: DISTance
+D: Measure the distance between two points
+S: complete
+U: DIS <xy1> <xy2>... EOC
+T: {
+For each pair of coordinates, DISTANCE prints out the location of each
+coordinate, the delta_x, delta_y, and delta_xy to the screen. 
+}
+
+N: DUMp
+D: Dump the graphics window to a file
+S: PPM file only
+U: DUM <EOC>
+T: {
+The DUMP command creates a Portable Pix Map copy of the current graphic
+window in the file "./<device_name>.ppm".  You can view/print/convert
+this with xv(1), or convert it to gif format with ppmtogif(1) from the
+pbmtools package.
+}
+
+N: ECHo
+D: Echo the argument to screen
+S: unimplemented
+
+N: EDIt
+D: Edit a new or old device
+U: EDI <device> 
+S: good (no edit in place yet)
+T: {
+Edit a new or old device.  If the <device> argument is given, a
+nested edit is performed.  The current device is pushed onto a stack
+and the newly specified device becomes the currently edited cell.  When
+an edit is terminated with an EXIT, the stack is popped and Piglet
+returns to editing the previous device.  There is no limit to the number
+of edits that can be stacked, except for the the constraint that no
+individual cell may appear more than once in the edit stack.
+
+If the newly specified device is already in memory, the memory copy will
+be used.  If the device is not already in memory, a search will be made
+for a definition of the device on disk.  If found, the disk definition
+will be read into memory and used.  If the device is neither in memory
+nor on disk, a new empty device will be created with the name <device>. 
+
+If a previously defined version of the device is found, the grid, grid
+color, lock angle, level and window settings will all be returned to their
+last settings.  This information is persistent, and is stored on disk in
+the ".d" file whenever a device is SAVed. 
+
+Piglet keeps track of the modification state of every device in memory.  If
+a user attempts to EXIt a modified device, the EXIt is aborted and 
+a warning is printed suggesting that the device should be saved before exiting.  Typing 
+EXIt twice in a row will force an exit leaving the device in memory, but
+with the modification bit still set.  The user may return to editing the device
+at any time.  If the user attempts to leave the editor with QUIT or BYE, a list
+of all currently modified devices in memory will be printed warning the user
+that the devices have not been properly saved.  If a second QUIT or BYE is typed, the
+editor will be killed and all unsaved changes will be permanently lost.
+}
+
+N: EQUate
+D: Assign pen/line type to a mask layer
+S: unimplemented (moderate)
+
+N: EXIt
+D: Exit from an EDIT, PROCESS, or SEARCH subsystem
+S: complete
+U: EXI <EOC>
+T: {
+EXIT from an EDIT.  Piglet keeps track of the modification state of
+every device in memory.  If a user attempts to EXIt from a modified
+device which has not been saved, the EXIt is aborted and a warning is
+printed suggesting that the device should be saved before exiting. 
+Typing EXIt twice in a row will force an exit leaving the device in
+memory but with the modification bit still set.  The user may return to
+editing the device at any time. 
+
+If the user then attempts to leave the editor with QUIT or BYE, a list
+of all modified devices in memory will be printed warning the user that
+the devices have not been properly saved.  If a second BYE or QUIT is
+typed, the editor will be killed and all unsaved changes will be
+permanently lost. 
+
+Piglet allows nested editing of cells.  If a second EDIT command is
+given before saving the current device, then the current device is
+pushed onto a stack and the newly specified device becomes the currently
+edited cell.  When such an edit is terminated with an EXIT, the stack is
+popped and Piglet returns to editing the previous device.  There is no
+limit to the number of edits that can be stacked, except for the the
+constraint that no individual cell may appear more than once in the edit
+stack. 
+
+}
+
+N: FILes
+D: Purge named files
+S: complete
+U: $FILES <cellname1> <cellname2> .... <EOC>
+T: {
+$FILES is the first command in an archive files.  It removes all
+listed cells from memory.  The cell names are ordered hierarchically from top 
+to bottom such that no deletion leaves dangling references for the remaining cells.
+The cells are then redefined in the archive in reverse order, from bottom to top so
+that there are no forward references. 
+}
+
+N: GRId
+D: Set grid spacing or turn grid on/off
+U: GRI [ON|OFF] [:C<color>] <delta> <skip> [<xorig> <yorig>]]
+U: GRI [ON|OFF] [:C<color>] <xdelta> <ydelta> <xskip> <yskip> <xorig> <yorig>
+S: complete
+T: {
+Modify the grid.  If no arguments, will toggle the visibility of
+the grid.  The visibility can be explicitly set with "GRI ON" and "GRI
+OFF".  The grid color is set with ":C<color>", where <color> is an
+integer from 0-7 signifying the colors "white, red, green, blue, cyan,
+magenta, yellow". 
+
+Grid takes either 2,4 or 6 numeric arguments.  With two arguments the
+grid <delta> and <skip> are set.  "GRI 10 2" forces all mouse picks to
+be multiples of 10 units and will display every other grid tick:
+0,20,40, etc.  With four arguments the grid can be offset with an origin
+of <xorig>,<yorig>.  "GRID 10 1 5 7" displays grid snap points at ...-5,
+5,15,25...  in the x direction and ...-3, 7,17,27...  in the y
+direction, With 6 arguments the <delta> and <skip> can be set
+independently for both x and y axis, creating a non-isotropic grid. 
+This can be useful when designing an IC in which metals with different
+widths are used for routing signals in x and y directions. 
+
+When entering points with the mouse, the clicks ALWAYS snap to the grid,
+giving a powerful way to enter precise coordinates.
+
+.SS OPTIONS
+.TP
+.I <color>
+an integer from 1-7 signifying white, red, green, blue, cyan, magenta or yellow
+.TP
+.I <delta>
+grid spacing for both x,y axes
+.TP
+.I <skip>
+how many snap points to skip for each displayed point
+.TP
+.I <xorig>
+x origin of the grid (default = 0)
+.TP
+.I <yorig>
+y origin of the grid (default = 0)
+.TP
+.I <xdelta>
+grid spacing for x axis
+.TP
+.I <ydelta>
+grid spacing for y axis
+.TP
+.I <xskip>
+grid skip for x axis
+.TP
+.I <yskip>
+grid skip for y axis
+
+.SS DIAGNOSTICS
+The grid normally shows intermediate tick marks between major grid
+points.  These extra points are suppressed if the spacing goes below 3
+pixels per tick.  If the drawing is zoomed further, such that the major
+grid ticks would also be displayed with less than 3 pixels per tick, the
+entire grid is suppressed, and an error message is printed to the
+console.  The grid is still considered to be on even if a "grid
+suppressed" message is printed
+
+.SS FILES
+The current grid setting and color is saved with the device on disk.
+}
+
+N: GROup
+D: Create  a  new  device  from  existing components
+S: unimplemented
+
+N: HELp
+D: Print out quick summary of command
+U: HELP [<commandname>] EOC
+S: good
+T: {
+With no arguments prints a list of all commands to the screen.  With <commandname> prints
+a short usage summary of the command.  
+}
+
+N: IDEntify
+D: Identify named instances or components
+U: IDE <xy1>... EOC
+S: good
+T: {
+The IDEntify command takes a series of xy points and for each point
+highlights the nearest primitive and prints some information about it to
+the screen.
+}
+
+N: INPut
+D: Take command input from a file
+S: complete
+U: INP <filename> <EOC>
+T: {
+Looks for a file <filename> in the current directory and reads the commands into Piglet.
+}
+
+N: INTerrupt
+D: Interrupt  an  ADD  to  issue another command
+S: unimplemented
+
+N: LAYer
+D: Set the default layer number
+U: LAYER [<layer_number>] <EOC>
+S: complete
+T: {
+Change the default layer.
+The default layer is zero when the editor is started, but can be changed
+with the LAYER command and will be used for any ADD
+command that does explicitly specify a layer. 
+
+For example, if the default layer is set to 3 with the command
+.ti +4
+\fB>LAYER 3;\fR
+
+then performing 
+.ti +4
+\fB>ADD C 0,0 0,10;\fR
+
+will add a circle on layer 3.
+}
+
+N: LEVel
+D: Set the logical level of the current device
+S: complete
+U: LEV <logical_level> <EOC>
+T: {
+Sets the logical level associated with the current device.  This can be used to selectively
+display components using the "WIN :L<level>" command.
+}
+
+N: LISt
+D: List information about the current environment
+S: complete
+U: LIS <EOC>
+T: {
+Prints out information about the current device.  Lists the components
+in the current device including type, bounding box and options
+associated with each device.  Lists the grid, lock and level settings. Lists
+whether the current device is modified.
+}
+
+N: LOCk
+D: Set the default lock angle for a given device
+S: complete
+U: LOCK <angle>
+T: {
+Set the lock angle, in degrees, for constraining line segments.  The default
+angle is 0.0 which turns off all constraints.  Invoking LOCK without any
+arguments prints out the current <angle> setting.
+
+When extending a line using the mouse, the mouse coordinate is modified
+such that the angle of each new segment is snapped to the closest
+multiple of the LOCK angle, consistent with the current drawing grid. 
+In practice, this produces precise angles for 45 and 90 degrees, but may
+result in slight angle errors for other settings, especially on coarse
+grids. 
+
+This command sets a variable stored with the current device.  The lock
+angle is stored in the device definition file, so is persistent across
+edits. 
+.SS OPTIONS
+.TP
+.I <angle>
+The lock angle in degrees between 0 and 90.  If a floating point number is
+given, the resolution will be rounded to the nearest 0.01 degrees.
+}
+
+N: MACro
+D: Enter the MACRO definition subsystem
+S: unimplemented (hard)
+
+N: MENu
+D: Change or save the current menu
+S: partial
+T: {
+Piglet's menu is defined by a customizable file "./MENUDATA_V".  The default
+menu is defined as:
+
+.nf
+ayyyyy|ADD |R|P|L|N|T|
+ayyygg|SHO |C|A|I|+|-|
+ayyggg|GRI |#|^|1|2|3|
+ayyggg|WIN |;|!|4|5|6|
+yyyggg|:F|:V|:Z|7|8|9|
+yyyggg|:D|:S|:V|,|0|.|
+yyyyyy|:W|:M|:N|:O|:R|
+yyaaaw|:X|:Y|X|Y|@|XY|
+ww    |      |       |
+aaa   |WRA |SMA |GRO |
+aaa   |MOV |COP |STR |
+ypy   |IDE |POI |LIS |
+ygg   |DIST |DISP |  |
+ggg   |DUM |PLO |LOC |
+ggy   |ARC |RET |INP |
+gw    |CHA |         |
+rrr   |UND |BYE |DEL |
+yyr   |SAV |EDI |EXI |
+.fi
+
+The file consists of fields separated by "|" characters.  The first field consists of
+some combination of the characters "wrgbapy" which denote the colors white, red, green,
+blue, aqua, purple and yellow.  There should be as many color designators as remaining
+fields.  The subsequent fields on each line will be displayed exactly as shown, rendered
+in the corresponding color.  The vertical bars are replaced with white bounding boxes.
+
+When using the editor, any mouse picks on the menu boxes inject the menu text directly
+into the parse stream.  The menu designer should take care to leave extra spaces after
+command names so that any combination of mouse picks results in intellegible commands.
+}
+
+N: MOVe
+D: Move  a  component  from  one  location to another
+U: MOV [<component>[<layer>]] { xysel xyref xynewref } ... <EOC>
+S: complete
+T: {
+MOves a component in the current device.  Can be optionally restricted
+to move only a specified <component> and <layer>.  In any case, only
+components which have been made modifiable by the SHOW command can be
+moved.  
+
+An <xysel> point selects and highlights the component to be moved.  A bounding box is
+displayed after the <xyref> reference point is given.  The box tracks the mouse
+until the final location of the reference point is given by <xynewref>.
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text.
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+.TP
+.I <xysel>
+A point to select the component to be moved.
+.TP
+.I <xyref>
+A reference point on the component.
+.TP
+.I <xynewref>
+The new location for the reference point after the move.
+}
+
+N: PLOt
+D: Make a postscript plot of the current device
+S: letter size only
+U: PLO <EOC>
+T: {
+The PLOT command creates a postscript dump of the current device
+in the file "./device_name.ps.  The file is suitable for printing
+on letter sized paper, and will automatically fit the drawing to
+either landscape or portrait depending on the shape of the drawing.
+.SS IMPLEMENTATION DETAILS
+Currently, the postscript file is not hierarchical and so can be quite
+big.  It would be a nice project to define each cell individually and
+then instantiate them hierarchically.  The render time would go up, but
+the size of the plot file would shrink dramatically. 
+
+The current implementation always plots the entire device fitted to the
+paper.  It would be nice to have it draw only the current windowed view
+of the device, leaving fit for an option (:F?). 
+
+There should be options (:P<papersize>?) for plotting to standard paper
+sizes and to arbitrary <width>x<height> pages.  The c-code for
+postscript plotting is set up to allow this, so it is just 
+an exercise in option parsing to enable this feature. 
+
+}
+
+N: POInt
+D: Display  the  coordinates  of  specified  point  on  the screen
+U: POI <xy1>... EOC
+S: complete
+T: {
+The POInt command takes a series of xy points and simply prints their
+coordinates to the screen.  No change is made to the database.
+You might also notice that Piglet constantly updates a textual
+version of your current mouse coordinates in the upper left hand
+corner of the graphical window.
+}
+
+N: PROcess
+D: Enter the PROCESS subsystem
+S: unimplemented (moderate)
+
+N: PURge
+D: Purge device definitions from memory and disk
+S: complete
+U: PUR <cellname>
+T: {
+Removes the cell definition from memory, and optionally from harddisk. 
+If the command is typed during interactive usage, the user is asked
+permission for removing the disk file.  If PURGE is encountered during a
+RETRIEVE command, both the disk file and the memory copy are deleted
+without asking. 
+}
+
+N: QUIt
+D: Terminate edit session
+S: complete
+U: QUI <EOC>
+T: {
+Quit the editing session.
+If the user attempts to QUIt or leave the editor with BYE, a list of all
+currently modified devices in memory will be printed warning the user
+that the devices have not been properly saved.  If a second BYE or QUIT
+is typed, the editor will be killed and all unsaved changes will be
+permanently lost.   BYE and QUIT are synonyms.
+}
+
+N: RETrieve
+D: read commands from an ARCHIVE file
+S: complete
+U: RET <archivefile>
+T: {
+Looks for a file at "./cells/<archivefile>_I" and reads those commands into the editor.  A properly formed
+archive will PURGE all files before redefining them and will have all hierarchical cell definitions
+ordered with no forward references.  This is the case for all Piglet-generated archives.
+
+During the retrieve, the display is turned off and all cellnames are echoed to the display as they are read
+in.
+}
+
+N: SAVe
+D: Save the current file or device to disk
+S: complete
+U: SAVE <newname>
+T: {
+Saves the current drawing to a file.  Currently files are save in the
+directory "./cells" with the the name and extension of <cellname>.d. 
+Later versions of PD Piglet will add a search path and give flexibility
+for the directory used.  If <newname> is given, the current cell is
+saved (duplicated) to the file "./cells/<newname>.d".  In this case the
+current drawing is still marked modified and will cause an error message
+if an attempt is made to exit the editor before saving the current
+drawing. 
+
+The save file is human readable transcript of the exact commands that
+you typed and moused to create the cell in the first place.  You can
+edit this file (carefully) and the textual changes will take effect next
+time you start a new piglet and read in the definition.  The
+"<cellname>.d" file only contains the definition of the cell <cellname>. 
+If <cellname> includes other cells, they will only be called by name and
+not defined unless the program can find the corresponding ".d" files. 
+In other words, if you mail a friend a ".d" file, they will be unable to
+reconstruct your cell if it has any hierarchy.  If you want a full,
+self-contained definition of your work, then you should use the
+"ARCHIVE" command. 
+}
+
+N: SEArch
+D: Modify the search path
+S: unimplemented (moderate)
+
+N: SET
+D: Set environment variables
+S: unimplemented (easy)
+
+N: SHEll
+D: Run a shell command from within the editor
+S: unimplemented (easy)
+
+N: SHOw
+D: Define which kinds of things to display
+U: SHOW {+|-|#}{EACILN0PRT}<layer>
+S: complete
+T: {
+The SHOW command controls what layers are visible and modifiable in the
+drawing.  Changes made with the SHOW command only become visible after the
+next WINDOW command.
+
+All drawings default to ALL layers visible and ALL layers non-modifiable
+when first created or read from disk.  This feature makes it much safer
+to browse critical files with Piglet.  No layers are modifiable unless
+explicitly unlocked with the SHOW command.  Changes to the SHOW settings
+only affect the component currently being edited.  SHOW settings remain
+with each component as long as the component is in memory. 
+
+.SS EXAMPLES
+.TP
+.B SHO #E;
+Make ALL layers visible and modifiable
+.TP
+.B SHO #E -C7;
+Set ALL layers visible and modifiable. except circles on layer 7
+.TP
+.B SHO -E #R3;
+Make nothing editable or visible except rectangles on layer 3 
+.TP
+.B SHO #E7 +E5; 
+Display layers 7 and 5, but only layer 7 is modifiable
+.SS OPTIONS
+.TP
+.I {+|-|#}
+One of three modifiers. "+" makes the layer visible, "-" turns off visibility and modifiability, "#" makes
+the layer both visible and modifiable.
+.TP
+.I [EACILN0PRT]
+A designator limiting the command to a given component.
+E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text.
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.
+}
+
+N: SMAsh
+D: Replace an instance with its components
+S: unimplemented (moderate)
+
+N: SPLit
+D: Cut a component into two halves
+S: unimplemented (hard)
+
+N: STEp
+D: Copy a component in an array fashion
+unimplemented (moderate)
+
+N: STRetch
+D: Make a component larger or smaller
+S: unimplemented (moderate)
+
+N: TRAce
+D: Highlight named signals
+S: unimplemented (easy)
+
+N: UNDo
+D: Undo the last DELETE command
+U: UND <EOC>
+S: one level, delete only
+T: {
+Restores the last deleted component.  Currently only one level of UNDO
+is available.  
+.SS IMPLEMENTATION DETAILS
+UNDO is currently written to simply save a pointer to the last deleted
+component in the device structure.  UNDO simply re-links the pointer
+back into the device definition list.  Because of this simple
+implementation, UNDO only works for DELETE but not MOVE and COPY.
+
+The commercial editor Graffy makes a copy of the entire device
+definition list before any change and stores it on a stack associated
+with each device.  This allows multiple levels of UNDO and also works
+with every command.  The depth of the stack is user-settable to control
+the amount of memory used.
+
+Graffy also extends the UNDO command to have ":B" and ":E" options.  The
+":B" option turns off command-by-command state saving, and batches up all
+changes until the ":E" option is given.  A subsequent UNDO will restore the
+state to that before the ":B" option was given.
+}
+
+N: UNIts
+D: Set   editor  resolution  and  user  unit  type
+S: unimplemented
+
+N: VERsion
+D: Identify the version number of program
+S: complete
+
+N: WINdow
+D: Change the current window parameters
+U: WINdow :X[<scale>] :N<physical> :F <xy1> [<xy2>] :L<logical> <EOC>
+S: good
+T: {
+Window with no arguments simply refreshes the display.  With only <xy1>
+the window is re-centered (panned) to the new point.  With both <xy1> and
+<xy2> the window is zoomed to the new bounding box.  If EOC is given by
+a double click, multiple window commands can be entered in succession. 
+
+The last window setting used in editing a device is saved along with the
+device so that the same editing environment can be restored the next
+time the device is edited.
+
+If you have a very complex drawing with lots of hierarchy, you can
+simplify things by using the ":N<nest_level>" of the WIN command.  "WIN
+:N0" will show all sub-cells as bounding boxes.  "WIN :N1" will show all
+sub-cells of sub-cells as bounding boxes, and so on.
+.SS OPTIONS
+.TP
+.I <scale>
+Factor by which to scale the current window
+.TP
+.I :F
+Specify fitting the window to the bounding box of the current device
+.TP
+.I <physical>
+Only display nesting down to <physical> number of hierarchy levels (default=3)
+.TP
+.I <logical>
+Only display nesting down to <logical> number of logical levels (default=3)
+}
+
+N: WRAp
+D: Create  a  new  device  using  existing components
+S: unimplemented
+
+N: CALibrate
+D: Calibrate the display to match a digitizing tablet
+S: unimplemented
+
+N: CMAp
+D: Modify the color map
+S: unimplemented
+
+N: DATe
+D: Print the current date
+S: unimplemented
+
+N: DEClare
+D: Declare a stretch point in a cell
+S: unimplemented
+
+N: MEMory
+D: Print remaining memory
+S: unimplemented
+
+N: TIMe
+D: Print the system clock time
+S: unimplemented
+
+N: XASsign
+D: Assign Stretch points to a cell
+S: unimplemented
+
+N: YASsign
+D: Assign Stretch points to a cell
+S: unimplemented
+
+N: ZAP
+D: Delete components with zero extent
+S: unimplemented
+
+
