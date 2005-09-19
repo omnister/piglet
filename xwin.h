@@ -26,6 +26,7 @@ void xwin_fill_poly();
 void xwin_set_pen(int pen);
 typedef enum {D_ON, D_OFF, D_TOGGLE} DISPLAYSTATE;
 void xwin_display_set_state( DISPLAYSTATE state );
+int  xwin_display_state();
 typedef enum {G_ON, G_OFF, G_TOGGLE} GRIDSTATE;
 void xwin_grid_state( GRIDSTATE state );
 void xwin_grid_color( int color );

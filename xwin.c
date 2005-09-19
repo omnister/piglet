@@ -42,7 +42,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.32 2005/05/20 14:14:22 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.33 2005/09/19 22:12:40 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -156,7 +156,6 @@ Pixmap stipple[128];
 #endif /* !FD_SET */
 
 extern char *getwd();
-extern char *xmalloc();
 
 Display *dpy; int scr;
 

@@ -104,7 +104,7 @@ int s, n;
 {
     char *r;
 
-    r = xmalloc(strlen( (char *) s) + n);
+    r = malloc(strlen( (char *) s) + n);
     strcpy(r, (char *) s);
     return (r);
 }

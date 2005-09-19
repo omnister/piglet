@@ -434,12 +434,13 @@ char *arg;
 	    case EOC:		/* end of command */
 		done++;
 		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
 	    case OPT:		/* option */
 	    case END:		/* end of file */
 	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
 	    default:
 		printf("DISP: expected ON/OFF, got %s\n", tok2str(token));
 		return(-1);
@@ -448,6 +449,18 @@ char *arg;
     }
 
     xwin_display_set_state(display_state);
+    switch (xwin_display_state()) {
+    	case D_ON:
+	    printf("display now ON\n");
+	    break;
+	case D_OFF:
+	    printf("display now OFF\n");
+	    break;
+	default:
+	    printf("display state UNKNOWN\n");
+	    break;
+    }
+
     return (0);
 }
 

@@ -71,6 +71,8 @@ char *arg;
 		    } else {
 			db_set_nest(nest);
 		    }
+		} else if (strncasecmp(word, ":O", 2) == 0) {
+			db_set_fill(FILL_TOGGLE);
 		} else {
 	    	     printf("WIN: bad option: %s\n", word);
 		     state = END;

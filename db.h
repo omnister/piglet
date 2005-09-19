@@ -345,6 +345,11 @@ extern int db_def_archive(
 		DB_TAB *sp
 	    );
 
+#define FILL_OFF 0
+#define FILL_ON 1
+#define FILL_TOGGLE 2
+extern void db_set_fill(int nest); 	/* set global fill level */
+
 extern void db_set_nest(int nest); 	/* set global display nest level */
 extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 

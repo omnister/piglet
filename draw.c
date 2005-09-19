@@ -21,6 +21,7 @@
 int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
+int draw_fill=FILL_OFF;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 FILE *PLOT_FD;		  /* file descriptor for plotting */
 
@@ -40,6 +41,24 @@ int debug = 0;
 /* rendering routines				    */
 /* db_render() sets globals xmax, ymax, xmin, ymin; */
 /****************************************************/
+
+void db_set_fill(fill) 
+int fill;
+{
+    extern int draw_fill;
+    if (fill == FILL_TOGGLE) {
+	if (draw_fill == FILL_ON) {
+	    draw_fill = FILL_OFF;
+	} else {
+	    draw_fill = FILL_ON;
+	}
+    } else  if (fill == FILL_ON || fill == FILL_OFF) {
+	draw_fill = fill;
+    } else {
+	printf("bad fill argument in db_set_fill() %d\n", fill);
+	exit(1);
+    }
+}
 
 void db_set_nest(nest) 
 int nest;
@@ -1264,7 +1283,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 		        xwin_draw_line((int)xxold,(int)yyold,(int)x,(int)y);
 		    }
 		    /* save coords for filling polygons later */
-		    if (filled_object) {
+		    if (filled_object && draw_fill) {
 		        savepoly((int)x, (int)y);
 		    }
 		}
