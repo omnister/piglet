@@ -14,6 +14,7 @@
 #include "lex.h"
 #include "eprintf.h"
 #include "readfont.h"
+#include "equate.h"
 
 /* The names of functions that actually do the manipulation. */
 
@@ -48,8 +49,8 @@ COMMAND commands[] =
     {"COPY", com_copy, "copy a component from one location to another"},
     {"DEFINE", com_define, "define a macro"},
     {"DELETE", com_delete, "delete a component from the current device"},
-    {"DISPLAY", com_display, "turn the display on or off"},
     {"DISTANCE", com_distance, "measure the distance between two points"},
+    {"DISPLAY", com_display, "turn the display on or off"},
     {"DUMP", com_dump, "dump graphics window to file or printer"},
     {"EDIT", com_edit, "begin edit of an old or new device"},
     {"EQUATE", com_equate, "define characteristics of a mask layer"},
@@ -114,10 +115,10 @@ char **argv;
     /* set up to catch all signal */
     /* for (i=1; i<=MAXSIGNAL; i++) { */
 
-    err+=(signal(2, &sighandler) == SIG_ERR);
-    err+=(signal(3, &sighandler) == SIG_ERR);
-    err+=(signal(15, &sighandler) == SIG_ERR);
-    err+=(signal(20, &sighandler) == SIG_ERR);
+    err+=(signal(2, &sighandler) == SIG_ERR);		/* SIGINT */
+    err+=(signal(3, &sighandler) == SIG_ERR);		/* SIGQUIT */
+    err+=(signal(15, &sighandler) == SIG_ERR);		/* SIGTERM */
+    err+=(signal(20, &sighandler) == SIG_ERR);		/* SIGSTP */
     if (err) {
     	printf("main() had difficulty setting sighandler\n");
 	return(err);
@@ -130,6 +131,9 @@ char **argv;
     loadfont("NOTEDATA.F",0);
 
     initialize_readline();
+    initialize_equates();
+    equate_print();
+
     rl_pending_input='\n';
     rl_setprompt("");
 
@@ -207,7 +211,7 @@ int x;
 {
     static int last=-1;
 
-    printf("caught %d: %s",x, strsignal(x));
+    printf("caught %d: %s. Use QUIT command to end program",x, strsignal(x));
     if (x == 3) {
        if (last==x) {
             exit(0);
@@ -523,13 +527,8 @@ char *arg;
 /* com_edit(lp, arg) */		/* begin edit of an old or new device */
 
 
-int com_equate(lp, arg)		/* define characteristics of a mask layer */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_equate\n");
-    return (0);
-}
+/* now in com_equate.c */
+/* int com_equate(lp, arg) */   /* define characteristics of a mask layer */
 
 
 int com_exit(lp, arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
@@ -1057,10 +1056,20 @@ int com_list(lp, arg)	/* list information about the current environment */
 LEXER *lp;
 char *arg;
 {
-    if (currep != NULL) 
-	db_list(currep);
-    else 
-    	printf("no current rep to list!\n");
+
+    if (lp->mode == MAIN) { 
+	if (currep != NULL) {
+	    db_list(currep);
+	} else { 
+	    printf("no current rep to list!\n");
+	}
+    } else if (lp->mode == MAC) {
+        /* mac_print(); */
+    } else if (lp->mode == PRO) {
+        equate_print();
+    } else if (lp->mode == SEA) {
+       /* search_path_print(); */
+    }
     return (0);
 }
 

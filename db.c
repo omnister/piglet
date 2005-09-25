@@ -1452,61 +1452,6 @@ int mode;
     	res = 64;
     }
 
-/*
-    Given two points:  p1:x1,y1 p2:x2,y2 at the ends of a circular arc and
-    a third point p3:x3,y3 on the arc itself, then find the center of
-    the circle and the radius.
-
-    Note that a perpendicular from the center of the line segment
-    drawn between p1 and p2, will intersect the perpendicular extended
-    from the center of the line segment p2p3 at the center of the circle.
-
-    Center points:
-	{ (x1+x2)/2 , (y1+y2)/2 }
-	{ (x2+x3)/2 , (y3+y3)/2 }
-
-    Perpendiculars are constructed by computing dx and dy and then taking
-    these as the vector { -dy, dx }.
-
-    So the equation for the center of the circle is found by finding P,Q
-    such that:
-	{ (x1+x2)/2 , (y1+y2)/2 } + P * { y1-y2, x2-x1 } =
-	{ (x2+x3)/2 , (y2+y3)/2 } + Q * { y2-y3, x3-x2 }
-*/
-
-    q = ((y1-y2)*((y2+y3)/2 - (y1+y2)/2) - (x2-x1)*((x2+x3)/2 - (x1+x2)/2));
-    q /= ((y2-y3)*(x2-x1) - (x3-x2)*(y1-y2));
-
-    x0 = (x2+x3)/2 + q*(y2-y3);
-    y0 = (y2+y3)/2 + q*(x3-x2);   
-
-    /* FIXME: Arc fails to degenerate properly if xy1, xy2, xy3 are colinear */
-
-    r = sqrt(pow((x3-x0),2.0)  +pow((y3-y0),2.0));
-
-    theta1 = atan2(y1-y0, x1-x0);
-    dtheta2 = atan2(y2-y0, x2-x0) - theta1;
-    dtheta3 = atan2(y3-y0, x3-x0) - theta1;
-
-    if (dtheta2 < 0.0) {
-        dtheta2 += 2.0*M_PI;
-    }
-    if (dtheta3 < 0.0) {
-        dtheta3 += 2.0*M_PI;
-    }
-
-
-    if ((dtheta3 > dtheta2)) {
-	nseg = res-fabs(floor(res*(dtheta2)/(2.0*M_PI)));
-	if (debug) printf("YY t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
-		theta1, dtheta2, dtheta3, nseg);
-    } else {
-	nseg = fabs(floor(res*(dtheta2)/(2.0*M_PI)));
-	if (debug) printf("XX t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
-		theta1, dtheta2, dtheta3, nseg);
-    }
-    if (debug) fflush(stdout);
-
     if( def->u.a->opts->width != 0.0) {
         /* render with width using the line drawing routine */
 	dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -1520,24 +1465,116 @@ int mode;
         dp->u.l->opts->width = def->u.a->opts->width;
     }
 
-    for (seg=0; seg<=nseg; seg++) {
-	if ((dtheta3 > dtheta2)) {
-	    theta=dtheta2+theta1+seg*(2.0*M_PI-dtheta2)/nseg; 
+    /* check to see if (x1,y1), (x2,y2), (x3,y3) are colinear,
+       because if they are then our arc algorithm blows up, 
+       use a simple line segment instead.
+
+    	does (x1,y1) + alpha*(x2-x1, y2-y1) = (x3,y3) ?
+
+	alphax*(x2-x1) + x1 = x3
+	alphax = (x3-x1)/(x2-x1)
+	alphay = (y3-y1)/(y2-y1)
+
+	colinear iff:
+
+	(x3-x1)/(x2-x1) = (y3-y1)/(y2-y1)
+
+	rearrange to avoid divbyzero:
+
+	collinear iff ((x3-x1)*(y2-y1) - (y3-y1)*(x2-x1) == 0)
+
+	note: it should be OK to test for exact equality here because
+	this test uses only subtraction and multiplication, and
+	the points have already been snapped to integer multiples
+	of the resolution setting.
+    */
+
+    if (((x3-x1)*(y2-y1) - (y3-y1)*(x2-x1) == 0)) { 	/* colinear ? */
+
+	/* draw straight line from x1,y1 to x2,y2 */
+
+ 	if( def->u.a->opts->width == 0.0) {
+	    draw(x1, y1, bb, mode);
+	    draw(x2, y2, bb, mode);
 	} else {
-	    theta=theta1+seg*(dtheta2)/nseg; 
+	    cp = coord_new(x1, y1);
+	    dp->u.l->coords=cp;
+	    coord_append(cp, x2, y2);
 	}
-	if( def->u.a->opts->width == 0.0) {
-	    draw(x0+r*cos(theta), y0+r*sin(theta), bb, mode);
+
+    } else {	/* otherwise compute arc */
+
+	/*
+	Given two points:  p1:x1,y1 p2:x2,y2 at the ends of a circular arc and
+	a third point p3:x3,y3 on the arc itself, then find the center of
+	the circle and the radius.
+
+	Note that a perpendicular from the center of the line segment
+	drawn between p1 and p2, will intersect the perpendicular extended
+	from the center of the line segment p2p3 at the center of the circle.
+
+	Center points:
+	    { (x1+x2)/2 , (y1+y2)/2 }
+	    { (x2+x3)/2 , (y3+y3)/2 }
+
+	Perpendiculars are constructed by computing dx and dy and then taking
+	these as the vector { -dy, dx }.
+
+	So the equation for the center of the circle is found by finding P,Q
+	such that:
+	    { (x1+x2)/2 , (y1+y2)/2 } + P * { y1-y2, x2-x1 } =
+	    { (x2+x3)/2 , (y2+y3)/2 } + Q * { y2-y3, x3-x2 }
+	*/
+
+	q = ((y1-y2)*((y2+y3)/2 - (y1+y2)/2) - (x2-x1)*((x2+x3)/2 - (x1+x2)/2));
+	q /= ((y2-y3)*(x2-x1) - (x3-x2)*(y1-y2));
+
+	x0 = (x2+x3)/2 + q*(y2-y3);
+	y0 = (y2+y3)/2 + q*(x3-x2);   
+
+	r = sqrt(pow((x3-x0),2.0)  +pow((y3-y0),2.0));
+
+	theta1 = atan2(y1-y0, x1-x0);
+	dtheta2 = atan2(y2-y0, x2-x0) - theta1;
+	dtheta3 = atan2(y3-y0, x3-x0) - theta1;
+
+	if (dtheta2 < 0.0) {
+	    dtheta2 += 2.0*M_PI;
+	}
+	if (dtheta3 < 0.0) {
+	    dtheta3 += 2.0*M_PI;
+	}
+
+	if ((dtheta3 > dtheta2)) {
+	    nseg = res-fabs(floor(res*(dtheta2)/(2.0*M_PI)));
+	    if (debug) printf("YY t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
+		    theta1, dtheta2, dtheta3, nseg);
 	} else {
-	    if (seg==0) {
-	    	cp = coord_new(x0+r*cos(theta), y0+r*sin(theta));
-		dp->u.l->coords=cp;
+	    nseg = fabs(floor(res*(dtheta2)/(2.0*M_PI)));
+	    if (debug) printf("XX t1=%g, dt2=%g, dt3=%g, nseg=%g\n", 
+		    theta1, dtheta2, dtheta3, nseg);
+	}
+	if (debug) fflush(stdout);
+
+	for (seg=0; seg<=nseg; seg++) {
+	    if ((dtheta3 > dtheta2)) {
+		theta=dtheta2+theta1+seg*(2.0*M_PI-dtheta2)/nseg; 
 	    } else {
-	    	coord_append(cp, x0+r*cos(theta), y0+r*sin(theta));
+		theta=theta1+seg*(dtheta2)/nseg; 
+	    }
+	    if( def->u.a->opts->width == 0.0) {
+		draw(x0+r*cos(theta), y0+r*sin(theta), bb, mode);
+	    } else {
+		if (seg==0) {
+		    cp = coord_new(x0+r*cos(theta), y0+r*sin(theta));
+		    dp->u.l->coords=cp;
+		} else {
+		    coord_append(cp, x0+r*cos(theta), y0+r*sin(theta));
+		}
 	    }
 	}
-    }
-
+    } 
+    
     if( def->u.a->opts->width != 0.0) {
     	do_line(dp, bb, mode);		/* draw it */
 	db_free_component(dp);		/* now destroy it */
@@ -2003,7 +2040,7 @@ int mode;
 
     /* NOTE: To work properly, these transformations have to */
     /* occur in the proper order, for example, rotation must come */
-    /* after slant transformation or else it wont work properly */
+    /* after slant transformation */
 
     switch (def->u.n->opts->mirror) {
 	case MIRROR_OFF:
@@ -2177,6 +2214,9 @@ DB_TAB *currep;
 int layer;
 {
     int i,j;
+
+    if (currep == NULL) return;
+
     printf("\n");
     i=layer;
     printf("%d ",i);
@@ -2198,6 +2238,9 @@ unsigned int x, p, n;
 
 void show_init(DB_TAB *currep) { /* set everyone visible, but RO */
     int i;
+
+    if (currep == NULL) return;
+
     /* default is all visible, none modifiable. */
     for (i=0; i<MAX_LAYER; i++) {
     	currep->show[i]=0|ALL;  /* visible */
@@ -2208,6 +2251,8 @@ void show_set_visible(DB_TAB *currep, int comp, int layer, int state) {
 
     int lstart, lstop, i;
     int debug=0;
+
+    if (currep == NULL) return;
 
     if (layer==0) {
     	lstart=0;
@@ -2233,6 +2278,8 @@ void show_set_modify(DB_TAB *currep, int comp, int layer, int state) {
     int lstart, lstop, i;
     int debug=0;
 
+    if (currep == NULL) return;
+
     if (layer==0) {
     	lstart=0;
 	lstop=MAX_LAYER;
@@ -2257,6 +2304,9 @@ void show_set_modify(DB_TAB *currep, int comp, int layer, int state) {
 int show_check_modifiable(DB_TAB *currep, int comp, int layer) {
 
     int debug=0;
+
+    if (currep == NULL) return(0);
+
     if (debug) show_list(currep, layer);
 
     return (currep->show[layer] & (comp*2));
@@ -2267,6 +2317,9 @@ int show_check_visible(DB_TAB *currep, int comp, int layer) {
 
     int debug=0;
     if (debug) show_list(currep, layer);
+
+    if (currep == NULL) return(0);
+
     if (debug) printf("checking vis, comp %d, layer %d, returning %d\n",
     	comp, layer, currep->show[layer] & comp);
 

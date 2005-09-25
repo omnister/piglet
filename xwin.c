@@ -42,7 +42,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.33 2005/09/19 22:12:40 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.34 2005/09/25 23:46:18 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -830,7 +830,7 @@ int line;
      * the line style to LineOnOffDash or LineDoubleDash.  So we set
      * line zero to be LineSolid and all the rest to LineOnOffDash
      * and then the XSetDashes will take effect.  (45 minutes to debug!)
-     * - with much appreciation to Ken P. for an example of this in 
+     * - with much appreciation to Ken Poulton for an example of this in 
      * autoplot(1) code.
      */
 

@@ -11,6 +11,7 @@
 #include "xwin.h"
 #include "postscript.h"
 #include "eprintf.h"
+#include "equate.h"
 
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines are */
@@ -22,17 +23,22 @@ int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 int showon=1;		  /* 0 = layer currently turned off */
 int nestlevel=9;
 int draw_fill=FILL_OFF;
+int layer_fill=FILL_OFF;
 int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 int filled_object = 0;		/* global for managing polygon filling */
 int n_poly_points = 0;		/* number of points in filled polygon */
-XPoint Poly[1024];
 
-void clipl();
-void clipr();
-void clipt();
-void clipb();
+#define MAXPOLY 1024		/* maximum polygon size */
+XPoint Poly[MAXPOLY];
+
+			
+void clipl();   	  /* polygon clipping pipeline: clip left side */
+void clipr();   	  /* clip right side */
+void clipt();		  /* clip top */
+void clipb();		  /* clip bottom */
+
 int pickcheck();
 void emit();
 int debug = 0;
@@ -294,6 +300,7 @@ char *name;			/* instance name restrict or NULL (not used)*/
 
 		/* pick point inside BB gives a score ranging from */
 		/* 1.0 to 2.0, with smaller BB's getting higher score */
+
 		pick_score= 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin),
 		    fabs(p->ymax-p->ymin)));
 
@@ -355,7 +362,7 @@ char *name;			/* instance name restrict or NULL (not used)*/
 
 	/* keep track of the best of the lot */
 	if (pick_score > pick_best) {
-	    if (debug) printf("pick_score %g, pick_best %g\n", pick_score, pick_best);
+	    if (debug) printf("pick_score %g, best %g\n", pick_score, pick_best);
 	    fflush(stdout);
 	    pick_best=pick_score;
 	    p_best = p;
@@ -923,7 +930,10 @@ int y;
     /* append points to Xwin Xpoint structure */
     Poly[n_poly_points].x = x;
     Poly[n_poly_points].y = y;
-    n_poly_points++;
+    if (n_poly_points++  > MAXPOLY) {
+    	printf("exceeded maximum polygon size (MAXPOLY) in savepoly()\n");
+	exit(1);
+    }
 }
 
 void clipl(init, x, y, bb, mode) 
@@ -1283,7 +1293,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 		        xwin_draw_line((int)xxold,(int)yyold,(int)x,(int)y);
 		    }
 		    /* save coords for filling polygons later */
-		    if (filled_object && draw_fill) {
+		    if (filled_object && (draw_fill || layer_fill)) {
 		        savepoly((int)x, (int)y);
 		    }
 		}
@@ -1447,23 +1457,18 @@ int comp;	/* component type */
         showon=1;
     }
 
-    if (X) {
-	xwin_set_pen((lnum%8));		/* for X */
-    } else {
-        ps_set_pen(lnum%8);
-	/* if (drawon) fprintf(PLOT_FD, "pen %d\n", (lnum%8)); */	/* autoplot */
-    }
-    set_line((((int)(lnum/8))%5));
-}
+    layer_fill = equate_get_fill(lnum);	
 
-void set_line(lnum)
-int lnum;
-{
     if (X) {
-	xwin_set_line((lnum%5));		/* for X */
+	xwin_set_pen(equate_get_color(lnum));	
+	xwin_set_line(equate_get_mask(lnum));
+	/* xwin_set_pen((lnum%8));xwin_set_line((((int)(lnum/8))%5)); */
     } else {
-        ps_set_line((lnum%5)+1);
-	/* if (drawon) fprintf(PLOT_FD, "line %d\n", (lnum%5)+1); */ /* autoplot */
+        ps_set_pen(equate_get_color(lnum));	
+	ps_set_line(equate_get_mask(lnum));
+        /* ps_set_line((lnum%5)+1); */
+	/* if(drawon)fprintf(PLOT_FD,"pen %d\n",(lnum%8));*//* autoplot */
+	/* if(drawon)fprintf(PLOT_FD,"line %d\n",(lnum%5)+1);*//* autoplot */
     }
 }
 
