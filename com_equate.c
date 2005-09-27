@@ -67,7 +67,7 @@ char *arg;
 			if (debug) printf("got pen %s\n", word+2);
 		        break;
 		    case 'M':	/* mask linetype */
-			if ((line_type = type2equate(word[2])) == -1) {
+			if ((line_type = linetype2equate(word[2])) == -1) {
 			    printf("EQUATE: bad mask line type: %c\n", word[2]);
 			    done++;
 			    token_flush_EOL(lp);
@@ -81,7 +81,7 @@ char *arg;
 		    case 'D':	/* detail */
 		    case 'S':	/* symbolic */
 		    case 'I':	/* interconnect */
-			if ((mask_type = mask2equate(word[1])) == -1) {
+			if ((mask_type = masktype2equate(word[1])) == -1) {
 			    printf("EQUATE: bad mask type: %c\n", word[1]);
 			    done++;
 			    token_flush_EOL(lp);
@@ -130,14 +130,14 @@ char *arg;
 	printf("EQUATE: no layer specified\n");
     } else {
     	if (color != -1) 	equate_set_color(layer, color);
-	if (line_type != -1)    equate_set_mask(layer, line_type);
+	if (line_type != -1)    equate_set_linetype(layer, line_type);
 	if (pen != -1)          equate_set_pen(layer, pen);
-	if (mask_type != -1)    equate_set_type(layer, mask_type);
+	if (mask_type != -1)    equate_set_masktype(layer, mask_type);
 	if (buf[0] != '\0')     equate_set_label(layer, buf);
 		                equate_set_fill(layer, fill);	
     }
 
-    equate_print();
+    /* equate_print(); */
 
     rl_restoreprompt();
     return (0);

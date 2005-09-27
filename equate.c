@@ -6,12 +6,12 @@
 /* private definitions */
 
 typedef struct flags {
-    unsigned int color : 3;  /* Color, 3-bits, 0=Red, 1=G, ... BYPAW */
-    unsigned int fill  : 1;  /* 0=unfilled, 1=filled */
-    unsigned int mask  : 2;  /* Mask: 0=Solid, 1=Dotted, 2=Broken */
-    unsigned int pen   : 3;  /* Pen, 3-bits (0=unused) */  
-    unsigned int type  : 2;  /* 0=Detail, 1=Symbolic, 2=Interconnect */	
-    unsigned int used  : 1;  /* Set 1 if defined, otherwise not plotted */
+    unsigned int color    : 3;  /* Color, 3-bits, 0=Red, 1=G, ... BYPAW */
+    unsigned int fill     : 1;  /* 0=unfilled, 1=filled */
+    unsigned int masktype : 2;  /* 0=Detail, 1=Symbolic, 2=Interconnect */	
+    unsigned int pen      : 3;  /* Pen, 3-bits (0=unused) */  
+    unsigned int linetype : 3;  /* Mask: 0=Solid, 1=Dotted, 2=Broken */
+    unsigned int used     : 1;  /* Set 1 if defined, otherwise not plotted */
 } FLAGS;
 
 typedef struct equate {
@@ -28,38 +28,38 @@ int initialize_equates() {
 	sprintf(buf,"UNDEF%04d", i);
     	equates[i].label=strsave(buf);
 	equates[i].flags.fill=0;	/* default unfilled */
-	equates[i].flags.mask=0;	/* default Solid Lines */
+	equates[i].flags.masktype=0;	/* detail, symbolic; interconnect */
 	equates[i].flags.pen=1;	        /* Pen, 3-bits (0=unused) */  
 	equates[i].flags.color=1;	/* set default G: 0-7=>WRGBCMY */
-	equates[i].flags.type=0;	/* detail, symbolic; interconnect */
+	equates[i].flags.linetype=0;	/* default Solid Lines */
 	equates[i].flags.used=0;        /* set unused */
     }
 
     /* set up some default layers */
     for (i=0; i<=0; i++) {
-	equates[i].flags.type=0;
+	equates[i].flags.linetype=i%6;
 	equates[i].flags.used++;
 	equates[i].flags.color=i;
 	equates[i].flags.pen=i;	   
-	equates[i].flags.mask=i%2;
+	equates[i].flags.masktype=i%2;
 	equates[i].flags.fill=i%2;
     }
 
     return(0);
 }
 static char *COLORTAB =  "WWRGBCMY";
-static char *LINETYPE =  "SDB";
+static char *LINETYPE =  "SDB34567";
 static char *MASKTYPE =  "BDSI";
 
 int equate2color(int c) {
-   return(COLORTAB[c%7]);
+   return(COLORTAB[c%8]);
 }
 
 /* parse character for 0-7, WRGB...Y or return -1 */
 int color2equate(char c) {
    char *i;
    if (isdigit(c)) {
-       return((c-'0')%7);
+       return((c-'0')%8);
    } else if ((i=strchr(COLORTAB, toupper(c)))) {
        return((int)(i-COLORTAB));
    } else {
@@ -67,11 +67,11 @@ int color2equate(char c) {
    }
 }
 
-int equate2mask(int c) {
-   return(MASKTYPE[c%3]);
+int equate2masktype(int c) {
+   return(MASKTYPE[c%4]);
 }
 
-int mask2equate(char c) {
+int masktype2equate(char c) {
    char *i;
    if ((i=strchr(MASKTYPE, toupper(c)))) {
        return((int)(i-MASKTYPE));
@@ -80,13 +80,15 @@ int mask2equate(char c) {
    }
 }
 
-int equate2type(int c) {
-   return(LINETYPE[c%3]);
+int equate2linetype(int c) {
+   return(LINETYPE[c%7]);
 }
 
-int type2equate(char c) {
+int linetype2equate(char c) {
    char *i;
-   if ((i=strchr(LINETYPE, toupper(c)))) {
+   if (isdigit(c)) {
+	return((c-'0')%7);
+   } else if ((i=strchr(LINETYPE, toupper(c)))) {
        return((int)(i-LINETYPE));
    } else {
        return(-1);
@@ -100,8 +102,8 @@ int equate_print() {
 	if (equates[i].flags.used) {
 	    printf("EQUATE :C%c ", equate2color(equates[i].flags.color));
 	    printf(":P%d ", equates[i].flags.pen);
-	    printf(":M%c ", equate2mask(equates[i].flags.mask));
-	    printf(":%c ", equate2type(equates[i].flags.type));
+	    printf(":M%c ", equate2linetype(equates[i].flags.linetype));
+	    printf(":%c ", equate2masktype(equates[i].flags.masktype));
 	    if (equates[i].flags.fill) {
 		printf(":O ");
 	    }
@@ -111,20 +113,20 @@ int equate_print() {
     return(0);
 }
 
-void  equate_set_type(int layer, int type) {
+void  equate_set_linetype(int layer, int linetype) {
     equates[layer].flags.used=1;
-    equates[layer].flags.type = type;
+    equates[layer].flags.linetype = linetype;
 }
-int   equate_get_type(int layer) {
-    return(equates[layer].flags.type);
+int   equate_get_linetype(int layer) {
+    return(equates[layer].flags.linetype);
 }
 
-void equate_set_mask(int layer, int mask) {
+void equate_set_masktype(int layer, int masktype) {
     equates[layer].flags.used=1;
-    equates[layer].flags.mask = mask;
+    equates[layer].flags.masktype = masktype;
 }
-int  equate_get_mask(int layer) {
-    return(equates[layer].flags.mask);
+int  equate_get_masktype(int layer) {
+    return(equates[layer].flags.masktype);
 }
 
 void equate_set_fill(int layer, int fill) {

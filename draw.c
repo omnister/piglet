@@ -1461,11 +1461,11 @@ int comp;	/* component type */
 
     if (X) {
 	xwin_set_pen(equate_get_color(lnum));	
-	xwin_set_line(equate_get_mask(lnum));
+	xwin_set_line(equate_get_linetype(lnum));
 	/* xwin_set_pen((lnum%8));xwin_set_line((((int)(lnum/8))%5)); */
     } else {
         ps_set_pen(equate_get_color(lnum));	
-	ps_set_line(equate_get_mask(lnum));
+	ps_set_line(equate_get_linetype(lnum));
         /* ps_set_line((lnum%5)+1); */
 	/* if(drawon)fprintf(PLOT_FD,"pen %d\n",(lnum%8));*//* autoplot */
 	/* if(drawon)fprintf(PLOT_FD,"line %d\n",(lnum%5)+1);*//* autoplot */

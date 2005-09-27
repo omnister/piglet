@@ -3,6 +3,7 @@
 
 #include "readfont.h"
 #include "db.h"
+#define MAXPOINT 5000
 
 int getxy();
 int eatwhite();
@@ -16,8 +17,9 @@ int line=1;
 int dx[2];		/* size of font cell */
 int dy[2];		/* size of font cell */	
 int fonttab[2][256];
-int xdef[2][5000];
-int ydef[2][5000];
+
+int xdef[2][MAXPOINT];
+int ydef[2][MAXPOINT];
 
 int fillable[2] = {0,0};
 
@@ -85,6 +87,7 @@ int mode;
 	writechar(*s,
 		(((double)(dx[id]))*0.80*offset)/((double)(dy[id])),
 		0.0,xf,id, bb, mode);
+        if (debug) printf("writing %c, dx:%d dy:%d id:%d\n", *s, dx[id], dy[id], id);
 	offset+=1.0;
 	++s;
     }
@@ -103,9 +106,10 @@ int id;
     int lit;
     extern int line;
     int index=0;	/* index into font table */
+    int debug=0;
 
     /* initialize font table */
-    for (i=0; i<=5000; i++) {
+    for (i=0; i<MAXPOINT; i++) {
 	xdef[id][i] = ydef[id][i] = -64;
     }
     for (i=0; i<=255; i++) {
@@ -115,15 +119,17 @@ int id;
     if((fp=fopen(file,"r")) == NULL) {
 	fprintf(stderr, "error: fopen call failed\n");
 	exit(1);
+    } else {
+    	printf("loading %s from disk\n",file);
     }
 
     line=0;
     done=0;
 
     /* note reversed order of arguments */
-    next=getxy(fp,&dy[id],&dx[id]);
 
-    /* printf("got %d, %d next=%c\n", x,y,next); */
+    next=getxy(fp,&dy[id],&dx[id]);
+    /* printf("got %d, %d next=%x id=%d\n", dx[id],dy[id],next, id); */
 
     /* make first line look properly terminated */
     x=-64;
@@ -144,7 +150,7 @@ int id;
 	    }
 	} else if (next == EOF) {
 	    done++;
-	}
+	} 
 
 	if (!done) {
 	    next=getxy(fp,&x,&y);
@@ -154,6 +160,7 @@ int id;
 	    index++;
 	}
     }
+    if (debug) printf("index = %d\n", index);
 }
 
 

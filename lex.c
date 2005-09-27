@@ -16,6 +16,8 @@
 #include "readfont.h"
 #include "equate.h"
 
+int readin();
+
 /* The names of functions that actually do the manipulation. */
 
 int com_add(), com_archive(), com_area(), com_background();
@@ -41,7 +43,7 @@ typedef struct {
 COMMAND commands[] =
 {
     {"ADD", com_add, "add a component to the current device"},
-    {"ARChIVE", com_archive, "create an archive file of the specified device"},
+    {"ARCHIVE", com_archive, "create an archive file of the specified device"},
     {"AREA", com_area, "calculate and display the area of selected component"},
     {"BACKGROUND", com_background, "specified device for background overlay"},
     {"BYE", com_bye, "terminate edit session"},
@@ -124,15 +126,15 @@ char **argv;
 	return(err);
     }
 
-    initX();
+    initX();			/* create window, load MENUDATA */
 
-    /* FIXME: find out why these two lines fail when in the opposite order */
+    loadfont("NOTEDATA.F",0);	/* load NOTE, TEXT definitions */
     loadfont("TEXTDATA.F",1);
-    loadfont("NOTEDATA.F",0);
 
     initialize_readline();
+
     initialize_equates();
-    equate_print();
+    readin("PROCDATA.P");	/* load PROCESS FILE definitions */
 
     rl_pending_input='\n';
     rl_setprompt("");
@@ -542,29 +544,32 @@ char *arg;
 
     if (debug) printf("line#: %d\n", lp->line);
 
-    if (lp->line != linenumber+1 && currep != NULL && currep->modified) {
-	printf("    current device is unsaved!");
-	printf("    typing \"EXIT\" a second time will force exit\n");
-    } else {
-	if (currep != NULL) {
-	    editlevel=currep->being_edited;
-	    currep->being_edited = 0;
-	    /* FIXME: This is where we should set currep to the next cell in the */
-	    /* edit stack... */
-
-	    if ((currep = db_edit_pop(editlevel)) != NULL) {
-	    	;
-	    } else {
-		lp->mode = MAIN;
-	    }
-
+    if (lp->mode == EDI) {
+	if (lp->line != linenumber+1 && currep != NULL && currep->modified) {
+	    printf("    current device is unsaved!");
+	    printf("    typing \"EXIT\" a second time will force exit\n");
 	} else {
-	    /* can get here if someone purges the very cell */
-	    /* that they are editing and then does an EXIT */
+	    if (currep != NULL) {
+		editlevel=currep->being_edited;
+		currep->being_edited = 0;
+
+		if ((currep = db_edit_pop(editlevel)) != NULL) {
+		    ;
+		} else {
+		    lp->mode = MAIN;
+		}
+
+	    } else {
+		/* can get here if someone purges the very cell */
+		/* that they are editing and then does an EXIT */
+	    }
+	    need_redraw++;
 	}
-	need_redraw++;
+	linenumber=lp->line;
+    } else if (lp->mode == PRO) {
+        /* FIXME: need to check if PROCFILE is modified */
+	lp->mode = MAIN;
     }
-    linenumber=lp->line;
     return (0);
 }
 
@@ -833,6 +838,47 @@ char *arg;
 /* now in com_ident.c */
 /* com_identify(lp, arg) */  /*	identify named instances or components */
 
+int readin(filename)		/* work routine for com_input */
+char *filename;
+{
+    LEXER *my_lp;
+    FILE *fp;
+
+    char *save_rep;
+    xwin_display_set_state(D_OFF);
+
+    if((fp = fopen(filename, "r")) == 0) {
+	return(0);
+    } else {
+
+	my_lp = token_stream_open(fp, filename);
+	my_lp->mode = EDI;
+
+	if (currep != NULL) {
+	    save_rep=strsave(currep->name);
+	} else {
+	    save_rep=NULL;
+	}
+
+	printf ("reading %s from disk\n", filename);
+	/* show_set_modify(currep, ALL,0,1); */
+	parse(my_lp);
+	token_stream_close(my_lp); 
+	/* show_set_modify(currep, ALL,0,0); */
+	/* show_set_visible(currep, ALL,0,1); */
+
+	if (save_rep != NULL) {
+	    currep=db_lookup(save_rep);
+	    free(save_rep);
+	} else {
+	    currep=NULL;
+	}
+
+	xwin_display_set_state(D_ON);
+    }
+    return(1);
+}
+
 int com_input(lp, arg)		/* take command input from a file */
 LEXER *lp;
 char *arg;
@@ -841,11 +887,8 @@ char *arg;
     char buf[MAXFILENAME];
     char word[MAXFILENAME];
     int debug=0;
-    FILE *fp;
     int done=0;
     int nfiles=0;
-    LEXER *my_lp;
-    char *save_rep;
 
     if (debug) printf("in com_input\n");
 
@@ -862,39 +905,10 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "%s", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if((fp = fopen(buf, "r")) == 0) {
+			if(readin(buf) == 0) {
 			    printf("COM_INPUT: could not open %s\n", buf);
 			    return(1);
-			} else {
-			    xwin_display_set_state(D_OFF);
-			    my_lp = token_stream_open(fp, buf);
-			    my_lp->mode = EDI;
-
-			    if (currep != NULL) {
-				save_rep=strsave(currep->name);
-			    } else {
-				save_rep=NULL;
-			    }
-
-			    printf ("reading %s from disk\n", buf);
-			    show_set_modify(currep, ALL,0,1);
-			    /* FIXME: here and one other place */
-			    /* create a way to do show_set_save and restore */
-			    /* reading archive files should not affect currep's show set */
-			    parse(my_lp);
-			    token_stream_close(my_lp); 
-			    show_set_modify(currep, ALL,0,0);
-			    show_set_visible(currep, ALL,0,1);
-
-			    if (save_rep != NULL) {
-				currep=db_lookup(save_rep);
-				free(save_rep);
-			    } else {
-				currep=NULL;
-			    }
-
-			    xwin_display_set_state(D_ON);
-			}
+			} 
 		    } else {
 			printf("INPUT: wrong number of args\n");
 			return(-1);
@@ -1057,7 +1071,7 @@ LEXER *lp;
 char *arg;
 {
 
-    if (lp->mode == MAIN) { 
+    if (lp->mode == EDI || lp->mode == MAIN) { 
 	if (currep != NULL) {
 	    db_list(currep);
 	} else { 
@@ -1231,11 +1245,8 @@ char *arg;
     char buf[MAXFILENAME];
     char word[MAXFILENAME];
     int debug=0;
-    FILE *fp;
     int done=0;
     int nfiles=0;
-    LEXER *my_lp;
-    char *save_rep;
 
     if (debug) printf("in com_retrieve\n");
     rl_saveprompt();
@@ -1251,33 +1262,11 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "./cells/%s_I", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if((fp = fopen(buf, "r")) == 0) {
+			if(readin(buf) == 0) {
 			    printf("COM_RET: could not open %s\n", buf);
 			    return(1);
-			} else {
-			    xwin_display_set_state(D_OFF);
-			    my_lp = token_stream_open(fp, buf);
-			    my_lp->mode = EDI;
-
-			    if (currep != NULL) {
-				save_rep=strsave(currep->name);
-			    } else {
-				save_rep=NULL;
-			    }
-
-			    printf ("reading %s from disk\n", buf);
-			    parse(my_lp);
-			    token_stream_close(my_lp); 
-
-			    if (save_rep != NULL) {
-				currep=db_lookup(save_rep);
-				free(save_rep);
-			    } else {
-				currep=NULL;
-			    }
-
-			    xwin_display_set_state(D_ON);
-			}
+			} 
+			
 		    } else {
 			printf("RET: wrong number of args\n");
 			return(-1);

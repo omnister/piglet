@@ -42,7 +42,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.34 2005/09/25 23:46:18 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.35 2005/09/27 22:37:19 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -183,7 +183,7 @@ XFontStruct *font_info;
 
 #define MAX_COLORS 8
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
-#define MAX_LINETYPE 5
+#define MAX_LINETYPE 7
 
 int initX()
 {
@@ -405,7 +405,7 @@ int initX()
     XSetFillStyle(dpy, gcx, FillStippled);
     XSetFunction(dpy, gcx, GXxor);
 
-    XSetStipple(dpy, gcb, stipple[0]);		/* use gcb for polygon filling */
+    XSetStipple(dpy, gcb, stipple[0]);	   /* use gcb for polygon filling */
     XSetFillStyle(dpy, gcb, FillStippled);
 
     /* dpy windows */
@@ -737,7 +737,9 @@ XFontStruct *font_info;
 void load_font(font_info)
 XFontStruct **font_info;
 {
-    char *fontname = "9x15";
+    /* char *fontname = "9x15"; */
+    /* char *fontname = "12x24"; */
+    char *fontname = "10x20"; 
 
     /* Load font and get font information structure */
     if ((*font_info = XLoadQueryFont(dpy, fontname)) == NULL) {
@@ -806,24 +808,15 @@ int line;
     int line_style;
     char dash_list[5];
 
-    /* FIXME: line types are turned off for now .... */
-    line = 0;	/* for now turn off dashed line types */
-
-    /* FIXME: should avoid accessing out of bounds of colors[]
-     * also should cache different pen colors to avoid having to keep
-     * sending messages to server.  Currently this is enforced because
-     * only db::set_pen() calls here, and uses pen%5 as the argument 
+    /* FIXME:should cache different pen colors to avoid having to keep
+     * sending messages to server.  
      */
 
     /* optimize out unnecessary Xserver calls */
     static int oldlinetype=(-9999);
     if (line == oldlinetype) return;
 
-    if (line > MAX_LINETYPE) {
-	line = MAX_LINETYPE;
-    } else if (line < 0) {
-	line = 0;
-    }
+    line = abs(line)%MAX_LINETYPE;
 
     /* there are two switches here because even if you XSetDashes(),
      * the drawn line will still be solid *unless* you also change
@@ -835,23 +828,32 @@ int line;
      */
 
     switch (line) {
-       case 0:     line_style = LineSolid;     break;
-       case 1:     line_style = LineOnOffDash; break;
-       case 2:     line_style = LineOnOffDash; break;
-       case 3:     line_style = LineOnOffDash; break;
-       case 4:     line_style = LineOnOffDash; break;
+       case 0:     line_style = LineSolid;     break;	/* solid */
+       case 1:     line_style = LineOnOffDash; break;	/* dotted */
+       case 2:     line_style = LineOnOffDash; break;   /* broken */
+       case 3:     line_style = LineOnOffDash; break;   /* dot center */
+       case 4:     line_style = LineOnOffDash; break;   /* dash center */
+       case 5:     line_style = LineOnOffDash; break;   /* long dash */
+       case 6:     line_style = LineOnOffDash; break;   /* long dotted */
        default:
 	   eprintf("line type %d out of range.", line);
     }        
     
     switch (line) {
-       case 0:
-       case 1:     dash_list[0]=7; dash_list[1]=2;
-                   dash_list[2]=1; dash_list[3]=2; dash_n=4; break;
+       case 0:				
+       case 1:     dash_list[0]=2; dash_list[1]=2; dash_n=2; break;
+
        case 2:     dash_list[0]=7; dash_list[1]=5; dash_n=2; break;
-       case 3:     dash_list[0]=2; dash_list[1]=2; dash_n=2; break;
+
+       case 3:     dash_list[0]=7; dash_list[1]=2;
+                   dash_list[2]=1; dash_list[3]=2; dash_n=4; break;
+
        case 4:     dash_list[0]=7; dash_list[1]=2;
                    dash_list[2]=3; dash_list[3]=2; dash_n=4; break;
+
+       case 5:     dash_list[0]=9; dash_list[1]=5; dash_n=2; break;
+
+       case 6:     dash_list[0]=4; dash_list[1]=4; dash_n=2; break;
     }
 
     dash_offset=0;
