@@ -30,6 +30,9 @@ int add_inst(LEXER *lp, char *inst_name)
     char *save_rep;
 
     BOUNDS bb;
+    XFORM *xp;
+
+    double xx, yy;
 
     opt_set_defaults(&opts);
 
@@ -79,11 +82,6 @@ int add_inst(LEXER *lp, char *inst_name)
 	    } else {
 		currep=NULL;
 	    }
-
-	    bb_xmin=ed_rep->minx;
-	    bb_xmax=ed_rep->maxx;
-	    bb_ymin=ed_rep->miny;
-	    bb_ymax=ed_rep->maxy;
 	}
     }
 
@@ -91,6 +89,11 @@ int add_inst(LEXER *lp, char *inst_name)
     	printf("ADD INST: instance not found: %s\n", inst_name );
 	return(-1);
     }
+
+    bb_xmin=ed_rep->minx;
+    bb_xmax=ed_rep->maxx;
+    bb_ymin=ed_rep->miny;
+    bb_ymax=ed_rep->maxy;
 
     if (debug) printf("currep = %s\n", currep->name);
 
@@ -113,7 +116,54 @@ int add_inst(LEXER *lp, char *inst_name)
 		    if (opt_parse(word, INST_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
+			/* an option may have scaled the bounding box */
+			/* clear callback, recompute and then restart */
+
+			rubber_clear_callback(draw_inst_bb);
+
+			xp = matrix_from_opts(&opts);
+			bb_xmin = bb_xmax = bb_ymin = bb_ymax = 0.0;
+
+			xx = ed_rep->minx;
+			yy = ed_rep->miny;
+			xform_point(xp, &xx, &yy); 
+
+			if (xx < bb_xmin) bb_xmin = xx;
+			if (yy < bb_ymin) bb_ymin = yy;
+			if (xx > bb_xmax) bb_xmax = xx;
+			if (yy > bb_ymax) bb_ymax = yy;
+
+			xx = ed_rep->maxx;
+			yy = ed_rep->maxy;
+			xform_point(xp, &xx, &yy); 
+
+			if (xx < bb_xmin) bb_xmin = xx;
+			if (yy < bb_ymin) bb_ymin = yy;
+			if (xx > bb_xmax) bb_xmax = xx;
+			if (yy > bb_ymax) bb_ymax = yy;
+
+			xx = ed_rep->maxx;
+			yy = ed_rep->miny;
+			xform_point(xp, &xx, &yy); 
+
+			if (xx < bb_xmin) bb_xmin = xx;
+			if (yy < bb_ymin) bb_ymin = yy;
+			if (xx > bb_xmax) bb_xmax = xx;
+			if (yy > bb_ymax) bb_ymax = yy;
+
+			xx = ed_rep->minx;
+			yy = ed_rep->maxy;
+			xform_point(xp, &xx, &yy); 
+
+			if (xx < bb_xmin) bb_xmin = xx;
+			if (yy < bb_ymin) bb_ymin = yy;
+			if (xx > bb_xmax) bb_xmax = xx;
+			if (yy > bb_ymax) bb_ymax = yy;
+
+			free(xp);
+
 			state = START;
+			rubber_set_callback(draw_inst_bb);
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
@@ -158,7 +208,9 @@ int add_inst(LEXER *lp, char *inst_name)
 		    sscanf(word, "%lf", &y1);	/* scan it in */
 		    
 		    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
+		    rubber_clear_callback();
 		    need_redraw++;
+		    rubber_set_callback(draw_inst_bb);
 		    state = START;
 		} else if (token == EOL) {
 		    token_get(lp, word);

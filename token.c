@@ -9,6 +9,8 @@
 #include "rlgetc.h"
 #include "lex.h" 	/* for lookup_command() */
 
+static char promptbuf[128];
+
 
 LEXER *token_stream_open(FILE *fp, char *name)  {
     LEXER *lp;
@@ -76,11 +78,11 @@ int token_flush_EOL(LEXER *lp)
 TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 {
     enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM} state = NEUTRAL;
-    int c;
+    int c,d;
     char *w;
     int debug=0;
 
-    if (lp->bufp > 0) {
+    if (lp->bufp > 0) {		/* characters in pushback buffer */
 	strcpy(word, lp->tokbuf[--(lp->bufp)].word);
 	free(lp->tokbuf[lp->bufp].word);
 	lp->tokbuf[lp->bufp].word = (char *) NULL;
@@ -109,6 +111,9 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			return(COMMA);
 		    case '"':
 			state = INQUOTE;
+			strcpy(promptbuf, rl_saveprompt());
+			strcat(promptbuf, "(in quote)> ");
+			rl_setprompt(promptbuf);
 			continue;
 		    case '^':
 			*w++ = c;
@@ -198,11 +203,18 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 	    case INQUOTE:
 		switch(c) {
 		    case '\\':
-			*w++ = rlgetc(lp->token_stream);
+			/* escape quotes, but pass everything else along */
+			if ((d = rlgetc(lp->token_stream)) == '"') {
+			    *w++ = d;
+			} else {
+			    *w++ = c;
+			    *w++ = d;
+			}
 			continue;
 		    case '"':
 			*w = '\0';
 			if (debug) printf("returning QUOTE: %s \n", word);
+			rl_restoreprompt();
 			return(QUOTE);
 		    default:
 			*w++ = c;

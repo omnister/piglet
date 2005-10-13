@@ -14,13 +14,17 @@
 #include "readfont.h"	/* for writestring() */
 #include "rubber.h"
 #include "stack.h"	/* for generating $FILE arguments in archives */
-
+#include "rlgetc.h"
 
 #define EPS 1e-6
 
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
 #define BB 2		/* draw bounding box and don't do xform */
+
+
+char *PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
+
 
 /* master symbol table pointers */
 static DB_TAB *HEAD = 0;
@@ -518,7 +522,6 @@ char *name;
 	printf("access =%d\n", access(buf, F_OK));
     }
 
-
     if ((strcmp(sp->name, name) != 0) &&
        		(strcmp(lp->name, "STDIN") == 0) &&
        		(access(buf, F_OK) == 0)) {
@@ -527,11 +530,11 @@ char *name;
 	    printf("aborting save.\n");
 	    return(1);
 	}
-    } else {
-	err+=((fp = fopen(buf, "w+")) == 0); 
-	db_def_print(fp, sp, CELL); 
-	err+=(fclose(fp) != 0);
-    }
+    } 
+    
+    err+=((fp = fopen(buf, "w+")) == 0); 
+    db_def_print(fp, sp, CELL); 
+    err+=(fclose(fp) != 0);
     return(err);
 }
 
@@ -2318,7 +2321,7 @@ int show_check_visible(DB_TAB *currep, int comp, int layer) {
     int debug=0;
     if (debug) show_list(currep, layer);
 
-    if (currep == NULL) return(0);
+    if (currep == NULL) return(1);
 
     if (debug) printf("checking vis, comp %d, layer %d, returning %d\n",
     	comp, layer, currep->show[layer] & comp);

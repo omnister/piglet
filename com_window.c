@@ -59,7 +59,7 @@ char *arg;
 			if (scale < 0.0) {
 			    scale = 1.0/(-scale);
 			}
-			if (scale > 10.0 || scale < 0.10) {
+			if (scale > 100.0 || scale < 0.01) {
 			    weprintf("WIN: scale out of range %s\n", word+2);
 			    state = END;
 			}
@@ -248,11 +248,13 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	ymin=y1-dx/2.0;
 	xmax=x1+dx/2.0;
 	ymax=y1+dx/2.0;
-    } else if (n==4) {		/* this is how vp_xmin gets loaded during initial readin */
-	currep->vp_xmin=x1;
-	currep->vp_xmax=x2;
-	currep->vp_ymin=y1;
-	currep->vp_ymax=y2;
+    } else if (n==4) {		/* how vp_xmin gets loaded during readin */
+	if (currep != NULL) {
+	    currep->vp_xmin=x1;
+	    currep->vp_xmax=x2;
+	    currep->vp_ymin=y1;
+	    currep->vp_ymax=y2;
+	}
     	xmin=x1;
 	ymin=y1;
 	xmax=x2;
@@ -302,12 +304,12 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 
     if (scale != 1.0) {
 	if (debug) printf("doing scale \n");
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=((xmax+xmin)/2.0)-((dx*scale)/2.0);
-	xmax=((xmax+xmin)/2.0)+((dx*scale)/2.0);
-	ymin=((ymax+ymin)/2.0)-((dy*scale)/2.0);
-	ymax=((ymax+ymin)/2.0)+((dy*scale)/2.0);
+	dx=(xmax-xmin)/2.0;
+	dy=(ymax-ymin)/2.0;
+	xmin=((xmax+xmin)/2.0)-(dx*scale);
+	xmax=((xmax+xmin)/2.0)+(dx*scale);
+	ymin=((ymax+ymin)/2.0)-(dy*scale);
+	ymax=((ymax+ymin)/2.0)+(dy*scale);
     } 
 
     if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);

@@ -124,6 +124,7 @@ int k;	  /* index of color */
 		n++;
 	    	break;
 	    case 'p':	/* purple */
+	    case 'm':	/* magenta */
 		c=6;
 		n++;
 	    	break;

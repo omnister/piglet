@@ -28,6 +28,8 @@
 
 #define MAX_LAYER 1024
 
+extern char *PATH;
+
 int show[MAX_LAYER];
 
 /*   definition of hierarchical editor data structures 
@@ -428,3 +430,5 @@ void endpoly();
 void do_arc(),  do_circ(), do_line(), do_note();
 void do_oval(), do_poly(), do_rect(), do_text();
 
+void xform_point(XFORM *xp, double *xx, double *yy); 
+XFORM *matrix_from_opts(OPTS *opts);

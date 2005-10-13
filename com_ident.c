@@ -1,14 +1,26 @@
+#include <ctype.h>
+
 #include "db.h"
 #include "xwin.h"
 #include "token.h"
 #include "lex.h"
 #include "rlgetc.h"
 
+#define POINT  0
+#define REGION 1
+
 /*
  *
- * IDE xypnt ...
+ * IDE [:r xy1 xy2] | [[:p] xypnt] ... EOC
  *	highlight and print out details of rep under xypnt.
  *	  no refresh is done.
+ * OPTIONS:
+ *      :r identify by region (requires 2 points to define a region)
+ *      :p identify by point (requires single coordinate)
+ *
+ * NOTE: default is pick by point.  However, if you change to pick
+ *       by region with :r, you can go back to picking by point with
+ *       the :p option.
  *
  */
 
@@ -27,7 +39,7 @@ int *layer;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_prev = NULL;
     double area;
-
+    int mode=POINT;
     
     rl_saveprompt();
     rl_setprompt("IDENT> ");
@@ -42,6 +54,23 @@ int *layer;
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
 		token_get(lp,word); /* ignore for now */
+		if (word[0]==':') {
+		    switch (toupper(word[1])) {
+		        case 'R':
+			    mode = REGION;
+			    break;
+			case 'P':
+			    mode = POINT;
+			    break;
+			default:
+			    printf("IDENT: bad option: %s\n", word);
+			    state=END;
+			    break;
+		    }
+		} else {
+		    printf("IDENT: bad option: %s\n", word);
+		    state = END;
+		}
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;

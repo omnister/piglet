@@ -78,17 +78,26 @@ int id; 	/* font id */
 BOUNDS *bb;
 int mode;
 {
-    double offset=0.0;
+    double yoffset=0.0;
     int debug=0;
+    double xoffset=0.0;
     
     if (debug) printf("in writestring id=%d\n", id);
 
+    /* void writechar(c,x,y,xf,id,bb,mode) */
+
     while(*s != 0) {
-	writechar(*s,
-		(((double)(dx[id]))*0.80*offset)/((double)(dy[id])),
-		0.0,xf,id, bb, mode);
-        if (debug) printf("writing %c, dx:%d dy:%d id:%d\n", *s, dx[id], dy[id], id);
-	offset+=1.0;
+	if (*s != '\n') {
+	    writechar(*s,
+	        (((double)(dx[id]))*0.80*xoffset)/((double)(dy[id])),
+		-yoffset,xf,id, bb, mode);
+	    if (debug) printf("writing %c, dx:%d dy:%d id:%d\n",
+	    	*s, dx[id], dy[id], id);
+	    xoffset+=1.0;
+	} else {
+	    xoffset=0.0;
+	    yoffset+=1.0; 
+	}
 	++s;
     }
 }

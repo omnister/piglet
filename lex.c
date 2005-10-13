@@ -15,6 +15,7 @@
 #include "eprintf.h"
 #include "readfont.h"
 #include "equate.h"
+#include "path.h"
 
 int readin();
 
@@ -109,7 +110,7 @@ char **argv;
 {
     LEXER *lp;		/* lexer struct for main cmd loop */
     int err=0;
-
+    char buf[128];
 
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
@@ -128,13 +129,49 @@ char **argv;
 
     initX();			/* create window, load MENUDATA */
 
-    loadfont("NOTEDATA.F",0);	/* load NOTE, TEXT definitions */
-    loadfont("TEXTDATA.F",1);
+    findfile(PATH, "NOTEDATA.F", buf);
+    if (buf[0] == '\0') {
+	printf("Could not file NOTEDATA.F\n");
+	printf("PATH=\"%s\"\n", PATH);
+	exit(5);
+    } else {
+	loadfont(buf,0);	/* load NOTE, TEXT definitions */
+    }
+
+    findfile(PATH, "TEXTDATA.F", buf);
+    if (buf[0] == '\0') {
+	printf("Could not file TEXTDATA.F\n");
+	printf("PATH=\"%s\"\n", PATH);
+	exit(5);
+    } else {
+	loadfont(buf,1);	/* load NOTE, TEXT definitions */
+    }
 
     initialize_readline();
 
     initialize_equates();
-    readin("PROCDATA.P");	/* load PROCESS FILE definitions */
+
+    findfile(PATH, "PROCDATA.P", buf);
+    if (buf[0] == '\0') {
+	printf("Could not PROCDATA.P in $PATH\n");
+	printf("PATH=\"%s\"\n", PATH);
+	exit(5);
+    } else {
+	readin(buf,0);	/* load PROCESS FILE definitions */
+    }
+
+    findfile(PATH, "piglogo.d", buf);
+    if (buf[0] == '\0') {
+	printf("Could not piglogo in $PATH\n");
+	printf("PATH=\"%s\"\n", PATH);
+	exit(5);
+    } else {
+        currep = db_install("piglogo");           /* create blank stub */
+	readin(buf,1);	
+	currep->modified = 0;
+	show_init(currep);
+	currep = NULL;
+    }
 
     rl_pending_input='\n';
     rl_setprompt("");
@@ -327,6 +364,9 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
     need_redraw++; 
 
+    /* check for :P option to write PROCDATA info */
+    /* make sure and purge PROCDATA on read in */
+
     if (currep != NULL) {
 	if (db_def_archive(currep)) {
 	    printf("unable to archive %s\n", currep->name);
@@ -380,11 +420,8 @@ char *arg;
 
     static int linenumber;	/* remember last request */
 
-    /* FIXME, the next section should scan the db and print out the */
-    /* names of ALL unsaved cells */
-
     if ( (lp->line != linenumber+1) && db_list_unsaved() ) {
-	printf("    you have an unsaved instance!\n");
+	printf("    you have one or more unsaved instances!\n");
 	printf("    typing either \"QUIT\" or \"BYE\" twice will force exit\n");
     } else {
 	quit_now++;
@@ -455,16 +492,19 @@ char *arg;
     }
 
     xwin_display_set_state(display_state);
-    switch (xwin_display_state()) {
-    	case D_ON:
-	    printf("display now ON\n");
-	    break;
-	case D_OFF:
-	    printf("display now OFF\n");
-	    break;
-	default:
-	    printf("display state UNKNOWN\n");
-	    break;
+
+    if (strcmp(lp->name, "STDIN") == 0) {
+	switch (xwin_display_state()) {
+	    case D_ON:
+		printf("display now ON\n");
+		break;
+	    case D_OFF:
+		printf("display now OFF\n");
+		break;
+	    default:
+		printf("display state UNKNOWN\n");
+		break;
+	}
     }
 
     return (0);
@@ -838,19 +878,18 @@ char *arg;
 /* now in com_ident.c */
 /* com_identify(lp, arg) */  /*	identify named instances or components */
 
-int readin(filename)		/* work routine for com_input */
+int readin(filename, editmode)		/* work routine for com_input */
 char *filename;
+int editmode;
 {
     LEXER *my_lp;
     FILE *fp;
 
     char *save_rep;
-    xwin_display_set_state(D_OFF);
 
     if((fp = fopen(filename, "r")) == 0) {
 	return(0);
     } else {
-
 	my_lp = token_stream_open(fp, filename);
 	my_lp->mode = EDI;
 
@@ -860,12 +899,20 @@ char *filename;
 	    save_rep=NULL;
 	}
 
+	if (editmode) {
+	    show_set_modify(currep, ALL,0,1); 
+	}
+
 	printf ("reading %s from disk\n", filename);
-	/* show_set_modify(currep, ALL,0,1); */
+	xwin_display_set_state(D_OFF);
 	parse(my_lp);
+	xwin_display_set_state(D_ON);
 	token_stream_close(my_lp); 
-	/* show_set_modify(currep, ALL,0,0); */
-	/* show_set_visible(currep, ALL,0,1); */
+
+	if (editmode) {
+	    show_set_modify(currep, ALL,0,0);
+	    show_set_visible(currep, ALL,0,1);
+	}
 
 	if (save_rep != NULL) {
 	    currep=db_lookup(save_rep);
@@ -874,7 +921,6 @@ char *filename;
 	    currep=NULL;
 	}
 
-	xwin_display_set_state(D_ON);
     }
     return(1);
 }
@@ -905,7 +951,7 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "%s", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if(readin(buf) == 0) {
+			if(readin(buf,0) == 0) {
 			    printf("COM_INPUT: could not open %s\n", buf);
 			    return(1);
 			} 
@@ -1262,7 +1308,7 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "./cells/%s_I", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if(readin(buf) == 0) {
+			if(readin(buf,0) == 0) {
 			    printf("COM_RET: could not open %s\n", buf);
 			    return(1);
 			} 
@@ -1336,8 +1382,17 @@ char *arg;
 		done++;
 		break;
 	    case CMD:		/* command */
-	    	token_unget(lp, token, word);
-		done++;
+		if (strncasecmp(word, "SAV", 3) == 0) {
+		     /* a classic HP Piglet cleverness: */
+		     /* in the event that a user accidently */
+		     /* mouses "SAV SAV cell EXI; */ 
+		     /* we inhibit parsing of second SAV */
+		     /* to avoid losing changes to cell */
+		     ;
+		} else {
+		    token_unget(lp, token, word);
+		    done++;
+		}
 		break;
 	    default:
 		eprintf("bad case in com_save");

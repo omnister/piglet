@@ -1,10 +1,5 @@
 #include <math.h>
 #include <X11/Xlib.h>
-/*
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
-#include <X11/Xatom.h>
-*/
 
 #include "db.h"
 #include "rubber.h"
@@ -13,9 +8,8 @@
 #include "eprintf.h"
 #include "equate.h"
 
-
-#define FUZZBAND 0.01	/* how big the fuzz around lines are */
-                        /* compared to minimum window dimension */
+#define FUZZBAND 0.01	/* how big the fuzz around lines is as */
+                        /* a fraction of minimum window dimension */
 			/* for the purpose of picking objects */
 
 /* global variables that need to eventually be on a stack for nested edits */
@@ -111,7 +105,7 @@ double dx,dy;
 }
 
 
-/* called with pick point x,y and bounding box in p return zero if xy */
+/* called with pick point x,y and bounding box in p return -1 if xy */
 /* inside bb, otherwise return a number  between zero and 1 */
 /* monotonically related to inverse distance of xy from bounding box */
 
@@ -362,7 +356,8 @@ char *name;			/* instance name restrict or NULL (not used)*/
 
 	/* keep track of the best of the lot */
 	if (pick_score > pick_best) {
-	    if (debug) printf("pick_score %g, best %g\n", pick_score, pick_best);
+	    if (debug) printf("pick_score %g, best %g\n",
+	        pick_score, pick_best);
 	    fflush(stdout);
 	    pick_best=pick_score;
 	    p_best = p;
@@ -428,7 +423,8 @@ DB_DEFLIST *p;			/* return the area of component p */
 	area = -1.0;
 	break;
     case CIRC:  /* circle definition */
-	r2 = pow(p->u.c->x1 - p->u.c->x2, 2.0) +  pow(p->u.c->y2 - p->u.c->y1, 2.0);
+	r2 = pow(p->u.c->x1 - p->u.c->x2, 2.0) +
+	    pow(p->u.c->y2 - p->u.c->y1, 2.0);
 	area = M_PI*r2;
 	break;
     case LINE:  /* line definition */
@@ -653,6 +649,7 @@ int db_plot() {
     BOUNDS bb;
     bb.init=0;
     char buf[MAXFILENAME];
+    double x1, y1, x2, y2;
 
     if (currep == NULL) {
     	printf("not currently editing any rep!\n");
@@ -669,13 +666,101 @@ int db_plot() {
     } 
 
     X=0;				    /* turn X display off */
-    ps_preamble(PLOT_FD, currep->name, "piglet version 0.8",
-	8.5, 11.0, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax);
-    db_render(currep, 0, &bb, D_NORM);  /* dump plot */
+
+
+    x1 = currep->vp_xmin;
+    y1 = currep->vp_ymin;
+    x2 = currep->vp_xmax;
+    y2 = currep->vp_ymax;
+
+    printf("currep min/max bounds: %g, %g, %g, %g\n", 
+    	currep->minx, currep->miny, currep->maxx, currep->maxy);
+    printf("currep vp bounds: %g, %g, %g, %g\n", 
+    	x1, y1, x2, y2);
+
+    R_to_V(&x1, &y1);
+    R_to_V(&x2, &y2);
+
+    printf("currep screen bounds: %g, %g, %g, %g\n", 
+    	x1, y1, x2, y2);
+
+    printf("gwidth/height: %g, %g\n", 
+    	(double) g_width, (double) g_height);
+    printf("bounds to ps: %g, %g, %g, %g\n", 
+    	x1, y2, x2, y1);
+
+    /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
+
+    ps_preamble(PLOT_FD, currep->name, "piglet version 0.8", 8.5, 11.0, 
+    0.0, 0.0, (double) g_width, (double) g_height);
+    /* x1, y2, x2, y1); */
+
+    db_render(currep, 0, &bb, D_NORM);      /* dump plot */
     ps_postamble(PLOT_FD);
     X=1;				    /* turn X back on*/
     return(1);
 }
+
+void xform_point(xp,xx,yy) 
+XFORM  *xp;
+double *xx;
+double *yy;
+{
+    double x,y;
+
+    x = (*xx)*xp->r11 + (*yy)*xp->r21 + xp->dx;
+    y = (*xx)*xp->r12 + (*yy)*xp->r22 + xp->dy;
+
+    *xx=x;
+    *yy=y;
+}
+
+XFORM *matrix_from_opts(opts) /* initialize xfrom matrix from options */
+OPTS *opts;
+{
+    XFORM *xp;
+
+    /* create a unit xform matrix */
+
+    xp = (XFORM *) emalloc(sizeof(XFORM));  
+    xp->r11 = 1.0;
+    xp->r12 = 0.0;
+    xp->r21 = 0.0;
+    xp->r22 = 1.0;
+    xp->dx  = 0.0;
+    xp->dy  = 0.0;
+
+    /* ADD [I] devicename [.cname] [:Mmirror] [:Rrot] [:Xscl]
+     *	   [:Yyxratio] [:Zslant] [:Snx ny xstep ystep]
+     *	   [{:F0 | :F1}romfile] coord   
+     */
+
+    /* NOTE: To work properly, these transformations have to */
+    /* occur in the proper order, for example, rotation must come */
+    /* after slant transformation */
+
+    switch (opts->mirror) {
+	case MIRROR_OFF:
+	    break;
+	case MIRROR_X:
+	    xp->r22 *= -1.0;
+	    break;
+	case MIRROR_Y:
+	    xp->r11 *= -1.0;
+	    break;
+	case MIRROR_XY:
+	    xp->r11 *= -1.0;
+	    xp->r22 *= -1.0;
+	    break;
+    }
+
+    mat_scale(xp, opts->scale, opts->scale); 
+    mat_scale(xp, 1.0/opts->aspect_ratio, 1.0); 
+    mat_slant(xp,  opts->slant); 
+    mat_rotate(xp, opts->rotation);
+
+    return(xp);
+} 
 
 
 int db_render(cell, nest, bb, mode)
@@ -774,46 +859,9 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    	;
 	    }
 
-	    /* create a unit xform matrix */
-
-	    xp = (XFORM *) emalloc(sizeof(XFORM));  
-	    xp->r11 = 1.0;
-	    xp->r12 = 0.0;
-	    xp->r21 = 0.0;
-	    xp->r22 = 1.0;
-	    xp->dx  = 0.0;
-	    xp->dy  = 0.0;
-
-	    /* ADD [I] devicename [.cname] [:Mmirror] [:Rrot] [:Xscl]
-	     *	   [:Yyxratio] [:Zslant] [:Snx ny xstep ystep]
-	     *	   [{:F0 | :F1}romfile] coord   
-	     */
-
 	    /* create transformation matrix from options */
+	    xp = matrix_from_opts(p->u.i->opts);
 
-	    /* NOTE: To work properly, these transformations have to */
-	    /* occur in the proper order, for example, rotation must come */
-	    /* after slant transformation */
-
-	    switch (p->u.i->opts->mirror) {
-	    	case MIRROR_OFF:
-		    break;
-	    	case MIRROR_X:
-		    xp->r22 *= -1.0;
-		    break;
-	    	case MIRROR_Y:
-		    xp->r11 *= -1.0;
-		    break;
-	    	case MIRROR_XY:
-		    xp->r11 *= -1.0;
-		    xp->r22 *= -1.0;
-		    break;
-	    }
-
-	    mat_scale(xp, p->u.i->opts->scale, p->u.i->opts->scale); 
-	    mat_scale(xp, 1.0/p->u.i->opts->aspect_ratio, 1.0); 
-	    mat_slant(xp,  p->u.i->opts->slant); 
-	    mat_rotate(xp, p->u.i->opts->rotation);
 	    xp->dx += p->u.i->x;
 	    xp->dy += p->u.i->y;
 
@@ -836,7 +884,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 
 	    if (db_lookup(p->u.i->name) == NULL) {
 
-		printf("skipping reference to %s, no longer in memory\n", p->u.i->name);
+		printf("skipping ref to %s, no longer in memory\n", p->u.i->name);
 
 	    	/* FIXME try to reread the definition from disk */
 		/* this can only happen when a memory copy has */
@@ -860,7 +908,8 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 
             if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
 		set_layer(0,0);
-		db_drawbounds(childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax, D_BB);
+		db_drawbounds(childbb.xmin, childbb.ymin, 
+		    childbb.xmax, childbb.ymax, D_BB);
 	    }
 
 	    free(global_transform); free(xp);	
@@ -885,15 +934,16 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     db_bounds_update(bb, &mybb);
  
     if (nest == 0) { 
-	jump(&mybb, D_BB);
-	/*
-	set_layer(12,0);
-	draw(bb->xmin, bb->ymax, &mybb, D_BB);
-	draw(bb->xmax, bb->ymax, &mybb, D_BB);
-	draw(bb->xmax, bb->ymin, &mybb, D_BB);
-	draw(bb->xmin, bb->ymin, &mybb, D_BB);
-	draw(bb->xmin, bb->ymax, &mybb, D_BB);
-	*/
+
+	if (nestlevel == 0) {
+	    jump(&mybb, D_BB);
+	    set_layer(12,0);
+	    draw(bb->xmin, bb->ymax, &mybb, D_BB);
+	    draw(bb->xmax, bb->ymax, &mybb, D_BB);
+	    draw(bb->xmax, bb->ymin, &mybb, D_BB);
+	    draw(bb->xmin, bb->ymin, &mybb, D_BB);
+	    draw(bb->xmin, bb->ymax, &mybb, D_BB);
+	}
 
 	/* update cell and globals for db_bounds() */
 	cell->minx =  bb->xmin;
@@ -919,7 +969,13 @@ int mode;
     clipl(2, 0.0, 0.0, bb, mode);	/* flush pipe */
     filled_object = 0;		/* global for managing polygon filling */
     if (n_poly_points >= 3) {
-	xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon with saved points */
+	if (X) {
+	    xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon w/saved pts */
+	} else {
+	    /* FIXME: if !X, then output postscript polygon instead */
+	    /* bummer: Poly saves ints, and we need floats.... */
+	    /* ps_draw_poly(&Poly, n_poly_points); */
+	}
     }
 }
 
@@ -967,6 +1023,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
     if (debug) printf("#clipl got: %g %g\n", x, y);
     bound = -10.0;	/* CUSTOMIZE */
+    bound = 0.0;	/* CUSTOMIZE */
 
     if (init == 2) {		/* process closing segment */
        x = xorig;
@@ -1041,6 +1098,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
     if (debug) printf("#clipr got: %g %g\n", x, y);
     bound = (double) (g_width+10); 		/* CUSTOMIZE */
+    bound = (double) (g_width); 		/* CUSTOMIZE */
 
     if (init == 2) {		/* process closing segment */
        x = xorig;
@@ -1116,6 +1174,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
     if (debug) printf("#clipt got: %g %g\n", x, y);
     bound = (double) (g_height + 10); 		/* CUSTOMIZE */
+    bound = (double) (g_height); 		/* CUSTOMIZE */
 
     if (init == 2) {		/* process closing segment */
        x = xorig;
@@ -1199,6 +1258,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
     if (debug) printf("#clipb got: %g %g\n", x, y);
     bound = -10.0; 		/* CUSTOMIZE */
+    bound = 0.0; 		/* CUSTOMIZE */
 
     if (init == 2) {		/* process closing segment */
        x = xorig;
@@ -1267,38 +1327,43 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     if (debug) printf("#emit got: %g %g\n", x, y);
 
     if (nseg && mode != D_READIN) {
-	if (X) {
-	    if (mode == D_PICK) {   /* no drawing just pick checking */
+	if (mode == D_PICK) {   /* no drawing just pick checking */
 
-		/* a bit of a hack, but we overload the bb structure */
-		/* to transmit the pick points ... pick comes in on */
-		/* xmin, ymin and a boolean 0,1 goes back on xmax */
+	    /* a bit of a hack, but we overload the bb structure */
+	    /* to transmit the pick points ... pick comes in on */
+	    /* xmin, ymin and a boolean 0,1 goes back on xmax */
 
-		/* transform the pick point into screen coords */
-		xp = bb->xmin;
-		yp = bb->ymin;
-		R_to_V(&xp, &yp);
+	    /* transform the pick point into screen coords */
+	    xp = bb->xmin;
+	    yp = bb->ymin;
+	    R_to_V(&xp, &yp);
 
-		bb->xmax += (double) pickcheck(xxold, yyold, x, y, xp, yp, 3.0);
-
-	    } else if (mode == D_RUBBER) { /* xor rubber band drawing */
-		if (showon && drawon) {
-		    if (nseg > 1) {
-		        xwin_xor_line((int)xxold,(int)yyold,(int)x,(int)y);
-		    }
-		}
-	    } else {		/* regular drawing */
-		if (showon && drawon) {
-		    if (nseg > 1) {
-		        xwin_draw_line((int)xxold,(int)yyold,(int)x,(int)y);
-		    }
-		    /* save coords for filling polygons later */
-		    if (filled_object && (draw_fill || layer_fill)) {
-		        savepoly((int)x, (int)y);
-		    }
+	    bb->xmax += (double) pickcheck(xxold, yyold, x, y, xp, yp, 3.0);
+	} else if ((mode == D_RUBBER)) { /* xor rubber band drawing */
+	    if (showon && drawon) {
+		if (X && (nseg > 1)) {
+		    xwin_xor_line((int)xxold,(int)yyold,(int)x,(int)y);
 		}
 	    }
-    	}
+	} else {		/* regular drawing */
+	    if (showon && drawon) {
+		if (X) {
+		    if (nseg > 1) {
+			xwin_draw_line((int)xxold,(int)yyold,(int)x,(int)y);
+		    }
+		} else {
+		    if (nseg == 1) {
+			ps_start_line(PLOT_FD, x, y);
+		    } else {
+			ps_continue_line(PLOT_FD, x, y);
+		    }
+		}
+		/* save coords for filling polygons later */
+		if (filled_object && (draw_fill || layer_fill)) {
+		    savepoly((int)x, (int)y);
+		}
+	    }
+	}
     }
     xxold=x;
     yyold=y;
@@ -1376,22 +1441,14 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     /* to a 16 bit limitation for primitives in Xlib in the O'Reilly book */
 
     if (mode != D_READIN) {
-	if (X) {
-	    R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
-	    if (!nseg) {
-	    	clipl(1, 0.0, 0.0, bb, mode);	/* initialize pipe */
-	    }
-	    clipl(0, xx, yy, bb, mode);	
-	} else {	/* postscript output */
-	    if (nseg) {
-		/* autoplot output */
-		/* if (showon && drawon) fprintf(PLOT_FD, 
-		     "%4.6g %4.6g\n", xx,yy);*/	
-		if (showon && drawon) ps_continue_line(PLOT_FD, xx, yy);
-	    } else {
-		if (showon && drawon) ps_start_line(PLOT_FD, xx, yy);
-	    }
+	if (!nseg) {
+	    clipl(1, 0.0, 0.0, bb, mode);	/* initialize pipe */
+	} 
+	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
+	if (!X) {
+	    yy = (double) g_height - yy;    /* for postscript, flip y polarity */
 	}
+	clipl(0, xx, yy, bb, mode);	
     }
     nseg++;
 }

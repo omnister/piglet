@@ -61,18 +61,19 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
 
     xmid = (llx+urx)/2.0;
     ymid = (lly+ury)/2.0;
-    xdel = sqrt((urx-llx)*(urx-llx));
-    ydel = sqrt((ury-lly)*(ury-lly));
+    xdel = fabs(urx-llx);
+    ydel = fabs(ury-lly);
 
     pdx=8.5;
     pdy=11.0;
 
     xmax=pdx*72.0;
     ymax=pdy*72.0;
-    landscape=0;
     if (xdel > ydel) { /* flip aspect */
 	landscape=1;
 	tmp=xmax;  xmax=ymax; ymax=tmp;
+    } else {
+	landscape=0;
     }
 
     s1 = xmax/xdel;
@@ -94,7 +95,7 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
 	buf,
 	getpwuid(getuid())->pw_gecos );
     if (landscape) {
-	fprintf(fp,"%%%%Orientation: Portrait\n");
+	fprintf(fp,"%%%%Orientation: Landscape\n");
     } else {
 	fprintf(fp,"%%%%Orientation: Portrait\n");
     }
@@ -169,14 +170,13 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
     if (landscape) {
     	fprintf(fp,"%g %g scale\n", scale, scale);
-	fprintf(fp,"%g %g translate\n", ury, -llx);
-	fprintf(fp,"%%%g %g translate\n", 
+	fprintf(fp,"%g %g translate\n", 
 	    (ymax/(2.0*scale))+ymid, (xmax/(2.0*scale))-xmid);
 	fprintf(fp,"90 rotate\n");
     } else {
     	fprintf(fp,"%g %g scale\n", scale, scale);
-	fprintf(fp,"%g %g translate\n", 
-	    (xmax/(2.0*scale))-xmid, (ymax/(2.0*scale))-ymid);
+	fprintf(fp,"%g %g translate\n",
+	    (xmax/(2.0*scale))-xmid,  (ymax/(2.0*scale))-ymid);
     }
     fprintf(fp,"%%EndPageSetup\n");
     fprintf(fp,"%% here starts figure;\n");
@@ -224,6 +224,8 @@ double x1, y1;
     fprintf(fp, "%g %g m\n",x1, y1);
 }
 
+void ps_draw_poly() {
+}
 
 
 void ps_postamble(fp)
@@ -236,4 +238,5 @@ FILE *fp;
     fprintf(fp,"%%Pig2psEnd\n");
     fprintf(fp,"rs\n");
     fprintf(fp,"showpage\n");
+    fclose(fp);
 }

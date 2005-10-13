@@ -21,6 +21,9 @@
 #include "rubber.h"
 #include "lex.h"
 #include "readmenu.h"
+#include "path.h"
+
+extern void do_win();
 
 #define MAX_MENU 256
 
@@ -42,7 +45,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.35 2005/09/27 22:37:19 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.36 2005/10/13 16:53:36 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -190,7 +193,7 @@ int initX()
     double x,y;
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
-    char *window_name = "RHOE: Rick's Hierarchical Object Editor";
+    char *window_name = "PD_Piglet: Personal Interactive Graphic Layout EdiTor";
     char *icon_name = "rigel";
     Pixmap icon_pixmap;
     XSizeHints *size_hints;
@@ -216,6 +219,7 @@ int initX()
     int winindex;
     int linewidth;
     int numrows;
+    char buf[128];
 
     if (!(size_hints = XAllocSizeHints())) {
 	eprintf("failure allocating SizeHints memory");
@@ -253,7 +257,16 @@ int initX()
     char_count = strlen(string);
 
     load_font(&font_info);
-    num_menus=loadmenu(menutab, MAX_MENU, "MENUDATA_V", &linewidth, &numrows);
+
+    findfile(PATH, "MENUDATA_V", buf);
+    if (buf[0] == '\0') {
+	printf("Could not file MENUDATA.F\n");
+	printf("PATH=\"%s\"\n", PATH);
+	exit(5);
+    } else {
+	printf("loading %s from disk\n", buf);
+	num_menus=loadmenu(menutab, MAX_MENU, buf, &linewidth, &numrows);
+    }
 
     /* Determine the extent of each menu pane based on font size */
     XTextExtents(font_info, string, char_count, &direction, &ascent,
@@ -436,6 +449,45 @@ int initX()
     return(0);
 }
 
+void dosplash() {
+    BOUNDS bb;
+    bb.init=0;
+    DB_TAB *splashrep;
+    extern double scale,xoffset,yoffset;
+    double x1,x2,y1,y2;
+    double dratio,wratio;
+
+    splashrep=db_lookup("piglogo");
+    if (splashrep != NULL) {
+	x1 = splashrep->vp_xmin; 
+	y1 = splashrep->vp_ymin;
+	x2 = splashrep->vp_xmax;
+	y2 = splashrep->vp_ymax;
+
+        grid_xd = splashrep->grid_xd;
+        grid_yd = splashrep->grid_yd;
+        grid_xs = splashrep->grid_xs;
+        grid_ys = splashrep->grid_ys;
+        grid_xo = splashrep->grid_xo;
+        grid_yo = splashrep->grid_yo;
+
+	dratio = (double) g_height/ (double)g_width;
+	wratio = (y2-y1)/(x2-x1);
+
+	if (wratio > dratio) {	/* world is taller,skinnier than display */
+	    scale=0.9*((double) g_height)/(y2-y1);
+	} else {			/* world is shorter,fatter than display */
+	    scale=0.9*((double) g_height)/(y2-y1);
+	}
+
+	xoffset = (((double) g_width)/2.0) -  ((x1+x2)/2.0)*scale;
+	yoffset = (((double) g_height)/2.0) + ((y1+y2)/2.0)*scale;
+	db_render(splashrep,0,&bb,0); 
+    }
+
+}
+
+static double x,y;
 
 int procXevent(fp)
 FILE *fp;
@@ -464,11 +516,16 @@ FILE *fp;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
 	    if (currep != NULL ) {
 		bb.init=0;
-		db_render(currep,0,&bb,0); /* render the current rep */
+		db_render(currep,0,&bb,0);  /* render the current rep */
 		draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
-		    currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+		    currep->grid_xs, currep->grid_ys, 
+		    currep->grid_xo, currep->grid_yo);
+		if (xwin_display_state() == D_ON) {
+		    rubber_draw(x, y); 
+		}
 		XFlush(dpy);
 	    } else {
+		dosplash();
 		draw_grid(win, gcx, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
 	    }
@@ -513,7 +570,6 @@ char **s;
     int debug=0;
 
     static char buf[BUF_SIZE];
-    static double x,y;
     static double xold,yold;
     unsigned long all = 0xffffffff;
 
@@ -531,8 +587,14 @@ char **s;
 	    bb.init=0;
 	    db_render(currep,0,&bb,0); /* render the current rep */
 	    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
-		currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
+		currep->grid_xs, currep->grid_ys,
+		currep->grid_xo, currep->grid_yo);
+	    if (xwin_display_state() == D_ON) {
+		rubber_draw(x, y);
+	    }
+	    XFlush(dpy);
 	} else {
+	    dosplash();
 	    draw_grid(win, gcx, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
 	}
@@ -649,8 +711,11 @@ char **s;
 			*s = buf;
 			break;
 		    default:
-			printf("a: unexpected button event: %d",
-			    xe.xbutton.button);
+			/* just ignore unexpected events... */
+			/* my laptop touchpad mouse makes random */
+			/* button #7 events all the time (?) */
+			/* printf("a: unexpected button event: %d",
+			    xe.xbutton.button); */
 			break;
 		}
 	    } else {
@@ -668,8 +733,8 @@ char **s;
 			   *s = buf;
 			   break;
 			default:
-			   printf("b: unexpected button event: %d",
-				xe.xbutton.button);
+			   /* printf("b: unexpected button event: %d",
+				xe.xbutton.button); */
 			   break;
 			}
 		    }
@@ -1392,28 +1457,7 @@ double x1,y1,x2,y2;
     if (debug)  printf("scale = %g, xoffset=%g, yoffset=%g\n",
     	scale, xoffset, yoffset);
 
-    /*
-    if (debug)  printf("\n");
-    if (debug)  printf("dx = xoffset + rx*scale;\n");
-    if (debug)  printf("dy = yoffset - ry*scale;\n");
-    if (debug)  printf("rx = (dx - xoffset)/scale;\n");
-    if (debug)  printf("ry = (yoffset - dy)/scale;\n");
-    if (debug)  printf("xmin -> %d\n", (int) (xoffset + x1*scale));
-    if (debug)  printf("ymin -> %d\n", (int) (yoffset - y1*scale));
-    if (debug)  printf("xmax -> %d\n", (int) (xoffset + x2*scale));
-    if (debug)  printf("ymax -> %d\n", (int) (yoffset - y2*scale));
-    */
-    
-    /* 
-    xp->r11 = scale;
-    xp->r12 = 0.0;
-    xp->r21 = 0.0;
-    xp->r22 = -scale;
-    xp->dx  = xoffset;
-    xp->dy  = yoffset;
-    */
-
-    need_redraw++;
+    need_redraw++; 
 }
 
 /* convert viewport coordinates to real-world coords */

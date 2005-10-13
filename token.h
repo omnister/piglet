@@ -31,9 +31,9 @@ typedef struct lexer {
     char *name;			/* name of stream */
     FILE *token_stream;		/* file pointer to stream */
     SAVETOK tokbuf[BUFSIZE];
-    int bufp;		/* next free position in buf */
-    int mode;		/* MAIN, EDI, PRO, ... etc */
-    int line;		/* line number */
+    int bufp;			/* next free position in buf */
+    int mode;			/* MAIN, EDI, PRO, ... etc */
+    int line;			/* line number */
 } LEXER;
 
 extern TOKEN  token_get(LEXER *lp, char *word);

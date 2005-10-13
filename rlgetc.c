@@ -44,7 +44,7 @@ main() {
 char *prompt = (char *) NULL;
 char *saveprompt = (char *) NULL;
 
-void rl_saveprompt() {
+char *rl_saveprompt() {
     if (prompt != (char *) NULL) {
 	 if (saveprompt != (char *) NULL) {
 	     free(saveprompt);
@@ -53,6 +53,7 @@ void rl_saveprompt() {
     } else {
 	saveprompt = (char *) estrdup(">");
     }
+    return(saveprompt);
 }
 
 void rl_restoreprompt() {
