@@ -1,0 +1,25 @@
+
+type "make" to build binary
+type "make install" to install man pages and library 
+
+run "pig" to start the editor
+
+inside piglet type "ret PLAN;"  to unpack a copy of a house floor plan
+then type "edi PLAN;" to edit the floor plan drawing.
+
+Do a window fit command to see the whole drawing "win :F;".
+
+unlock the drawing for modification with "SHO #E;" (make Everything
+readable/writable (#)).
+
+Now you can add lines with "ADD L<layer> x1,y1 x2,y2...;", or other components.
+
+Remember that all commands must end in either right mouse click, a ";" character,
+or the name of another command.
+
+There are a few other archives inside the cells directory.  The archive
+files have "_I" as a suffix.  You can unpack them in the same way as
+PLAN.  For instance, retrieve "smog" by typing "ret smog;".  You can
+then edit the cell with "edi smog;". 
+
+Have fun!

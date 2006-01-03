@@ -36,7 +36,7 @@ int *mr;		/* max rows */
     char * line = NULL;
     FILE *fp;
     int n;
-    int length;
+    size_t length;
     char *p;
     int x, y;
     int k, w;

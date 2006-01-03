@@ -29,17 +29,32 @@ details about commandline editing.
 
 .SS FILES
 
-Piglet requires several configuration files in the current working directory.
+Piglet requires several configuration files to start up.  They are
+the TEXT and NOTE font definition files, the MENU definition file and
+the PROCESS layer definition file.
 
-The TEXT font is defined in the file "./TEXTDATA.F" and the NOTE font is defined
-in the file "./NOTEDATA.F".  The format for both files is plain ASCII.  The file
-starts with two integers separated by a comma.  The first gives the height of each
-character definition and the second, the width.  Each character is then listed in
-printed form and the glyph is defined by a set of vector coordinates.  It is assumed that
-each successive x,y coordinate pair is connected by a stroke unless the path is broken
-by the special coordinate "-64,0".  Each definition is terminated by the special coordinate
-"-64,-64".  Here is an example of the first three definitions in "NOTEDATA.F" for the characters
-<exclam>, <double-quote>, and <pound>:
+Piglet sequentially searches the following directories to find these files.
+
+.nf
+    1) current working directory
+    2) directory ".pigrc" under the current working directory
+    3) directory ".pigrc" in the users HOME directory
+    4) /usr/local/lib/piglet
+    5) /usr/lib/piglet
+.fi
+
+
+The TEXT and FONT files are named "TEXTDATA.F" and "NOTEDATA.F"
+respectively.  The format for both files is plain ASCII.  The file
+starts with two integers separated by a comma.  The first gives the
+height of each character definition and the second, the width.  Each
+character is then listed in printed form and the glyph is defined by a
+set of vector coordinates.  It is assumed that each successive x,y
+coordinate pair is connected by a stroke unless the path is broken by
+the special coordinate "-64,0".  Each definition is terminated by the
+special coordinate "-64,-64".  Here is an example of the first three
+definitions in "NOTEDATA.F" for the characters <exclam>, <double-quote>,
+and <pound>:
 
 .nf
 16,12
@@ -49,7 +64,7 @@ by the special coordinate "-64,0".  Each definition is terminated by the special
 ...
 .fi
 
-Piglet's menu is also defined by a customizable file "./MENUDATA_V".  The default
+Piglet's menu is also defined by a customizable file "MENUDATA_V".  The default
 menu is defined as:
 
 .nf
@@ -73,15 +88,57 @@ rrr   |UND |BYE |DEL |
 yyr   |SAV |EDI |EXI |
 .fi
 
-The file consists of fields separated by "|" characters.  The first field consists of
-some combination of the characters "wrgbapy" which denote the colors white, red, green,
-blue, aqua, purple and yellow.  There should be as many color designators as remaining
-fields.  The subsequent fields on each line will be displayed exactly as shown, rendered
-in the corresponding color.  The vertical bars are replaced with white bounding boxes.
+The file consists of fields separated by "|" characters.  The first
+field consists of some combination of the characters "wrgbapy" which
+denote the colors white, red, green, blue, aqua, purple and yellow. 
+There should be as many color designators as remaining fields.  The
+subsequent fields on each line will be displayed exactly as shown,
+rendered in the corresponding color.  The vertical bars are replaced
+with white bounding boxes. 
 
-When using the editor, any mouse picks on the menu boxes inject the menu text directly
-into the parse stream.  The menu designer should take care to leave extra spaces after
-command names so that any combination of mouse picks results in intelligible commands.
+When using the editor, any mouse picks on the menu boxes inject the menu
+text directly into the parse stream.  The menu designer should take care
+to leave extra spaces after command names so that any combination of
+mouse picks results in intelligible commands.  
+
+
+The layer definition process file is named "PROCDATA.P".  Its format
+is also plain ASCII.  It consists of one EQUate command line per layer.
+The following PROCDATA.P file defines the characteristics of  9 
+layers.
+
+.nf
+EQU :C1 :P1 :M0 :B boundary 0
+EQU :C2 :P2 :M1 :D layer1 1
+EQU :C3 :P3 :M2 :D layer2 2
+EQU :C4 :P4 :M3 :D layer3 3
+EQU :C5 :P5 :M4 :S layer4 4
+EQU :C6 :P6 :M5 :S layer5 5
+EQU :C7 :P7 :M6 :I layer6 6
+EQU :C1 :P1 :M0 :I layer7 7
+EQU :C2 :P2 :M1 :I layer8 8
+.fi
+
+The first line, for example, says that layer 0 is named "boundary",
+drawn with color 1 (white), plotted with pen 1, and uses line type 0
+(solid).  See the EQUate man page for full details. 
+
+.SS DEBUGGING
+
+Since Piglet is under active development, it is distributed to run under
+the gdb() debugger.  The script "pig" runs pig.bin under gdb() When
+running under gdb() most run-time errors and signals will kill piglet
+and print out a backtrace of the stack.  If you would like help fixing a
+bug, please send the last few lines of the printout to Rick Walker
+<walker AT omnisterra DOT com> along with some description of what
+caused the bug. 
+
+When running pig.bin() without the debugger, piglet traps and ignores
+most signals, printing a notification to the terminal: "caught 2:
+Interrupt.  Use QUIT command to end program".  However, the special
+signal SIGQUIT elicits the message: "caught 3: Quit.  do it again and
+I'll die!".  Two SIGQUITs in a row will terminate the program.
+
 }
 
 N: ADD_ARC
@@ -94,9 +151,6 @@ plus a point on the circumference <xy3>.  After the first two
 coords are drawn, a "rubber-banded" arc will be drawn until
 the final coordinate terminates the command and draws the arc. 
 Multiple arcs can be draw with the same command until an EOC is encounterd.
-
-The arc will be solid unless a non-zero width is specified, in which
-case it will be hollow with a wall-thickness of <width>. 
 
 NOTE: Arcs with width are implemented by drawing a line with width
 along the path of the arc.  This means that the finished
@@ -622,20 +676,70 @@ color, lock angle, level and window settings will all be returned to their
 last settings.  This information is persistent, and is stored on disk in
 the ".d" file whenever a device is SAVed. 
 
-Piglet keeps track of the modification state of every device in memory.  If
-a user attempts to EXIt a modified device, the EXIt is aborted and 
-a warning is printed suggesting that the device should be saved before exiting.  Typing 
-EXIt twice in a row will force an exit leaving the device in memory, but
-with the modification bit still set.  The user may return to editing the device
-at any time.  If the user attempts to leave the editor with QUIT or BYE, a list
-of all currently modified devices in memory will be printed warning the user
-that the devices have not been properly saved.  If a second QUIT or BYE is typed, the
-editor will be killed and all unsaved changes will be permanently lost.
-}
+Piglet keeps track of the modification state of every device in memory. 
+If a user attempts to EXIt a modified device, the EXIt is aborted and a
+warning is printed suggesting that the device should be saved before
+exiting.  Typing EXIt twice in a row will force an exit leaving the
+device in memory, but with the modification bit still set.  The user may
+return to editing the device at any time.  If the user attempts to leave
+the editor with QUIT or BYE, a list of all currently modified devices in
+memory will be printed warning the user that the devices have not been
+properly saved.  If a second QUIT or BYE is typed, the editor will be
+killed and all unsaved changes will be permanently lost.  }
 
 N: EQUate
 D: Assign pen/line type to a mask layer
-S: unimplemented (moderate)
+U: EQU [:C<color>] [:P<pen>] [:M{S|D|B}] [:O] [:B|:D|:S|:I] [<label>] <layer>
+S: partial 
+T: {
+
+Associate a mask layer with a color, plotting pen, and a mnemonic
+description of its use.  All layers are initally set to detail, solid
+green, unfilled, and not plotted. 
+
+The EQU command allows these settings to be customized for a particular
+application or IC process. 
+
+.SS OPTIONS
+.TP
+.I <color>
+an integer from 1-7 or one of the characters "WRGBCMY" signifying 
+white, red, green, blue, cyan, magenta or yellow
+.TP
+.I <pen>
+an integer from 1-7 to specify a plot pen, or 0 to suppress plotting.
+Piglet parses this option, and stores it, but pen-based plotting is not
+currently implemented.
+.TP
+.I :M{S|D|B}
+Specify the way in which the mask layer is displayed.  S gives solid lines,
+D gives dotted lines, and B gives broken (dashed lines).
+.TP
+.I :B|:D|:S|:I
+Specify the function of the mask layer. B is Boundary, D is Detail, 
+S is Symbolic and I is Interconnect.  Detail is normally used for the
+actual geometries that are necessary to construct a given device.  Symbolic
+layers are used to replace the details of a device with a more
+comprehensible symbol.  If the symbolic layers are superimposed on the more
+complex detail layers, the designer can use the :N,:D and :S options of the
+WINDOW command to show only the symbolic or detailed form of the device.
+A properly constructed symbol can allow a circuit to be displayed as
+device geometries, schematics, or block diagrams.  Interconnect layers
+are used for circuit wiring.  In a detailed display, lines are shown in
+their true width, but in a symbolic display they are shown with zero
+width (not yet implemented). 
+.TP
+.I :0
+If the ":O" option is provided, the layer will be plotted filled instead of
+outlined.
+.TP
+.I <label>
+The <label> associates a short mnemonic name with the mask which will be printed
+when components are IDEntified.
+.TP
+.I <layer>
+An integer from 0 to MAX_LAYER which specifies which layer is being modified.
+}
 
 N: EXIt
 D: Exit from an EDIT, PROCESS, or SEARCH subsystem
@@ -1011,26 +1115,35 @@ D: Save the current file or device to disk
 S: complete
 U: SAVE <newname>
 T: {
-Saves the current drawing to a file.  Currently files are save in the
+Saves the current drawing to a file.  Currently files are saved in the
 directory "./cells" with the the name and extension of <cellname>.d. 
-Later versions of PD Piglet will add a search path and give flexibility
+Later versions of PD Piglet will add a search path to give flexibility
 for the directory used.  If <newname> is given, the current cell is
 saved (duplicated) to the file "./cells/<newname>.d".  In this case the
 current drawing is still marked modified and will cause an error message
 if an attempt is made to exit the editor before saving the current
 drawing. 
 
-The save file is human readable transcript of the exact commands that
+The SAVE file is a human readable transcript of the exact commands that
 you typed and moused to create the cell in the first place.  You can
 edit this file (carefully) and the textual changes will take effect next
 time you start a new piglet and read in the definition.  The
-"<cellname>.d" file only contains the definition of the cell <cellname>. 
-If <cellname> includes other cells, they will only be called by name and
-not defined unless the program can find the corresponding ".d" files. 
-In other words, if you mail a friend a ".d" file, they will be unable to
-reconstruct your cell if it has any hierarchy.  If you want a full,
-self-contained definition of your work, then you should use the
-"ARCHIVE" command. 
+"<cellname>.d" file contains the definition of the cell <cellname>. 
+If <cellname> includes other cells, they will only be called by name in
+<cellname>.d and will not be defined unless the program can find the
+corresponding ".d" files.  In other words, if you mail a friend a ".d"
+file, they will be unable to reconstruct your cell if it has any
+hierarchy.  If you want a full, self-contained definition of your work,
+then you should use the "ARCHIVE" command which defines every cell
+used in a given drawing.
+
+Most commands may be terminated by typing either an EOC or the name of
+another command.  SAVE is an exception to this rule.  In the event that
+the user accidently types the SAVE command more than once, Piglet will
+quietly ignore the extra SAVE commands.  This prevents a command like
+"SAVE SAVE <a_new_cellname> EXI" from erroneously saving to the current
+cell in addition to <a_new_cellname>.d. 
+
 }
 
 N: SEArch
@@ -1145,7 +1258,7 @@ S: complete
 
 N: WINdow
 D: Change the current window parameters
-U: WINdow :X[<scale>] :N<physical> :F <xy1> [<xy2>] :L<logical> <EOC>
+U: WINdow :X[<scale>] [:N<physical>] [:F] [:O] [<xy1> [<xy2>]] <EOC>
 S: good
 T: {
 Window with no arguments simply refreshes the display.  With only <xy1>
@@ -1161,19 +1274,23 @@ If you have a very complex drawing with lots of hierarchy, you can
 simplify things by using the ":N<nest_level>" of the WIN command.  "WIN
 :N0" will show all sub-cells as bounding boxes.  "WIN :N1" will show all
 sub-cells of sub-cells as bounding boxes, and so on.
+
+Piglet defaults to drawing unfilled polygons.  "WIN :O" will toggle filling.
+
 .SS OPTIONS
 .TP
 .I <scale>
-Factor by which to scale the current window
+Factor by which to scale the current window.  Limited to range 
+of 0.01 ... 100.0.
 .TP
 .I :F
 Specify fitting the window to the bounding box of the current device
 .TP
-.I <physical>
+.I :N<physical>
 Only display nesting down to <physical> number of hierarchy levels (default=3)
 .TP
-.I <logical>
-Only display nesting down to <logical> number of logical levels (default=3)
+.I :O 
+Toggle filled polygon display  (default=unfilled)
 }
 
 N: WRAp

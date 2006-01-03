@@ -45,7 +45,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.36 2005/10/13 16:53:36 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.37 2006/01/03 22:09:50 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -129,23 +129,23 @@ static char stip_bits4[] = {	/* 8x+4 negative slope diagonal */
 #define three_width 3
 #define three_height 3
 
-static unsigned char three_bits0[] = {
+static char three_bits0[] = {
    0x01, 0x00, 0x00};
-static unsigned char three_bits1[] = {
+static char three_bits1[] = {
    0x02, 0x00, 0x00};
-static unsigned char three_bits2[] = {
+static char three_bits2[] = {
    0x04, 0x00, 0x00};
-static unsigned char three_bits3[] = {
+static char three_bits3[] = {
    0x00, 0x01, 0x00};
-static unsigned char three_bits4[] = {
+static char three_bits4[] = {
    0x00, 0x02, 0x00};
-static unsigned char three_bits5[] = {
+static char three_bits5[] = {
    0x00, 0x04, 0x00};
-static unsigned char three_bits6[] = {
+static char three_bits6[] = {
    0x00, 0x00, 0x01};
-static unsigned char three_bits7[] = {
+static char three_bits7[] = {
    0x00, 0x00, 0x02};
-static unsigned char three_bits8[] = {
+static char three_bits8[] = {
    0x00, 0x00, 0x04};
 
 Pixmap stipple[128];

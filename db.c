@@ -60,7 +60,7 @@ int level;
 
     DB_TAB *sp;
     DB_TAB *sp_best;
-    int maxlevel;
+    int maxlevel=0;
 
     if (debug) printf("db_edit_pop: called with level %d\n", level);
 
@@ -78,10 +78,12 @@ int level;
     }
     if (maxlevel > level) {
 	printf("fatal error in db_edit_pop()\n"); 
-	printf("db_edit_pop(): returning pointer to %s %d %d\n", sp_best->name, maxlevel, level); 
+	printf("db_edit_pop(): returning pointer to %s %d %d\n",
+	    sp_best->name, maxlevel, level); 
 	return(NULL);
     } else if (maxlevel > 0) {
-	if (debug) printf("db_edit_pop(): returning pointer to %s\n", sp_best->name); 
+	if (debug) printf("db_edit_pop(): returning pointer to %s\n",
+	    sp_best->name); 
         return (sp_best);	
     } else {
 	if (debug) printf("db_edit_pop(): returning NULL\n"); 

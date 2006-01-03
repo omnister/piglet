@@ -111,4 +111,6 @@ END {
 
 '
 
+cp *1p /usr/local/man/man1p
+
 exit 0

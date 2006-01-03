@@ -1,5 +1,3 @@
-
-
 MANDIR="/usr/local/man/man1p";
 BINDIR="/usr/local/bin";
 LIBDIR="/usr/local/lib/piglet";
@@ -12,7 +10,7 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        com_copy.o com_move.c com_window.o com_point.o com_show.o postscript.o \
        com_area.o readmenu.o com_edit.o com_stretch.o path.o stack.o
 
-TARS = AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I \
+TARS =QUICKSTART AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I \
 cells/H20919M1_I cells/PLAN_I cells/ALL_I \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c db.h \
@@ -24,7 +22,7 @@ plan.TODO readfont.c readfont.h rlgetc.c rlgetc.h rubber.c rubber.h \
 TEXTDATA.F token.c token.h xwin.c xwin.h postscript.c pig \
 postscript.h readmenu.h readmenu.c man/commandlist man/makemans \
 man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
-path.h path.c stack.c
+path.h path.c stack.c piglogo.d
 
 CC=cc -ggdb -Wall
 
@@ -49,8 +47,10 @@ man/piglet.1p: man/commandlist
 
 
 install: man/piglet.1p pig.bin
+	@echo "########################################################"
 	@echo "installing man pages in $(MANDIR)"
-	@echo "you man wish to add $(MANDIR) to your MANPATH"
+	@echo "you may wish to add $(MANDIR) to your MANPATH"
+	@echo "########################################################"
 	mkdir -p $(MANDIR)
 	cp man/*1p $(MANDIR)
 	cp pig.bin  $(BINDIR)
@@ -59,6 +59,7 @@ install: man/piglet.1p pig.bin
 	cp TEXTDATA.F $(LIBDIR)
 	cp PROCDATA.P $(LIBDIR)
 	cp MENUDATA_V $(LIBDIR)
+	cp piglogo.d $(LIBDIR)
 
 #------- dependencies (made with mkdep script) --------------
 
