@@ -45,7 +45,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.37 2006/01/03 22:09:50 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.37 2006/01/03 22:09:50 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
