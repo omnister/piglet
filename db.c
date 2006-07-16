@@ -1731,150 +1731,152 @@ int mode; 	/* drawing mode */
     }
 
     segment = 0;
-    do {
-	x1=x2; x2=temp->coord.x;
-	y1=y2; y2=temp->coord.y;
+    if (temp!=NULL) {
+	do {
+	    x1=x2; x2=temp->coord.x;
+	    y1=y2; y2=temp->coord.y;
 
-	if (mode==D_RUBBER) {
-	    xwin_draw_circle(x2,y2);
-	}
-
-	if (width != 0) {
-	    if (segment == 0) {
-		dx = x2-x1; 
-		dy = y2-y1;
-		a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
-		if (debug) printf("# in 1, a=%g\n",a);
-		dx *= a; 
-		dy *= a;
-	    } else {
-		if (debug) printf("# in 2\n"); 
-		dx=dxn;
-		dy=dyn;
+	    if (mode==D_RUBBER) {
+		xwin_draw_circle(x2,y2);
 	    }
 
-	    if ( temp->next != NULL ) {
-		x3=temp->next->coord.x;
-		y3=temp->next->coord.y;
-		dxn = x3-x2; 
-		dyn = y3-y2;
-
-		/* prevent a singularity if the last */
-		/* rubber band segment has zero length */
-		if (dxn==0 && dyn==0) {
-		    a = 0;
+	    if (width != 0) {
+		if (segment == 0) {
+		    dx = x2-x1; 
+		    dy = y2-y1;
+		    a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
+		    if (debug) printf("# in 1, a=%g\n",a);
+		    dx *= a; 
+		    dy *= a;
 		} else {
-		    a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
+		    if (debug) printf("# in 2\n"); 
+		    dx=dxn;
+		    dy=dyn;
 		}
 
-		if (debug) printf("# in 3, a=%g\n",a); 
-		dxn *= a; 
-		dyn *= a;
-	    }
+		if ( temp->next != NULL ) {
+		    x3=temp->next->coord.x;
+		    y3=temp->next->coord.y;
+		    dxn = x3-x2; 
+		    dyn = y3-y2;
+
+		    /* prevent a singularity if the last */
+		    /* rubber band segment has zero length */
+		    if (dxn==0 && dyn==0) {
+			a = 0;
+		    } else {
+			a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
+		    }
+
+		    if (debug) printf("# in 3, a=%g\n",a); 
+		    dxn *= a; 
+		    dyn *= a;
+		}
+		
+		if ( temp->next == NULL && segment == 0) {
+
+		    if (debug) printf("# in 4\n"); 
+		    xa = x1+dy*width; ya = y1-dx*width;
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+		    xd = x1-dy*width; yd = y1+dx*width;
+
+		} else if (temp->next != NULL && segment == 0) {  
+
+		    if (debug) printf("# in 5\n"); 
+		    xa = x1+dy*width; ya = y1-dx*width;
+		    xd = x1-dy*width; yd = y1+dx*width;
+
+		    if (fabs(dx+dxn) < EPS) {
+			k = (dx - dxn)/(dyn + dy); 
+			if (debug) printf("# in 6, k=%g\n",k);
+		    } else {
+			k = (dyn - dy)/(dx + dxn);
+			if (debug) printf("# in 7, k=%g\n",k);
+		    }
+
+		    /* check for co-linearity of segments */
+		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+			if (debug) printf("# in 8\n"); 
+			xb = x2+dy*width; yb = y2-dx*width;
+			xc = x2-dy*width; yc = y2+dx*width;
+		    } else { 
+			if (debug) printf("# in 19\n");
+			xb = x2+dy*width + k*dx*width;
+			yb = y2-dx*width + k*dy*width;
+			xc = x2-dy*width - k*dx*width; 
+			yc = y2+dx*width - k*dy*width;
+		    }
+
+		} else if ((temp->next == NULL && segment >= 0) ||
+			  ( temp->next->coord.x == x2 && 
+			    temp->next->coord.y == y2)) {
+
+		    if (debug) printf("# in 10\n");
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+
+		} else if (temp->next != NULL && segment >= 0) {  
+
+		    if (debug) printf("# in 11\n");
+		    if (fabs(dx+dxn) < EPS) {
+			k = (dx - dxn)/(dyn + dy); 
+			if (debug) printf("# in 12, k=%g\n",k);
+		    } else {
+			if (debug) printf("# in 13, k=%g\n",k); 
+			k = (dyn - dy)/(dx + dxn);
+		    }
+
+		    /* check for co-linearity of segments */
+		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
+			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+			if (debug) printf("# in 8\n"); 
+			xb = x2+dy*width; yb = y2-dx*width;
+			xc = x2-dy*width; yc = y2+dx*width;
+		    } else { 
+			if (debug) printf("# in 9\n"); 
+			xb = x2+dy*width + k*dx*width;
+			yb = y2-dx*width + k*dy*width;
+			xc = x2-dy*width - k*dx*width; 
+			yc = y2+dx*width - k*dy*width;
+		    }
+		}
+
+		jump(bb,mode);
 	    
-	    if ( temp->next == NULL && segment == 0) {
-
-		if (debug) printf("# in 4\n"); 
-		xa = x1+dy*width; ya = y1-dx*width;
-		xb = x2+dy*width; yb = y2-dx*width;
-		xc = x2-dy*width; yc = y2+dx*width;
-		xd = x1-dy*width; yd = y1+dx*width;
-
-	    } else if (temp->next != NULL && segment == 0) {  
-
-		if (debug) printf("# in 5\n"); 
-		xa = x1+dy*width; ya = y1-dx*width;
-		xd = x1-dy*width; yd = y1+dx*width;
-
-		if (fabs(dx+dxn) < EPS) {
-		    k = (dx - dxn)/(dyn + dy); 
-		    if (debug) printf("# in 6, k=%g\n",k);
-		} else {
-		    k = (dyn - dy)/(dx + dxn);
-		    if (debug) printf("# in 7, k=%g\n",k);
-		}
-
-		/* check for co-linearity of segments */
-		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    if (debug) printf("# in 8\n"); 
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-		} else { 
-		    if (debug) printf("# in 19\n");
-		    xb = x2+dy*width + k*dx*width;
-		    yb = y2-dx*width + k*dy*width;
-		    xc = x2-dy*width - k*dx*width; 
-		    yc = y2+dx*width - k*dy*width;
-		}
-
-	    } else if ((temp->next == NULL && segment >= 0) ||
-	              ( temp->next->coord.x == x2 && 
-		        temp->next->coord.y == y2)) {
-
-		if (debug) printf("# in 10\n");
-		xb = x2+dy*width; yb = y2-dx*width;
-		xc = x2-dy*width; yc = y2+dx*width;
-
-	    } else if (temp->next != NULL && segment >= 0) {  
-
-		if (debug) printf("# in 11\n");
-		if (fabs(dx+dxn) < EPS) {
-		    k = (dx - dxn)/(dyn + dy); 
-		    if (debug) printf("# in 12, k=%g\n",k);
-		} else {
-		    if (debug) printf("# in 13, k=%g\n",k); 
-		    k = (dyn - dy)/(dx + dxn);
-		}
-
-		/* check for co-linearity of segments */
-		if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-		    (fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		    if (debug) printf("# in 8\n"); 
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-		} else { 
-		    if (debug) printf("# in 9\n"); 
-		    xb = x2+dy*width + k*dx*width;
-		    yb = y2-dx*width + k*dy*width;
-		    xc = x2-dy*width - k*dx*width; 
-		    yc = y2+dx*width - k*dy*width;
-		}
-	    }
-
-	    jump(bb,mode);
-	
-	    draw(xa, ya, bb, mode);
-	    draw(xb, yb, bb, mode);
-
-	    if( width != 0) {
-		draw(xc, yc, bb, mode);
-		draw(xd, yd, bb, mode);
 		draw(xa, ya, bb, mode);
+		draw(xb, yb, bb, mode);
+
+		if( width != 0) {
+		    draw(xc, yc, bb, mode);
+		    draw(xd, yd, bb, mode);
+		    draw(xa, ya, bb, mode);
+		}
+
+		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
+		/* check for co-linear reversal of path */
+		if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		    if (debug) printf("# in 20\n"); 
+		    xa = xc; ya = yc;
+		    xd = xb; yd = yb;
+		} else {
+		    if (debug) printf("# in 21\n"); 
+		    xa = xb; ya = yb;
+		    xd = xc; yd = yc;
+		}
+	    } else {		/* width == 0 */
+		jump(bb,mode);
+		draw(x1,y1, bb, mode);
+		draw(x2,y2, bb, mode);
+		jump(bb,mode);
 	    }
 
-	    /* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
-	    /* check for co-linear reversal of path */
-	    if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-		if (debug) printf("# in 20\n"); 
-		xa = xc; ya = yc;
-		xd = xb; yd = yb;
-	    } else {
-		if (debug) printf("# in 21\n"); 
-		xa = xb; ya = yb;
-		xd = xc; yd = yc;
-	    }
-	} else {		/* width == 0 */
-	    jump(bb,mode);
-	    draw(x1,y1, bb, mode);
-	    draw(x2,y2, bb, mode);
-	    jump(bb,mode);
-	}
+	    temp = temp->next;
+	    segment++;
 
-	temp = temp->next;
-	segment++;
-
-    } while(temp != NULL);
+	} while(temp != NULL);
+    }
 }
 
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
