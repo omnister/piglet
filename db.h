@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "stack.h"
 
 /* these definitions map bit fields in an int skipping every other */
 /* bit allowing circle visibility to be set with x|CIRC, and circle */
@@ -357,10 +358,23 @@ extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
 
+
 DB_DEFLIST *db_ident(
 		DB_TAB *cell,
 		NUM x,
 		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+STACK *db_ident_region(
+		DB_TAB *cell,
+		NUM xx1,
+		NUM yy1,
+		NUM xx2,
+		NUM yy2,
 		int mode,
 		int pick_layer,
 		int comp,

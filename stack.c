@@ -53,6 +53,20 @@ STACK **stack;
     }
 }
 
+void stack_free(stack) 
+STACK **stack;
+{
+
+     STACK *s;
+
+     if (stack == NULL) {
+     	return;
+     }
+     while ((s=stack_pop(stack)) != NULL) {
+         ;
+     }
+}
+
 int stack_print(stack) 
 STACK **stack;
 {

@@ -13,7 +13,6 @@
 #include "xwin.h"       /* for snapxy() */
 #include "readfont.h"	/* for writestring() */
 #include "rubber.h"
-#include "stack.h"	/* for generating $FILE arguments in archives */
 #include "rlgetc.h"
 
 #define EPS 1e-6
@@ -34,7 +33,7 @@ static DB_TAB *TAIL = 0;
 XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 
-STACK *stack;
+STACK *stack = NULL;
 
 void db_free_component(); 		/* recycle memory for component */
 int getbits();

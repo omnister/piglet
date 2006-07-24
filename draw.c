@@ -210,13 +210,13 @@ double fuzz;
 DB_DEFLIST *db_ident(cell, x, y, mode, pick_layer, comp, name)
 DB_TAB *cell;			/* device being edited */
 double x, y;	 		/* pick point */
-int mode; 			/* 0=ident, 1=pick */
+int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
 int pick_layer;			/* layer restriction, or 0=all */
 int comp;			/* comp restriction */
 char *name;			/* instance name restrict or NULL (not used)*/
 {
     DB_DEFLIST *p;
-    DB_DEFLIST *p_best = NULL;
+    static DB_DEFLIST *p_best = NULL;	/* gets returned */
     int debug=0;
     BOUNDS childbb;
     double pick_score=0.0;
@@ -351,10 +351,17 @@ char *name;			/* instance name restrict or NULL (not used)*/
 		}
 
 		pick_score += childbb.xmax*3.0;
+	    } else {
+	        /* bb_distance() gives pick_score {0...1} based on bb distances */
 	    }
 	}
 
 	/* keep track of the best of the lot */
+
+	/* 0 < pick_score < 1 -> pick is outside bb */
+	/* 1 < pick_score < 2 -> pick is inside bb */
+	/* 4 < pick_score < 5 -> pick is inside bb and a fuzzy hit on some line */
+
 	if (pick_score > pick_best) {
 	    if (debug) printf("pick_score %g, best %g\n",
 	        pick_score, pick_best);
@@ -365,6 +372,108 @@ char *name;			/* instance name restrict or NULL (not used)*/
     }
 
     return(p_best);
+}
+
+STACK *db_ident_region(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
+DB_TAB *cell;			/* device being edited */
+NUM x1, y1;	 		/* pick point */
+NUM x2, y2;	 		/* pick point */
+int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
+int pick_layer;			/* layer restriction, or 0=all */
+int comp;			/* comp restriction */
+char *name;			/* instance name restrict or NULL (not used)*/
+{
+    DB_DEFLIST *p;
+    static STACK *stack=NULL;	/* gets returned */
+    int debug=0;
+    BOUNDS childbb;
+    double fuzz;
+    double tmp;
+    int layer;
+    int bad_comp;
+
+    if (cell == NULL) {
+    	printf("no cell currently being edited!\n");
+	return(0);
+    }
+
+    if (mode && debug) {		/* pick rather than ident mode */
+    	printf("db_ident: called with layer %d, comp %d, name %s\n", 
+		pick_layer, comp, name);
+    }
+
+    /* pick fuzz should be a fraction of total window size */
+    
+    fuzz = max((cell->maxx-cell->minx),(cell->maxy-cell->miny))*FUZZBAND;
+
+    stack=NULL;
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	childbb.init=0;
+
+	/* screen components by crude bounding boxes then */
+	/* render each one in D_PICK mode for detailed test */
+
+	switch (p->type) {
+	case ARC:   /* arc definition */
+	    layer = p->u.a->layer;
+	    break;
+	case CIRC:  /* arc definition */
+	    layer = p->u.c->layer;
+	    break;
+	case LINE:  /* arc definition */
+	    layer = p->u.l->layer;
+	    break;
+	case NOTE:  /* note definition */
+	    layer = p->u.n->layer;
+	    break;
+	case OVAL:  /* oval definition */
+	    layer = p->u.o->layer;
+	    break;
+	case POLY:  /* polygon definition */
+	    layer = p->u.p->layer;
+	    break;
+	case RECT:  /* rectangle definition */
+	    layer = p->u.r->layer;
+	    break;
+	case TEXT:  /* text definition */
+	    layer = p->u.t->layer;
+	    break;
+	case INST:  /* instance definition */
+	    layer = 0;
+	    break;
+	default:
+	    printf("error in db_ident switch\n");
+	    break;
+	}
+
+	/* check all the restrictions on picking something */
+
+	bad_comp=0;
+	if ((pick_layer != 0 && layer != pick_layer) ||
+	    (comp != 0 && comp != ALL && p->type != comp)  ||
+	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
+	    (mode == 1 && !show_check_modifiable(currep, p->type, layer))) {
+		bad_comp++;
+	}
+
+	if (!bad_comp) {
+	    if (x1 > x2) {			/* canonicalize coords */
+	    	tmp = x2; x2 = x1; x1 = tmp;
+	    }
+	    if (y1 > y2) {
+	    	tmp = y2; y2 = y1; y1 = tmp;
+	    }
+
+	    /* check for enclosure */
+	    if (x1 <= p->xmin  && x2 >= p->xmax && y1 <= p->ymin && y2 >= p->ymax) {
+	    	stack_push(&stack, (char *)p);
+	    }
+
+	}
+    }
+    return(stack);
 }
 
 void db_drawbounds(xmin, ymin, xmax, ymax, mode)
