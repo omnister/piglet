@@ -1,5 +1,4 @@
 
-
 MANDIR="/usr/local/man/man1p";
 BINDIR="/usr/local/bin";
 LIBDIR="/usr/local/lib/piglet";
@@ -9,21 +8,21 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        geom_poly.o geom_text.o geom_inst.o geom_arc.o\
        rlgetc.o token.o lex.o coords.o com_change.o\
        com_add.o com_delete.o com_distance.o com_equate.o com_ident.o \
-       com_copy.o com_move.c com_window.o com_point.o com_show.o postscript.o \
-       com_area.o readmenu.o com_edit.o com_stretch.o path.o stack.o
+       com_copy.o com_move.o com_window.o com_point.o com_show.o postscript.o \
+       com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o path.o stack.o
 
 TARS =QUICKSTART AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I \
 cells/H20919M1_I cells/PLAN_I cells/ALL_I \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
-com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c db.h \
-draw.c eprintf.c eprintf.h eventnames.h equate.c equate.h geom_circle.c \
-geom_inst.c geom_line.c geom_arc.c  geom_poly.c geom_rect.c geom_text.c \
-lex.c lex.h Makefile PROCDATA.P MENUDATA_V NOTEDATA.F opt_parse.c opt_parse.h \
-com_change.c plan.EQUATE plan.MOVE plan.SELECT plan.STATUS \
-plan.TODO readfont.c readfont.h rlgetc.c rlgetc.h rubber.c rubber.h \
-TEXTDATA.F token.c token.h xwin.c xwin.h postscript.c pig \
-postscript.h readmenu.h readmenu.c man/commandlist man/makemans \
-man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
+com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
+db.h com_wrap.c com_smash.c draw.c eprintf.c eprintf.h eventnames.h equate.c \
+equate.h geom_circle.c geom_inst.c geom_line.c geom_arc.c  geom_poly.c \
+geom_rect.c geom_text.c lex.c lex.h Makefile PROCDATA.P MENUDATA_V \
+NOTEDATA.F opt_parse.c opt_parse.h com_change.c plan.EQUATE plan.MOVE \
+plan.SELECT plan.STATUS plan.TODO readfont.c readfont.h rlgetc.c \
+rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
+postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
+man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
 path.h path.c stack.c piglogo.d
 
 CC=cc -ggdb -Wall
@@ -57,6 +56,7 @@ install: man/piglet.1p pig.bin
 	cp man/*1p $(MANDIR)
 	cp pig.bin  $(BINDIR)
 	cp pig  $(BINDIR)
+	mkdir -p $(LIBDIR)
 	cp NOTEDATA.F $(LIBDIR)
 	cp TEXTDATA.F $(LIBDIR)
 	cp PROCDATA.P $(LIBDIR)

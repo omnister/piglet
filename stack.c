@@ -62,7 +62,7 @@ STACK **stack;
      if (stack == NULL) {
      	return;
      }
-     while ((s=stack_pop(stack)) != NULL) {
+     while ((s=(STACK *)stack_pop(stack)) != NULL) {
          ;
      }
 }

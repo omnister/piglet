@@ -1464,15 +1464,8 @@ char *arg;
     return (0);
 }
 
-/* com_show(lp, arg)		define which kinds of things to display */
-
-int com_smash(lp, arg)	/* replace an instance with its components */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_smash\n");
-    return (0);
-}
+/* com_show(lp, arg)	 define which kinds of things to display */
+/* com_smash(lp, arg)	 replace an instance with its components */
 
 int com_split(lp, arg)		/* cut a component into two halves */
 LEXER *lp;
@@ -1522,13 +1515,8 @@ char *arg;
 
 /* com_window(lp, arg)	  (defined in com_window.c) */
 
-int com_wrap(lp, arg)	/* create a new device using existing components*/
-LEXER *lp;
-char *arg;
-{
-    printf("    com_wrap\n");
-    return (0);
-}
+/* now in com_wrap.c */
+/* int com_wrap(lp, arg) */	/* create a new device using existing components*/
 
 int default_layer()
 {

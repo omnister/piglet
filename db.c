@@ -90,6 +90,22 @@ int level;
     }
 }
 
+int db_exists(char *name) { 		/* return 0 if not in memory or on disk */
+
+    char buf[MAXFILENAME];
+
+    snprintf(buf, MAXFILENAME, "./cells/%s.d", name );
+
+
+    if (((access(buf,F_OK)) == 0)  || (db_lookup(name) != NULL)) {
+	printf("checking access on %s = 1\n", buf);
+        return 1;
+    } else {
+	printf("checking access on %s = 0\n", buf);
+        return 0;
+    }
+}
+
 
 DB_TAB *db_lookup(char *name)           /* find name in db */
 {
@@ -106,7 +122,7 @@ DB_TAB *db_lookup(char *name)           /* find name in db */
 	}
     }
     if (debug) printf("not found!\n");
-    return(0);               	/* 0 ==> not found */
+    return(NULL);              	/* 0 ==> not found */
 } 
 
 DB_TAB *db_install(s)		/* install s in db */

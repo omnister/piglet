@@ -409,6 +409,7 @@ extern void db_highlight();
 extern void db_print_opts();
 extern void db_insert_component();
 extern void db_purge();
+extern int  db_exists();
 
 extern int db_plot();			/* plot the device to a file */
 

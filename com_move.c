@@ -81,7 +81,7 @@ int com_move(LEXER *lp, char *arg)
 	case START:		/* get option or first xy pair */
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,word);
                 if (word[0]==':') {
                     switch (toupper(word[1])) {
                         case 'R':

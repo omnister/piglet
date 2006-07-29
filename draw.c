@@ -7,6 +7,7 @@
 #include "postscript.h"
 #include "eprintf.h"
 #include "equate.h"
+#include "string.h"
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines is as */
                         /* a fraction of minimum window dimension */
@@ -213,7 +214,7 @@ double x, y;	 		/* pick point */
 int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
 int pick_layer;			/* layer restriction, or 0=all */
 int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL (not used)*/
+char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
     static DB_DEFLIST *p_best = NULL;	/* gets returned */
@@ -285,7 +286,8 @@ char *name;			/* instance name restrict or NULL (not used)*/
 	if ((pick_layer != 0 && layer != pick_layer) ||
 	    (comp != 0 && comp != ALL && p->type != comp)  ||
 	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
-	    (mode == 1 && !show_check_modifiable(currep, p->type, layer))) {
+	    (mode == 1 && !show_check_modifiable(currep, p->type, layer)) ||
+	    (p->type == INST && name != NULL && strncmp(name, p->u.i->name, MAXFILENAME)) != 0)  {
 		bad_comp++;
 	}
 
@@ -381,7 +383,7 @@ NUM x2, y2;	 		/* pick point */
 int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
 int pick_layer;			/* layer restriction, or 0=all */
 int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL (not used)*/
+char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
     static STACK *stack=NULL;	/* gets returned */
@@ -454,7 +456,8 @@ char *name;			/* instance name restrict or NULL (not used)*/
 	if ((pick_layer != 0 && layer != pick_layer) ||
 	    (comp != 0 && comp != ALL && p->type != comp)  ||
 	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
-	    (mode == 1 && !show_check_modifiable(currep, p->type, layer))) {
+	    (mode == 1 && !show_check_modifiable(currep, p->type, layer)) ||
+	    (p->type == INST && name != NULL && strncmp(name, p->u.i->name, MAXFILENAME)) != 0)  {
 		bad_comp++;
 	}
 
@@ -848,25 +851,27 @@ OPTS *opts;
     /* occur in the proper order, for example, rotation must come */
     /* after slant transformation */
 
-    switch (opts->mirror) {
-	case MIRROR_OFF:
-	    break;
-	case MIRROR_X:
-	    xp->r22 *= -1.0;
-	    break;
-	case MIRROR_Y:
-	    xp->r11 *= -1.0;
-	    break;
-	case MIRROR_XY:
-	    xp->r11 *= -1.0;
-	    xp->r22 *= -1.0;
-	    break;
+    if (opts != NULL) {
+	switch (opts->mirror) {
+	    case MIRROR_OFF:
+		break;
+	    case MIRROR_X:
+		xp->r22 *= -1.0;
+		break;
+	    case MIRROR_Y:
+		xp->r11 *= -1.0;
+		break;
+	    case MIRROR_XY:
+		xp->r11 *= -1.0;
+		xp->r22 *= -1.0;
+		break;
+	}
+	mat_scale(xp, opts->scale, opts->scale); 
+	mat_scale(xp, 1.0/opts->aspect_ratio, 1.0); 
+	mat_slant(xp,  opts->slant); 
+	mat_rotate(xp, opts->rotation);
     }
 
-    mat_scale(xp, opts->scale, opts->scale); 
-    mat_scale(xp, 1.0/opts->aspect_ratio, 1.0); 
-    mat_slant(xp,  opts->slant); 
-    mat_rotate(xp, opts->rotation);
 
     return(xp);
 } 

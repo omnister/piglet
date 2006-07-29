@@ -252,7 +252,7 @@ int *layer;
 	    		rubber_clear_callback();
 			printf("error: a line must have finite length\n");
 			state = START;
-		    } else if (x2==xold && y2==yold) {
+		    } else if (x2==xold && y2==yold && nsegs) {
 		    	if (debug) coord_print(CP);
 			printf("dropping coord\n");
 			coord_drop(CP);  /* drop last coord */

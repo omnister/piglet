@@ -172,6 +172,7 @@ int com_area(LEXER *lp, char *arg)
 
 		if (p_prev != NULL) {
 		    db_highlight(p_prev);	/* unhighlight it */
+		    p_prev = NULL;
 		}
 
 		if ((p_best=db_ident(currep, x1,y1,0,my_layer, comp, 0)) != NULL) {

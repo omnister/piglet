@@ -121,6 +121,7 @@ int *layer;
 		if (mode==POINT) {
 		    if (p_prev != NULL) {
 			db_highlight(p_prev);	/* unhighlight it */
+			p_prev = NULL;
 		    }
 		    if ((p_best=db_ident(currep, x1,y1,0, 0, 0, 0)) != NULL) {
 			db_highlight(p_best);	
