@@ -78,7 +78,7 @@ int com_add(LEXER *lp, char *arg)
 		    }
 		    if (valid_comp) {
 			if(sscanf(&word[1], "%d", &layer) == 1 && 
-			    layer > 0 && layer <= MAX_LAYER) {
+			    layer >= 0 && layer <= MAX_LAYER) {
 			    if (debug) printf("given layer=%d\n",layer);
 			} else {
 			    valid_comp=0;

@@ -182,7 +182,7 @@ char *arg;
 
 		    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
 
-		    if (readin(buf,1) == 0) {   /* cannot find copy on disk */
+		    if (readin(buf,1,EDI) == 0) {   /* cannot find copy on disk */
 			if (debug) printf("calling dowin 1\n");
 			do_win(lp, 4, -100.0, -100.0, 100.0, 100.0, 1.0);
 			if (old_rep == NULL ) {

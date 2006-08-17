@@ -19,6 +19,7 @@ static double xmin, ymin, xmax, ymax;
 void draw_cbox();
 void copy_draw_box();
 STACK *stack;
+STACK *tmp;
 
 /* 
     copy a component in the current device.
@@ -367,14 +368,16 @@ int com_copy(LEXER *lp, char *arg)
 		} else {
 		    /* rubber_clear_callback(); */
 		    if (mode == POINT) {
-			p_new=db_copy_component(p_best);
+			p_new=db_copy_component(p_best, NULL);
 			db_move_component(p_new, x4-x3, y4-y3);
 			db_insert_component(currep, p_new);
                     } else {
-                        while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-			    p_new=db_copy_component(p_best);
+			tmp = stack;
+                        while (tmp!=NULL) {
+                            p_best = (DB_DEFLIST *) stack_walk(&tmp);
+                            p_new=db_copy_component(p_best, NULL);
                             db_move_component(p_new, x4-x3, y4-y3);
-			    db_insert_component(currep, p_new);
+                            db_insert_component(currep, p_new);
                         }
                     }
 		    need_redraw++;

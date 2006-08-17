@@ -4,6 +4,9 @@
 #include <ctype.h>		/* for toupper */
 #include <math.h>
 
+#include <time.h>
+#include <sys/time.h>
+
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
 
@@ -22,17 +25,17 @@ int readin();
 /* The names of functions that actually do the manipulation. */
 
 int com_add(), com_archive(), com_area(), com_background();
-int com_bye(), com_change(), com_copy(), com_define();
+int com_bye(), com_change(), com_copy(), com_date(), com_define();
 int com_delete(), com_display(), com_distance(), com_dump(), com_edit();
-int com_equate(), com_exit(), com_files(), com_grid();
+int com_equate(), com_exit(), com_files(), com_fsize(), com_grid();
 int com_group(), com_help(),  com_identify();
 int com_input(), com_interrupt(), com_layer(), com_level();
 int com_list(), com_lock(), com_macro(), com_menu();
 int com_move(), com_plot(), com_point(), com_process();
 int com_purge(), com_retrieve(), com_save(), com_search();
 int com_set(), com_shell(), com_show(), com_smash();
-int com_split(), com_step(), com_stretch(), com_trace();
-int com_undo(), com_units(), com_version(), com_window();
+int com_split(), com_step(), com_stretch(), com_time(), com_trace();
+int com_tslant(), com_undo(), com_units(), com_version(), com_window();
 int com_wrap();
 
 typedef struct {
@@ -50,6 +53,7 @@ COMMAND commands[] =
     {"BYE", com_bye, "terminate edit session"},
     {"CHANGE", com_change, "change characteristics of selected components"},
     {"COPY", com_copy, "copy a component from one location to another"},
+    {"DATE", com_date, "print the current date and time to the console"},
     {"DEFINE", com_define, "define a macro"},
     {"DELETE", com_delete, "delete a component from the current device"},
     {"DISTANCE", com_distance, "measure the distance between two points"},
@@ -59,6 +63,7 @@ COMMAND commands[] =
     {"EQUATE", com_equate, "define characteristics of a mask layer"},
     {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
     {"$FILES", com_files, "purge named files"},
+    {"FSIZE", com_fsize, "Set the default font size for text and notes"},
     {"GRID", com_grid, "set grid spacing or turn grid on/off"},
     {"GROUP", com_group, "create a device from existing components"},
     {"HELP", com_help, "print syntax diagram for the specified command"},
@@ -89,7 +94,9 @@ COMMAND commands[] =
     {"SPLIT", com_split, "cut a component into two halves"},
     {"STEP", com_step, "copy a component in an array fashion"},
     {"STRETCH", com_stretch, "make a component larger or smaller"},
+    {"TIME", com_time, "print the system clock time"},
     {"TRACE", com_trace, "highlight named signals"},
+    {"TSLANT", com_tslant, "set the default font slant for italic text and notes"},
     {"UNDO", com_undo, "undo the last command"},
     {"UNITS", com_units, "set editor resolution and user unit type"},
     {"VERSION", com_version, "identify the version number of program"},
@@ -157,7 +164,7 @@ char **argv;
 	printf("PATH=\"%s\"\n", PATH);
 	exit(5);
     } else {
-	readin(buf,0);	/* load PROCESS FILE definitions */
+	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
 
     findfile(PATH, "piglogo.d", buf);
@@ -167,7 +174,7 @@ char **argv;
 	exit(5);
     } else {
         currep = db_install("piglogo");           /* create blank stub */
-	readin(buf,1);	
+	readin(buf,1,EDI);	
 	currep->modified = 0;
 	show_init(currep);
 	currep = NULL;
@@ -442,7 +449,21 @@ int com_define(lp, arg)		/* define a macro */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_define\n");
+    printf("    com_define (unimplemented)\n");
+    return (0);
+}
+
+int com_date(lp, arg)		/* print date and time to console */
+LEXER *lp;
+char *arg;
+{
+    char buf[MAXFILENAME]; 
+    time_t time_now;
+
+    time_now = time(NULL);
+    strftime(buf, MAXFILENAME, "%m/%d/%Y %H:%M:%S", localtime(&time_now));
+
+    printf("    %s\n",buf);
     return (0);
 }
 
@@ -609,6 +630,8 @@ char *arg;
     } else if (lp->mode == PRO) {
         /* FIXME: need to check if PROCFILE is modified */
 	lp->mode = MAIN;
+    } else if (lp->mode == MAIN) {
+	printf("    not editing a cell.  use BYE or QUIT to terminate program\n");
     }
     return (0);
 }
@@ -650,6 +673,67 @@ char *arg;
     }
     return (0);
 }
+
+int com_fsize(lp, arg)	/* Set the default font size for text and notes */
+LEXER *lp;
+char *arg;
+{
+    TOKEN token;
+    int done=0;
+    int fsize;
+    char buf[128];
+    char word[128];
+    int nnums=0;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%d", &fsize) != 1 || fsize < 0.0) {
+		    weprintf("FSIZE invalid font size value: %s\n", word);
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("FSIZE: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    if (1 || lp->mode == PRO) {		/* policy decision: don't limit to PRO */
+	if (nnums==1) {
+	     db_set_font_size(fsize);
+	     printf("FSIZE: default font size is set to %g\n", db_get_font_size());
+	} else if (nnums==0) {
+	     printf("FSIZE: default font size is set to %g\n", db_get_font_size());
+	} else {
+	    printf("FSIZE: wrong number of arguments\n");
+	    return(-1);
+	}
+    } else {
+	printf("FSIZE: can only set font size in PROCESS subsystem\n");
+	return(-1);
+    }
+
+    return (0);
+}
+
 
 
 /* "GRID [ON | OFF] [:Ccolor] [spacing mult [xypnt]]" */
@@ -878,9 +962,10 @@ char *arg;
 /* now in com_ident.c */
 /* com_identify(lp, arg) */  /*	identify named instances or components */
 
-int readin(filename, editmode)		/* work routine for com_input */
+int readin(filename, editmode, mode)		/* work routine for com_input */
 char *filename;
 int editmode;
+int mode;	/* EDI, MAIN, PRO, ... */
 {
     LEXER *my_lp;
     FILE *fp;
@@ -891,7 +976,7 @@ int editmode;
 	return(0);
     } else {
 	my_lp = token_stream_open(fp, filename);
-	my_lp->mode = EDI;
+	my_lp->mode = mode;
 
 	if (currep != NULL) {
 	    save_rep=strsave(currep->name);
@@ -951,7 +1036,7 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "%s", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if(readin(buf,0) == 0) {
+			if(readin(buf,0,EDI) == 0) {
 			    printf("COM_INPUT: could not open %s\n", buf);
 			    return(1);
 			} 
@@ -1308,7 +1393,7 @@ char *arg;
 		    snprintf(buf, MAXFILENAME, "./cells/%s_I", word);
 		    nfiles++;
 		    if (nfiles == 1) {
-			if(readin(buf,0) == 0) {
+			if(readin(buf,0,EDI) == 0) {
 			    printf("COM_RET: could not open %s\n", buf);
 			    return(1);
 			} 
@@ -1486,11 +1571,91 @@ char *arg;
 /* moved to com_stretch.c */
 /* com_stretch(lp, arg) */	/* make a component larger or smaller */
 
+int com_time(lp, arg)		/* print the system time to console */
+LEXER *lp;
+char *arg;
+{
+    char buf[MAXFILENAME]; 
+    static time_t time_old = 0;
+    static time_t time_now = 0;
+
+    time_old = time_now;
+    time_now = time(NULL);
+    strftime(buf, MAXFILENAME, "%m/%d/%Y %H:%M:%S", localtime(&time_now));
+
+    if (time_old != 0) {
+	printf("    %s, elapsed since last call: %d seconds\n",buf, (int) (time_now-time_old));
+    } else {
+	printf("    %s\n",buf);
+    }
+    return (0);
+}
+
 int com_trace(lp, arg)		/* highlight named signals */
 LEXER *lp;
 char *arg;
 {
     printf("    com_trace\n");
+    return (0);
+}
+
+int com_tslant(lp, arg)	/* set the default font slant for italic text and notes */
+LEXER *lp;
+char *arg;
+{
+    TOKEN token;
+    int done=0;
+    int slant;
+    char buf[128];
+    char word[128];
+    int nnums=0;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%d", &slant) != 1 || slant < -45.0 || slant > 45.0) {
+		    weprintf("TSLANT invalid slant value: %s\n", word);
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("TSLANT: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    if (1 || lp->mode == PRO) {		/* policy decision: don't limit to PRO */
+	if (nnums==1) {
+	     db_set_text_slant(slant);
+	     printf("TSLANT: slant is set to %g\n", db_get_text_slant());
+	} else if (nnums==0) {
+	     printf("TSLANT: slant is set to %g\n", db_get_text_slant());
+	} else {
+	    printf("TSLANT: wrong number of arguments\n");
+	    return(-1);
+	}
+    } else {
+	printf("TSLANT: can only set slant in PROCESS subsystem\n");
+	return(-1);
+    }
+
     return (0);
 }
 

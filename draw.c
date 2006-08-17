@@ -34,6 +34,7 @@ void clipr();   	  /* clip right side */
 void clipt();		  /* clip top */
 void clipb();		  /* clip bottom */
 
+
 int pickcheck();
 void emit();
 int debug = 0;
@@ -117,15 +118,24 @@ double fuzz;
 {
     int outcode;
     double retval;
+    double tmp;
     outcode = 0;
 
     /*  9 8 10
 	1 0 2
 	5 4 6 */
 
-    /* FIXME - this check can eventually go away for speed */
-    if (p->xmin > p->xmax) { printf("bad!\n"); }
-    if (p->ymin > p->ymax) { printf("bad!\n"); }
+    if (p->xmin > p->xmax) { 
+	tmp = p->xmax;
+	p->xmax = p->xmin;
+	p->xmin = tmp;
+    
+    }
+    if (p->ymin > p->ymax) {
+	tmp = p->ymax;
+	p->ymax = p->ymin;
+	p->ymin = tmp;
+    }
 
     if (x <= p->xmin-fuzz)  outcode += 1; 
     if (x >  p->xmax+fuzz)  outcode += 2;
@@ -871,7 +881,6 @@ OPTS *opts;
 	mat_slant(xp,  opts->slant); 
 	mat_rotate(xp, opts->rotation);
     }
-
 
     return(xp);
 } 

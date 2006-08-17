@@ -1,7 +1,7 @@
 #include "db.h"
 
 COORDS *coord_new(NUM x, NUM y);
-COORDS *coord_copy(COORDS *CP);
+COORDS *coord_copy(XFORM *xp, COORDS *CP);
 void coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
@@ -104,20 +104,35 @@ COORDS *CP;
     printf(";\n");
 }		
 
-COORDS *coord_copy(CP)
+/* copies a coordinate list with optional transform */
+/* if xp is NULL, no transform done */
+
+COORDS *coord_copy(xp, CP)
+XFORM *xp;
 COORDS *CP;
 {
     COORDS *p;
     COORDS *new_coords; 
+    double x,y;
 
     if (CP == NULL) {
     	printf("coord_copy: can't copy null coordinate list\n");
-    } else {
+    } else if (xp == NULL) {
 	p=CP;
 	new_coords = coord_new(p->coord.x,p->coord.y);
 	p=p->next;
 	while(p != NULL) {
 	    coord_append(new_coords, p->coord.x, p->coord.y);
+	    p=p->next;
+	}
+    } else {
+	p=CP;
+	x = p->coord.x; y = p->coord.y; xform_point(xp, &x, &y);
+	new_coords = coord_new(x, y);
+	p=p->next;
+	while(p != NULL) {
+	    x = p->coord.x; y = p->coord.y; xform_point(xp, &x, &y);
+	    coord_append(new_coords, x, y);
 	    p=p->next;
 	}
     }

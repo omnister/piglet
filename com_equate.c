@@ -29,13 +29,11 @@ char *arg;
 
     int debug=0;
 
-    /*
-    if (lp->mode != EDI) {
-    	printf("No cell currently being edited!\n");
+    if (lp->mode != PRO) {
+    	printf("Can only enter EQUate commands in the PROCESS subsystem!\n");
 	token_flush_EOL(lp);
 	return(1);
     }
-    */
 
     rl_saveprompt();
     rl_setprompt("EQUATE> ");

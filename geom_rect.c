@@ -144,7 +144,11 @@ int *layer;
 		token_get(lp,word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
 		state = START;
-		db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
+		if (x1 == x2 || y1 == y2) {
+		    printf("    Can't add a rectangle of zero width or height\n");
+		} else {
+		    db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
+		}
 		rubber_clear_callback();
 		need_redraw++; 
 	    } else if (token == EOL) {

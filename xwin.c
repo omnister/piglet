@@ -45,7 +45,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.37 2006/01/03 22:09:50 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.38 2006/08/17 16:05:40 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -698,7 +698,7 @@ char **s;
 			snapxy(&x,&y);
 
 			/* returning mouse loc as a string */
-			sprintf(buf," %g, %g\n", x, y);
+			sprintf(buf," %f, %f\n", x, y);
 			*s = buf;
 
 			if (debug) printf("EVENT LOOP: got ButtonPress\n");
@@ -945,7 +945,7 @@ double xorig,yorig;	/* grid origin */
 
     double xstart, ystart, xend, yend;
 
-    if (debug) printf("draw_grid called with: %g %g %g %g %g %g, color %d\n", 
+    if (debug) printf("draw_grid called with: %f %f %f %f %f %f, color %d\n", 
     	dx, dy, sx, sy, xorig, yorig, grid_color);
 
     /* colored grid */
@@ -959,20 +959,20 @@ double xorig,yorig;	/* grid origin */
 
     xstart=(double) 0;
     ystart=(double) g_height;
-	if (debug) printf("starting with %g %g\n", xstart, ystart); 
+	if (debug) printf("starting with %f %f\n", xstart, ystart); 
     V_to_R(&xstart, &ystart);
-	if (debug) printf("V_to_R %g %g\n", xstart, ystart); 
+	if (debug) printf("V_to_R %f %f\n", xstart, ystart); 
 
     snapxy_major(&xstart,&ystart);
-	if (debug) printf("snap %g %g\n", xstart, ystart); 
+	if (debug) printf("snap %f %f\n", xstart, ystart); 
 
     xend=(double) g_width;
     yend=(double) 0;
-	if (debug) printf("starting with %g %g\n", xend, yend); 
+	if (debug) printf("starting with %f %f\n", xend, yend); 
     V_to_R(&xend, &yend);
-	if (debug) printf("V_to_R %g %g\n", xend, yend); 
+	if (debug) printf("V_to_R %f %f\n", xend, yend); 
     snapxy_major(&xend,&yend);
-	if (debug) printf("snap %g %g\n", xend, yend); 
+	if (debug) printf("snap %f %f\n", xend, yend); 
 
     if ( sx <= 0.0 || sy <= 0.0) {
 	printf("grid x,y step must be a positive integer\n");
@@ -1120,7 +1120,7 @@ double x, y;
     extern unsigned int g_width, g_height;
     char buf[BUF_SIZE];
 
-    sprintf(buf,"%g,%g", x, y);
+    sprintf(buf,"%f,%f", x, y);
 
     if (g_width > g_height) {
 	delta = (double) dpy_width/100;
@@ -1161,7 +1161,7 @@ double *x, *y;
 
     int debug=0;
 
-    if (debug) printf("snap called with %g %g, and xo %g %g xd %g %g\n", 
+    if (debug) printf("snap called with %f %f, and xo %f %f xd %f %f\n", 
     	*x, *y,xo, yo, xd, yd);
 
 
@@ -1382,7 +1382,7 @@ double yo;
 	}
     }
    
-    if (debug) printf("setting grid: xydelta=%g,%g xyskip=%g,%g xyoffset=%g,%g\n",
+    if (debug) printf("setting grid: xydelta=%f,%f xyskip=%f,%f xyoffset=%f,%f\n",
 	xd, yd, xs, ys, xo, yo);
 }
 
@@ -1454,7 +1454,7 @@ double x1,y1,x2,y2;
     }
 
     if (debug) printf("screen width = %d, height=%d\n",g_width, g_height);
-    if (debug)  printf("scale = %g, xoffset=%g, yoffset=%g\n",
+    if (debug)  printf("scale = %f, xoffset=%f, yoffset=%f\n",
     	scale, xoffset, yoffset);
 
     need_redraw++; 

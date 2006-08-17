@@ -303,7 +303,7 @@ int com_wrap(LEXER *lp, char *arg)
 		    newrep = (DB_TAB *) db_install(wrap_inst_name);
 
 		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-			p_new = db_copy_component(p_best);
+			p_new = db_copy_component(p_best, NULL);
 			db_unlink_component(currep, p_best);
 			db_move_component(p_new, -x1, -y1);
 			db_insert_component(newrep, p_new);
@@ -318,7 +318,10 @@ int com_wrap(LEXER *lp, char *arg)
 		    db_add_inst(currep, newrep, opts, x1, y1);
 
 		    newrep->modified++;
-		    if (!anonymous) {
+
+		    if (anonymous) {
+		        newrep->is_tmp_rep++;
+		    } else {
 			db_save(lp, newrep, wrap_inst_name);
 			newrep->modified=0;
 		    } 

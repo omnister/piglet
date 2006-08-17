@@ -8,14 +8,14 @@ yyyyy  |:W|:C|:N|:O|:R|
 yyaaaa |:X|:Y|:M|X|Y|@|
 ggg    |LAY |LEV |LOC |
 gyyy   |SHO #E; |;|!| |
-wrgbapy|1|2|3|4|5|6|7 |
+wrgbapy|0|1|2|3|4|5|6 |
 ww     |       |      |
 aap    |MOV |COP |CHA |
 ypy    |IDE |POI |LIS |
 ygg    |DISP |DIST |  |
 ggg    |DUM |PLO |ARC |
 ggy    |RET |    |INP |
-gbb    |ARE |WRA |GRO |
+ggb    |ARE |WRA |GRO |
 bbr    |STR |SMA |PUR |
 yrr    |EDI |DEL |EXI |
 ygr    |SAV |UND |BYE |

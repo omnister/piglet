@@ -16,6 +16,9 @@
     change options for a component in the current device.
 */
 
+/* FIXME: add way to change note to text, text to note */
+/* perhaps by using :N option on text, :T option on note */
+
 int com_change(LEXER *lp, char *arg)		
 {
 
@@ -30,12 +33,14 @@ int com_change(LEXER *lp, char *arg)
     double optval;
     int i;
     DB_DEFLIST *p_best;
+    DB_TAB *p_tab;
 
     int my_layer = 0; 	/* internal working layer */
     int new_layer;	 
 
     int comp=ALL;
     static double x1,y1;
+    double saverotation;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -234,7 +239,25 @@ int com_change(LEXER *lp, char *arg)
 			    retval=opt_parse(word, CIRC_OPTS, (p_best->u.c->opts));
 			    break;
 			case INST:
-			    retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
+			    p_tab = db_lookup(p_best->u.i->name);
+			    saverotation = p_best->u.i->opts->rotation;
+			    if (p_tab->is_tmp_rep) {
+				retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
+				if (fmod(p_best->u.i->opts->rotation, 90.0) != 0.0) {
+				    printf("NONAMEs only rotatable by 90 deg. multiples\n");
+				    p_best->u.i->opts->rotation = saverotation;
+				} 
+				if (p_best->u.i->opts->aspect_ratio != 1.0) {
+				    printf("NONAMEs may not be aspected\n");
+				    p_best->u.i->opts->aspect_ratio = 1.0;
+				}
+				if (p_best->u.i->opts->slant != 0.0) {
+				    printf("NONAMEs may not be slanted\n");
+				    p_best->u.i->opts->slant = 0.0;
+				}
+			    } else {
+				retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
+			    }
 			    break;
 			case LINE:
 			    retval=opt_parse(word, LINE_OPTS, (p_best->u.l->opts));

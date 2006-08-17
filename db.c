@@ -170,6 +170,7 @@ char *s;
     sp->lock_angle=0.0;
     sp->modified = 0;
     sp->being_edited = 0;
+    sp->is_tmp_rep = 0;
     sp->flag = 0;
 
     if (HEAD ==(DB_TAB *) 0) {	/* first element */
@@ -308,14 +309,29 @@ char *s;
     }
 }
 
-DB_DEFLIST *db_copy_component(p) 		/* create a copy of a component */
+
+/* create a copy of a component with coordinates optionally transformed */
+/* by instance options.  If pinstdef is null, no transform done */
+
+
+DB_DEFLIST *db_copy_component(p, pinstdef) 		/* create a copy of a component */
 DB_DEFLIST *p;
+DB_DEFLIST *pinstdef;
 {
     struct db_deflist *dp;
+    XFORM *xp;
 
     if (p==NULL) {
     	printf("db_copy_component: can't copy a null component\n");
 	return(NULL);
+    }
+
+    if (pinstdef != NULL) {
+        xp = matrix_from_opts(pinstdef->u.i->opts);
+	xp->dx = pinstdef->u.i->x;
+	xp->dy = pinstdef->u.i->y;
+    } else {
+        xp = matrix_from_opts(NULL);	/* returns unit xform */
     }
 
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -328,76 +344,143 @@ DB_DEFLIST *p;
 	dp->u.a = (struct db_arc *) emalloc(sizeof(struct db_arc));
 	dp->u.a->layer=p->u.a->layer;
 	dp->u.a->opts=opt_copy(p->u.a->opts);
-	dp->u.a->x1=p->u.a->x1;
-	dp->u.a->y1=p->u.a->y1;
-	dp->u.a->x2=p->u.a->x2;
-	dp->u.a->y2=p->u.a->y2;
-	dp->u.a->x3=p->u.a->x3;
-	dp->u.a->y3=p->u.a->y3;
+
+    	if (pinstdef != NULL) {
+	    dp->u.a->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.a->x1 = p->u.a->x1; dp->u.a->y1 = p->u.a->y1;
+	xform_point(xp, &(dp->u.a->x1), &(dp->u.a->y1));
+
+	dp->u.a->x2 = p->u.a->x2; dp->u.a->y2 = p->u.a->y2;
+	xform_point(xp, &(dp->u.a->x2), &(dp->u.a->y2));
+
+	dp->u.a->x3 = p->u.a->x3; dp->u.a->y3 = p->u.a->y3;
+	xform_point(xp, &(dp->u.a->x3), &(dp->u.a->y3));
 	break;
+
     case CIRC:  /* circle definition */
 	dp->u.c = (struct db_circ *) emalloc(sizeof(struct db_circ));
 	dp->u.c->layer=p->u.c->layer;
 	dp->u.c->opts=opt_copy(p->u.c->opts);
-	dp->u.c->x1=p->u.c->x1;
-	dp->u.c->y1=p->u.c->y1;
-	dp->u.c->x2=p->u.c->x2;
-	dp->u.c->y2=p->u.c->y2;
+
+    	if (pinstdef != NULL) {
+	    dp->u.c->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.c->x1 = p->u.c->x1; dp->u.c->y1 = p->u.c->y1;
+	xform_point(xp, &(dp->u.c->x1), &(dp->u.c->y1));
+
+	dp->u.c->x2 = p->u.c->x2; dp->u.c->y2 = p->u.c->y2;
+	xform_point(xp, &(dp->u.c->x2), &(dp->u.c->y2));
 	break;
+
     case LINE:  /* line definition */
 	dp->u.l = (struct db_line *) emalloc(sizeof(struct db_line));
 	dp->u.l->layer=p->u.l->layer;
 	dp->u.l->opts=opt_copy(p->u.l->opts);
-	dp->u.l->coords=coord_copy(p->u.l->coords);
+
+    	if (pinstdef != NULL) {
+	    dp->u.l->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.l->coords=coord_copy(xp, p->u.l->coords); 
 	break;
+
     case NOTE:  /* note definition */
 	dp->u.n = (struct db_note *) emalloc(sizeof(struct db_note));
 	dp->u.n->layer=p->u.n->layer;
 	dp->u.n->opts=opt_copy(p->u.n->opts);
+
+    	if (pinstdef != NULL) {
+	    dp->u.n->opts->rotation += pinstdef->u.i->opts->rotation;
+	    dp->u.n->opts->font_size *= pinstdef->u.i->opts->scale;
+	    dp->u.n->opts->mirror ^= pinstdef->u.i->opts->mirror;
+	} 
+
 	dp->u.n->text=strsave(p->u.n->text);
-	dp->u.n->x=p->u.n->x;
-	dp->u.n->y=p->u.n->y;
+
+	dp->u.n->x = p->u.n->x; dp->u.n->y = p->u.n->y;
+	xform_point(xp, &(dp->u.n->x), &(dp->u.n->y));
     	break;
     case OVAL:  /* oval definition */
 	dp->u.o = (struct db_oval *) emalloc(sizeof(struct db_oval));
 	dp->u.o->layer=p->u.o->layer;
 	dp->u.o->opts=opt_copy(p->u.o->opts);
-	dp->u.o->x1=p->u.o->x1;		/* first foci */
-	dp->u.o->y1=p->u.o->y1;
-	dp->u.o->x2=p->u.o->x2;		/* second foci */
-	dp->u.o->y2=p->u.o->y2;
-	dp->u.o->x3=p->u.o->x3;		/* point on curve */
-	dp->u.o->y3=p->u.o->y3;
+
+    	if (pinstdef != NULL) {
+	    dp->u.o->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.o->x1 = p->u.o->x1; dp->u.o->y1 = p->u.o->y1;  	/* first foci */
+	xform_point(xp, &(dp->u.o->x1), &(dp->u.o->y1));
+
+	dp->u.o->x2 = p->u.o->x2; dp->u.o->y2 = p->u.o->y2;  	/* second foci */
+	xform_point(xp, &(dp->u.o->x2), &(dp->u.o->y2));
+
+	dp->u.o->x3 = p->u.o->x3; dp->u.o->y3 = p->u.o->y3;  	/* point on curve */
+	xform_point(xp, &(dp->u.o->x3), &(dp->u.o->y3));
 	break;
+
     case POLY:  /* polygon definition */
 	dp->u.p = (struct db_poly *) emalloc(sizeof(struct db_poly));
 	dp->u.p->layer=p->u.p->layer;
 	dp->u.p->opts=opt_copy(p->u.p->opts);
-	dp->u.p->coords=coord_copy(p->u.p->coords);
+
+    	if (pinstdef != NULL) {
+	    dp->u.p->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.p->coords=coord_copy(xp, p->u.p->coords);
 	break;
+
     case RECT:  /* rectangle definition */
 	dp->u.r = (struct db_rect *) emalloc(sizeof(struct db_rect));
 	dp->u.r->layer=p->u.r->layer;
 	dp->u.r->opts=opt_copy(p->u.r->opts);
-	dp->u.r->x1=p->u.r->x1;
-	dp->u.r->y1=p->u.r->y1;
-	dp->u.r->x2=p->u.r->x2;
-	dp->u.r->y2=p->u.r->y2;
+
+    	if (pinstdef != NULL) {
+	    dp->u.r->opts->width *= pinstdef->u.i->opts->scale;
+	} 
+
+	dp->u.r->x1 = p->u.r->x1; dp->u.r->y1 = p->u.r->y1;
+	xform_point(xp, &(dp->u.r->x1), &(dp->u.r->y1));
+
+	dp->u.r->x2 = p->u.r->x2; dp->u.r->y2 = p->u.r->y2;
+	xform_point(xp, &(dp->u.r->x2), &(dp->u.r->y2));
     	break;
+
     case TEXT:  /* text definition */
 	dp->u.t = (struct db_text *) emalloc(sizeof(struct db_text));
 	dp->u.t->layer=p->u.t->layer;
 	dp->u.t->opts=opt_copy(p->u.t->opts);
+
+    	if (pinstdef != NULL) {
+	    dp->u.t->opts->rotation += pinstdef->u.i->opts->rotation;
+	    dp->u.t->opts->font_size *= pinstdef->u.i->opts->scale;
+	    dp->u.t->opts->mirror ^= pinstdef->u.i->opts->mirror;
+	} 
+
 	dp->u.t->text=strsave(p->u.t->text);
-	dp->u.t->x=p->u.t->x;
-	dp->u.t->y=p->u.t->y;
+
+	dp->u.t->x = p->u.t->x; dp->u.t->y = p->u.t->y;
+	xform_point(xp, &(dp->u.t->x), &(dp->u.t->y));
     	break;
     case INST:  /* instance call */
+
 	dp->u.i = (struct db_inst *) emalloc(sizeof(struct db_inst));
 	dp->u.i->opts=opt_copy(p->u.i->opts);
+
+    	if (pinstdef != NULL) {
+	    dp->u.i->opts->rotation += pinstdef->u.i->opts->rotation;
+	    dp->u.i->opts->scale *= pinstdef->u.i->opts->scale;
+	    dp->u.i->opts->mirror ^= pinstdef->u.i->opts->mirror;
+	} 
+
 	dp->u.i->name=strsave(p->u.i->name);
-	dp->u.i->x=p->u.i->x;
-	dp->u.i->y=p->u.i->y;
+	dp->u.i->x = p->u.i->x; dp->u.i->y = p->u.i->y;
+
+	xform_point(xp, &(dp->u.i->x), &(dp->u.i->y));
 	break;
     default:
     	printf("bad case in db_copy_component\n"); 
@@ -657,10 +740,13 @@ int db_list_unsaved()
     DB_TAB *dp;
     int numunsaved=0;
     for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
-    	if (dp->modified) {
+
+	/* do not complain about NONAME reps */
+    	if (dp->modified && !dp->is_tmp_rep) {
 	    printf("    device <%s> is modified!\n", dp->name);
 	    numunsaved++;
 	}
+
     }
     return(numunsaved);
 }
@@ -722,15 +808,238 @@ int *retval;
     }
 }
 
+/* printcoords uses %g to minimize size of definition files.  Can print up to */
+/* 6 numbers to the right of the decimal, but will not print trailing 0's or */
+/* decimal point.  Only problem with native %g is that it will print exponential */
+/* notation for numbers that are very close but not equal to zero.  So, we use */
+/* the fmod function to make all numbers multiples of 1/(10^RES) */
+
+#define RES 6
+
+void printcoords(FILE *fp, XFORM *xp, double x, double y) {
+    double xx, yy;
+    xform_point(xp, &x, &y);
+    xx = x-fmod(x,1.0/pow(10.0,RES));
+    yy = y-fmod(y,1.0/pow(10.0,RES));
+    fprintf(fp, " %g,%g", xx,yy);
+}
+
+/* printdef writes the definition of a single component *p to the */
+/* the FILE *fp.  If *pinstdef is not NULL, then printdef will */
+/* transform the definitions by the offset and transform pointed */
+/* to by *pinstdef.  This is used when auto-smashing NONAME instances */
+/* during SAVes.  *p points to one of the sub components of the NONAME */
+/* instance, and *pinstdef is the pointer to NONAME's definition */
+
+void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
+
+    COORDS *coords;
+    DB_TAB *sp;
+    DB_DEFLIST *tp;
+    int i;
+    XFORM *xp;
+    OPTS *opts;
+
+    if (pinstdef != NULL) {
+        xp = matrix_from_opts(pinstdef->u.i->opts);
+	xp->dx = pinstdef->u.i->x;
+	xp->dy = pinstdef->u.i->y;
+    } else {
+        xp = matrix_from_opts(NULL);	/* returns unit xform */
+    }
+
+    switch (p->type) {
+
+    case ARC:  /* arc definition */
+
+	fprintf(fp, "ADD A%d ", p->u.a->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.a->opts);
+	    opts->width *= pinstdef->u.i->opts->scale;
+	    db_print_opts(fp, opts, ARC_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.a->opts, ARC_OPTS);
+	}
+
+	printcoords(fp, xp, p->u.a->x1, p->u.a->y1);
+	printcoords(fp, xp, p->u.a->x2, p->u.a->y2);
+	printcoords(fp, xp, p->u.a->x3, p->u.a->y3);
+	fprintf(fp, ";\n");
+
+	break;
+
+    case CIRC:  /* circle definition */
+
+	fprintf(fp, "ADD C%d ", p->u.c->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.c->opts);
+	    opts->width *= pinstdef->u.i->opts->scale;
+	    db_print_opts(fp, opts, CIRC_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.c->opts, CIRC_OPTS);
+	}
+
+	printcoords(fp, xp, p->u.c->x1, p->u.c->y1);
+	printcoords(fp, xp, p->u.c->x2, p->u.c->y2);
+	fprintf(fp, ";\n");
+	break;
+
+    case LINE:  /* line definition */
+	fprintf(fp, "ADD L%d ", p->u.l->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.l->opts);
+	    opts->width *= pinstdef->u.i->opts->scale;
+	    db_print_opts(fp, opts, LINE_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.l->opts, LINE_OPTS);
+	}
+
+	i=1;
+	coords = p->u.l->coords;
+	while(coords != NULL) {
+	    fprintf(fp, " ");
+	    printcoords(fp, xp,  coords->coord.x, coords->coord.y);
+	    if ((coords = coords->next) != NULL && (++i)%7 == 0) {
+		fprintf(fp,"\n    ");
+	    }
+	}
+	fprintf(fp, ";\n");
+
+	break;
+
+    case NOTE:  /* note definition */
+
+	fprintf(fp, "ADD N%d ", p->u.n->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.n->opts);
+	    opts->rotation += pinstdef->u.i->opts->rotation;
+	    opts->font_size *= pinstdef->u.i->opts->scale;
+	    opts->mirror = (opts->mirror)^(pinstdef->u.i->opts->mirror);
+	    db_print_opts(fp, opts, NOTE_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.n->opts, NOTE_OPTS);
+	}
+
+	fprintf(fp, "\"%s\" ", p->u.n->text);
+	printcoords(fp, xp,  p->u.n->x, p->u.n->y);
+	fprintf(fp, ";\n");
+	break;
+
+    case OVAL:  /* oval definition */
+
+	fprintf(fp, "#add OVAL not implemented yet\n");
+	break;
+
+    case POLY:  /* polygon definition */
+
+	fprintf(fp, "ADD P%d", p->u.p->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.p->opts);
+	    opts->width *= pinstdef->u.i->opts->scale;
+	    db_print_opts(fp, opts, POLY_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.p->opts, POLY_OPTS);
+	}
+
+	i=1;
+	coords = p->u.p->coords;
+	while(coords != NULL) {
+	    fprintf(fp, " ");
+	    printcoords(fp, xp,  coords->coord.x, coords->coord.y);
+	    if ((coords = coords->next) != NULL && (++i)%7 == 0) {
+		fprintf(fp,"\n    ");
+	    }
+	}
+	fprintf(fp, ";\n");
+
+	break;
+
+    case RECT:  /* rectangle definition */
+
+	fprintf(fp, "ADD R%d ", p->u.r->layer);
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.r->opts);
+	    opts->width *= pinstdef->u.i->opts->scale;
+	    db_print_opts(fp, opts, RECT_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.r->opts, RECT_OPTS);
+	}
+
+	printcoords(fp, xp,  p->u.r->x1, p->u.r->y1);
+	printcoords(fp, xp,  p->u.r->x2, p->u.r->y2);
+	fprintf(fp, ";\n");
+
+	break;
+
+    case TEXT:  /* text definition */
+
+	fprintf(fp, "ADD T%d ", p->u.t->layer); 
+
+    	if (pinstdef != NULL) {
+	    opts = opt_copy(p->u.t->opts);
+	    opts->rotation += pinstdef->u.i->opts->rotation;
+	    opts->font_size *= pinstdef->u.i->opts->scale;
+	    opts->mirror = (opts->mirror)^(pinstdef->u.i->opts->mirror);
+	    db_print_opts(fp, opts, TEXT_OPTS);
+	    free(opts);
+	} else {
+	    db_print_opts(fp, p->u.t->opts, TEXT_OPTS);
+	}
+
+	fprintf(fp, "\"%s\" ", p->u.t->text);
+	printcoords(fp, xp,  p->u.t->x, p->u.t->y);
+	fprintf(fp, ";\n");
+	break;
+		
+    case INST:  /* instance call */
+	if ((sp=db_lookup(p->u.i->name)) && sp->is_tmp_rep) { 	/* a tmp rep */
+	    if (sp->is_tmp_rep) {
+		printf("    Smashing anonymous instance %s to disk\n", sp->name);
+		for (tp=sp->dbhead; tp!=(struct db_deflist *)0; tp=tp->next) {
+		    printdef(fp, tp, p);
+		}
+	    }
+	} else {
+	    fprintf(fp, "ADD %s ", p->u.i->name);
+	    if (pinstdef != NULL) {
+		opts = opt_copy(p->u.i->opts);
+		opts->rotation += pinstdef->u.i->opts->rotation;
+	        opts->scale *= pinstdef->u.i->opts->scale;
+	        opts->mirror = (opts->mirror)^(pinstdef->u.i->opts->mirror);
+	        db_print_opts(fp, opts, INST_OPTS);
+		free(opts);
+	    } else {
+	        db_print_opts(fp, p->u.i->opts, INST_OPTS);
+	    }
+	    printcoords(fp, xp,  p->u.i->x, p->u.i->y);
+	    fprintf(fp, ";\n");
+	}
+	break;
+
+    default:
+	eprintf("unknown record type (%d) in db_def_print\n", p->type );
+	break;
+    }
+}
 
 void db_def_print(fp, dp, mode) 
 FILE *fp;
 DB_TAB *dp;
 int mode;
 {
-    COORDS *coords;
     DB_DEFLIST *p; 
-    int i;
 
     if (mode == ARCHIVE) {
 	/* fprintf(fp, "PURGE %s;\n", dp->name);  */
@@ -752,125 +1061,7 @@ int mode;
     	/* dp->vp_xmin, dp->vp_ymin, dp->vp_xmax, dp->vp_ymax); */
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	switch (p->type) {
-        case ARC:  /* arc definition */
-
-	    fprintf(fp, "ADD A%d ", p->u.a->layer);
-	    db_print_opts(fp, p->u.a->opts, ARC_OPTS);
-
-	    fprintf(fp, "%g,%g %g,%g %g,%g;\n",
-		p->u.a->x1,
-		p->u.a->y1,
-		p->u.a->x2,
-		p->u.a->y2,
-		p->u.a->x3,
-		p->u.a->y3
-	    );
-
-	    break;
-
-        case CIRC:  /* circle definition */
-
-	    fprintf(fp, "ADD C%d ", p->u.c->layer);
-	    db_print_opts(fp, p->u.c->opts, CIRC_OPTS);
-
-	    fprintf(fp, "%g,%g %g,%g;\n",
-		p->u.c->x1,
-		p->u.c->y1,
-		p->u.c->x2,
-		p->u.c->y2
-	    );
-	    break;
-
-        case LINE:  /* line definition */
-	    fprintf(fp, "ADD L%d ", p->u.l->layer);
-	    db_print_opts(fp, p->u.l->opts, LINE_OPTS);
-
-	    i=1;
-	    coords = p->u.l->coords;
-	    while(coords != NULL) {
-		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%7 == 0) {
-		    fprintf(fp,"\n");
-		}
-	    }
-	    fprintf(fp, ";\n");
-
-	    break;
-
-        case NOTE:  /* note definition */
-
-	    fprintf(fp, "ADD N%d ", p->u.n->layer);
-	    db_print_opts(fp, p->u.n->opts, NOTE_OPTS);
-
-	    fprintf(fp, "\"%s\" %g,%g;\n",
-		p->u.n->text,
-		p->u.n->x,
-		p->u.n->y
-	    );
-	    break;
-
-        case OVAL:  /* oval definition */
-
-	    fprintf(fp, "#add OVAL not implemented yet\n");
-	    break;
-
-        case POLY:  /* polygon definition */
-
-	    fprintf(fp, "ADD P%d", p->u.p->layer);
-	    db_print_opts(fp, p->u.p->opts, POLY_OPTS);
-
-	    i=1;
-	    coords = p->u.p->coords;
-	    while(coords != NULL) {
-		fprintf(fp, " %g,%g", coords->coord.x, coords->coord.y);
-		if ((coords = coords->next) != NULL && (++i)%7 == 0) {
-		    fprintf(fp,"\n");
-		}
-	    }
-	    fprintf(fp, ";\n");
-
-	    break;
-
-	case RECT:  /* rectangle definition */
-
-	    fprintf(fp, "ADD R%d ", p->u.r->layer);
-	    db_print_opts(fp, p->u.r->opts, RECT_OPTS);
-
-	    fprintf(fp, "%g,%g %g,%g;\n",
-		p->u.r->x1,
-		p->u.r->y1,
-		p->u.r->x2,
-		p->u.r->y2
-	    );
-	    break;
-
-        case TEXT:  /* text definition */
-
-	    fprintf(fp, "ADD T%d ", p->u.t->layer); 
-	    db_print_opts(fp, p->u.t->opts, TEXT_OPTS);
-
-	    fprintf(fp, "\"%s\" %g,%g;\n",
-		p->u.t->text,
-		p->u.t->x,
-		p->u.t->y
-	    );
-	    break;
-
-        case INST:  /* instance call */
-	    fprintf(fp, "ADD %s ", p->u.i->name);
-	    db_print_opts(fp, p->u.i->opts, INST_OPTS);
-	    fprintf(fp, "%g,%g;\n",
-		p->u.i->x,
-		p->u.i->y
-	    );
-	    break;
-
-	default:
-	    eprintf("unknown record type (%d) in db_def_print\n", p->type );
-	    break;
-	}
-
+	printdef(fp, p, NULL);
     }
 
     if (mode == ARCHIVE) {
@@ -1303,6 +1494,26 @@ main () {
 }
 */
 
+static double font_size = 10.0;
+static double font_slant = 0.0;
+
+void db_set_font_size(double size) { /* set default from FSIze command */
+    font_size = size;
+}
+
+double db_get_font_size() { 	 /* get default from FSIze command */
+    return font_size;
+}
+
+void db_set_text_slant(double slant) {  /* get default from TSLant command */
+    font_slant = slant;
+}
+
+double db_get_text_slant() { 	 /* get default from TSLant command */
+    return font_slant;
+}
+
+
 OPTS *opt_copy(OPTS *opts)
 {
     OPTS *tmp;
@@ -1317,8 +1528,8 @@ OPTS *opt_copy(OPTS *opts)
     tmp->aspect_ratio = opts->aspect_ratio;
     tmp->scale = opts->scale;
     tmp->slant = opts->slant;
-    tmp->cname = opts->cname;
-    tmp->sname = opts->sname;
+    tmp->cname = strsave(opts->cname);
+    tmp->sname = strsave(opts->sname);
 
     return(tmp);
 }     
@@ -1355,6 +1566,10 @@ OPTS *popt;
 char *validopts;
 {
     char *p;
+
+    if (popt == NULL) {
+        return;
+    }
 
     if (popt->cname != NULL) {
     	fprintf(fp, "%s ", popt->cname);
@@ -1429,6 +1644,10 @@ char *strsave(s)   /* save string s somewhere */
 char *s;
 {
     char *p;
+
+    if (s == NULL) {
+        return(s);
+    }
 
     if ((p = (char *) emalloc(strlen(s)+1)) != NULL)
 	strcpy(p,s);
@@ -2181,7 +2400,7 @@ double theta;
     xp->r22 = c*xp->r22 + s*xp->r21;
     xp->r21 = t;
 
-    t = c*xp->dx - s*xp->dx;
+    t = c*xp->dx - s*xp->dy;
     xp->dy = c*xp->dy + s*xp->dx;
     xp->dx = t;
 }

@@ -26,6 +26,7 @@
 #define NOTE_OPTS "MNRYZF"
 #define TEXT_OPTS "MNRYZF"
 #define INST_OPTS "MRXYZ"
+#define NONAME_OPTS "MRX"
 
 #define MAX_LAYER 1024
 
@@ -77,15 +78,6 @@ typedef struct coord_list {
     struct coord_list *prev;
 } COORDS;
 
-COORDS *coord_new(NUM x, NUM y);
-COORDS *coord_copy(COORDS *CP);
-void coord_append(COORDS *CP, NUM x, NUM y);
-void coord_swap_last(COORDS *CP, NUM x, NUM y);
-int coord_get(COORDS *CP, int n, NUM *x, NUM *y);
-void coord_drop(COORDS *CP);
-void coord_print(COORDS *CP);
-int coord_count(COORDS *CP);
-
 typedef struct xform {
      double r11;
      double r12;
@@ -94,6 +86,15 @@ typedef struct xform {
      double dx;
      double dy;
 } XFORM; 
+
+COORDS *coord_new(NUM x, NUM y);
+COORDS *coord_copy(XFORM *xp, COORDS *CP);
+void coord_append(COORDS *CP, NUM x, NUM y);
+void coord_swap_last(COORDS *CP, NUM x, NUM y);
+int coord_get(COORDS *CP, int n, NUM *x, NUM *y);
+void coord_drop(COORDS *CP);
+void coord_print(COORDS *CP);
+int coord_count(COORDS *CP);
 
 typedef struct bounds {
     double xmin;
@@ -141,6 +142,7 @@ typedef struct db_tab {
     				/* 0 = not edited, !0 = location in edit stack */
 
     int flag;			/* bookingkeeping flag for db_def_archive() */
+    int is_tmp_rep;		/* used to mark temporary instances created by WRAP */
 
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     struct db_deflist *dbtail;  /* pointer to last cell definition */
@@ -165,6 +167,11 @@ typedef struct opt_list {
     char *sname;	    /* signal name */
     char *cname;	    /* signal name */
 } OPTS;
+
+extern void    db_set_font_size(double size);
+extern double  db_get_font_size();
+extern void    db_set_text_slant(double slant);
+extern double  db_get_text_slant();
 
 extern OPTS *opt_create();
 extern void opt_set_defaults( OPTS *opts  );

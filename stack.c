@@ -86,10 +86,25 @@ STACK **stack;
      return(0);
 }
 
+char *stack_walk(stack)		/* each call returns a new entry, modifies stack */ 
+STACK **stack;
+{
+     char *p;
+     if (stack == NULL) {
+     	return NULL;
+     }
+     if (stack != NULL) {
+	 p = (*stack)->saved;
+	 *stack = (*stack)->next;
+     }
+     return p;
+}
+
 /*
 int main() {
 
     STACK *stack;
+    STACK *tmp;
     char *s;
 
     stack=NULL;
@@ -100,9 +115,15 @@ int main() {
     stack_push(&stack, "a");
     stack_push(&stack, "test");
 
+    tmp=stack;
+    while (tmp!=NULL) {
+       printf("%s\n", stack_walk(&tmp));
+    }
+
     while ((s=stack_pop(&stack))!=NULL) {
 	    printf("%s\n",s);
     }
+
     return(1);
 }
 */

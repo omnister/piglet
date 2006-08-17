@@ -43,7 +43,9 @@ int mode;
     char *type;
 
     opt_set_defaults( &opts );
-    opts.font_num = mode;	/* default note font=0, text=1 */
+    opts.font_size = db_get_font_size(); 	/* get default from FSIze command */
+    opts.slant = db_get_text_slant(); 	/* get default from TSLant command */
+    opts.font_num = mode;		/* default note font=0, text=1 */
 
     str[0] = 0;
 
