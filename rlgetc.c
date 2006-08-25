@@ -100,12 +100,11 @@ FILE *fd;
 
 /* expand and duplicate a string with malloc */
 
-char * expdupstr(s,n)
-int s, n;
+char * expdupstr(char *s, int n)
 {
     char *r;
 
-    r = malloc(strlen( (char *) s) + n);
+    r = (char *) malloc(strlen( (char *) s) + n);
     strcpy(r, (char *) s);
     return (r);
 }

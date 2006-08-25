@@ -224,11 +224,11 @@ double x3, y3;
 int count; /* number of times called */
 {
 	static double x3old, y3old;
+	int debug=0;
 	BOUNDS bb;
 
 	bb.init=0;
 
-	int debug=0;
 
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */

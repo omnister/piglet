@@ -17,9 +17,7 @@ OPTS opts;
 void draw_bounds();
 int do_win();
 
-int com_window(lp, arg)
-LEXER *lp;
-char *arg;
+int com_window(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 

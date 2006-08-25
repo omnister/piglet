@@ -20,11 +20,11 @@ int add_annotation();
 
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
-void add_note(lp, layer) {
+void add_note(LEXER *lp, int *layer) {
     add_annotation(lp, layer, 0);
 }
 
-void add_text(lp, layer) {
+void add_text(LEXER *lp, int *layer) {
     add_annotation(lp, layer, 1);
 }
 
@@ -192,10 +192,10 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double xold, yold;
+	int debug=0;
 	static BOUNDS bb;
 
 	bb.init=0;
-	int debug=0;
 
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */

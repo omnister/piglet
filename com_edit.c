@@ -15,9 +15,7 @@
 extern void do_win();		/* found in com_window */
 extern int readin();
 
-int com_edit(lp, arg)		/* begin edit of an old or new device */
-LEXER *lp;
-char *arg;
+int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 {
     TOKEN token;
     int done=0;

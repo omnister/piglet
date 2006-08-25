@@ -11,9 +11,7 @@
 
 #define MAXBUF 128
 
-int com_equate(lp, arg)	   /* define properties of each layer */
-LEXER *lp;
-char *arg;
+int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 {
     TOKEN token;
     int done=0;

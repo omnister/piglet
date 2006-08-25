@@ -1,5 +1,6 @@
 #include <math.h>
 #include <X11/Xlib.h>
+#include <string.h>
 
 #include "db.h"
 #include "rubber.h"
@@ -7,7 +8,6 @@
 #include "postscript.h"
 #include "eprintf.h"
 #include "equate.h"
-#include "string.h"
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines is as */
                         /* a fraction of minimum window dimension */
@@ -227,7 +227,7 @@ int comp;			/* comp restriction */
 char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
-    static DB_DEFLIST *p_best = NULL;	/* gets returned */
+    DB_DEFLIST *p_best = NULL;	/* gets returned */
     int debug=0;
     BOUNDS childbb;
     double pick_score=0.0;
@@ -634,47 +634,53 @@ DB_DEFLIST *p;			/* print out identifying information */
 
     switch (p->type) {
     case ARC:  /* arc definition */
-	printf("   ARC %d end1=%.5g,%.5g end2=%.5g,%.5g point_on_circumference=%.5g,%.5g ", 
-		p->u.a->layer, p->u.a->x1, p->u.a->y1, p->u.a->x2, p->u.a->y2,
-		p->u.a->x3, p->u.a->y3);
+	printf("   ARC %d (%s) end1=%.5g,%.5g end2=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
+		p->u.a->layer, equate_get_label(p->u.a->layer), p->u.a->x1, p->u.a->y1, 
+		p->u.a->x2, p->u.a->y2, p->u.a->x3, p->u.a->y3);
 	db_print_opts(stdout, p->u.a->opts, ARC_OPTS);
 	printf("\n");
 	break;
     case CIRC:  /* circle definition */
-	printf("   CIRC %d center=%.5g,%.5g point_on_circumference=%.5g,%.5g ", 
-		p->u.c->layer, p->u.c->x1, p->u.c->y1, p->u.c->x2, p->u.c->y2);
+	printf("   CIRC %d (%s) center=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
+		p->u.c->layer, equate_get_label(p->u.c->layer), p->u.c->x1, 
+		p->u.c->y1, p->u.c->x2, p->u.c->y2);
 	db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
 	printf("\n");
 	break;
     case LINE:  /* line definition */
-	printf("   LINE %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.l->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   LINE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.l->layer, equate_get_label(p->u.l->layer), 
+		p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
 	printf("\n");
 	break;
     case NOTE:  /* note definition */
-	printf("   NOTE %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.n->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   NOTE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.n->layer, equate_get_label(p->u.n->layer), 
+		p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.n->opts, NOTE_OPTS);
 	printf(" \"%s\"\n", p->u.n->text);
 	break;
     case OVAL:  /* oval definition */
 	break;
     case POLY:  /* polygon definition */
-	printf("   POLY %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.p->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   POLY %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.p->layer, equate_get_label(p->u.p->layer),
+		p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.p->opts, POLY_OPTS);
 	printf("\n");
 	break;
     case RECT:  /* rectangle definition */
-	printf("   RECT %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.r->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   RECT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.r->layer, equate_get_label(p->u.r->layer),
+		p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
 	printf("\n");
 	break;
     case TEXT:  /* text definition */
-	printf("   TEXT %d LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.t->layer, p->xmin, p->ymin, p->xmax, p->ymax);
+	printf("   TEXT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		p->u.t->layer, equate_get_label(p->u.r->layer),
+		p->xmin, p->ymin, p->xmax, p->ymax);
 	db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
 	printf(" \"%s\"\n", p->u.t->text);
 	break;
@@ -769,9 +775,10 @@ DB_TAB *cell;
 
 int db_plot() {
     BOUNDS bb;
-    bb.init=0;
     char buf[MAXFILENAME];
     double x1, y1, x2, y2;
+
+    bb.init=0;
 
     if (currep == NULL) {
     	printf("not currently editing any rep!\n");
@@ -902,8 +909,10 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     int debug=0;
 
     BOUNDS childbb;
+    BOUNDS backbb;
     BOUNDS mybb;
     mybb.init=0; 
+    backbb.init=0; 
 
     if (cell == NULL) {
         printf("bad reference in db_render\n");
@@ -920,6 +929,12 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
         global_transform = &unity_transform;
     }
 
+    if (nest > nestlevel) { 	/* RCW */
+	drawon = 0;
+    } else {
+	drawon = 1; 
+    }
+
     if (!X && (nest == 0)) {	/* autoplot output */
 	/*
 	fprintf(PLOT_FD, "nogrid\n");
@@ -934,6 +949,10 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	mybb.ymax=0.0;
 	mybb.ymin=0.0;
 	mybb.init++;
+    }
+
+    if (nest == 0 && currep != NULL &&  currep->background != NULL) {
+	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
@@ -1037,6 +1056,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 
 	    free(global_transform); free(xp);	
 	    global_transform = save_transform;	/* set transform back */
+           
 
 	    break;
 	default:

@@ -30,9 +30,7 @@ static double x2, y2;
 void ident_draw_box();
 STACK *stack;
 
-int com_identify(lp, layer)
-LEXER *lp;
-int *layer;
+int com_identify(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -128,7 +126,7 @@ int *layer;
 			db_notate(p_best);	/* print information */
 			area = db_area(p_best);
 			if (area >= 0) {
-			    printf("   area = %g\n", db_area(p_best));
+			    printf("   area = %g\n", area);
 			}
 			p_prev=p_best;
 		    }
@@ -187,7 +185,7 @@ int *layer;
 		    db_notate(p_best);		/* print information */
 		    area = db_area(p_best);
 		    if (area >= 0) {
-			printf("   area = %g\n", db_area(p_best));
+			printf("   area = %g\n", area);
 		    }
 		}
 	    } else if (token == EOL) {

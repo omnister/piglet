@@ -14,9 +14,7 @@
 
 static double x1, y1;
 
-int com_point(lp, layer)
-LEXER *lp;
-int *layer;
+int com_point(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -25,7 +23,6 @@ int *layer;
     char word[BUFSIZE];
     int debug=0;
 
-    if (debug) printf("layer %d\n",*layer);
     rl_saveprompt();
     rl_setprompt("POINT> ");
 

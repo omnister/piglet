@@ -4,6 +4,7 @@
 #include <X11/Xatom.h>
 #include "eventnames.h"
 #include <errno.h>
+#include <math.h>
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -45,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.38 2006/08/17 16:05:40 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.38 2006/08/17 16:05:40 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -450,12 +451,13 @@ int initX()
 }
 
 void dosplash() {
-    BOUNDS bb;
-    bb.init=0;
     DB_TAB *splashrep;
     extern double scale,xoffset,yoffset;
     double x1,x2,y1,y2;
     double dratio,wratio;
+    BOUNDS bb;
+
+    bb.init=0;
 
     splashrep=db_lookup("piglogo");
     if (splashrep != NULL) {
@@ -549,7 +551,10 @@ FILE *fp;
 		continue;
 	    eprintf("select failed. errno:%d", errno);
 	}
-	nf > 0 && XFlush(dpy);
+
+	if (nf > 0) {
+	    XFlush(dpy);
+	}
 
 	if (FD_ISSET(cn, &tset)) { 		/* pending X Event */
 	    xwin_doXevent(&s);
@@ -1070,9 +1075,9 @@ double x, y;
     if (xwin_display_state() == D_ON) {
 
 	if (g_width > g_height) {
-	    delta = (double) dpy_width/200;
+	    delta = (double) dpy_width/300;
 	} else {
-	    delta = (double) dpy_height/200;
+	    delta = (double) dpy_height/300;
 	}
 
 	R_to_V(&x,&y);
@@ -1113,14 +1118,19 @@ char *s;
     XFlush(dpy);
 }
 
+#define RES 6
+
 void xwin_draw_point(x,y) 
 double x, y;
 {
-    double delta;
+    double delta, xx, yy;
     extern unsigned int g_width, g_height;
     char buf[BUF_SIZE];
 
-    sprintf(buf,"%f,%f", x, y);
+    xx = x-fmod(x,1.0/pow(10.0,RES));
+    yy = y-fmod(y,1.0/pow(10.0,RES));
+
+    sprintf(buf,"%g,%g", xx, yy);
 
     if (g_width > g_height) {
 	delta = (double) dpy_width/100;
@@ -1146,6 +1156,7 @@ double *x, *y;
     extern double grid_xo, grid_xd;
     extern double grid_yo, grid_yd;
     double xo, yo, xd, yd;
+    int debug=0;
 
     if (currep != NULL) {
     	xo = currep->grid_xo;
@@ -1158,8 +1169,6 @@ double *x, *y;
     	xd = grid_xd;
     	yd = grid_yd;
     }
-
-    int debug=0;
 
     if (debug) printf("snap called with %f %f, and xo %f %f xd %f %f\n", 
     	*x, *y,xo, yo, xd, yd);
@@ -1505,13 +1514,13 @@ int init_colors()
     Visual *default_visual;
     static char *name[] = {
 	"white",        /* FIXME: eventually should be black */
-	"white",
 	"red",
 	"green",
 	"#7272ff",	/* brighten up our blues a la Ken.P. :-)*/
 	"cyan",
 	"magenta",
-	"yellow"
+	"yellow",
+	"white"
     };
 
     XColor exact_def;

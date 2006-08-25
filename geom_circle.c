@@ -15,9 +15,7 @@ OPTS opts;
 
 void draw_circle();
 
-int add_circ(lp, layer)
-LEXER *lp;
-int *layer;
+int add_circ(LEXER *lp, int *layer)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 

@@ -19,6 +19,7 @@
 #include "readfont.h"
 #include "equate.h"
 #include "path.h"
+#include "rubber.h"
 
 int readin();
 
@@ -41,68 +42,134 @@ int com_wrap();
 typedef struct {
     char *name;			/* User printable name of the function. */
     Function *func;		/* Function to call to do the job. */
-    char *doc;			/* Documentation for this function.  */
+    char *doc;			/* Description of function.  */
+    char *usage;		/* Usage for function.  */
 } COMMAND;
 
 COMMAND commands[] =
 {
-    {"ADD", com_add, "add a component to the current device"},
-    {"ARCHIVE", com_archive, "create an archive file of the specified device"},
-    {"AREA", com_area, "calculate and display the area of selected component"},
-    {"BACKGROUND", com_background, "specified device for background overlay"},
-    {"BYE", com_bye, "terminate edit session"},
-    {"CHANGE", com_change, "change characteristics of selected components"},
-    {"COPY", com_copy, "copy a component from one location to another"},
-    {"DATE", com_date, "print the current date and time to the console"},
-    {"DEFINE", com_define, "define a macro"},
-    {"DELETE", com_delete, "delete a component from the current device"},
-    {"DISTANCE", com_distance, "measure the distance between two points"},
-    {"DISPLAY", com_display, "turn the display on or off"},
-    {"DUMP", com_dump, "dump graphics window to file or printer"},
-    {"EDIT", com_edit, "begin edit of an old or new device"},
-    {"EQUATE", com_equate, "define characteristics of a mask layer"},
-    {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem"},
-    {"$FILES", com_files, "purge named files"},
-    {"FSIZE", com_fsize, "Set the default font size for text and notes"},
-    {"GRID", com_grid, "set grid spacing or turn grid on/off"},
-    {"GROUP", com_group, "create a device from existing components"},
-    {"HELP", com_help, "print syntax diagram for the specified command"},
-    {"?", com_help, "Synonym for HELP"},
-    {"IDENTIFY", com_identify, "identify named instances or components"},
-    {"INPUT", com_input, "take command input from a file"},
-    {"INTERRUPT", com_interrupt, "interrupt an ADD to issue another command"},
-    {"LAYER", com_layer, "set a default layer number"},
-    {"LEVEL", com_level, "set the logical level of the current device"},
-    {"LIST", com_list, "list information about the current environment"},
-    {"LOCK", com_lock, "set the default lock angle"},
-    {"MACRO", com_macro, "enter the MACRO subsystem"},
-    {"MENU", com_menu, "change or save the current menu"},
-    {"MOVE", com_move, "move a component from one location to another"},
-    {"PLOT", com_plot, "make a plot of the current device"},
-    {"POINT", com_point, "display the specified point on the screen"},
-    {"PROCESS", com_process, "enter the PROCESS subsystem"},
-    {"PURGE", com_purge, "remove device from memory and disk"},
-    {"QUIT", com_bye, "terminate edit session"},
-    {"RETRIEVE", com_retrieve, "read commands from an ARCHIVE file"},
-    {"SAVE", com_save, "save the current file or device to disk"},
-    {"SEARCH", com_search, "modify the search path"},
-    {"SET", com_set, "set environment variables"},
-    {"SHELL", com_shell, "run a program from within the editor"},
-    {"!", com_shell, "Synonym for `shell'"},
-    {"SHOW", com_show, "define which kinds of things to display"},
-    {"SMASH", com_smash, "replace an instance with its components"},
-    {"SPLIT", com_split, "cut a component into two halves"},
-    {"STEP", com_step, "copy a component in an array fashion"},
-    {"STRETCH", com_stretch, "make a component larger or smaller"},
-    {"TIME", com_time, "print the system clock time"},
-    {"TRACE", com_trace, "highlight named signals"},
-    {"TSLANT", com_tslant, "set the default font slant for italic text and notes"},
-    {"UNDO", com_undo, "undo the last command"},
-    {"UNITS", com_units, "set editor resolution and user unit type"},
-    {"VERSION", com_version, "identify the version number of program"},
-    {"WINDOW", com_window, "change the current window parameters"},
-    {"WRAP", com_wrap, "create a new device using existing components"},
-    {(char *) NULL, (Function *) NULL, (char *) NULL}
+    {"ADD", com_add, "add a component to the current device", 
+    "ADD A<layer> [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>\n\
+    ADD C<layer> [:W<width>] [:R<res>] [:Y<yxratio>] <xy1> <xy2>... <EOC>\n\
+    ADD <device> [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... <EOC>\n\
+    ADD L<layer> [:W<width>] <xy1> <xy2> [<xy3> ...]  <EOC>\n\
+    ADD N<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] \"string\" <xy> <EOC>\n\
+    ADD O<layer> [:W<width>] [:R<res>] <xy1> <xy2> <xy3>... <EOC>\n\
+    ADD P<layer> [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] <EOC>\n\
+    ADD R<layer> [:W<width>] <xy1> <xy2> <EOC>\n\
+    ADD T<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] \"string\" <xy> <EOC>" },
+    {"ARCHIVE", com_archive, "create an archive file of the specified device",
+    	"ARC <EOC>"},
+    {"AREA", com_area, "calculate and display the area of selected component", 
+    	"ARE [<component>[<layer>]] xysel [xysel ...] <EOC>"},
+    {"BACKGROUND", com_background, "specified device for background overlay",
+        "unimplemented"},
+    {"BYE", com_bye, "terminate edit session",
+        "BYE <EOC>"},
+    {"CHANGE", com_change, "change characteristics of selected components",
+    	"CHA [<component>[<layer>]] {xysel [<comp_options>|\"string\"|:L<newlayer>]}... <EOC>}"},
+    {"COPY", com_copy, "copy a component from one location to another",
+    	"COP [<component>[<layer>]] xysel xyref {xynewref ...} <EOC>" },
+    {"DATE", com_date, "print the current date and time to the console",
+        "DATE <EOC>"},
+    {"DEFINE", com_define, "define a macro",
+        "unimplemented"},
+    {"DELETE", com_delete, "delete a component from the current device", 
+    	"DEL [<component>[<layer>]] xy1... <EOC>"},
+    {"DISTANCE", com_distance, "measure the distance between two points",
+	"DIS {<xy1> <xy2>} ... EOC" },
+    {"DISPLAY", com_display, "turn the display on or off",
+    	"DISP [ON|OFF]"},
+    {"DUMP", com_dump, "dump graphics window to file or printer",
+        "DUM <EOC>"},
+    {"EDIT", com_edit, "begin edit of an old or new device",
+    	"EDI <device>"},
+    {"EQUATE", com_equate, "define characteristics of a mask layer",
+    	"EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:O] [:B|:D|:S|:I] [<label>] <layer>"},
+    {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem",
+    	"EXI <EOC>"},
+    {"$FILES", com_files, "purge named files",
+	"$FILES <cellname1> <cellname2> .... <EOC>"},
+    {"FSIZE", com_fsize, "Set the default font size for text and notes",
+    	"FSI [<fontsize>]"},
+    {"GRID", com_grid, "set grid spacing or turn grid on/off",
+    	"GRI [ON|OFF] [:C<color>] <delta> <skip> [<xorig> <yorig>]]\n\
+    GRI [ON|OFF] [:C<color>] <xdelta> <ydelta> <xskip> <yskip> <xorig> <yorig>"},
+    {"GROUP", com_group, "create a device from existing components",
+    	"unimplemented"},
+    {"HELP", com_help, "print syntax diagram for the specified command",
+    	"HELP [<commandname>] EOC"},
+    {"?", com_help, "Synonym for HELP",
+    	"? [<commandname>] EOC"},
+    {"IDENTIFY", com_identify, "identify named instances or components",
+    	"IDE [[:P] <xypnt>] | [:R <xy1> <xy2>] ... EOC"},
+    {"INPUT", com_input, "take command input from a file",
+    	"INP <filename> <EOC>"},
+    {"INTERRUPT", com_interrupt, "interrupt an ADD to issue another command",
+        "unimplemented"},
+    {"LAYER", com_layer, "set a default layer number",
+    	"LAYER [<layer_number>] <EOC>"},
+    {"LEVEL", com_level, "set the logical level of the current device",
+    	"LEV <logical_level> <EOC>"},
+    {"LIST", com_list, "list information about the current environment",
+    	"LIS <EOC>"},
+    {"LOCK", com_lock, "set or print the default lock angle",
+    	"LOCK [<angle>]"},
+    {"MACRO", com_macro, "enter the MACRO subsystem",
+    	"unimplemented"},
+    {"MENU", com_menu, "change or save the current menu",
+        "unimplemented"},
+    {"MOVE", com_move, "move a component from one location to another",
+    	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
+    {"PLOT", com_plot, "make a plot of the current device",
+    	"PLO <EOC>"},
+    {"POINT", com_point, "display the specified point on the screen",
+    	"POI {<xy1>...} <EOC>" },
+    {"PROCESS", com_process, "enter the PROCESS subsystem",
+    	"PRO <EOC>"},
+    {"PURGE", com_purge, "remove device from memory and disk",
+    	"PUR <cellname>"},
+    {"QUIT", com_bye, "terminate edit session",
+    	"QUI <EOC>"},
+    {"RETRIEVE", com_retrieve, "read commands from an ARCHIVE file",
+    	"RET <archivefile>"},
+    {"SAVE", com_save, "save the current file or device to disk",
+    	"SAV [<newname>]"},
+    {"SEARCH", com_search, "modify the search path",
+    	"unimplemented"},
+    {"SET", com_set, "set environment variables",
+    	"unimplemented"},
+    {"SHELL", com_shell, "run a program from within the editor",
+    	"unimplemented"},
+    {"!", com_shell, "Synonym for `shell'",
+    	"unimplemented"},
+    {"SHOW", com_show, "define which kinds of things to display",
+    	"SHOW {+|-|#}{EACILN0PRT}<layer>"},
+    {"SMASH", com_smash, "replace an instance with its components", 
+    	"SMAsh [<device_name>] {<coord>} <EOC>"},
+    {"SPLIT", com_split, "cut a component into two halves",
+    	"unimplemented"},
+    {"STEP", com_step, "copy a component in an array fashion",
+    	"unimplemented"},
+    {"STRETCH", com_stretch, "make a component larger or smaller",
+    	"STR { <xysel> <xyref> <xynewref> }" },
+    {"TIME", com_time, "print the system clock time",
+    	"TIM <EOC>"},
+    {"TRACE", com_trace, "highlight named signals",
+        "unimplemented"},
+    {"TSLANT", com_tslant, "get or set the default font slant for italic text and notes",
+    	"TSL [<fontslantangle>]"},
+    {"UNDO", com_undo, "undo the last command", 
+    	"UNDo <EOC>"},
+    {"UNITS", com_units, "set editor resolution and user unit type",
+    	"unimplemented"},
+    {"VERSION", com_version, "identify the version number of program",
+    	"VER <EOC>"},
+    {"WINDOW", com_window, "change the current window parameters",
+    	"WINdow :X[<scale>] [:N<physical>] [:F] [:O] [<xy1> [<xy2>]] <EOC>"},
+    {"WRAP", com_wrap, "create a new device using existing components",
+    	"WRAP [<component>[<layer>]] [<devicename>] <xyorig> <xy1> <xy2> <EOC>"},
+    {(char *) NULL, (Function *) NULL, (char *) NULL, (char *) NULL}
 };
 
 static int def_layer=0;
@@ -413,7 +480,101 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 
 int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 {
-    printf("    com_background %s\n", arg);
+    TOKEN token;
+    int done=0;
+    char buf[128];
+    char buf2[128];
+    char word[128];
+    int nnums=0;
+    DB_TAB *ed_rep;
+    FILE *fp;
+    LEXER *my_lp;
+    char *save_rep;
+    BOUNDS bb;
+
+    buf[0]='\0';
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case IDENT: 	/* identifier */
+		strncpy(buf, word, 128);
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case NUMBER: 	/* number */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("BACKGROUND: expected IDENT, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+
+    if (currep == NULL) {
+        printf("    BACKGROUND: not currently editing any cell, can't set background\n");
+        return(-1);
+    } else if (nnums==1) {
+	if ((ed_rep = db_lookup(buf)) == NULL) {	/* not in memory */
+
+	    snprintf(buf2, MAXFILENAME, "./cells/%s.d", buf);
+	    if((fp = fopen(buf2, "r")) == 0) { 		/* cannot find copy on disk */	
+		printf("    BACKGROUND: specified cell: %s, doesn't exist\n", buf);
+		return(-1);
+	    } else { 					/* found it on disk, read it in */	
+		ed_rep = db_install(buf);  /* create blank stub */
+		printf("reading %s from disk\n", buf);
+		my_lp = token_stream_open(fp, buf);
+
+		if (currep != NULL) {
+		    save_rep=strsave(currep->name);
+		} else {
+		    save_rep=NULL;
+		}
+
+		currep = ed_rep;
+		xwin_display_set_state(D_OFF);
+		show_set_modify(currep, ALL, 0,1);		/* make rep modifiable */
+		parse(my_lp);
+		show_set_modify(currep, ALL, 0,0);		/* set rep not modifiable */
+		show_set_visible(currep, ALL, 0,1);		/* and make it visible */
+		currep->modified = 0;
+		bb.init=0;
+		db_render(currep, 0, &bb, D_READIN); 	/* set boundbox, etc */
+		xwin_display_set_state(D_ON);
+		
+		token_stream_close(my_lp); 
+
+		if (save_rep != NULL) {
+		    currep=db_lookup(save_rep);
+		    free(save_rep);
+		} else {
+		    currep=NULL;
+		}
+	    }
+	}
+        currep->background = strsave(buf);
+    } else if (nnums==0) {
+	if (currep->background != NULL) {
+	    free(currep->background);
+	    currep->background = NULL;
+	}
+    } else {
+	printf("BACKGROUND: wrong number of arguments\n");
+	return(-1);
+    }
+
+    need_redraw++;
     return (0);
 }
 
@@ -918,8 +1079,8 @@ char *arg;
     
 		for (i = 0; commands[i].name; i++) {
 		    if (strncasecmp(word, commands[i].name, size) == 0) {
-			printf("    %-12s: %s.\n", 
-				commands[i].name, commands[i].doc);
+			printf("    %-12s: %s.\n    %s\n", 
+				commands[i].name, commands[i].doc, commands[i].usage);
 			printed++;
 
 			/* doesn't connect to stdin... */
@@ -1202,12 +1363,14 @@ LEXER *lp;
 char *arg;
 {
 
-    if (lp->mode == EDI || lp->mode == MAIN) { 
+    if (lp->mode == EDI) {
 	if (currep != NULL) {
 	    db_list(currep);
 	} else { 
 	    printf("no current rep to list!\n");
 	}
+    } else if (lp->mode == MAIN) { 
+        db_list_db();
     } else if (lp->mode == MAC) {
         /* mac_print(); */
     } else if (lp->mode == PRO) {
@@ -1431,14 +1594,14 @@ int com_save(lp, arg)	/* save the current file or device to disk */
 LEXER *lp;
 char *arg;
 {
-    need_redraw++; 
-
     TOKEN token;
     int done=0;
     char word[128];
     char name[128];
     int debug=0;
     int nfiles=0;
+
+    need_redraw++; 
    
     if (debug) printf("    com_save <%s>\n", arg); 
 

@@ -58,6 +58,9 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
 
     /* now create transform commands based on bb and paper size */
     /* FIXME, check that bb is in canonic order */
+    if ((llx > urx) || (lly > ury)) {
+    	printf("bounding box error in postscript.c\n");
+    }
 
     xmid = (llx+urx)/2.0;
     ymid = (lly+ury)/2.0;
@@ -71,8 +74,10 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     ymax=pdy*72.0;
     if (xdel > ydel) { /* flip aspect */
 	landscape=1;
+    	printf("setting landscape\n");
 	tmp=xmax;  xmax=ymax; ymax=tmp;
     } else {
+    	printf("setting portrait\n");
 	landscape=0;
     }
 
@@ -124,7 +129,7 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     fprintf(fp,"/col4 {0.000 0.900 0.900 srgb} bind def\n");
     fprintf(fp,"/col5 {0.900 0.000 0.900 srgb} bind def\n");
     fprintf(fp,"/col6 {0.900 0.900 0.000 srgb} bind def\n");
-    fprintf(fp,"/col7 {0.200 0.200 0.900 srgb} bind def\n");
+    fprintf(fp,"/col7 {0.000 0.000 0.000 srgb} bind def\n");
     fprintf(fp,"/col8 {0.000 0.000 0.960 srgb} bind def\n");
     fprintf(fp,"end\n");
     fprintf(fp,"save\n");

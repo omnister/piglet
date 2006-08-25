@@ -181,6 +181,10 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		if (isdigit(c) || c=='.') {
 		    *w++ = c;
 		    continue;
+		} else if (isalnum(c) || (c=='_') || (c=='.') ) {
+		    *w++ = c;
+		    state = INWORD;
+		    continue;
 		} else {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';

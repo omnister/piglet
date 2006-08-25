@@ -29,9 +29,7 @@ SHOW {+|-|#}[EACILN0PRT]<layer>
    layer : layer number, "0" or omitted for all layers.
 */
 
-int com_show(lp, arg)		/* define which kinds of things to display */
-LEXER *lp;
-char *arg;
+int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display */
 {
     TOKEN token;
     int done=0;
@@ -127,6 +125,7 @@ char *arg;
 			}
 		    }
 		    if (!done) {
+			printf("setting comp %d, layer %d, visible %d, modify %d\n", comp, show_layer, visible, modifiable);
 			show_set_visible(currep, comp, show_layer, visible);
 			show_set_modify(currep, comp, show_layer, modifiable);
 		    }

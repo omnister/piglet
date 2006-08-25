@@ -114,8 +114,8 @@ int com_move(LEXER *lp, char *arg)
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
 		    if (strlen(word) == 1) {
-			my_layer = default_layer();
-			printf("using default layer=%d\n",my_layer);
+			/* my_layer = default_layer(); */
+			/* printf("using default layer=%d\n",my_layer); */
 			valid_comp++;	/* no layer given */
 		    } else {
 			valid_comp++;
@@ -192,6 +192,7 @@ int com_move(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (mode == POINT) {
+		    printf("calling db_ident, %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp);
 		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 			db_notate(p_best);	    /* print out id information */
 			db_highlight(p_best);

@@ -24,9 +24,7 @@ void draw_box();
 
 OPTS opts;
 
-int add_rect(lp, layer)
-LEXER *lp;
-int *layer;
+int add_rect(LEXER *lp, int *layer)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 

@@ -149,6 +149,8 @@ typedef struct db_tab {
 
     struct db_deflist *deleted; 	/* most recently deleted comp */
 
+    char *background;		/* cell to display as background */
+
     struct db_tab *next;    	/* to link to next */
     struct db_tab *prev;    	/* link to previous */
 } DB_TAB;
@@ -417,6 +419,8 @@ extern void db_print_opts();
 extern void db_insert_component();
 extern void db_purge();
 extern int  db_exists();
+extern void db_list_db();
+extern double  dist(double x, double y);
 
 extern int db_plot();			/* plot the device to a file */
 

@@ -19,6 +19,7 @@
 
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
+
 #define BB 2		/* draw bounding box and don't do xform */
 
 
@@ -143,6 +144,7 @@ char *s;
     sp->dbhead = (struct db_deflist *) 0; 
     sp->dbtail = (struct db_deflist *) 0; 
     sp->deleted = (struct db_deflist *) 0; 
+    sp->background = (char *) 0;
 
     sp->vp_xmin = -100.0; 
     sp->vp_ymin = -100.0; 
@@ -224,6 +226,21 @@ char    *s;
     return(-1);
 }
 
+void db_list_db() 			/* print names of all cells in memory */
+{
+    DB_TAB *sp;
+    int i=0;
+
+    if (HEAD != (DB_TAB *)0) {
+	for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next) {
+	    printf("    %d: %s ", i++, sp->name);
+	    if (sp->modified) {
+		printf("\t(modified)");
+	    }
+	    printf("\n");
+	}
+    }
+}
 
 void db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
@@ -312,14 +329,19 @@ char *s;
 
 /* create a copy of a component with coordinates optionally transformed */
 /* by instance options.  If pinstdef is null, no transform done */
+/* We allow arbitrary mirroring, rotation and scaling */
+/* We assume here that there is no shearing or aspecting. */
+/* Rectangles rotated by non-multiples of 90 degrees */
+/* are converted into equivalent polygons */
 
 
 DB_DEFLIST *db_copy_component(p, pinstdef) 		/* create a copy of a component */
-DB_DEFLIST *p;
-DB_DEFLIST *pinstdef;
+DB_DEFLIST *p;	       /* component to be copied */
+DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
 {
     struct db_deflist *dp;
     XFORM *xp;
+    double x,y;
 
     if (p==NULL) {
     	printf("db_copy_component: can't copy a null component\n");
@@ -435,19 +457,46 @@ DB_DEFLIST *pinstdef;
 	break;
 
     case RECT:  /* rectangle definition */
-	dp->u.r = (struct db_rect *) emalloc(sizeof(struct db_rect));
-	dp->u.r->layer=p->u.r->layer;
-	dp->u.r->opts=opt_copy(p->u.r->opts);
 
-    	if (pinstdef != NULL) {
-	    dp->u.r->opts->width *= pinstdef->u.i->opts->scale;
-	} 
+	if (pinstdef != NULL && fmod(pinstdef->u.i->opts->rotation, 90.0) != 0) {
 
-	dp->u.r->x1 = p->u.r->x1; dp->u.r->y1 = p->u.r->y1;
-	xform_point(xp, &(dp->u.r->x1), &(dp->u.r->y1));
+	    /* non-ortho rotation, convert rectangle to polygon */
 
-	dp->u.r->x2 = p->u.r->x2; dp->u.r->y2 = p->u.r->y2;
-	xform_point(xp, &(dp->u.r->x2), &(dp->u.r->y2));
+	    dp->u.p = (struct db_poly *) emalloc(sizeof(struct db_poly));
+	    dp->u.p->layer=p->u.r->layer;
+	    dp->u.p->opts=opt_copy(p->u.r->opts);
+	    dp->u.p->opts->width *= pinstdef->u.i->opts->scale;
+
+	    dp->type = POLY;	/* override default */
+
+	    x = p->u.r->x1; y = p->u.r->y1; xform_point(xp, &x, &y);
+	    dp->u.p->coords = coord_new(x, y);
+
+	    x = p->u.r->x1; y = p->u.r->y2; xform_point(xp, &x, &y);
+	    coord_append(dp->u.p->coords, x, y);
+
+	    x = p->u.r->x2; y = p->u.r->y2; xform_point(xp, &x, &y);
+	    coord_append(dp->u.p->coords, x, y);
+
+	    x = p->u.r->x2; y = p->u.r->y1; xform_point(xp, &x, &y);
+	    coord_append(dp->u.p->coords, x, y);
+
+	} else {
+
+	    dp->u.r = (struct db_rect *) emalloc(sizeof(struct db_rect));
+	    dp->u.r->layer=p->u.r->layer;
+	    dp->u.r->opts=opt_copy(p->u.r->opts);
+
+	    if (pinstdef != NULL) {
+		dp->u.r->opts->width *= pinstdef->u.i->opts->scale;
+	    } 
+
+	    dp->u.r->x1 = p->u.r->x1; dp->u.r->y1 = p->u.r->y1;
+	    xform_point(xp, &(dp->u.r->x1), &(dp->u.r->y1));
+
+	    dp->u.r->x2 = p->u.r->x2; dp->u.r->y2 = p->u.r->y2;
+	    xform_point(xp, &(dp->u.r->x2), &(dp->u.r->y2));
+	}
     	break;
 
     case TEXT:  /* text definition */
@@ -966,20 +1015,39 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 
     case RECT:  /* rectangle definition */
 
-	fprintf(fp, "ADD R%d ", p->u.r->layer);
+	if (pinstdef != NULL && fmod(pinstdef->u.i->opts->rotation, 90.0) != 0) {
 
-    	if (pinstdef != NULL) {
+	    /* non-ortho rotation so convert to a polygon */
+
+	    fprintf(fp, "ADD P%d", p->u.p->layer);
 	    opts = opt_copy(p->u.r->opts);
 	    opts->width *= pinstdef->u.i->opts->scale;
-	    db_print_opts(fp, opts, RECT_OPTS);
+	    db_print_opts(fp, opts, POLY_OPTS);
 	    free(opts);
+	    fprintf(fp, " ");
+	    printcoords(fp, xp,  p->u.r->x1, p->u.r->y1);
+	    printcoords(fp, xp,  p->u.r->x1, p->u.r->y2);
+	    printcoords(fp, xp,  p->u.r->x2, p->u.r->y2);
+	    printcoords(fp, xp,  p->u.r->x2, p->u.r->y1);
+	    fprintf(fp, ";\n");
+	
 	} else {
-	    db_print_opts(fp, p->u.r->opts, RECT_OPTS);
-	}
 
-	printcoords(fp, xp,  p->u.r->x1, p->u.r->y1);
-	printcoords(fp, xp,  p->u.r->x2, p->u.r->y2);
-	fprintf(fp, ";\n");
+	    fprintf(fp, "ADD R%d ", p->u.r->layer);
+
+	    if (pinstdef != NULL) {
+		opts = opt_copy(p->u.r->opts);
+		opts->width *= pinstdef->u.i->opts->scale;
+		db_print_opts(fp, opts, RECT_OPTS);
+		free(opts);
+	    } else {
+		db_print_opts(fp, p->u.r->opts, RECT_OPTS);
+	    }
+
+	    printcoords(fp, xp,  p->u.r->x1, p->u.r->y1);
+	    printcoords(fp, xp,  p->u.r->x2, p->u.r->y2);
+	    fprintf(fp, ";\n");
+	}
 
 	break;
 
@@ -1849,10 +1917,7 @@ int mode;		/* drawing mode */
     x2 = (double) def->u.c->x2;	/* point on circumference */
     y2 = (double) def->u.c->y2;
 
-    if (mode==D_RUBBER) {
-    	xwin_draw_circle(x1,y1);
-    	xwin_draw_circle(x2,y2);
-    }
+    /* if (mode==D_RUBBER) { xwin_draw_circle(x1,y1); xwin_draw_circle(x2,y2); } */
     
     jump(bb,mode); set_layer(def->u.c->layer, CIRC);
 
@@ -1885,7 +1950,7 @@ int mode;		/* drawing mode */
 	startpoly(bb,mode);
     }
 
-    for (i=0; i<=res; i++) {
+    for (i=0; i<=res+1; i++) {				/* +1 to fill the gap */
 	theta = ((double) i)*2.0*M_PI/((double) res);
 	x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
 	y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
@@ -1960,9 +2025,7 @@ int mode; 	/* drawing mode */
     y2=temp->coord.y;
     temp = temp->next;
 
-    if (mode==D_RUBBER) {
-	xwin_draw_circle(x2,y2);
-    }
+    /* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
 
     segment = 0;
     if (temp!=NULL) {
@@ -1970,9 +2033,7 @@ int mode; 	/* drawing mode */
 	    x1=x2; x2=temp->coord.x;
 	    y1=y2; y2=temp->coord.y;
 
-	    if (mode==D_RUBBER) {
-		xwin_draw_circle(x2,y2);
-	    }
+	    /* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
 
 	    if (width != 0) {
 		if (segment == 0) {
@@ -2162,17 +2223,15 @@ int mode;
     temp = def->u.p->coords;
     x1=temp->coord.x; y1=temp->coord.y;
 
-    if (mode==D_RUBBER) {
-    	xwin_draw_circle(x1,y1);
-    }
+    /* if (mode==D_RUBBER) { xwin_draw_circle(x1,y1); } */
 
     jump(bb,mode);
     startpoly(bb,mode);
     while(temp != NULL) {
 	x2=temp->coord.x; y2=temp->coord.y;
-	if (mode==D_RUBBER) {
-	    xwin_draw_circle(x2,y2);
-	}
+
+	/* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
+
 	if (npts && temp->prev->coord.x==x2 && temp->prev->coord.y==y2) {
 	    ;
 	} else {
@@ -2189,9 +2248,7 @@ int mode;
     /* next bit of code when npts > 2 */
 
     if ((x1 != x2 || y1 != y2) && npts > 2) {
-        if (mode==D_RUBBER) {
-	    xwin_draw_circle(x1,y1);
-	}
+	/* if (mode==D_RUBBER) { xwin_draw_circle(x1,y1); } */
 	draw(x1, y1, bb, mode);
     }
     endpoly(bb,mode);
@@ -2254,10 +2311,7 @@ int mode;	/* drawing mode */
 	db_free_component(dp);		/* now destroy it */
     }
 
-    if (mode==D_RUBBER) {
-    	xwin_draw_circle(x1,y1);
-    	xwin_draw_circle(x2,y2);
-    }
+    /* if (mode==D_RUBBER) { xwin_draw_circle(x1,y1); xwin_draw_circle(x2,y2); } */
 }
 
 

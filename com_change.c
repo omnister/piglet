@@ -3,6 +3,9 @@
 #include <ctype.h>		/* for toupper() */
 #include <math.h>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include "rlgetc.h"
 #include "db.h"
 #include "token.h"
@@ -11,6 +14,7 @@
 #include "eprintf.h"
 #include "opt_parse.h"
 
+#define MAXBUF 256
 
 /* 
     change options for a component in the current device.
@@ -26,6 +30,7 @@ int com_change(LEXER *lp, char *arg)
 
     TOKEN token;
     char word[BUFSIZE];
+    char buf[MAXBUF];
     int debug=1;
     int done=0;
     int retval;
@@ -177,6 +182,18 @@ int com_change(LEXER *lp, char *arg)
 		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
+		    switch (p_best->type) {	/* put text in command buffer */
+		        case NOTE:
+			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.n->text);
+			    add_history(buf);
+			    break;
+			case TEXT:
+			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.t->text);
+			    add_history(buf);
+			    break;
+			default:
+			    break;
+		    }
 		} else {
 		    printf("nothing here to change...try SHO command?\n");
 		}
@@ -243,7 +260,7 @@ int com_change(LEXER *lp, char *arg)
 			    saverotation = p_best->u.i->opts->rotation;
 			    if (p_tab->is_tmp_rep) {
 				retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
-				if (fmod(p_best->u.i->opts->rotation, 90.0) != 0.0) {
+				if (0 && fmod(p_best->u.i->opts->rotation, 90.0) != 0.0) {
 				    printf("NONAMEs only rotatable by 90 deg. multiples\n");
 				    p_best->u.i->opts->rotation = saverotation;
 				} 

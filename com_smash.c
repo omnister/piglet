@@ -33,9 +33,7 @@ static double x1, yy1;		/* funny name for yy1 to avoid conflict with <math.h> */
 static double lastx1, lasty1;
 STACK *stack;
 
-int com_smash(lp, layer)
-LEXER *lp;
-int *layer;
+int com_smash(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -135,11 +133,11 @@ int *layer;
 		if (ncoords && lastx1 == x1 && lasty1 == yy1) {	/* double click */
 
 		    if ( p_best != NULL &&   /* test for skew */
-			(fmod(p_best->u.i->opts->rotation, 90.0) == 0.0 ) &&
 			(p_best->u.i->opts->aspect_ratio == 1.0) &&
 			(p_best->u.i->opts->slant == 0.0)) {
 
 		        /* (p_best->u.i->opts->mirror == 0) &&  
+			(fmod(p_best->u.i->opts->rotation, 90.0) == 0.0 ) &&
 			(p_best->u.i->opts->scale == 1.0) && */
 
 			smashrep=db_lookup(p_best->u.i->name);

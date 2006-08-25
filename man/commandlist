@@ -290,17 +290,21 @@ D: Add a note to the current device
 U: ADD N<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
-Add a note.  A note is zero width text.  <Rotation> is in
-degrees with counterclockwise rotations being positive. 
-<Slant> is in the range -90.00 to +90.00 degrees with 0.01
-resolution, and specifies how many degrees the y-axis of the
-character is slanted with respect to the x-axis.  The note
-is scaled to have adequate clearance when packed into
-single-spaced lines which are <fontsize> apart.  The
-<yxratio> is used to proportionally stretch or shrink the
-text to fill less horizontal space.  (Note: this is a change
-from HP Piglet which keeps width constant while changing
-height). 
+Add a note.  A note is zero width text.  <Rotation> is in degrees with
+counterclockwise rotations being positive.  <Slant> is in the range
+-90.00 to +90.00 degrees with 0.01 resolution, and specifies how many
+degrees the y-axis of the character is slanted with respect to the
+x-axis.  The note is scaled to have adequate clearance when packed into
+single-spaced lines which are <fontsize> apart.  The <yxratio> is used
+to proportionally stretch or shrink the text to fill less horizontal
+space.  (Note: this is a change from HP Piglet which keeps width
+constant while changing height.  This redefinition is much more natural
+for creating narrow typefaces.  <Fontsize> controls height, and
+<xyratio> controls width.). 
+
+The "string" may contain embedded newlines.  These can be entered by simply typing a
+carriage return while still in quotes.  This can be handy for entering a multi-line
+block of information".
 
 The font is defined in NOTEDATA.F and is easily
 changed.  New fonts can be easily derived from the Hershey
@@ -403,17 +407,22 @@ D: Add text to the current device
 U: ADD T<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
-Add a text annotation to the drawing.  Text is a fillable
-polygon font with line width.  <Rotation> is in degrees with
-counterclockwise rotations being positive.  <Slant> is in
-the range -90.00 to +90.00 degrees with 0.01 resolution, and
-specifies how many degrees the y-axis of the character is
-slanted with respect to the x-axis.  The text is scaled to
-have adequate clearance when packed into single-spaced lines
-which are <fontsize> apart.  The <yxratio> is used to
-proportionally stretch or shrink the text to fill less
-horizontal space.  (Note: this is a change from HP Piglet
-which keeps width constant while changing height). 
+
+Add a text annotation to the drawing.  Text is a fillable polygon font
+with line width.  <Rotation> is in degrees with counterclockwise
+rotations being positive.  <Slant> is in the range -90.00 to +90.00
+degrees with 0.01 resolution, and specifies how many degrees the y-axis
+of the character is slanted with respect to the x-axis.  The text is
+scaled to have adequate clearance when packed into single-spaced lines
+which are <fontsize> apart.  The <yxratio> is used to proportionally
+stretch or shrink the text to fill less horizontal space.  (Note: this
+is a change from HP Piglet which keeps width constant while changing
+height.  This redefinition is much more natural for creating narrow
+typefaces.  <Fontsize> controls height, and <xyratio> controls width.). 
+
+The "string" may contain embedded newlines.  These can be entered by
+simply typing a carriage return while still in quotes.  This can be
+handy for entering a multi-line block of information". 
 
 The font is defined in TEXTDATA.F and is easily
 changed.  New fonts can be easily derived from the Hershey
@@ -447,6 +456,7 @@ The location of the text.
 
 N: ARChive
 D: Create archive file of specified device
+U: ARC <eoc>
 S: good
 T: {
 Creates an human readable ASCII file containing all the commands
@@ -489,8 +499,29 @@ A point to select the component to be measured.
 }
 
 N: BACkground
-D: Specify  a  background bitmap for the editor
-S: unimplemented
+D: Specify a background device for the editor
+U: BAC [<cellname>]
+S: implemented
+T: {
+
+This command allows any device to be used as a background.  The origin
+of the background device will be in the same location as the origin of
+the device currently being edited.  The device specified as the
+background device will display with the same parameters as the current
+edit device, but none of its components can be selected for edit
+operations.  This is a display only option.  One possible use is to
+create special grid devices for custom layouts or forms, without the
+form being a part of the device. 
+
+If <cellname> is specified, that particular device is displayed in the
+background.  If <cellname> is not specified, no background device will
+be displayed.
+
+The use of a background device is completely invisible to all editor
+functions.  In particular a WINDOW command with the fit option (:F) will
+only fit the edited device, not the (possibly larger) background device.
+
+}
 
 N: BYE
 D: Terminate the edit session
@@ -520,6 +551,10 @@ of the current non-default component options is printed to the text window.  The
 can then enter any valid option for the selected component type.  The new option
 replaces the old value and the device is redisplayed.  Any number of valid options
 may be typed until a new <xysel> is given.
+
+If either a NOTE or TEXT is selected, the associated text will be automatically
+placed in the commandline history buffer where it can be easily recalled and edited.
+See the GNU readline(3) manual page for details on commandline editing.
 
 .SS OPTIONS
 .TP
@@ -585,6 +620,15 @@ A reference point on the component.
 The location for the reference point of the new copy.
 }
 
+N: DATe
+D: Print the current date and time to the console
+S: complete
+U: DAT 
+T: {
+Prints the current date and time to the console in the format:
+"Month/Day/Year Hour:Minutes:Seconds" using 24-hour format.
+}
+
 N: DEFine
 D: Define a macro
 S: unimplemented (moderate)
@@ -631,10 +675,26 @@ is toggled.
 N: DISTance
 D: Measure the distance between two points
 S: complete
-U: DIS <xy1> <xy2>... EOC
+U: DIS {<xy1> <xy2>} ... EOC
 T: {
-For each pair of coordinates, DISTANCE prints out the location of each
-coordinate, the delta_x, delta_y, and delta_xy to the screen. 
+
+After entering the first point <xy1> a rubber-banded right-angled
+triangle is animated on the screen between <xy1> and the current mouse
+location.  The coordinates of both points and the delta_x, delta_y,
+and total distance is displayed.
+
+After entering the final point <xy2> a summary is printed to the screen of the
+form:
+
+.nf
+   xy1=(-600,1100) xy2=(2800,3900) dx=3400, dy=2800, dxy=4404.54 theta=39.4725 (deg.)
+.fi
+
+giving the location of each coordinate, the delta_x, delta_y,  delta_xy and the
+angle of the line xy1:xy2 with respect to horizontal in degrees.
+
+Pairs of points may be entered indefinitely until receipt of a final EOC or
+the entry of another command name.
 }
 
 N: DUMp
@@ -685,12 +745,14 @@ return to editing the device at any time.  If the user attempts to leave
 the editor with QUIT or BYE, a list of all currently modified devices in
 memory will be printed warning the user that the devices have not been
 properly saved.  If a second QUIT or BYE is typed, the editor will be
-killed and all unsaved changes will be permanently lost.  }
+killed and all unsaved changes will be permanently lost.  
+
+}
 
 N: EQUate
 D: Assign pen/line type to a mask layer
-U: EQU [:C<color>] [:P<pen>] [:M{S|D|B}] [:O] [:B|:D|:S|:I] [<label>] <layer>
-S: partial 
+U: EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:O] [:B|:D|:S|:I] [<label>] <layer>
+S: complete
 T: {
 
 Associate a mask layer with a color, plotting pen, and a mnemonic
@@ -698,7 +760,30 @@ description of its use.  All layers are initally set to detail, solid
 green, unfilled, and not plotted. 
 
 The EQU command allows these settings to be customized for a particular
-application or IC process. 
+application or IC process.   Normally, EQUate commands are stored in the
+file PROCDATA.P and are read in automatically by Piglet on startup.
+
+EQUate commands may only be entered, LISted, and SAVed in the PROCESS subsystem.
+
+.SS EXAMPLE
+
+Here are a few lines from a typical PROCDATA.P file:
+
+.nf
+EQU :C1 :P1 :M0 :B boundary 0
+EQU :C2 :P2 :M1 :D layer1 1
+EQU :C3 :P3 :M2 :D layer2 2
+EQU :C4 :P4 :M3 :D layer3 3
+EQU :C5 :P5 :M4 :S layer4 4
+EQU :C6 :P6 :M5 :S layer5 5
+EQU :C7 :P7 :M6 :I layer6 6
+EQU :C1 :P1 :M0 :I layer7 7
+EQU :C2 :P2 :M1 :I layer8 8
+.fi
+
+The first line, for example, says that layer 0 is named "boundary",
+drawn with color 1 (white), plotted with pen 1, and uses line type 0
+(solid). 
 
 .SS OPTIONS
 .TP
@@ -711,9 +796,12 @@ an integer from 1-7 to specify a plot pen, or 0 to suppress plotting.
 Piglet parses this option, and stores it, but pen-based plotting is not
 currently implemented.
 .TP
-.I :M{S|D|B}
-Specify the way in which the mask layer is displayed.  S gives solid lines,
-D gives dotted lines, and B gives broken (dashed lines).
+.I :M{S|D|B|[0-6]}
+Specify the way in which the mask layer is displayed.  S gives solid
+lines, D gives dotted lines, and B gives broken (dashed lines).  Line
+types can also be designated by numbers.  0-2 are synonymous with S,D,B. 
+3 gives "dot-dash", 4 gives "long-short", 5 gives "large-broken", 6
+gives "small-broken". 
 .TP
 .I :B|:D|:S|:I
 Specify the function of the mask layer. B is Boundary, D is Detail, 
@@ -781,6 +869,30 @@ listed cells from memory.  The cell names are ordered hierarchically from top
 to bottom such that no deletion leaves dangling references for the remaining cells.
 The cells are then redefined in the archive in reverse order, from bottom to top so
 that there are no forward references. 
+}
+
+N: FSIze
+D: Set the default font size for text and notes
+S: complete
+U: FSI [<fontsize>]
+T: {
+Set the font size for text and notes.
+
+The default font size is 10.0 when the editor is started, but can be changed
+with the FSIze command and will be used for any ADD NOTE or ADD TEXT
+command that does explicitly specify a font size with the <:f> option. 
+
+Text and Notes entered with the new default will be saved to disk with
+the :F<fontsize> option. 
+
+The current <fontsize> can be printed by running FSize without an argument.
+
+.SS OPTIONS
+.TP
+.I <fontsize>
+Size of font.  The total height of all characters in the font is scaled to be approximately
+equal to <fontsize>.  Must be a positive floating point number.
+
 }
 
 N: GRId
@@ -866,12 +978,25 @@ a short usage summary of the command.
 
 N: IDEntify
 D: Identify named instances or components
-U: IDE <xy1>... EOC
+U: IDE [[:P] <xypnt>] | [:R <xy1> <xy2>] ... EOC
 S: good
 T: {
-The IDEntify command takes a series of xy points and for each point
-highlights the nearest primitive and prints some information about it to
-the screen.
+The IDEntify command highlights and prints out details of selected
+components.  Components can be selected either by point or by region. 
+The default mode is select by point.  However, if you change to select
+by region with :R, you can later change back with :P.  The selection
+mode is "sticky" so you can do multiple selections of the same type
+without re-entering the option. 
+.SS OPTIONS
+.TP
+.I :R 
+Select by Region.  Identify zero or more components whose bounding boxes
+are entirely contained within the rectangular region defined by <xy1> &
+<xy2>.   When selecting by region, a rubber-banded rectangle will be drawn 
+after the first coordinate to help the user define the region.
+.TP
+.I :P
+Select by Point.  Identify the single component closest to <xypnt>. 
 }
 
 N: INPut
@@ -921,10 +1046,14 @@ D: List information about the current environment
 S: complete
 U: LIS <EOC>
 T: {
-Prints out information about the current device.  Lists the components
-in the current device including type, bounding box and options
-associated with each device.  Lists the grid, lock and level settings. Lists
-whether the current device is modified.
+If in the EDIT subsystem, the LISt command prints out information about the
+current device.  Lists the components in the current device including
+type, bounding box and options associated with each device.  Lists the
+grid, lock and level settings.  Lists whether the current device is
+modified. 
+
+If in the PROCESS subsystem, the LISt command prints out the current 
+Process file EQUates.
 }
 
 N: LOCk
@@ -996,9 +1125,10 @@ into the parse stream.  The menu designer should take care to leave extra spaces
 command names so that any combination of mouse picks results in intellegible commands.
 }
 
+
 N: MOVe
-D: Move  a  component  from  one  location to another
-U: MOV [<component>[<layer>]] { xysel xyref xynewref } ... <EOC>
+D: Move a component from one location to another
+U: MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>
 S: complete
 T: {
 MOves a component in the current device.  Can be optionally restricted
@@ -1006,9 +1136,24 @@ to move only a specified <component> and <layer>.  In any case, only
 components which have been made modifiable by the SHOW command can be
 moved.  
 
-An <xysel> point selects and highlights the component to be moved.  A bounding box is
-displayed after the <xyref> reference point is given.  The box tracks the mouse
-until the final location of the reference point is given by <xynewref>.
+Components to be moved can be selected either by point or by region. 
+The default mode is select by point.  However, if you change to select
+by region with :R, you can later change back with :P.  The selection
+mode is "sticky" so you can do multiple moves of the same type
+without re-entering the option. 
+
+When selecting by point, an <xysel> selects and highlights the component
+to be moved.  A bounding box is displayed after the <xyref> reference
+point is given.  The box tracks the mouse until the final location of
+the reference point is given by <xynewref>. 
+
+The :R options allows selection by region.  A bounding box is selected
+with <xy1> and <xy2>.  A rubberband rectangle will be displayed once
+<xy1> is entered.  When <xy2> is entered, the box is remembered, but
+erased.  When the <xyref> reference point is given, the bounding box is
+redisplayed.  The box tracks the mouse until the final location of the
+reference point is given by <xynewref>. 
+
 .SS OPTIONS
 .TP
 .I <component>
@@ -1028,6 +1173,15 @@ A reference point on the component.
 .TP
 .I <xynewref>
 The new location for the reference point after the move.
+.TP
+.I :P
+Move by Point (default).  Move the single component closest to <xysel>. 
+.TP
+.I :R 
+Move by Region.  Identify zero or more components whose bounding boxes
+are entirely contained within the rectangular region defined by <xy1> &
+<xy2>.   When selecting by region, a rubber-banded rectangle will be drawn 
+after the first coordinate to help the user define the region.
 }
 
 N: PLOt
@@ -1070,7 +1224,13 @@ corner of the graphical window.
 
 N: PROcess
 D: Enter the PROCESS subsystem
-S: unimplemented (moderate)
+U: PRO EOC
+S: implemented
+T: {
+Entering the process system allows listing of the process file.
+Entering PRO, followed by LISt, will list the current set of layer EQUates which define
+layer color, pen type, and line types currently in use.
+}
 
 N: PURge
 D: Purge device definitions from memory and disk
@@ -1136,6 +1296,13 @@ file, they will be unable to reconstruct your cell if it has any
 hierarchy.  If you want a full, self-contained definition of your work,
 then you should use the "ARCHIVE" command which defines every cell
 used in a given drawing.
+
+If there have been any NONAME instances created with the WRAP command,
+they will be automatically smashed when the device is written to disk.
+The wrapped instances will still remain in memory, however, so a given
+device may be written multiple times without destroying the temporary
+hierarchy created with the wrap command.  When the editor is finally 
+closed, all NONAME instances will be permanently lost.
 
 Most commands may be terminated by typing either an EOC or the name of
 another command.  SAVE is an exception to this rule.  In the event that
@@ -1205,7 +1372,33 @@ Layer number, "0" or omitted designates all layers.
 
 N: SMAsh
 D: Replace an instance with its components
-S: unimplemented (moderate)
+U: SMASH [<device_name>] {<coord>} EOC
+S: partial
+T: {
+
+The SMAsh command will replace a selected instance with copies of the
+individual components that define the instance.  The instance closest to
+<coord> is selected.  If <device_name> is given, then only instances of
+<device_name> can be selected.  The first <coord> simply highlights the
+instance.  The SMAsh is only performed after EOC, which can be a
+double-click on the same <coord> or a command terminating semi-colon
+(;).  Using a double-click allows multiple SMAshes to be performed with
+one command. 
+
+Instances to be SMAshed can be scaled, mirrored, or rotated.  Instances
+that have been sheared with the :Z option or aspected with the :Y option
+may not be smashed.  This could lead to distorted geometries which do
+not fit on the grid due to round off errors.  
+
+Rectangles rotated by exact multiples of 90 degrees will remain as
+rectangles after SMAshing.  Rectangles rotated by non-orthogonal angles
+will be smashed into equivalent polygons. 
+
+Smashing should be done with care.  Smashing a instance destroys the
+hierarchy of the drawing and can tremendously increase the number of
+components in a device. 
+
+}
 
 N: SPLit
 D: Cut a component into two halves
@@ -1213,15 +1406,73 @@ S: unimplemented (hard)
 
 N: STEp
 D: Copy a component in an array fashion
-unimplemented (moderate)
+S: unimplemented (moderate)
 
 N: STRetch
-D: Make a component larger or smaller
-S: unimplemented (moderate)
+D: Move an internal point of a component
+S: partial
+U: STR [[<component>[<layer>]] { <xysel> <xyref> <xynewref> }
+T: {
+
+STRetch moves a vertex of a Rectangle, Line or Polygon to a new location with 
+respect to a specified reference point.  STRetch applied to a Circle modifies
+the point on the circumference of the circle. 
+
+The <xysel> point selects the component to be modified.  The <xyref> point
+selects the vertex to be modified and acts a reference point for the move.
+The delta between <xyref> and <xynewref> is added to the selected vertex.
+
+As a convenience, and because STRetch is commonly used to "tidy up" a
+drawing, a STRetch applied to Notes, Text and Instances behaves the same
+as the MOVE command. 
+
+.SS OPTIONS
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text. 
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Limit selection to layer number, "0" or omitted designates all layers.
+.TP
+.I <xysel>
+xy-coordinate to select the component to be modified.
+.TP
+.I <xyref>
+A reference point on the component which selects which vertex to modify.
+.TP
+.I <xynewref>
+The location for the reference point of the new copy.
+}
 
 N: TRAce
 D: Highlight named signals
 S: unimplemented (easy)
+
+N: TSLant
+D: Get or set the default font slant for italic text and notes
+S: complete
+U: TSL [<slant>] <EOC>
+T: {
+Set the default font slant for italic text and notes.
+
+The default font slant is zero when the editor is started, but can be changed
+with the TSLant command and will be used for any ADD NOTE or ADD TEXT
+command that does explicitly specify a slant with the <:z> option.  
+
+Text or Notes added with a non-zero TSLant will be saved with the :z
+option set to <slant>. 
+
+The current <slant> value can be printed by running TSLant without an argument.
+
+.SS OPTIONS
+.TP
+.I <slant>
+Angle to slant text and notes.  Limited to +/- 45.0 degrees.
+A positive slant leans to the right, approximating an italic font.
+}
+
 
 N: UNDo
 D: Undo the last DELETE command
@@ -1295,7 +1546,53 @@ Toggle filled polygon display  (default=unfilled)
 
 N: WRAp
 D: Create  a  new  device  using  existing components
-S: unimplemented
+S: complete
+U: WRAP [<component>[<layer>]] [<devicename>] <xyorig> <xy1> <xy2> EOC
+T: {
+Creates a new device out of the selected components.  Selection is done
+by taking all the components completely enclosed by the rectangular
+region defined by <xy1> and <xy2>.  Components can be further restricted by
+the optional <component><layer> argument. Partially enclosed components are
+omitted from the new device definition.  Once selected, the group of
+components is replaced by an instance named <devicename> of the newly
+created device definition.  The <devicename> is automatically saved to disk
+when it is created.  It is an error for <devicename> to exist either in
+memory or on disk prior to the WRAp command. 
+
+WRAp is commonly used to MOVe or COPy various sub-regions of a drawing. 
+For this purpose, <devicename> can be omitted, and a unique name of the
+form "NONAME_<number>" will be automatically generated.  Such components
+can be subsequently MOVed or COPied and will be automatically smashed
+onto the disc when the current device is saved.  NONAME instances may be
+mirrored, scaled, or rotated by CHAnge command, but may not be sheared
+(:Z) or aspected (:Y).  If you need to shear or aspect a geometry, you
+must encapsulated it in a permanently named instance, which may not be
+subsequently smashed. 
+
+The GROUP command is identical to WRAp in function except that
+components are selected individually instead of by region. 
+
+.SS OPTIONS
+.TP
+.I <component>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text. 
+If omitted, any component type may be selected.
+.TP
+.I <layer>
+Limit selection to layer number, "0" or omitted designates all layers.
+.TP
+.I <devicename>
+The name to be used for the new wrapped instance.  If omitted, an
+internally generated name of the form "NONAME_<number>" will be used.
+.TP 
+.I <xyorig>
+The point which will become the 0,0 coordinate in the new instance.
+.TP 
+.I <xy1> <xy2>
+The bounding box used to select components to be wrapped.
+}
 
 N: CALibrate
 D: Calibrate the display to match a digitizing tablet
@@ -1303,10 +1600,6 @@ S: unimplemented
 
 N: CMAp
 D: Modify the color map
-S: unimplemented
-
-N: DATe
-D: Print the current date
 S: unimplemented
 
 N: DEClare
@@ -1318,8 +1611,24 @@ D: Print remaining memory
 S: unimplemented
 
 N: TIMe
-D: Print the system clock time
-S: unimplemented
+D: Print the current and elapsed time to the console
+S: complete
+U: TIM
+T: {
+Prints the current 24-hour time to the console in the format:
+"Hour:Minutes:Seconds".  If TIMe had been called previously,
+the elapsed time will also be printed.
+
+For example:
+.nf
+    MAIN> time
+        07/29/2006 19:11:14
+    MAIN> time
+	07/29/2006 19:11:18, elapsed since last call: 4 seconds
+.fi
+
+TIMe can be useful in scripts for benchmarking internal Piglet operations.
+}
 
 N: XASsign
 D: Assign Stretch points to a cell

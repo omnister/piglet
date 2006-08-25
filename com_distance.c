@@ -21,9 +21,7 @@
 static double x1, yy1; 	/* cant call it "y1" because of math lib */
 void draw_dist(); 
 
-int com_distance(lp, layer)
-LEXER *lp;
-int *layer;
+int com_distance(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
@@ -33,8 +31,6 @@ int *layer;
     TOKEN token;
     char word[BUFSIZE];
     int debug=0;
-
-    if (debug) printf("layer %d\n",*layer);
 
     rl_saveprompt();
     rl_setprompt("DISTANCE> ");
@@ -132,9 +128,10 @@ int *layer;
 	    if (token == NUMBER) {
 		token_get(lp,word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
-	        printf("(%g,%g) (%g,%g) dx=%g, dy=%g, dxy=%g\n",
+	        printf("xy1=(%g,%g) xy2=(%g,%g) dx=%g, dy=%g, dxy=%g theta=%g (deg.)\n",
 	        x1, yy1, x2, y2, fabs(x1-x2), fabs(yy1-y2),
-	        sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0)));
+	        sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0)),
+		360.0*atan2(y2-yy1, x2-x1)/(2.0*M_PI));
 		rubber_clear_callback();
 		state = NUM1;
 	    } else if (token == EOL) {
@@ -163,24 +160,42 @@ int *layer;
     return(1);
 }
 
+void zerotrim(char *buf) {
+   int i;
+   for (i=strlen(buf); i>0; i--) {
+       if (buf[i] == '0') {
+          buf[i]='\0';
+       } else {
+          break;
+       }
+   }
+}
+
+#define RES 6
+
+/* return nearest exact multiple of 1/(10^RES)) */
+double grid(double num) {
+   return (num-fmod(num,1.0/pow(10.0,RES)));
+}
 
 void draw_dist(x2, y2, count) 
 double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
-	BOUNDS bb;
-	bb.init=0;
 	static char dxbuf[MAXDBUF];
 	static char dybuf[MAXDBUF];
 	static char dxybuf[MAXDBUF];
 	static char dxbufold[MAXDBUF];
 	static char dybufold[MAXDBUF];
 	static char dxybufold[MAXDBUF];
+	BOUNDS bb;
 
-	snprintf(dxbuf,  MAXDBUF, "%g", fabs(x1-x2));
-	snprintf(dybuf,  MAXDBUF, "%g", fabs(yy1-y2)),
-	snprintf(dxybuf, MAXDBUF, "%g", sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0)));
+	bb.init=0;
+
+	snprintf(dxbuf,  MAXDBUF, "%g", grid(fabs(x1-x2)));
+	snprintf(dybuf,  MAXDBUF, "%g", grid(fabs(yy1-y2))),
+	snprintf(dxybuf, MAXDBUF, "%g", grid(sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0))));
 
 	if (count == 0) {		/* first call */
 	    jump(&bb, D_RUBBER); /* draw new shape */

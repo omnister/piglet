@@ -112,32 +112,32 @@ int k;	  /* index of color */
     for (i=0; i<=strlen(s); i++) {
     	switch(s[i]) {
 	    case 'a':	/* aqua */
-		c=5;
-		n++;
-	    	break;
-	    case 'b':	/* blue */
 		c=4;
 		n++;
 	    	break;
-	    case 'g':	/* green */
+	    case 'b':	/* blue */
 		c=3;
+		n++;
+	    	break;
+	    case 'g':	/* green */
+		c=2;
 		n++;
 	    	break;
 	    case 'p':	/* purple */
 	    case 'm':	/* magenta */
-		c=6;
+		c=5;
 		n++;
 	    	break;
 	    case 'r':	/* red */
-		c=2;
-		n++;
-	    	break;
-	    case 'w':	/* white */
 		c=1;
 		n++;
 	    	break;
-	    case 'y':	/* yellow */
+	    case 'w':	/* white */
 		c=7;
+		n++;
+	    	break;
+	    case 'y':	/* yellow */
+		c=6;
 		n++;
 	    	break;
 	    default:

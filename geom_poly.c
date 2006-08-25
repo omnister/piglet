@@ -41,9 +41,7 @@ OPTS opts;
 
 static double x1, y1;
 
-int add_poly(lp, layer)
-LEXER *lp;
-int *layer;
+int add_poly(LEXER *lp, int *layer)
 {
     enum {START,NUM1,COM1,NUM2,END,ERR} state = START;
 
@@ -234,11 +232,11 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
+	int debug=0;
 	BOUNDS bb;
 
 	bb.init=0;
 
-	int debug=0;
 
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */
