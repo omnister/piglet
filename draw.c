@@ -14,12 +14,12 @@
 			/* for the purpose of picking objects */
 
 /* global variables that need to eventually be on a stack for nested edits */
-int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
-int showon=1;		  /* 0 = layer currently turned off */
-int nestlevel=9;
-int draw_fill=FILL_OFF;
-int layer_fill=FILL_OFF;
-int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
+static int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
+static int showon=1;		  /* 0 = layer currently turned off */
+static int nestlevel=9;
+static int draw_fill=FILL_OFF;
+static int layer_fill=FILL_OFF;
+static int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
 FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 int filled_object = 0;		/* global for managing polygon filling */
@@ -386,20 +386,56 @@ char *name;			/* instance name restrict or NULL */
     return(p_best);
 }
 
+int bb_overlap(x1, y1, x2, y2, xc1, yc1, xc2, yc2) 
+double x1, y1, x2, y2, xc1, yc1, xc2, yc2;
+{
+
+    int err = 0;
+    double tmp;
+
+    /* canonicalize inputs */
+
+    if (x1 > x2)   { tmp = x2;   x2 = x1;   x1 = tmp; }
+    if (y1 > y2)   { tmp = y2;   y2 = y1;   y1 = tmp; }
+    if (xc1 > xc2) { tmp = xc2; xc2 = xc1; xc1 = tmp; }
+    if (yc1 > yc2) { tmp = yc2; yc2 = yc1; yc1 = tmp; }
+
+    if (y2 < yc1 ) err++;
+    if (xc2 < x1 ) err++;
+    if (yc2 < y1 ) err++;
+    if (xc1 > x2 ) err++;
+
+    if (y1 < yc1 && yc1 < y2)   y1 = yc1;     /* trim bottom */
+    if (x1 < xc2 && xc2 < x2)   x2 = xc2;     /* trim right */
+    if (y1 < yc2 && yc2 < y2)   y2 = yc2;     /* trim top */
+    if (x1 < xc1 && xc1 < x2)   x1 = xc1;     /* trim left */
+
+    if (x1 >= x2)   err++;
+    if (y1 >= y2)   err++;
+
+    if (!err) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+                                               
+
 STACK *db_ident_region(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
 DB_TAB *cell;			/* device being edited */
 NUM x1, y1;	 		/* pick point */
 NUM x2, y2;	 		/* pick point */
-int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
+int mode; 			/* 0 = ident (any visible) */
+				/* 1 = enclose pick (pick restricted to modifiable objects) */
+				/* 2 = boundary overlap (restricted to modifiable objects) */
 int pick_layer;			/* layer restriction, or 0=all */
 int comp;			/* comp restriction */
 char *name;			/* instance name restrict or NULL */
 {
     DB_DEFLIST *p;
-    static STACK *stack=NULL;	/* gets returned */
-    int debug=0;
+    STACK *stack=NULL;	/* gets returned */
+    /* int debug=0; */
     BOUNDS childbb;
-    double fuzz;
     double tmp;
     int layer;
     int bad_comp;
@@ -409,23 +445,13 @@ char *name;			/* instance name restrict or NULL */
 	return(0);
     }
 
-    if (mode && debug) {		/* pick rather than ident mode */
-    	printf("db_ident: called with layer %d, comp %d, name %s\n", 
-		pick_layer, comp, name);
-    }
-
-    /* pick fuzz should be a fraction of total window size */
-    
-    fuzz = max((cell->maxx-cell->minx),(cell->maxy-cell->miny))*FUZZBAND;
-
     stack=NULL;
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
 	childbb.init=0;
 
-	/* screen components by crude bounding boxes then */
-	/* render each one in D_PICK mode for detailed test */
+	/* screen components by layers and bounding boxes */
 
 	switch (p->type) {
 	case ARC:   /* arc definition */
@@ -465,8 +491,8 @@ char *name;			/* instance name restrict or NULL */
 	bad_comp=0;
 	if ((pick_layer != 0 && layer != pick_layer) ||
 	    (comp != 0 && comp != ALL && p->type != comp)  ||
-	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
-	    (mode == 1 && !show_check_modifiable(currep, p->type, layer)) ||
+	    (!mode && !show_check_visible(currep, p->type, layer)) ||
+	    (mode && !show_check_modifiable(currep, p->type, layer)) ||
 	    (p->type == INST && name != NULL && strncmp(name, p->u.i->name, MAXFILENAME)) != 0)  {
 		bad_comp++;
 	}
@@ -479,11 +505,15 @@ char *name;			/* instance name restrict or NULL */
 	    	tmp = y2; y2 = y1; y1 = tmp;
 	    }
 
-	    /* check for enclosure */
-	    if (x1 <= p->xmin  && x2 >= p->xmax && y1 <= p->ymin && y2 >= p->ymax) {
-	    	stack_push(&stack, (char *)p);
+	    if (mode == 0 || mode == 1 ) {	/* check for enclosure */
+		if (x1 <= p->xmin  && x2 >= p->xmax && y1 <= p->ymin && y2 >= p->ymax) {
+		    stack_push(&stack, (char *)p);
+		}
+	    } else if (mode == 2)  { /* check for mutual overlap */
+		if (bb_overlap(x1, y1, x2, y2, p->xmin, p->ymin, p->xmax, p->ymax)) {
+		    stack_push(&stack, (char *)p);
+		}
 	    }
-
 	}
     }
     return(stack);
@@ -700,6 +730,7 @@ void db_highlight(p)
 DB_DEFLIST *p;			/* component to display */
 {
     BOUNDS bb;
+    DB_TAB *def;
     bb.init=0;
 
     if (p == NULL) {
@@ -737,7 +768,12 @@ DB_DEFLIST *p;			/* component to display */
 	do_note(p, &bb, D_RUBBER);
 	break;
     case INST:  /* instance call */
-	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	def = db_lookup(p->u.i->name);
+	db_drawbounds(def->minx+p->u.i->x, 
+	              def->miny+p->u.i->y, 
+		      def->maxx+p->u.i->x, 
+		      def->maxy+p->u.i->y, 
+		      D_RUBBER);
 	break;
     default:
 	eprintf("unknown record type: %d in db_highlight\n", p->type);
@@ -1457,7 +1493,8 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
     static int nseg=0; 
-    static double xxold, yyold;
+    static double xxold = 0.0;
+    static double yyold = 0.0;
     double xp, yp;
     int debug=0;
 
@@ -1483,7 +1520,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
 	    bb->xmax += (double) pickcheck(xxold, yyold, x, y, xp, yp, 3.0);
 	} else if ((mode == D_RUBBER)) { /* xor rubber band drawing */
-	    if (showon && drawon) {
+	    if (drawon) {
 		if (X && (nseg > 1)) {
 		    xwin_xor_line((int)xxold,(int)yyold,(int)x,(int)y);
 		}

@@ -23,8 +23,8 @@
 #define OVAL_OPTS "WR"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
-#define NOTE_OPTS "MNRYZF"
-#define TEXT_OPTS "MNRYZF"
+#define NOTE_OPTS "JMNRYZF"
+#define TEXT_OPTS "JMNRYZF"
 #define INST_OPTS "MRXYZ"
 #define NONAME_OPTS "MRX"
 
@@ -161,6 +161,7 @@ typedef struct opt_list {
     double font_size;       /* :F<font_size> */
     int mirror;             /* :M<x,xy,y>    */
     int font_num;           /* :N<font_number> */
+    int justification;      /* :J<justification> */
     double rotation;        /* :R<rotation,resolution> */
     double width;           /* :W<width> */
     double scale; 	    /* :X<scale> */

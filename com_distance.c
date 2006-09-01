@@ -160,17 +160,6 @@ int com_distance(LEXER *lp, char *arg)
     return(1);
 }
 
-void zerotrim(char *buf) {
-   int i;
-   for (i=strlen(buf); i>0; i--) {
-       if (buf[i] == '0') {
-          buf[i]='\0';
-       } else {
-          break;
-       }
-   }
-}
-
 #define RES 6
 
 /* return nearest exact multiple of 1/(10^RES)) */

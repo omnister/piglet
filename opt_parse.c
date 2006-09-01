@@ -31,9 +31,15 @@ OPTS *popt;
 	return(ERR);
     } else if (optstring[0] == '.') {
 	/* got a component name */
+	if (popt->cname != NULL) {
+	   free (popt->cname);
+	}
     	popt->cname = strsave(optstring);
     } else if (optstring[0] == '@') {
 	/* got a signal name */
+	if (popt->sname != NULL) {
+	   free (popt->sname);
+	}
     	popt->sname = strsave(optstring);
     } else if (optstring[0] == ':') {
         /* got a regular option */
@@ -55,6 +61,38 @@ OPTS *popt;
 		}
 		popt->font_size = optval;
 		break;
+	    case 'J': 		/* :J(justification) */
+		/* note: the order of these tests is important */
+		if (strncasecmp(optstring+2,"SW",2) ==  0) {
+		    popt->justification = 0;
+		} else if (strncasecmp(optstring+2,"SE",2) == 0) {
+		    popt->justification = 2;
+		} else if (strncasecmp(optstring+2,"NE",2) == 0) {
+		    popt->justification = 8;
+		} else if (strncasecmp(optstring+2,"NW",2) == 0) {
+		    popt->justification = 6;
+		} else if (strncasecmp(optstring+2,"S" ,1) == 0) {
+		    popt->justification = 1;
+		} else if (strncasecmp(optstring+2,"W" ,1) == 0) {
+		    popt->justification = 3;
+		} else if (strncasecmp(optstring+2,"C" ,1) == 0) {
+		    popt->justification = 4;
+		} else if (strncasecmp(optstring+2,"E" ,1) == 0) {
+		    popt->justification = 5;
+		} else if (strncasecmp(optstring+2,"N" ,1) == 0) {
+		    popt->justification = 7;
+		} else {
+		    if(sscanf(optstring+2, "%lf", &optval) != 1) {
+			weprintf("invalid option argument: %s\n", optstring+2); 
+			return(ERR);
+		    }
+		    if (optval < 0.0 || optval > 8.0 ) {
+		         weprintf("justification must be between 0 and 8: %s\n", optstring+2); 
+		         return(ERR);
+		    }
+		    popt->justification = (int) optval;
+		}
+		break;
 	    case 'M':		/* mirror X,Y,XY */
 		/* Note: these comparisons must be done in this order */
 		if (strncasecmp(optstring+1,"MXY",3) == 0) {
@@ -63,6 +101,10 @@ OPTS *popt;
 		    popt->mirror = MIRROR_Y;
 		} else if (strncasecmp(optstring+1,"MX",2) == 0) {
 		    popt->mirror = MIRROR_X;
+		} else if (strncasecmp(optstring+1,"M0",2) == 0) {
+		    popt->mirror = MIRROR_OFF;
+		} else if (strncasecmp(optstring+1,"MOFF",4) == 0) {
+		    popt->mirror = MIRROR_OFF;
 		} else {
 		    weprintf("unknown mirror option %s\n", optstring); 
 		    return(ERR);

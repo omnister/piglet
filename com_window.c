@@ -326,6 +326,7 @@ double x2, y2;
 int count; /* number of times called */
 {
 	static double x1old, x2old, y1old, y2old;
+	static int called = 0;
 	BOUNDS bb;
 
 	if (count == 0) {		/* first call */
@@ -335,6 +336,7 @@ int count; /* number of times called */
 	    draw(x2,y2, &bb, D_RUBBER);
 	    draw(x2,y1, &bb, D_RUBBER);
 	    draw(x1,y1, &bb, D_RUBBER);
+	    called++;
 
 	} else if (count > 0) {		/* intermediate calls */
 
@@ -351,14 +353,18 @@ int count; /* number of times called */
 	    draw(x2,y2, &bb, D_RUBBER);
 	    draw(x2,y1, &bb, D_RUBBER);
 	    draw(x1,y1, &bb, D_RUBBER);
+	    called++;
 
 	} else {			/* last call, cleanup */
-	    jump(&bb, D_RUBBER); /* erase old shape */
-	    draw(x1old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y2old, &bb, D_RUBBER);
-	    draw(x2old,y1old, &bb, D_RUBBER);
-	    draw(x1old,y1old, &bb, D_RUBBER);
+	    if (called) {
+		jump(&bb, D_RUBBER); /* erase old shape */
+		draw(x1old,y1old, &bb, D_RUBBER);
+		draw(x1old,y2old, &bb, D_RUBBER);
+		draw(x2old,y2old, &bb, D_RUBBER);
+		draw(x2old,y1old, &bb, D_RUBBER);
+		draw(x1old,y1old, &bb, D_RUBBER);
+	    }
+	    called=0;
 	}
 
 	/* save old values */

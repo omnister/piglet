@@ -236,7 +236,7 @@ char **argv;
 
     findfile(PATH, "piglogo.d", buf);
     if (buf[0] == '\0') {
-	printf("Could not piglogo in $PATH\n");
+	printf("Could not find piglogo in $PATH\n");
 	printf("PATH=\"%s\"\n", PATH);
 	exit(5);
     } else {

@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.38 2006/08/17 16:05:40 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.39 2006/09/01 21:24:54 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -350,7 +350,13 @@ int initX()
     XSetWMProperties(dpy, topwin, &windowName, &iconName,
         (char **) NULL, (int) NULL, size_hints, wm_hints, class_hints);
 
-        /* argv, argc, size_hints, wm_hints, class_hints); */
+    XFree(windowName.value);
+    XFree(iconName.value);
+    XFree(size_hints);
+    XFree(wm_hints);
+    free(class_hints->res_name);
+    XFree(class_hints);
+    
 
     /* Select event types wanted */
     XSelectInput(dpy, topwin, ExposureMask | KeyPressMask |

@@ -288,6 +288,8 @@ char *s;
 	    db_free_component(p);
 	}
     
+	free(sp->name);
+	free(sp->background);
 	free(sp);
     } 
 
@@ -552,6 +554,8 @@ DB_DEFLIST *p;
 
 	case ARC:  /* arc definition */
 	    if (debug) printf("db_purge: freeing arc\n");
+	    free(p->u.a->opts->cname);
+	    free(p->u.a->opts->sname);
 	    free(p->u.a->opts);
 	    free(p->u.a);
 	    free(p);
@@ -559,6 +563,8 @@ DB_DEFLIST *p;
 
 	case CIRC:  /* circle definition */
 	    if (debug) printf("db_purge: freeing circle\n");
+	    free(p->u.c->opts->cname);
+	    free(p->u.c->opts->sname);
 	    free(p->u.c->opts);
 	    free(p->u.c);
 	    free(p);
@@ -573,6 +579,8 @@ DB_DEFLIST *p;
 		free(coords);	
 		coords=ncoords;
 	    }
+	    free(p->u.l->opts->cname);
+	    free(p->u.l->opts->sname);
 	    free(p->u.l->opts);
 	    free(p->u.l);
 	    free(p);
@@ -581,6 +589,8 @@ DB_DEFLIST *p;
 	case NOTE:  /* note definition */
 
 	    if (debug) printf("db_purge: freeing note\n");
+	    free(p->u.n->opts->cname);
+	    free(p->u.n->opts->sname);
 	    free(p->u.n->opts);
 	    free(p->u.n->text);
 	    free(p->u.n);
@@ -590,6 +600,8 @@ DB_DEFLIST *p;
 	case OVAL:  /* oval definition */
 
 	    if (debug) printf("db_purge: freeing oval\n");
+	    free(p->u.o->opts->cname);
+	    free(p->u.o->opts->sname);
 	    free(p->u.o->opts);
 	    free(p->u.o);
 	    free(p);
@@ -604,6 +616,8 @@ DB_DEFLIST *p;
 		free(coords);
 		coords=ncoords;
 	    }
+	    free(p->u.p->opts->cname);
+	    free(p->u.p->opts->sname);
 	    free(p->u.p->opts);
 	    free(p->u.p);
 	    free(p);
@@ -612,6 +626,8 @@ DB_DEFLIST *p;
 	case RECT:  /* rectangle definition */
 
 	    if (debug) printf("db_purge: freeing rect\n");
+	    free(p->u.r->opts->cname);
+	    free(p->u.r->opts->sname);
 	    free(p->u.r->opts);
 	    free(p->u.r);
 	    free(p);
@@ -620,6 +636,8 @@ DB_DEFLIST *p;
 	case TEXT:  /* text definition */
 
 	    if (debug) printf("db_purge: freeing text\n");
+	    free(p->u.t->opts->cname);
+	    free(p->u.t->opts->sname);
 	    free(p->u.t->opts);
 	    free(p->u.t->text);
 	    free(p->u.t);
@@ -631,6 +649,8 @@ DB_DEFLIST *p;
 	    if (debug) printf("db_purge: freeing instance call: %s\n",
 		p->u.i->name);
 	    free(p->u.i->name);
+	    free(p->u.i->opts->cname);
+	    free(p->u.i->opts->sname);
 	    free(p->u.i->opts);
 	    free(p->u.i);
 	    free(p);
@@ -1590,6 +1610,7 @@ OPTS *opt_copy(OPTS *opts)
     /* set defaults */
     tmp->font_size = opts->font_size;
     tmp->font_num = opts->font_num;
+    tmp->justification = opts->justification;
     tmp->mirror = opts->mirror;
     tmp->rotation = opts->rotation;
     tmp->width = opts->width;
@@ -1607,6 +1628,7 @@ void opt_set_defaults(OPTS *opts)
     opts->font_size = 10.0;       /* :F<font_size> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
     opts->font_num=0;		  /* :N<font_num> */
+    opts->justification=0;	  /* :J<justification> */
     opts->rotation = 0.0;         /* :R<rotation,resolution> */
     opts->width = 0.0;            /* :W<width> */
     opts->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
@@ -1649,6 +1671,11 @@ char *validopts;
 
     for (p=validopts; *p != '\0'; p++) {
     	switch(toupper(*p)) {
+	    case 'J':
+		if (popt->justification != 0) {
+		    fprintf(fp, ":J%d ", popt->justification);
+		}
+	    	break;
 	    case 'F':
 		fprintf(fp, ":F%g ", popt->font_size);
 	    	break;
@@ -1991,6 +2018,7 @@ int mode; 	/* drawing mode */
     int debug=0;	/* set to 1 for copious debug output */
 
     width = def->u.l->opts->width;
+    dx = dy = dxn  = dyn = 0.0;
 
     /* there are four cases for rendering lines with miters 
      *
@@ -2362,7 +2390,8 @@ int mode;
     xp->dx += def->u.n->x;
     xp->dy += def->u.n->y;
 
-    writestring(def->u.n->text, xp, def->u.n->opts->font_num, bb, mode);
+    writestring(def->u.n->text, xp, def->u.n->opts->font_num,
+    	def->u.n->opts->justification, bb, mode);
 
     free(xp);
 }
@@ -2414,7 +2443,8 @@ int mode;
     xp->dx += def->u.t->x;
     xp->dy += def->u.t->y;
 
-    writestring(def->u.t->text, xp, def->u.t->opts->font_num, bb, mode);
+    writestring(def->u.t->text, xp, def->u.t->opts->font_num,
+    	def->u.t->opts->justification, bb, mode);
 
     free(xp);
 }

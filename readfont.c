@@ -1,9 +1,32 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "readfont.h"
 #include "db.h"
 #define MAXPOINT 5000
+
+/* 
+
+The TEXT and FONT files are named "TEXTDATA.F" and "NOTEDATA.F"
+respectively.  The format for both files is plain ASCII.  The file
+starts with two integers separated by a comma.  The first gives the
+height of each character definition and the second, the width.  Each
+character is then listed in printed form and the glyph is defined by a
+set of vector coordinates.  It is assumed that each successive x,y
+coordinate pair is connected by a stroke unless the path is broken by
+the special coordinate "-64,0".  Each definition is terminated by the
+special coordinate "-64,-64".  Here is an example of the first three
+definitions in "NOTEDATA.F" for the characters <exclam>, <double-quote>,
+and <pound>:
+
+16,12
+! 6,2 6,3 -64,0 6,5 6,14 -64,-64
+" 4,14 4,10 -64,0 8,14 8,10 -64,-64
+# 2,6 10,6 -64,0 2,10 10,10 -64,0 4,2 4,14 -64,0 8,2 8,14 -64,-64
+
+*/
+
 
 int getxy();
 int eatwhite();
@@ -71,17 +94,65 @@ int mode;		/* drawing mode */
 }
 
 
-void writestring(s,xf, id, bb, mode)
+void writestring(s,xf, id, jf, bb, mode)
 char *s;
 XFORM *xf;
 int id; 	/* font id */
+int jf; 	/* font justification */
 BOUNDS *bb;
 int mode;
 {
     double yoffset=0.0;
     int debug=0;
     double xoffset=0.0;
+    double xoff, yoff;
     
+    double width=(((double)(dx[id]))*0.80*strlen(s))/((double)(dy[id]));
+    double height=0.8;
+    xoff = yoff = 0.0;
+
+    switch (jf) {
+        case 0:		/* SW */
+	    xoff = 0.0;
+	    yoff = 0.0;
+	    break;
+        case 1:		/* S */
+	    xoff = -width/2.0;
+	    yoff = 0.0;
+	    break;
+        case 2:		/* SE */
+	    xoff = -width;
+	    yoff = 0.0;
+	    break;
+        case 3:		/* W */
+	    xoff = 0.0;
+	    yoff = -height/2.0;
+	    break;
+        case 4:		/* C */
+	    xoff = -width/2.0;
+	    yoff = -height/2.0;
+	    break;
+        case 5:		/* E */
+	    xoff = -width;
+	    yoff = -height/2.0;
+	    break;
+        case 6:		/* NW */
+	    xoff = 0.0;
+	    yoff = -height;
+	    break;
+        case 7:		/* N */
+	    xoff = -width/2.0;
+	    yoff = -height;
+	    break;
+        case 8:		/* NE */
+	    xoff = -width;
+	    yoff = -height;
+	    break;
+	default:
+	    printf("bad justification: %d in writestring()\n", jf);
+	    break;
+    }
+
     if (debug) printf("in writestring id=%d\n", id);
 
     /* void writechar(c,x,y,xf,id,bb,mode) */
@@ -89,8 +160,8 @@ int mode;
     while(*s != 0) {
 	if (*s != '\n') {
 	    writechar(*s,
-	        (((double)(dx[id]))*0.80*xoffset)/((double)(dy[id])),
-		-yoffset,xf,id, bb, mode);
+	        (((double)(dx[id]))*0.80*xoffset)/((double)(dy[id]))+xoff,
+		-yoffset+yoff,xf,id, bb, mode);
 	    if (debug) printf("writing %c, dx:%d dy:%d id:%d\n",
 	    	*s, dx[id], dy[id], id);
 	    xoffset+=1.0;

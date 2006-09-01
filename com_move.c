@@ -192,7 +192,8 @@ int com_move(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (mode == POINT) {
-		    printf("calling db_ident, %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp);
+		    /* printf("calling db_ident, 
+		        %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp); */
 		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
 			db_notate(p_best);	    /* print out id information */
 			db_highlight(p_best);

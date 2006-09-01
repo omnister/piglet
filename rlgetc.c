@@ -9,8 +9,8 @@
 extern char *getwd();
 extern char *xmalloc();
 char * stripwhite();
-char *lineread = (char *) NULL;
-int pushback = (char) NULL;
+static char *lineread = (char *) NULL;
+static int pushback = (char) NULL;
 double getdouble();
 
 int	lineno = 1;
@@ -149,8 +149,9 @@ char *prompt;
     fflush(stdout);
 
     /* If the line has any text in it, save it on the history. */
-    if (lineread && *lineread)
+    if (lineread && *lineread) {
 	add_history (lineread);
+    }
     
     /* add a newline to return string */
 

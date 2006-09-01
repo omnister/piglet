@@ -98,7 +98,11 @@ int *mr;		/* max rows */
 	    ; /* ignore all other lines */
 	}
 	*mr = y;
+        free(line);
+	line = (char *) NULL;
     }
+    free(line);
+    line = (char *) NULL;
     return(count);
 }
 

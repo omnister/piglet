@@ -37,6 +37,7 @@ int token_err(char *modulename, LEXER *lp, char *expected, TOKEN token)
 int token_stream_close(LEXER *lp)  {
     int retcode;
     retcode=fclose(lp->token_stream);
+    free(lp->name);
     free(lp);
     return(retcode);
 }
@@ -181,10 +182,16 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		if (isdigit(c) || c=='.') {
 		    *w++ = c;
 		    continue;
-		} else if (isalnum(c) || (c=='_') || (c=='.') ) {
+
+		/* took this out because of ambiguity with mouse */
+		/* clicks like "ADD L1MOV", 1MOV becam ident rather */
+		/* than 1 and MOV being parsed separately */
+
+		/* } else if (isalnum(c) || (c=='_') || (c=='.') ) {
 		    *w++ = c;
 		    state = INWORD;
-		    continue;
+		    continue; */
+
 		} else {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';

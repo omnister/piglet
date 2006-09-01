@@ -11,6 +11,8 @@
 #include <string.h>	/* for strncmp */
 #include "rlgetc.h"
 #include "opt_parse.h"
+#include "lock.h"
+
 static COORDS *CP;
 
 DB_TAB dbtab; 
@@ -31,77 +33,27 @@ void draw_line();
 
 OPTS opts;
 
-static double x1, yy1;
-static double xsnap, ysnap;
-
-void setlockpoint(x,y) 
-double x, y;
-{
-    int debug = 0;
-
-    if (debug) printf("setting snap to %g %g\n", x, y);
-
-    xsnap = x;
-    ysnap = y;
-}
-
-void lockpoint(px, py, lock) 
-double *px, *py;
-double lock;
-{
-    double dx, dy;
-    double theta;
-    double locktheta;
-    double snaptheta;
-    double radius;
-
-    if (lock != 0.0) {
-
-	dx = *px - xsnap;
-	dy = *py - ysnap;
-	radius = sqrt(dx*dx + dy*dy);
-
-	/* compute angle (range is +/- M_PI) */
-	theta = atan2(dy,dx);
-	if (theta < 0.0) {
-	    theta += 2.0*M_PI;
-	}
-
-	locktheta = 2.0*M_PI*lock/360.0;
-	snaptheta = locktheta*floor((theta+(locktheta/2.0))/locktheta);
-
-	/*
-	printf("angle = %g, locked %g\n", 
-		theta*360.0/(2.0*M_PI), snaptheta*360.0/(2.0*M_PI));
-	fflush(stdout);
-	*/ 
-
-    	/* overwrite px, py, to produce vector with same radius, but proper theta */
-	*px = xsnap+radius*cos(snaptheta);
-	*py = ysnap+radius*sin(snaptheta);
-
-	snapxy(px, py);	   /* snap computed points to grid */
-    }
-}
-
+static double x1=0.0;
+static double yy1=0.0;
 
 int add_line(LEXER *lp, int *layer)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
 
-    int debug=0;
-    int done=0;
     int count;
-    int nsegs;
     TOKEN token;
     char word[BUFSIZE];
     double x2,y2;
-    static double xold, yold;
+    double xold, yold;
+    int debug=0;
+    int done=0;
+    int nsegs=0;
 
     if (debug) {printf("layer %d\n",*layer);}
     rl_saveprompt();
     rl_setprompt("ADD_LINE> ");
 
+    x2 = y2 = xold = yold = 0.0;
     opt_set_defaults(&opts);
 
     while (!done) {
@@ -319,6 +271,7 @@ int count; /* number of times called */
 	static double x1old, x2old, y1old, y2old;
 	int debug=0;
 	BOUNDS bb;
+	static int called = 0;
 
 	bb.init=0;
 
@@ -346,16 +299,20 @@ int count; /* number of times called */
 	if (count == 0) {		/* first call */
 	    jump(&bb, D_RUBBER); /* draw new shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
-
+	    called++;
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 	    jump(&bb, D_RUBBER); /* draw new shape */
 	    coord_swap_last(CP, x2, y2);
 	    do_line(&dbdeflist, &bb, D_RUBBER);
+	    called++;
 	} else {			/* last call, cleanup */
-	    jump(&bb, D_RUBBER); /* erase old shape */
-	    do_line(&dbdeflist, &bb, D_RUBBER);
+	    if (called) {
+		jump(&bb, D_RUBBER); /* erase old shape */
+		do_line(&dbdeflist, &bb, D_RUBBER);
+	    }
+	    called = 0;
 	}
 
 	/* save old values */
