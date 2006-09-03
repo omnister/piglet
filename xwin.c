@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.39 2006/09/01 21:24:54 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.40 2006/09/03 00:23:57 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -273,8 +273,8 @@ int initX()
     XTextExtents(font_info, string, char_count, &direction, &ascent,
         &descent, &overall);
 
-    menu_width = overall.width*linewidth + 4;
-    pane_height = overall.ascent + overall.descent + 4;
+    menu_width = overall.width*linewidth + 6;
+    pane_height = overall.ascent + overall.descent + 6;
     menu_height = pane_height * numrows;
 
     /* create top level window for packing graphic and menu windows */
