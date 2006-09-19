@@ -39,6 +39,8 @@ int com_change(LEXER *lp, char *arg)
     int i;
     DB_DEFLIST *p_best;
     DB_TAB *p_tab;
+    char instname[BUFSIZE];
+    char *pinst = (char *) NULL;
 
     int my_layer = 0; 	/* internal working layer */
     int new_layer;	 
@@ -74,9 +76,6 @@ int com_change(LEXER *lp, char *arg)
     "N7" is an instance call.
 
 */
-
-    rl_saveprompt();
-    rl_setprompt("CHA> ");
 
     while(!done) {
 	token = token_look(lp,word);
@@ -140,8 +139,13 @@ int com_change(LEXER *lp, char *arg)
 			}
 		    }
 		} else { 
-		    /* here need to handle a valid cell name */
-		    printf("looks like a descriptor to me: %s\n", word);
+		    if (db_lookup(word)) {
+		        strncpy(instname, word, BUFSIZE);
+			pinst = instname;
+		    } else {
+			printf("not a valid instance name: %s\n", word);
+			state = START;
+		    }
 		}
 	    } else {
 		token_err("CHA", lp, "expected DESC or NUMBER", token);
@@ -179,7 +183,7 @@ int com_change(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
 		    switch (p_best->type) {	/* put text in command buffer */
@@ -248,55 +252,57 @@ int com_change(LEXER *lp, char *arg)
 			    break;
 		    }
 		} else {	/* let opt_parse do the rest */
-		    switch (p_best->type) {
-			case ARC:
-			    retval=opt_parse(word, ARC_OPTS, (p_best->u.a->opts));
-			    break;
-			case CIRC:
-			    retval=opt_parse(word, CIRC_OPTS, (p_best->u.c->opts));
-			    break;
-			case INST:
-			    p_tab = db_lookup(p_best->u.i->name);
-			    saverotation = p_best->u.i->opts->rotation;
-			    if (p_tab->is_tmp_rep) {
-				retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
-				if (0 && fmod(p_best->u.i->opts->rotation, 90.0) != 0.0) {
-				    printf("NONAMEs only rotatable by 90 deg. multiples\n");
-				    p_best->u.i->opts->rotation = saverotation;
-				} 
-				if (p_best->u.i->opts->aspect_ratio != 1.0) {
-				    printf("NONAMEs may not be aspected\n");
-				    p_best->u.i->opts->aspect_ratio = 1.0;
+		    if (p_best != NULL) {
+			switch (p_best->type) {
+			    case ARC:
+				retval=opt_parse(word, ARC_OPTS, (p_best->u.a->opts));
+				break;
+			    case CIRC:
+				retval=opt_parse(word, CIRC_OPTS, (p_best->u.c->opts));
+				break;
+			    case INST:
+				p_tab = db_lookup(p_best->u.i->name);
+				saverotation = p_best->u.i->opts->rotation;
+				if (p_tab->is_tmp_rep) {
+				    retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
+				    if (0 && fmod(p_best->u.i->opts->rotation, 90.0) != 0.0) {
+					printf("NONAMEs only rotatable by 90 deg. multiples\n");
+					p_best->u.i->opts->rotation = saverotation;
+				    } 
+				    if (p_best->u.i->opts->aspect_ratio != 1.0) {
+					printf("NONAMEs may not be aspected\n");
+					p_best->u.i->opts->aspect_ratio = 1.0;
+				    }
+				    if (p_best->u.i->opts->slant != 0.0) {
+					printf("NONAMEs may not be slanted\n");
+					p_best->u.i->opts->slant = 0.0;
+				    }
+				} else {
+				    retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
 				}
-				if (p_best->u.i->opts->slant != 0.0) {
-				    printf("NONAMEs may not be slanted\n");
-				    p_best->u.i->opts->slant = 0.0;
-				}
-			    } else {
-				retval=opt_parse(word, INST_OPTS, (p_best->u.i->opts));
-			    }
-			    break;
-			case LINE:
-			    retval=opt_parse(word, LINE_OPTS, (p_best->u.l->opts));
-			    break;
-			case NOTE:
-			    retval=opt_parse(word, NOTE_OPTS, (p_best->u.n->opts));
-			    break;
-			case OVAL:
-			    retval=opt_parse(word, OVAL_OPTS, (p_best->u.o->opts));
-			    break;
-			case POLY:
-			    retval=opt_parse(word, POLY_OPTS, (p_best->u.p->opts));
-			    break;
-			case RECT:
-			    retval=opt_parse(word, RECT_OPTS, (p_best->u.r->opts));
-			    break;
-			case TEXT:
-			    retval=opt_parse(word, TEXT_OPTS, (p_best->u.t->opts));
-			    break;
-			default:
-			    printf("unknown case in change routine\n");
-			    break;
+				break;
+			    case LINE:
+				retval=opt_parse(word, LINE_OPTS, (p_best->u.l->opts));
+				break;
+			    case NOTE:
+				retval=opt_parse(word, NOTE_OPTS, (p_best->u.n->opts));
+				break;
+			    case OVAL:
+				retval=opt_parse(word, OVAL_OPTS, (p_best->u.o->opts));
+				break;
+			    case POLY:
+				retval=opt_parse(word, POLY_OPTS, (p_best->u.p->opts));
+				break;
+			    case RECT:
+				retval=opt_parse(word, RECT_OPTS, (p_best->u.r->opts));
+				break;
+			    case TEXT:
+				retval=opt_parse(word, TEXT_OPTS, (p_best->u.t->opts));
+				break;
+			    default:
+				printf("unknown case in change routine\n");
+				break;
+			}
 		    }
 		    if (retval != -1) {
 			state = OPT;
@@ -339,7 +345,6 @@ int com_change(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 

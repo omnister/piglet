@@ -49,9 +49,6 @@ int com_smash(LEXER *lp, char *arg)
     int ncoords=0;
     DB_TAB *smashrep;
     
-    rl_saveprompt();
-    rl_setprompt("SMASH> ");
-
     while (!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
@@ -207,7 +204,6 @@ int com_smash(LEXER *lp, char *arg)
     if (p_prev != NULL) {
 	db_highlight(p_prev);	/* unhighlight any remaining component */
     }
-    rl_restoreprompt();
     return(1);
 }
 

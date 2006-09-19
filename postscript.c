@@ -62,6 +62,17 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     	printf("bounding box error in postscript.c\n");
     }
 
+/*
+plotting postcript to zhongsheet.ps
+currep min/max bounds: 0, 0, 8.5, 11
+currep vp bounds: 0, 0, 8.5, 11
+currep screen bounds: 142.932, 787, 751.068, -1.42109e-14
+gwidth/height: 894, 787
+bounds to ps: 142.932, -1.42109e-14, 751.068, 787
+setting landscape
+*/
+
+
     xmid = (llx+urx)/2.0;
     ymid = (lly+ury)/2.0;
     xdel = fabs(urx-llx);

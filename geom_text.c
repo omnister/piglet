@@ -41,6 +41,8 @@ int mode;
     int debug=0;
     int nargs=0;
     char *type;
+    int numadd = 0;
+    double xold, yold;
 
     opt_set_defaults( &opts );
     opts.font_size = db_get_font_size(); 	/* get default from FSIze command */
@@ -142,17 +144,22 @@ int mode;
 		    	printf("ADD %s: no string given\n", type);
 			state = START;
 		    } else {
-
-			rubber_clear_callback();
-			if (mode) {
-			    db_add_text(currep, *layer, opt_copy(&opts),
-				strsave(str), x1, y1);
+			if (numadd && xold == x1 && yold == y1) {
+			    printf("   suppressing double click\n");
 			} else {
-			    db_add_note(currep, *layer, opt_copy(&opts),
-				strsave(str), x1, y1);
+			    rubber_clear_callback();
+			    if (mode) {
+				db_add_text(currep, *layer, opt_copy(&opts),
+				    strsave(str), x1, y1);
+			    } else {
+				db_add_note(currep, *layer, opt_copy(&opts),
+				    strsave(str), x1, y1);
+			    }
+			    rubber_set_callback(draw_text);
+			    need_redraw++;
 			}
-			rubber_set_callback(draw_text);
-			need_redraw++;
+			xold=x1; yold=y1;
+			numadd++;
 			state = START;
 	            }
 		} else if (token == EOL) {

@@ -142,7 +142,7 @@ I'll die!".  Two SIGQUITs in a row will terminate the program.
 }
 
 N: ADD_ARC
-U: ADD A<layer> [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>
+U: ADD A<layer> [.<cname>] [@<sname>] [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>
 D: Add an arc to the current device
 S: complete
 T: {
@@ -161,6 +161,12 @@ arc has an effective radius <width>/2.0 larger than drawn.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width>
 line width
 .TP
@@ -169,7 +175,7 @@ arc resolution angle (in degrees) (default = 2 degrees)
 }
 
 N: ADD_CIRCLE
-U: ADD C<layer> [:W<width>] [:R<resolution>] [:Y<yxratio>] <xy1> <xy2>... EOC
+U: ADD C<layer> [.<cname>] [@<sname>] [:W<width>] [:R<resolution>] [:Y<yxratio>] <xy1> <xy2>... EOC
 D: Add a circle to the current device
 S: complete
 T: {
@@ -205,6 +211,12 @@ vertices.  "ADD C7 :R90" is a way to add a rotated square.  "ADD C7
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width>
 width of line
 .TP
@@ -222,24 +234,27 @@ a point on the radius, or on the major axis if <yxratio>!=1
 }
 
 N: ADD_INSTANCE
-U: ADD [I] <device> [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... EOC
+U: ADD [I] <device> [.<cname>] [@<sname>] [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... EOC
 D: Add an instance (sub-cell) to the current device
 S: good
 T: {
 Add a device instance with rotation, scaling, shearing and mirroring. 
-<mirror> can take the values "X","Y", or "XY" for mirroring about the X
-axis, Y axis, or both.  <rotation> is the rotation angle in decimal
-degrees in the range -180.00 to +180.00 with 0.01 degree increment. 
-Multiple devices can be placed with multiple <xy> points.  EOC (or
-double click) is required to terminate the command. 
+<mirror> can take the values "X","Y","XY", "0", or "OFF" for mirroring
+about the X axis, Y axis, or both.  <rotation> is the rotation angle in
+decimal degrees in the range -180.00 to +180.00 with 0.01 degree
+increment.  Multiple devices can be placed with multiple <xy> points. 
+EOC (or double click) is required to terminate the command. 
 
 .SS OPTIONS
 .TP
-.I <layer>
-layer number for component
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
 .TP
 .I <mirror>
-one of "X" "Y" or "XY", for mirroring around a specified axis
+one of "X", "Y", "XY", "0", or "OFF" for mirroring around a specified axis
 .TP
 .I <rotation>
 angle (in degrees) of instance rotation
@@ -259,7 +274,7 @@ the location of the instance.
 
 N: ADD_LINE
 D: Add a line to the current device
-U: ADD L<layer> [:W<width>] <xy1> <xy2> [<xy3> ...]  EOC
+U: ADD L<layer> [.<cname>] [@<sname>] [:W<width>] <xy1> <xy2> [<xy3> ...]  EOC
 S: good
 T: {
 Add a line.  Lines are added with "ADD L<layer_number>".  Coordinates
@@ -281,13 +296,19 @@ A lock angle of 0 turns off all restrictions on line placement.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width>
 width of line (default=0) (FIXME: not currently subject to resolution setting>
 }
 
 N: ADD_NOTE
 D: Add a note to the current device
-U: ADD N<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>]  "string" <xy> EOC
 S: good
 T: {
 Add a note.  A note is zero width text.  <Rotation> is in degrees with
@@ -302,21 +323,57 @@ constant while changing height.  This redefinition is much more natural
 for creating narrow typefaces.  <Fontsize> controls height, and
 <xyratio> controls width.). 
 
-The "string" may contain embedded newlines.  These can be entered by simply typing a
-carriage return while still in quotes.  This can be handy for entering a multi-line
-block of information".
+To prevent accidentally adding multiple copies of a text string,
+multiple mouse clicks on the same coordinate are ignored and the message
+"suppressing double click" is printed to the console. 
 
-The font is defined in NOTEDATA.F and is easily
-changed.  New fonts can be easily derived from the Hershey
-font database.  The format is documented in readfont.c.
+The default origin for a note is the lower left or southwest (SW)
+corner.  This can be changed by the :J option to any of 9 different
+locations.  This feature is very helpful for aligning labels to various
+sides of a component. 
+
+The "string" may contain embedded newlines.  These can be entered by
+simply typing a carriage return while still in quotes.  This can be
+handy for entering a multi-line block of information. 
+
+The font is defined in NOTEDATA.F and is easily changed.  New fonts can
+be derived from the Hershey font database.  The format is documented in
+readfont.c. 
 
 .SS OPTIONS
 .TP
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
+.I <fontsize>
+font is scaled to permit single-spaced text at a y-delta of <fontsize>
+.TP
+.I <justification>
+A number or string defining where the origin of the text block is.  The default is 0 which
+corresponds to the lower-left, or southwest (SW) corner.  The permissable numeric and text values 
+for <justification>, and their resulting location of origin are:
+.nf
+   numeric  text  location of origin
+   -------  ----  ------------------
+      0     SW     lower-left
+      1     S      lower-center
+      2     SE     lower-right  
+      3     W      middle-left
+      4     C      center
+      5     E      middle-right
+      6     NW     upper-left
+      7     N      upper-center
+      8     NE     upper-right
+.fi
+.TP
 .I <mirror>
-one of "X" "Y" or "XY", for mirroring around a specified axis
+one of "X", "Y", "XY", "0", or "OFF" for mirroring around a specified axis
 .TP
 .I <rotation>
 angle (in degrees) for note rotation
@@ -327,9 +384,6 @@ y-to-x ratio for creating "stretched" text
 .I <slant>
 slant angle (degrees) for creating italic text
 .TP
-.I <fontsize>
-font is scaled to permit single-spaced text at a y-delta of <fontsize>
-.TP
 .I "string"
 The string to be added as a note component.  Should be in quotes.
 .TP
@@ -339,7 +393,7 @@ The location of the note.
 
 N: ADD_OVAL
 D: Add an oval to the current device (unimplemented)
-U: ADD O<layer> [:W<width>] [:R<resolution>] <xy1> <xy2> <xy3>... EOC
+U: ADD O<layer> [.<cname>] [@<sname>] [:W<width>] [:R<resolution>] <xy1> <xy2> <xy3>... EOC
 S: unimplemented (easy)
 T: {
 Add an oval (or more precisely, an ellipse).  Three points are required. 
@@ -354,6 +408,12 @@ specification of the ratio between major and minor axes.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width>
 width of line
 .TP
@@ -363,7 +423,7 @@ resolution (in degrees) for oval approximation
 
 N: ADD_POLYGON
 D: Add a polygon to the current device
-U: ADD P<layer> [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] EOC
+U: ADD P<layer> [.<cname>][@<sname>][:W<width>] <xy1> <xy2> <xy3> [<xy4>...] EOC
 S: good
 T: {
 Add a polygon.  If the last vertex is not the same as the
@@ -376,13 +436,19 @@ a hollow figure with a wall thickness of <width>.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width> 
 linewidth of polygon (unimplemented)
 }
 
 N: ADD_RECTANGLE
 D: Add a rectangle to the current device
-U: ADD R<layer> [:W<width>] <xy1> <xy2> EOC
+U: ADD R<layer> [.<cname>] [@<sname>] [:W<width>] <xy1> <xy2> EOC
 S: good
 T: {
 Add a rectangle.  The rectangle will be solid unless a
@@ -398,13 +464,19 @@ rectangle has an outside dimension <width> larger than drawn.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
 .I <width>
 width of line
 }
 
 N: ADD_TEXT
 D: Add text to the current device
-U: ADD T<layer> [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
 
@@ -424,6 +496,15 @@ The "string" may contain embedded newlines.  These can be entered by
 simply typing a carriage return while still in quotes.  This can be
 handy for entering a multi-line block of information". 
 
+To prevent accidentally adding multiple copies of a text string,
+multiple mouse clicks on the same coordinate are ignored and the message
+"suppressing double click" is printed to the console. 
+
+The default origin for text is the lower left or southwest (SW) corner. 
+This can be changed by the :J option to any of 9 different locations. 
+This feature is very helpful for aligning labels to various sides of a
+component. 
+
 The font is defined in TEXTDATA.F and is easily
 changed.  New fonts can be easily derived from the Hershey
 font database.  The format is documented in readfont.c.
@@ -432,8 +513,35 @@ font database.  The format is documented in readfont.c.
 .I <layer>
 layer number for component
 .TP
+.I <cname>
+component name
+.TP
+.I <sname>
+signal name
+.TP
+.I <fontsize>
+font is scaled to permit single-spaced text at a y-delta of <fontsize>
+.TP
+.I <justification>
+A number or string defining where the origin of the text block is.  The default is 0 which
+corresponds to the lower-left, or southwest (SW) corner.  The permissable numeric and text values 
+for <justification>, and their resulting location of origin are:
+.nf
+   numeric  text  location of origin
+   -------  ----  ------------------
+      0     SW     lower-left
+      1     S      lower-center
+      2     SE     lower-right  
+      3     W      middle-left
+      4     C      center
+      5     E      middle-right
+      6     NW     upper-left
+      7     N      upper-center
+      8     NE     upper-right
+.fi
+.TP
 .I <mirror>
-one of "X" "Y" or "XY", for mirroring around a specified axis
+one of "X", "Y", "XY", "0", or "OFF" for mirroring around a specified axis
 .TP
 .I <rotation>
 angle (in degrees) for text rotation
@@ -443,9 +551,6 @@ y-to-x ratio for creating "stretched" text
 .TP
 .I <slant>
 slant angle (degrees) for creating italic text
-.TP
-.I <fontsize>
-font is scaled to permit single-spaced text at a y-delta of <fontsize>
 .TP
 .I "string"
 The string to be added as a text component.  Should be in quotes.
@@ -488,11 +593,14 @@ components is displayed after each pick.
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text.
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
-Layer number, "0" or omitted designates all layers.
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 .TP
 .I <xysel>
 A point to select the component to be measured.
@@ -561,11 +669,14 @@ See the GNU readline(3) manual page for details on commandline editing.
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text. 
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
-Layer number, "0" or omitted designates all layers.
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 .TP
 .I <xysel>
 A point to select the component to be changed.
@@ -582,7 +693,7 @@ A new string for NOTE and TEXT components
 
 N: COPy
 D: Copy  a  component  from  one  location to another
-U: COP [<component>[<layer>]] xysel xyref xynewref [ xynewref2...] <EOC>
+U: COP [<component>[<layer>]] [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref ... <EOC>
 S: complete
 T: {
 Copies a component in the current device.  Can be optionally restricted
@@ -590,11 +701,26 @@ to copy only a specified <component> and <layer>.  In any case, only
 components which have been made modifiable by the SHOW command can be
 copied.  
 
-An <xysel> point selects and highlights the component to be copied.  A
-bounding box is displayed after the <xyref> reference point is given. 
-The box tracks the mouse until the final location of the reference point
-is given by <xynewref>.  Multiple copies can be placed by simply entering
-more coordinates before terminating the command. 
+Components to be copied can be selected either by point or by region. 
+The default mode is select by point.  However, if you change to select
+by region with :R, you can later change back with :P.  The selection
+mode is "sticky" so you can do multiple moves of the same type
+without re-entering the option. 
+
+When selecting by point, an <xysel> selects and highlights the component
+to be copied.  A bounding box is displayed after the <xyref> reference
+point is given.  The box tracks the mouse until the final location of
+the reference point is given by <xynewref>.  Multiple copies can be
+placed by simply entering more coordinates before terminating the
+command. 
+
+The :R options allows selection by region.  A bounding box is selected
+with <xy1> and <xy2>.  A rubberband rectangle will be displayed once
+<xy1> is entered.  When <xy2> is entered, the box is remembered, but
+erased.  When the <xyref> reference point is given, the bounding box is
+redisplayed.  The box tracks the mouse until the final location of the
+reference point is given by <xynewref>.  All components lying completely
+within the bounding box will be selected.
 
 Double clicking on <xyref> will terminate the current copy allowing the
 selection and copying of a new component. 
@@ -604,21 +730,35 @@ selection and copying of a new component.
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text.
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 Layer number, "0" or omitted designates all layers.
 .TP
 .I <xysel>
-A point to select the component to be moved.
+A point to select the component to be copied.
 .TP
 .I <xyref>
 A reference point on the component.
 .TP
 .I <xynewref>
 The location for the reference point of the new copy.
+.TP
+.I :P
+Copy by Point (default).  Copy the single component closest to <xysel>. 
+.TP
+.I :R 
+Copy by Region.  Identify zero or more components whose bounding boxes
+are entirely contained within the rectangular region defined by <xy1> &
+<xy2>.   When selecting by region, a rubber-banded rectangle will be drawn 
+after the first coordinate to help the user define the region.
 }
+
 
 N: DATe
 D: Print the current date and time to the console
@@ -636,31 +776,50 @@ S: unimplemented (moderate)
 N: DELete
 D: Delete a component
 S: works
-U: DEL [<component>[<layer>]] xy1... <EOC>
+U: DEL [<comp>[<layer>]] [[:P] <xysel>...] [:R <xy1> <xy2>...] <EOC>
 T: {
 Deletes a component from the current device.  Optionally can be restricted
 to only delete a specified <component> and <layer>.  In any case, only
 components which have been made modifiable by the SHOW command can be
 deleted.  The most recent deleted component can be restored by the UNDO
 command.
+
+Components to be deleted can be selected either by point or by region. 
+The default mode is select by point.  However, if you change to delete
+by region with :R, you can later change back with :P.  The selection
+mode is "sticky" so you can do multiple deletes of the same type
+without re-entering the option. 
+
+When selecting by point, an <xysel> selects and highlights the component
+to be moved.
+
+The :R options allows selection by region.  A bounding box is selected
+with <xy1> and <xy2>.  A rubberband rectangle will be displayed once
+<xy1> is entered.  When <xy2> is entered, all components within the bounding
+box matching the [<comp>[<layer>]] restriction will be deleted.
 .SS OPTIONS
 .TP
-.I <component>
-A designator limiting the command to a given component.
+.I <comp>
+A designator limiting the command to a given component type.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text.
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <comp> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 Layer number, "0" or omitted designates all layers.
 .TP
-.I <xy1>
+.I <xysel>
 A point to select the component to be deleted.
-
-.SS IMPLEMENTATION DETAILS
-Both classic Piglet and Graffy allow DEL to be restricted to a particular
-instance name.  The stubs are in place to extend DEL to include this
-function, but have not yet been implemented.
+.TP
+.I <xy1>
+First corner of the bounding box for delete by region.
+.TP
+.I <xy2>
+Second corner of the bounding box for delete by region.
 }
 
 N: DISPlay
@@ -978,7 +1137,7 @@ a short usage summary of the command.
 
 N: IDEntify
 D: Identify named instances or components
-U: IDE [[:P] <xypnt>] | [:R <xy1> <xy2>] ... EOC
+U: IDE [<comp>[<layer>]][[:P] <xypnt>] | [:R <xy1> <xy2>] ... EOC
 S: good
 T: {
 The IDEntify command highlights and prints out details of selected
@@ -997,6 +1156,18 @@ after the first coordinate to help the user define the region.
 .TP
 .I :P
 Select by Point.  Identify the single component closest to <xypnt>. 
+.TP
+.I <comp>
+A designator limiting the command to a given component.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
+.TP
+.I <layer>
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 }
 
 N: INPut
@@ -1159,11 +1330,14 @@ reference point is given by <xynewref>.
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text.
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
-Layer number, "0" or omitted designates all layers.
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 .TP
 .I <xysel>
 A point to select the component to be moved.
@@ -1361,13 +1535,18 @@ One of three modifiers. "+" makes the layer visible, "-" turns off visibility an
 the layer both visible and modifiable.
 .TP
 .I [EACILN0PRT]
+.TP
+.I <component>
 A designator limiting the command to a given component.
-E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text.
-If omitted, any component type may be selected.
+One of E=everything, A=arc, C=circle, I=instances, L=lines,
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
-Layer number, "0" or omitted designates all layers.
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 }
 
 N: SMAsh
@@ -1402,7 +1581,7 @@ components in a device.
 
 N: SPLit
 D: Cut a component into two halves
-S: unimplemented (hard)
+S: unimplemented (moderate)
 
 N: STEp
 D: Copy a component in an array fashion
@@ -1411,36 +1590,86 @@ S: unimplemented (moderate)
 N: STRetch
 D: Move an internal point of a component
 S: partial
-U: STR [[<component>[<layer>]] { <xysel> <xyref> <xynewref> }
+U: STR [[<component>[<layer>]] {[:P] <xysel> <xyref> <xynewref> } ...
+U: STR [[<component>[<layer>]] {:R <xyll> <xyur> <xyref> <xynewref> } ...
 T: {
 
-STRetch moves a vertex of a Rectangle, Line or Polygon to a new location with 
-respect to a specified reference point.  STRetch applied to a Circle modifies
-the point on the circumference of the circle. 
+STRetch can move either single vertices or edges of components as selected
+by <xysel>, or multiple vertices selected by the bounding box <xyll> <xyur>.
+The default mode is to STRetch by point.  To select by region, the ":R" option
+can be given.  Once the mode has been switched to region, the :P option can be used
+to return to point selection mode.
 
-The <xysel> point selects the component to be modified.  The <xyref> point
-selects the vertex to be modified and acts a reference point for the move.
-The delta between <xyref> and <xynewref> is added to the selected vertex.
+.SS STRetch by point
+
+STRetch moves either a vertex or an edge of a Rectangle, Line or
+Polygon to a new location with respect to a specified reference point. 
+
+STRetch applied to a Circle modifies the point on the circumference of
+the circle. 
 
 As a convenience, and because STRetch is commonly used to "tidy up" a
 drawing, a STRetch applied to Notes, Text and Instances behaves the same
 as the MOVE command. 
 
+The <xysel> point selects the component to be modified.  The <xyref>
+point selects the edge or vertex to be modified and acts a reference
+point for the move.  Only components matching the optional <component>
+and <layer> descriptors will be selected. 
+
+The distance between <xyref> and each of the vertices is tested along
+with the distance between <xyref> and the mid-point of each line, polygon or
+rectangle segment.  If <xyref> is closer to a vertex, then the delta between
+<xyref> and <xynewref> will be added to the vertex.  If <xyref> is
+closer to a midpoint, then the delta between <xyref> and <xynewref> will
+be added to both the endpoints of the selected segment. 
+
+The placement of <xynewref> is snapped to the nearest grid point such
+that the angle between <xyref> and <xynewref> satisfies the current
+<lock> angle set by the LOCK command.  This can be used to keep
+manhattan geometries precisely orthogonal. 
+
+.SS STRetch by region
+
+When the :R option is given, STRetch will pull all component points
+matching the <component> and <layer> descriptors that lie within the
+bounding box given by <xyll> and <xyur>.  Any two diagonal corners of
+the bounding box may be specified.  After entering <xyll> a
+rubber-banded outline will track the mouse to help with the placement of
+<xyur>. 
+
+Once the components and nodes have been selected, they are moved by
+the vector difference between <xyref> and <xynewref>.  After entering
+<xyref> all affected components are drawn in rubber-band mode until 
+finally entering <xynewref>.
+
+Components fully enclosed by the bounding box are simply moved.
+
 .SS OPTIONS
+.TP
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
-N=notes, O=oval, P=polygons, R=rectangles, T=text. 
-If omitted, any component type may be selected.
+N=notes, O=oval, P=polygons, R=rectangles, T=text, or a valid 
+instance name.  If an instance name is given, only instances of
+that name will be selected.  If no <component> is given, then
+components of any type may be selected.
 .TP
 .I <layer>
-Limit selection to layer number, "0" or omitted designates all layers.
+Layer number, "0" or omitted designates all layers.  Not used
+when <component> is an instance name.
 .TP
 .I <xysel>
 xy-coordinate to select the component to be modified.
 .TP
+.I <xyll>
+xy-coordinate of one corner of the bounding box used to select multiple vertices
+.TP
+.I <xyur>
+xy-coordinate diagonally opposite <xyll> specifying the bounding box used to select multiple vertices
+.TP
 .I <xyref>
-A reference point on the component which selects which vertex to modify.
+A reference point on the component which selects which vertex or line segment to modify.
 .TP
 .I <xynewref>
 The location for the reference point of the new copy.
@@ -1573,7 +1802,6 @@ The GROUP command is identical to WRAp in function except that
 components are selected individually instead of by region. 
 
 .SS OPTIONS
-.TP
 .I <component>
 A designator limiting the command to a given component.
 One of E=everything, A=arc, C=circle, I=instances, L=lines,
@@ -1594,17 +1822,17 @@ The point which will become the 0,0 coordinate in the new instance.
 The bounding box used to select components to be wrapped.
 }
 
-N: CALibrate
-D: Calibrate the display to match a digitizing tablet
-S: unimplemented
+#N: CALibrate
+#D: Calibrate the display to match a digitizing tablet
+#S: unimplemented
 
-N: CMAp
-D: Modify the color map
-S: unimplemented
+#N: CMAp
+#D: Modify the color map
+#S: unimplemented
 
-N: DEClare
-D: Declare a stretch point in a cell
-S: unimplemented
+#N: DEClare
+#D: Declare a stretch point in a cell
+#S: unimplemented
 
 N: MEMory
 D: Print remaining memory
@@ -1630,16 +1858,16 @@ For example:
 TIMe can be useful in scripts for benchmarking internal Piglet operations.
 }
 
-N: XASsign
-D: Assign Stretch points to a cell
-S: unimplemented
+#N: XASsign
+#D: Assign Stretch points to a cell
+#S: unimplemented
 
-N: YASsign
-D: Assign Stretch points to a cell
-S: unimplemented
+#N: YASsign
+#D: Assign Stretch points to a cell
+#S: unimplemented
 
-N: ZAP
-D: Delete components with zero extent
-S: unimplemented
+#N: ZAP
+#D: Delete components with zero extent
+#S: unimplemented
 
 

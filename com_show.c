@@ -46,9 +46,6 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 	return(1);
     }
 
-    rl_saveprompt();
-    rl_setprompt("SHOW> ");
-
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
@@ -125,7 +122,8 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 			}
 		    }
 		    if (!done) {
-			printf("setting comp %d, layer %d, visible %d, modify %d\n", comp, show_layer, visible, modifiable);
+			/* printf("setting comp %d, layer %d, visible %d, modify %d\n", comp,
+			show_layer, visible, modifiable); */
 			show_set_visible(currep, comp, show_layer, visible);
 			show_set_modify(currep, comp, show_layer, modifiable);
 		    }
@@ -151,7 +149,6 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 	    	break;
 	}
     }
-    rl_restoreprompt();
     return (0);
 }
 

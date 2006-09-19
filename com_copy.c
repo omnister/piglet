@@ -40,6 +40,8 @@ int com_copy(LEXER *lp, char *arg)
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_new = NULL;
     int mode=POINT;
+    char instname[BUFSIZE];
+    char *pinst = (char *) NULL;
 
     int my_layer=0; 	/* internal working layer */
 
@@ -73,8 +75,6 @@ int com_copy(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("COPY> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -113,7 +113,6 @@ int com_copy(LEXER *lp, char *arg)
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,word);
-	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
@@ -154,8 +153,13 @@ int com_copy(LEXER *lp, char *arg)
 			}
 		    }
 		} else { 
-		    /* here need to handle a valid cell name */
-		    printf("looks like a descriptor to me: %s\n", word);
+		    if (db_lookup(word)) {
+		        strncpy(instname, word, BUFSIZE);
+			pinst = instname;
+		    } else {
+			printf("not a valid instance name: %s\n", word);
+			state = START;
+		    }
 		}
 	    } else {
 		token_err("COPY", lp, "expected DESC or NUMBER", token);
@@ -196,7 +200,7 @@ int com_copy(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (mode == POINT) {
-		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
+		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
 			db_notate(p_best);	    /* print out id information */
 			db_highlight(p_best);
 			xmin=p_best->xmin;
@@ -230,9 +234,11 @@ int com_copy(LEXER *lp, char *arg)
             } else if (token == EOL) {
                 token_get(lp,word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
+                rubber_clear_callback();
                 state = END;
             } else {
                 token_err("IDENT", lp, "expected NUMBER", token);
+                rubber_clear_callback();
                 state = END;
             }
             break;
@@ -244,6 +250,7 @@ int com_copy(LEXER *lp, char *arg)
                 state = NUM4;
             } else {
                 token_err("IDENT", lp, "expected COMMA", token);
+                rubber_clear_callback();
                 state = END;
             }
             break;
@@ -256,14 +263,16 @@ int com_copy(LEXER *lp, char *arg)
                 xmax=x2;
                 ymin=y1;
                 ymax=y2;
-                stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, 0);
+                stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
                 state = NUM5;
             } else if (token == EOL) {
                 token_get(lp,word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
+                rubber_clear_callback();
                 printf("IDENT: cancelling POINT\n");
                 state = END;
             } else {
+                rubber_clear_callback();
                 token_err("IDENT", lp, "expected NUMBER", token);
                 state = END;
             }
@@ -277,9 +286,11 @@ int com_copy(LEXER *lp, char *arg)
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		state = END;	
 	    } else {
 		token_err("COPY", lp, "expected NUMBER", token);
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		state = END; 
 	    }
 	    break;
@@ -301,17 +312,19 @@ int com_copy(LEXER *lp, char *arg)
 		token_get(lp,word);
 		sscanf(word, "%lf", &y3);	/* scan it in */
 		if (mode == POINT) {
-		    db_highlight(p_best);		/* unhighlight */
+		    db_highlight(p_best);
 		}
 		rubber_set_callback(draw_cbox);
 		state = NUM7;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else {
 		token_err("COPY", lp, "expected NUMBER", token);
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		state = END; 
 	    }
 	    break;
@@ -336,6 +349,7 @@ int com_copy(LEXER *lp, char *arg)
 		state = END;	
 	    } else {
 		token_err("COPY", lp, "expected NUMBER", token);
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		state = END; 
 	    }
 	    break;
@@ -366,7 +380,7 @@ int com_copy(LEXER *lp, char *arg)
 		    need_redraw++;
 		    state = START;
 		} else {
-		    /* rubber_clear_callback(); */
+		    rubber_clear_callback();
 		    if (mode == POINT) {
 			p_new=db_copy_component(p_best, NULL);
 			db_move_component(p_new, x4-x3, y4-y3);
@@ -380,6 +394,7 @@ int com_copy(LEXER *lp, char *arg)
                             db_insert_component(currep, p_new);
                         }
                     }
+		    rubber_set_callback(draw_cbox);
 		    need_redraw++;
 		    num_copies++;
 		    lastx = x4;
@@ -408,7 +423,6 @@ int com_copy(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 

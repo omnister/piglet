@@ -52,7 +52,7 @@ cat commandlist | awk '
     /^U:/ {	# usage
 	inblank=0
     	sub("^U:[ ]*", "");
-	usage = $0
+	usage = usage "\n.P\n" $0
 	next;
     }
 

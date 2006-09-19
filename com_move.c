@@ -8,15 +8,16 @@
 #include "xwin.h" 	
 #include "lex.h"
 #include "rubber.h"
+#include "lock.h"
 
 #define POINT 0
 #define REGION 1
 
 static double x1, y1, x2, y2, x3, y3, x4, y4;
-static double xmin, ymin, xmax, ymax;
 void draw_bbox();
+void move_draw_point();
 void move_draw_box();
-STACK *stack;
+SELPNT *selpnt, *tmp;
 
 /* 
     move a component in the current device.
@@ -31,15 +32,17 @@ int com_move(LEXER *lp, char *arg)
     int done=0;
     TOKEN token;
     char word[BUFSIZE];
+    char instname[BUFSIZE];
+    char *pinst = (char *) NULL;
     int debug=0;
     int valid_comp=0;
     int i;
-    DB_DEFLIST *p_best;
     int mode=POINT;
 
     int my_layer=0; 	/* internal working layer */
 
     int comp=ALL;
+
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -69,8 +72,6 @@ int com_move(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("MOVE> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -109,7 +110,6 @@ int com_move(LEXER *lp, char *arg)
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,word);
-	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
@@ -150,8 +150,13 @@ int com_move(LEXER *lp, char *arg)
 			}
 		    }
 		} else { 
-		    /* here need to handle a valid cell name */
-		    printf("looks like a descriptor to me: %s\n", word);
+		    if (db_lookup(word)) {
+		        strncpy(instname, word, BUFSIZE);
+			pinst = instname;
+		    } else {
+			printf("not a valid instance name: %s\n", word);
+			state = START;
+		    }
 		}
 	    } else {
 		token_err("MOVE", lp, "expected DESC or NUMBER", token);
@@ -194,13 +199,12 @@ int com_move(LEXER *lp, char *arg)
 		if (mode == POINT) {
 		    /* printf("calling db_ident, 
 		        %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp); */
-		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
-			db_notate(p_best);	    /* print out id information */
-			db_highlight(p_best);
-			xmin=p_best->xmin;
-			xmax=p_best->xmax;
-			ymin=p_best->ymin;
-			ymax=p_best->ymax;
+		    if ((selpnt=db_ident2(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+			    if (tmp->p != NULL) {
+				db_highlight(tmp->p);
+			    }
+			}
 			state = NUM5;
 		    } else {
 			printf("nothing here to move... try SHO command?\n");
@@ -250,12 +254,20 @@ int com_move(LEXER *lp, char *arg)
                 token_get(lp,word);
                 sscanf(word, "%lf", &y2);       /* scan it in */
 		rubber_clear_callback();
-		xmin=x1;
-		xmax=x2;
-		ymin=y1;
-		ymax=y2;
-                stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, 0);
-                state = NUM5;
+                selpnt=db_ident_region2(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
+		if (selpnt == NULL) {
+		    printf("nothing here to move... try SHO command?\n");
+		    state = END;
+		} else {
+		    tmp=selpnt;
+                    while (tmp!=NULL) {
+                        if (tmp->p != NULL) {
+                            db_highlight(tmp->p);
+                        }
+                        tmp = tmp->next;
+                     }
+		    state = NUM5;
+		}
             } else if (token == EOL) {
                 token_get(lp,word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
@@ -300,7 +312,7 @@ int com_move(LEXER *lp, char *arg)
 		token_get(lp,word);
 		sscanf(word, "%lf", &y3);	/* scan it in */
 		printf("got %g %g\n", x3, y3);
-		rubber_set_callback(draw_bbox);
+		rubber_set_callback(move_draw_point);
 		state = NUM7;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
@@ -320,11 +332,12 @@ int com_move(LEXER *lp, char *arg)
 		state = COM4;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
 	    } else {
 		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
+		printf("aborting MOV\n");
+		rubber_clear_callback();
+		move_draw_point(x3, y3, 0);
+		state = END;	
 	    }
 	    break;
 	case COM4:		
@@ -336,7 +349,10 @@ int com_move(LEXER *lp, char *arg)
 		state = NUM8;
 	    } else {
 		token_err("MOVE", lp, "expected COMMA", token);
-	        state = END;
+		printf("aborting MOV\n");
+		rubber_clear_callback();
+		move_draw_point(x3, y3, 0);
+		state = END;	
 	    }
 	    break;
 	case NUM8:
@@ -346,24 +362,28 @@ int com_move(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y4);	/* scan it in */
 		printf("got %g %g\n", x4, y4);
 		rubber_clear_callback();
-		if (mode == POINT) {
-		    db_move_component(p_best, x4-x3, y4-y3);
-		} else {
-		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-			db_move_component(p_best, x4-x3, y4-y3);
+		for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+		    if (tmp->xsel != NULL) {
+		       *(tmp->xsel) = tmp->xselorig + x4 - x3;
 		    }
-		} 				/* mode == REGION */
+		    if (tmp->ysel != NULL) {
+		       *(tmp->ysel) = tmp->yselorig + y4 - y3;
+		    }
+		    if (tmp->p != NULL) {
+			db_highlight(tmp->p);
+		    }
+		}
 		currep->modified++;
 		need_redraw++;
 		state = START;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
-	        state = END;
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
+		printf("MOVE: cancelling POINT\n");
+		printf("aborting MOV\n");
+		rubber_clear_callback();
+		move_draw_point(x3, y3, 0);
+		state = END;	
 	    }
 	    break;
 	case END:
@@ -378,7 +398,6 @@ int com_move(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 
@@ -409,37 +428,78 @@ int com_move(LEXER *lp, char *arg)
 	;
 */
 
-void draw_bbox(x, y, count)
-double x, y;  /* offset */
-int count; /* number of times called */
+
+void move_draw_point(double xx, double yy, int count)
 {
-	static double x1old, x2old, y1old, y2old;
-	static double xx1, yy1, xx2, yy2;
-	BOUNDS bb;
-	bb.init=0;
+        static double xxold, yyold;
+        BOUNDS bb;
+        bb.init=0;
+	int debug = 0;
+	SELPNT *tmp;
 
-	xx1=xmin+x-x3;
-	yy1=ymin+y-y3;
-	xx2=xmax+x-x3;
-	yy2=ymax+y-y3;
-
-	if (count == 0) {		/* first call */
-	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
-	} else if (count > 0) {		/* intermediate calls */
-	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
-	    db_drawbounds(xx1, yy1, xx2, yy2, D_RUBBER);
-	} else {			/* last call, cleanup */
-	    db_drawbounds(x1old, y1old, x2old, y2old, D_RUBBER); 	/* erase old shape */
+	if (debug) {
+	   printf("in move_draw_point: %g %g\n", xx, yy);
 	}
+        
+	/* 
+	setlockpoint(x3, y3);
+	lockpoint(&xx, &yy, currep->lock_angle);
+	*/
 
-	/* save old values */
-	x1old=xx1;
-	y1old=yy1;
-	x2old=xx2;
-	y2old=yy2;
-	jump(&bb, D_RUBBER);
+        if (count == 0) {               /* first call */
+	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	        if (tmp->xsel != NULL) {
+		   *(tmp->xsel) = tmp->xselorig + xx - x3;
+		}
+	        if (tmp->ysel != NULL) {
+		   *(tmp->ysel) = tmp->yselorig + yy - y3;
+		}
+		if (tmp->p != NULL) {
+		    db_highlight(tmp->p);
+		}
+	    }
+        } else if (count > 0) {         /* intermediate calls */
+	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	        if (tmp->xsel != NULL) {
+		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
+		}
+	        if (tmp->ysel != NULL) {
+		   *(tmp->ysel) = tmp->yselorig + yyold - y3;
+		}
+		if (tmp->p != NULL) {
+		    db_highlight(tmp->p);
+		}
+	    }
+	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	        if (tmp->xsel != NULL) {
+		   *(tmp->xsel) = tmp->xselorig + xx - x3;
+		}
+	        if (tmp->ysel != NULL) {
+		   *(tmp->ysel) = tmp->yselorig + yy - y3;
+		}
+		if (tmp->p != NULL) {
+		    db_highlight(tmp->p);
+		}
+	    }
+        } else {                        /* last call, cleanup */
+	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	        if (tmp->xsel != NULL) {
+		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
+		}
+	        if (tmp->ysel != NULL) {
+		   *(tmp->ysel) = tmp->yselorig + yyold - y3;
+		}
+		if (tmp->p != NULL) {
+		    db_highlight(tmp->p);
+		}
+	    }
+        }
+
+        /* save old values */
+        xxold=xx;
+        yyold=yy;
+        jump(&bb, D_RUBBER);
 }
-
 
 void move_draw_box(x2, y2, count)
 double x2, y2;
@@ -448,14 +508,19 @@ int count; /* number of times called */
         static double x1old, x2old, y1old, y2old;
         BOUNDS bb;
         bb.init=0;
+	static int called=0;
 
         if (count == 0) {               /* first call */
             db_drawbounds(x1,y1,x2,y2,D_RUBBER);                /* draw new shape */
+	    called++;
         } else if (count > 0) {         /* intermediate calls */
             db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
             db_drawbounds(x1,y1,x2,y2,D_RUBBER);                /* draw new shape */
         } else {                        /* last call, cleanup */
-            db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
+	    if (called) {
+		db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
+            }
+	    called=0;
         }
 
         /* save old values */

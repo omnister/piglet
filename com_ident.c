@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <string.h>
 
 #include "db.h"
 #include "xwin.h"
@@ -12,16 +13,16 @@
 
 /*
  *
- * IDE [:r xy1 xy2] | [[:p] xypnt] ... EOC
+ * IDE [:R xy1 xy2] | [[:p] xypnt] ... EOC
  *	highlight and print out details of rep under xypnt.
  *	  no refresh is done.
  * OPTIONS:
- *      :r identify by region (requires 2 points to define a region)
- *      :p identify by point (default mode: requires single coordinate) 
+ *      :R identify by region (requires 2 points to define a region)
+ *      :P identify by point (default mode: requires single coordinate) 
  *
  * NOTE: default is pick by point.  However, if you change to pick
- *       by region with :r, you can later go back to picking by point with
- *       the :p option.
+ *       by region with :R, you can later go back to picking by point with
+ *       the :P option.
  *
  */
 
@@ -34,18 +35,21 @@ int com_identify(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
-    int done=0;
     TOKEN token;
     char word[BUFSIZE];
-    int debug=0;
+    char instname[BUFSIZE];
     DB_DEFLIST *p_best;
-    DB_DEFLIST *p_prev = NULL;
     double area;
+    DB_DEFLIST *p_prev = NULL;
+    char *pinst = (char *) NULL;
+    int i;
+    int debug=0;
     int mode=POINT;
+    int done=0;
+    int my_layer=0;
+    int comp=ALL;
+    int valid_comp=0;
     
-    rl_saveprompt();
-    rl_setprompt("IDENT> ");
-
     while (!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
@@ -81,6 +85,57 @@ int com_identify(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		 state = END;
+            } else if (token == IDENT) {
+                token_get(lp,word);
+                state = NUM1;
+                /* check to see if is a valid comp descriptor */
+                valid_comp=0;
+                if ((comp = is_comp(toupper(word[0])))) {
+                    if (strlen(word) == 1) {
+                        /* my_layer = default_layer();
+                        printf("using default layer=%d\n",my_layer); */
+                        valid_comp++;   /* no layer given */
+                    } else {
+                        valid_comp++;
+                        /* check for any non-digit characters */
+                        /* to allow instance names like "L1234b" */
+                        for (i=0; i<strlen(&word[1]); i++) {
+                            if (!isdigit(word[1+i])) {
+                                valid_comp=0;
+                            }
+                        }
+                        if (valid_comp) {
+                            if(sscanf(&word[1], "%d", &my_layer) == 1) {
+                                if (debug) printf("given layer=%d\n",my_layer);
+                            } else {
+                                valid_comp=0;
+                            }
+                        }
+                        if (valid_comp) {
+                            if (my_layer > MAX_LAYER) {
+                                printf("layer must be less than %d\n",
+                                    MAX_LAYER);
+                                valid_comp=0;
+                                done++;
+                            }
+                            if (!show_check_modifiable(currep, comp, my_layer)) {
+                                printf("layer %d is not modifiable!\n",
+                                    my_layer);
+                                token_flush_EOL(lp);
+                                valid_comp=0;
+                                done++;
+                            }
+                        }
+                    }
+                } else {
+                    if (db_lookup(word)) {
+                        strncpy(instname, word, BUFSIZE);
+                        pinst = instname;
+                    } else {
+                        printf("not a valid instance name: %s\n", word);
+                        state = START;
+                    }
+                }
 	    } else {
 		token_err("IDENT", lp, "expected NUMBER", token);
 		state = END;	/* error */
@@ -121,7 +176,7 @@ int com_identify(LEXER *lp, char *arg)
 			db_highlight(p_prev);	/* unhighlight it */
 			p_prev = NULL;
 		    }
-		    if ((p_best=db_ident(currep, x1,y1,0, 0, 0, 0)) != NULL) {
+		    if ((p_best=db_ident(currep, x1,y1,0, my_layer, comp , pinst)) != NULL) {
 			db_highlight(p_best);	
 			db_notate(p_best);	/* print information */
 			area = db_area(p_best);
@@ -179,7 +234,7 @@ int com_identify(LEXER *lp, char *arg)
 		need_redraw++;
 
 		printf("IDENT: got %g,%g %g,%g\n", x1, y1, x2, y2);
-		stack=db_ident_region(currep, x1,y1, x2, y2, 0, 0, 0, 0);
+		stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
 		while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
 		    db_highlight(p_best);	
 		    db_notate(p_best);		/* print information */
@@ -213,7 +268,6 @@ int com_identify(LEXER *lp, char *arg)
     if (p_prev != NULL) {
 	db_highlight(p_prev);	/* unhighlight any remaining component */
     }
-    rl_restoreprompt();
     return(1);
 }
 

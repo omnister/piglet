@@ -32,9 +32,6 @@ int com_distance(LEXER *lp, char *arg)
     char word[BUFSIZE];
     int debug=0;
 
-    rl_saveprompt();
-    rl_setprompt("DISTANCE> ");
-
     while (!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
@@ -156,7 +153,6 @@ int com_distance(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 

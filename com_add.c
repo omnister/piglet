@@ -54,8 +54,6 @@ int com_add(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("ADD> ");
     while(!done) {
 	token = token_get(lp, word);
 	if (token == IDENT) { 	
@@ -170,7 +168,6 @@ int com_add(LEXER *lp, char *arg)
 	    done++;
 	}
     }
-    rl_restoreprompt();
     return(0);
 }
 

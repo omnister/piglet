@@ -31,8 +31,6 @@ int com_window(LEXER *lp, char *arg)
     double x2, y2;
 
     if (debug) printf("com_window\n");
-    rl_saveprompt();
-    rl_setprompt("WIN> ");
 
     opt_set_defaults(&opts);
 
@@ -214,7 +212,6 @@ int com_window(LEXER *lp, char *arg)
 	}
     }
     rubber_clear_callback();
-    rl_restoreprompt();
     return(1);
 }
 

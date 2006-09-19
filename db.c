@@ -702,8 +702,12 @@ char *name;
     } 
     
     err+=((fp = fopen(buf, "w+")) == 0); 
-    db_def_print(fp, sp, CELL); 
-    err+=(fclose(fp) != 0);
+    if (!err) {
+	db_def_print(fp, sp, CELL); 
+	err+=(fclose(fp) != 0);
+    } else {
+        printf("couldn't open %s for saving!\n", buf);
+    }
     return(err);
 }
 
@@ -1120,6 +1124,8 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	eprintf("unknown record type (%d) in db_def_print\n", p->type );
 	break;
     }
+
+    free(xp);
 }
 
 void db_def_print(fp, dp, mode) 

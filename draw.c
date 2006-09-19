@@ -217,7 +217,6 @@ double fuzz;
  *
  */
 
-
 DB_DEFLIST *db_ident(cell, x, y, mode, pick_layer, comp, name)
 DB_TAB *cell;			/* device being edited */
 double x, y;	 		/* pick point */
@@ -292,12 +291,14 @@ char *name;			/* instance name restrict or NULL */
 
 	/* check all the restrictions on picking something */
 
+	if (name != NULL) {comp = INST;}
+
 	bad_comp=0;
 	if ((pick_layer != 0 && layer != pick_layer) ||
 	    (comp != 0 && comp != ALL && p->type != comp)  ||
 	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
 	    (mode == 1 && !show_check_modifiable(currep, p->type, layer)) ||
-	    (p->type == INST && name != NULL && strncmp(name, p->u.i->name, MAXFILENAME)) != 0)  {
+	    (p->type==INST && name!=NULL && strncmp(name, p->u.i->name, MAXFILENAME))!=0) {
 		bad_comp++;
 	}
 
@@ -307,8 +308,9 @@ char *name;			/* instance name restrict or NULL */
 		/* pick point inside BB gives a score ranging from */
 		/* 1.0 to 2.0, with smaller BB's getting higher score */
 
-		pick_score= 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin),
+		pick_score = 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin),
 		    fabs(p->ymax-p->ymin)));
+
 
 		/* a bit of a hack, but we overload the childbb */
 		/* structure to pass the point into the draw routine. */
@@ -363,6 +365,15 @@ char *name;			/* instance name restrict or NULL */
 		}
 
 		pick_score += childbb.xmax*3.0;
+
+		/* now do some special cases - exact hits on 0,0 coords */
+
+                if (p->type == INST && p->u.i->x == x && p->u.i->y == y) {
+		    pick_score += 4.0;
+		} else  if (p->type == CIRC && p->u.c->x1 == x && p->u.c->y1 == y) {
+		    pick_score += 4.0;
+		}
+
 	    } else {
 	        /* bb_distance() gives pick_score {0...1} based on bb distances */
 	    }
@@ -386,6 +397,242 @@ char *name;			/* instance name restrict or NULL */
     return(p_best);
 }
 
+SELPNT *db_ident2(cell, x, y, mode, pick_layer, comp, name)
+DB_TAB *cell;			/* device being edited */
+double x, y;	 		/* pick point */
+int mode; 			/* 0=ident (any visible), 1=pick (only modifiable objects) */
+int pick_layer;			/* layer restriction, or 0=all */
+int comp;			/* comp restriction */
+char *name;			/* instance name restrict or NULL */
+{
+    DB_DEFLIST *p;
+    DB_DEFLIST *p_best=NULL;	
+    COORDS *coords;
+    static SELPNT *selpnt=NULL;	/* gets returned */
+    int debug=0;
+    BOUNDS childbb;
+    double pick_score=0.0;
+    double pick_best=0.0;
+    double fuzz;
+    int layer;
+    int bad_comp;
+
+    if (cell == NULL) {
+    	printf("no cell currently being edited!\n");
+	return(0);
+    }
+
+    if (mode && debug) {		/* pick rather than ident mode */
+    	printf("db_ident: called with layer %d, comp %d, name %s\n", 
+		pick_layer, comp, name);
+    }
+
+    /* pick fuzz should be a fraction of total window size */
+    
+    fuzz = max((cell->maxx-cell->minx),(cell->maxy-cell->miny))*FUZZBAND;
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	childbb.init=0;
+
+	/* screen components by crude bounding boxes then */
+	/* render each one in D_PICK mode for detailed test */
+
+	switch (p->type) {
+	case ARC:   /* arc definition */
+	    layer = p->u.a->layer;
+	    break;
+	case CIRC:  /* arc definition */
+	    layer = p->u.c->layer;
+	    break;
+	case LINE:  /* arc definition */
+	    layer = p->u.l->layer;
+	    break;
+	case NOTE:  /* note definition */
+	    layer = p->u.n->layer;
+	    break;
+	case OVAL:  /* oval definition */
+	    layer = p->u.o->layer;
+	    break;
+	case POLY:  /* polygon definition */
+	    layer = p->u.p->layer;
+	    break;
+	case RECT:  /* rectangle definition */
+	    layer = p->u.r->layer;
+	    break;
+	case TEXT:  /* text definition */
+	    layer = p->u.t->layer;
+	    break;
+	case INST:  /* instance definition */
+	    layer = 0;
+	    break;
+	default:
+	    printf("error in db_ident switch\n");
+	    break;
+	}
+
+	/* check all the restrictions on picking something */
+
+	if (name != NULL) {comp = INST;}
+
+	bad_comp=0;
+	if ((pick_layer != 0 && layer != pick_layer) ||
+	    (comp != 0 && comp != ALL && p->type != comp)  ||
+	    (mode == 0 && !show_check_visible(currep, p->type, layer)) ||
+	    (mode == 1 && !show_check_modifiable(currep, p->type, layer)) ||
+	    (p->type==INST && name!=NULL && strncmp(name, p->u.i->name, MAXFILENAME))!=0) {
+		bad_comp++;
+	}
+
+	if (!bad_comp) {
+	    if ((pick_score=bb_distance(x,y,p,fuzz)) < 0.0) { 	/* inside BB */
+
+		/* pick point inside BB gives a score ranging from */
+		/* 1.0 to 2.0, with smaller BB's getting higher score */
+
+		pick_score = 1.0 + 1.0/(1.0+min(fabs(p->xmax-p->xmin),
+		    fabs(p->ymax-p->ymin)));
+
+
+		/* a bit of a hack, but we overload the childbb */
+		/* structure to pass the point into the draw routine. */
+		/* If a hit, then childbb.xmax is set to 1.0 */
+		/* seemed cleaner than more arguments, or */
+		/* yet another global variable */
+
+		childbb.xmin = x;
+		childbb.ymin = y;
+		childbb.xmax = 0.0;
+
+		switch (p->type) {
+		case ARC:  /* arc definition */
+		    do_arc(p, &childbb, D_PICK); 
+		    if (debug) printf("in arc %g\n", childbb.xmax);
+		    break;
+		case CIRC:  /* circle definition */
+		    do_circ(p, &childbb, D_PICK); 
+		    if (debug) printf("in circ %g\n", childbb.xmax);
+		    break;
+		case LINE:  /* line definition */
+		    do_line(p, &childbb, D_PICK); 
+		    if (debug) printf("in line %g\n", childbb.xmax);
+		    break;
+		case NOTE:  /* note definition */
+		    do_note(p, &childbb, D_PICK); 
+		    if (debug) printf("in note %g\n", childbb.xmax);
+		    break;
+		case OVAL:  /* oval definition */
+		    do_oval(p, &childbb, D_PICK);
+		    if (debug) printf("in oval %g\n", childbb.xmax);
+		    break;
+		case POLY:  /* polygon definition */
+		    do_poly(p, &childbb, D_PICK);
+		    if (debug) printf("in poly %g\n", childbb.xmax);
+		    break;
+		case RECT:  /* rectangle definition */
+		    do_rect(p, &childbb, D_PICK);
+		    if (debug) printf("in rect %g\n", childbb.xmax);
+		    break;
+		case TEXT:  /* text definition */
+		    do_text(p, &childbb, D_PICK); 
+		    if (debug) printf("in text %g\n", childbb.xmax);
+		    break;
+		case INST:  /* recursive instance call */
+		    if (debug) printf("in inst %g\n", childbb.xmax);
+		    break;
+		default:
+		    eprintf("unknown record type: %d in db_ident\n", p->type);
+		    return(0);
+		    break;
+		}
+
+		pick_score += childbb.xmax*3.0;
+
+		/* now do some special cases - exact hits on 0,0 coords */
+
+                if (p->type == INST && p->u.i->x == x && p->u.i->y == y) {
+		    pick_score += 4.0;
+		} else  if (p->type == CIRC && p->u.c->x1 == x && p->u.c->y1 == y) {
+		    pick_score += 4.0;
+		}
+
+	    } else {
+	        /* bb_distance() gives pick_score {0...1} based on bb distances */
+	    }
+	}
+
+	/* keep track of the best of the lot */
+
+	/* 0 < pick_score < 1 -> pick is outside bb */
+	/* 1 < pick_score < 2 -> pick is inside bb */
+	/* 4 < pick_score < 5 -> pick is inside bb and a fuzzy hit on some line */
+
+	if (pick_score > pick_best) {
+	    if (debug) printf("pick_score %g, best %g\n",
+	        pick_score, pick_best);
+	    fflush(stdout);
+	    pick_best=pick_score;
+	    p_best = p;
+	}
+    }
+
+    if (p_best != NULL) {
+	p = p_best;
+	if (selpnt != NULL) {
+	    selpnt_clear(&selpnt);
+	}
+	switch (p->type) {
+
+	case ARC:
+	    selpnt_save(&selpnt, &(p->u.a->x1), &(p->u.a->y1), NULL);
+	    selpnt_save(&selpnt, &(p->u.a->x2), &(p->u.a->y2), NULL);
+	    selpnt_save(&selpnt, &(p->u.a->x3), &(p->u.a->y3), NULL);
+	    break;
+
+	case CIRC:
+	    selpnt_save(&selpnt, &(p->u.c->x1), &(p->u.c->y1), NULL);
+	    selpnt_save(&selpnt, &(p->u.c->x2), &(p->u.c->y2), NULL);
+	    break;
+
+	case INST:
+	    selpnt_save(&selpnt, &(p->u.i->x), &(p->u.i->y), NULL);
+	    break;
+
+	case LINE:
+	    for (coords=p->u.l->coords;coords!=NULL;coords=coords->next) {
+		selpnt_save(&selpnt, &(coords->coord.x), &(coords->coord.y),NULL);
+	    }
+	    break;
+
+	case NOTE:
+	    selpnt_save(&selpnt, &(p->u.n->x), &(p->u.n->y), NULL);
+	    break;
+
+	case POLY:
+	    for (coords=p->u.p->coords;coords!=NULL;coords=coords->next) {
+		selpnt_save(&selpnt, &(coords->coord.x), &(coords->coord.y),NULL);
+	    }
+	    break;
+
+	case RECT:
+	    selpnt_save(&selpnt, &(p->u.r->x1), &(p->u.r->y1), NULL);
+	    selpnt_save(&selpnt, &(p->u.r->x2), &(p->u.r->y2), NULL);
+
+	    break;
+
+	case TEXT:
+	    selpnt_save(&selpnt, &(p->u.t->x), &(p->u.t->y), NULL);
+	    break;
+
+	default:
+	    printf("    not a stretchable object\n");
+	}
+
+	selpnt_save(&selpnt, NULL, NULL, p);	/* save comp */
+    }
+    return(selpnt);
+}
+
 int bb_overlap(x1, y1, x2, y2, xc1, yc1, xc2, yc2) 
 double x1, y1, x2, y2, xc1, yc1, xc2, yc2;
 {
@@ -405,6 +652,8 @@ double x1, y1, x2, y2, xc1, yc1, xc2, yc2;
     if (yc2 < y1 ) err++;
     if (xc1 > x2 ) err++;
 
+    /* clip one rectangle against another */
+
     if (y1 < yc1 && yc1 < y2)   y1 = yc1;     /* trim bottom */
     if (x1 < xc2 && xc2 < x2)   x2 = xc2;     /* trim right */
     if (y1 < yc2 && yc2 < y2)   y2 = yc2;     /* trim top */
@@ -419,7 +668,295 @@ double x1, y1, x2, y2, xc1, yc1, xc2, yc2;
         return 0;
     }
 }
+
+int bounded(double *x, double *y, double xmin, double ymin, double xmax, double ymax) {
+
+     double tmp;
+
+     /* canonicalize bounding box */
+
+     if (xmax < xmin) { tmp = xmax; xmax = xmin; xmin = tmp; }
+     if (ymax < ymin) { tmp = ymax; ymax = ymin; ymin = tmp; }
+
+     if ((*x >= xmin && *x <= xmax) && (*y >= ymin && *y <= ymax)) {
+        return 1;
+     } else {
+        return 0;
+     }
+}
+
                                                
+SELPNT *db_ident_region2(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
+DB_TAB *cell;			/* device being edited */
+NUM x1, y1;	 		/* pick point */
+NUM x2, y2;	 		/* pick point */
+int mode; 			/* 0 = ident (any visible) */
+				/* 1 = enclose pick (pick restricted to modifiable objects) */
+				/* 2 = boundary overlap (restricted to modifiable objects) */
+int pick_layer;			/* layer restriction, or 0=all */
+int comp;			/* comp restriction */
+char *name;			/* instance name restrict or NULL */
+{
+    DB_DEFLIST *p;
+    SELPNT *selpnt=NULL;	/* gets returned */
+    /* int debug=0; */
+    BOUNDS childbb;
+    double tmp;
+    int layer;
+    int bad_comp;
+    int gotpnts;
+    double *xsel;
+    double *ysel;
+    COORDS *coords;
+    double *xmin, *ymin, *xmax, *ymax;
+    int sel;
+
+    if (cell == NULL) {
+    	printf("no cell currently being edited!\n");
+	return(0);
+    }
+
+    selpnt=NULL;
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+
+	childbb.init=0;
+
+	/* screen components by layers and bounding boxes */
+
+	switch (p->type) {
+	case ARC:   /* arc definition */
+	    layer = p->u.a->layer;
+	    break;
+	case CIRC:  /* arc definition */
+	    layer = p->u.c->layer;
+	    break;
+	case LINE:  /* arc definition */
+	    layer = p->u.l->layer;
+	    break;
+	case NOTE:  /* note definition */
+	    layer = p->u.n->layer;
+	    break;
+	case OVAL:  /* oval definition */
+	    layer = p->u.o->layer;
+	    break;
+	case POLY:  /* polygon definition */
+	    layer = p->u.p->layer;
+	    break;
+	case RECT:  /* rectangle definition */
+	    layer = p->u.r->layer;
+	    break;
+	case TEXT:  /* text definition */
+	    layer = p->u.t->layer;
+	    break;
+	case INST:  /* instance definition */
+	    layer = 0;
+	    break;
+	default:
+	    printf("error in db_ident switch\n");
+	    break;
+	}
+
+	/* check all the restrictions on picking something */
+
+	if (name != NULL) { comp = INST; }
+
+	bad_comp=0;
+	if ((pick_layer != 0 && layer != pick_layer) ||
+	    (comp != 0 && comp != ALL && p->type != comp)  ||
+	    (!mode && !show_check_visible(currep, p->type, layer)) ||
+	    (mode && !show_check_modifiable(currep, p->type, layer)) ||
+	    (p->type==INST && name!=NULL && strncmp(name, p->u.i->name, MAXFILENAME))!=0) {
+		bad_comp++;
+	}
+
+	if (!bad_comp) {
+	    if (x1 > x2) {			/* canonicalize coords */
+	    	tmp = x2; x2 = x1; x1 = tmp;
+	    }
+	    if (y1 > y2) {
+	    	tmp = y2; y2 = y1; y1 = tmp;
+	    }
+
+
+	    if ( ( (mode==0 || mode==1) &&   /* check for enclosure */
+	           (x1<=p->xmin && x2>=p->xmax && y1<=p->ymin && y2>=p->ymax) ) ||
+		 ( (mode==2) && 	    /* check for mutual overlap */
+		   (bb_overlap(x1, y1, x2, y2, p->xmin, p->ymin, p->xmax, p->ymax)) ) ) {
+
+		gotpnts = 0;
+		switch (p->type) {
+
+		case ARC:
+
+		    xsel = &(p->u.a->x3);
+		    ysel = &(p->u.a->y3);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+
+		    xsel = &(p->u.a->x2);
+		    ysel = &(p->u.a->y2);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+
+		    xsel = &(p->u.a->x1);
+		    ysel = &(p->u.a->y1);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+		    break;
+
+		case CIRC:
+
+		    xsel = &(p->u.c->x2);
+		    ysel = &(p->u.c->y2);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+
+		    xsel = &(p->u.c->x1);
+		    ysel = &(p->u.c->y1);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+		    break;
+
+		case INST:
+
+		    xsel = &(p->u.i->x);
+		    ysel = &(p->u.i->y);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+		    break;
+
+		case LINE:
+
+		    for (coords=p->u.l->coords;coords!=NULL;coords=coords->next) {
+			xsel = &(coords->coord.x);
+			ysel = &(coords->coord.y);
+			if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    gotpnts++;
+			}
+		    }
+		    break;
+
+		case NOTE:
+
+		    xsel = &(p->u.n->x);
+		    ysel = &(p->u.n->y);
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt, xsel, ysel, NULL);
+			gotpnts++;
+		    }
+		    break;
+
+		case POLY:
+
+		    for (coords=p->u.p->coords;coords!=NULL;coords=coords->next) {
+			xsel = &(coords->coord.x);
+			ysel = &(coords->coord.y);
+			if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    gotpnts++;
+			}
+		    }
+		    break;
+
+		case RECT:
+		    xmin = &(p->u.r->x1);
+		    xmax = &(p->u.r->x2);
+		    ymin = &(p->u.r->y1);
+		    ymax = &(p->u.r->y2);
+
+		    sel=0;
+
+		    if (bounded (xmin, ymin, x1, y1, x2, y2)) sel += 1;
+		    if (bounded (xmin, ymax, x1, y1, x2, y2)) sel += 2;
+		    if (bounded (xmax, ymax, x1, y1, x2, y2)) sel += 4;
+		    if (bounded (xmax, ymin, x1, y1, x2, y2)) sel += 8;
+
+		    switch (sel) {
+		    case 0:
+			break;
+		    case 1:
+			selpnt_save(&selpnt, xmin, ymin, NULL);
+			gotpnts++;
+			break;
+		    case 2:
+			selpnt_save(&selpnt, xmin, ymax, NULL);
+			gotpnts++;
+			break;
+		    case 3:	/* left side */
+			selpnt_save(&selpnt, xmin, NULL, NULL);
+			gotpnts++;
+			break;
+		    case 4:
+			selpnt_save(&selpnt, xmax, ymax, NULL);
+			gotpnts++;
+			break;
+		    case 6:	/* top side */
+			selpnt_save(&selpnt, NULL, ymax, NULL);
+			gotpnts++;
+			break;
+		    case 8:
+			selpnt_save(&selpnt, xmax, ymin, NULL);
+			gotpnts++;
+			break;
+		    case 9:	/* bottom side */
+			selpnt_save(&selpnt,NULL, ymin, NULL);
+			gotpnts++;
+			break;
+		    case 12:	/* right side */
+			selpnt_save(&selpnt,xmax, NULL, NULL);
+			gotpnts++;
+			break;
+		    case 15:	/* entire rectangle */
+			selpnt_save(&selpnt,xmin, ymin, NULL);
+			selpnt_save(&selpnt,xmax, ymax, NULL);
+			gotpnts+=2;
+			break;
+		    default:
+			printf("   COM_STRETCH: case %d should never occur!\n",sel);
+			break;
+		    }
+
+		    break;
+
+		case TEXT:
+
+		    xsel = &(p->u.t->x);
+		    ysel = &(p->u.t->y);
+
+		    if (bounded (xsel, ysel, x1, y1, x2, y2)) {
+			selpnt_save(&selpnt,xsel, ysel, NULL);
+			gotpnts+=2;
+		    }
+		    break;
+
+		default:
+		    printf("    not a stretchable object\n");
+		    db_notate(p);	/* print information */
+		    break;
+		}
+
+		if (gotpnts) {
+		    selpnt_save(&selpnt, NULL, NULL, p);	/* save comp */
+		} 
+	    }
+	}
+    }
+    return(selpnt);
+}
 
 STACK *db_ident_region(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
 DB_TAB *cell;			/* device being edited */
@@ -488,12 +1025,14 @@ char *name;			/* instance name restrict or NULL */
 
 	/* check all the restrictions on picking something */
 
+	if (name != NULL) { comp = INST; }
+
 	bad_comp=0;
 	if ((pick_layer != 0 && layer != pick_layer) ||
 	    (comp != 0 && comp != ALL && p->type != comp)  ||
 	    (!mode && !show_check_visible(currep, p->type, layer)) ||
 	    (mode && !show_check_modifiable(currep, p->type, layer)) ||
-	    (p->type == INST && name != NULL && strncmp(name, p->u.i->name, MAXFILENAME)) != 0)  {
+	    (p->type==INST && name!=NULL && strncmp(name, p->u.i->name, MAXFILENAME))!=0) {
 		bad_comp++;
 	}
 
@@ -732,6 +1271,8 @@ DB_DEFLIST *p;			/* component to display */
     BOUNDS bb;
     DB_TAB *def;
     bb.init=0;
+    XFORM *xp;
+    double x1, y1, x2, y2, xx, yy;
 
     if (p == NULL) {
     	printf("db_highlight: no component!\n");
@@ -744,6 +1285,7 @@ DB_DEFLIST *p;			/* component to display */
 	break;
     case CIRC:  /* circle definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	xwin_draw_origin(p->u.c->x1, p->u.c->y1);
 	do_circ(p, &bb, D_RUBBER);
 	break;
     case LINE:  /* line definition */
@@ -751,6 +1293,7 @@ DB_DEFLIST *p;			/* component to display */
 	break;
     case NOTE:  /* note definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	xwin_draw_origin(p->u.n->x, p->u.n->y);
 	do_note(p, &bb, D_RUBBER);
 	break;
     case OVAL:  /* oval definition */
@@ -765,15 +1308,68 @@ DB_DEFLIST *p;			/* component to display */
 	break;
     case TEXT:  /* text definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	xwin_draw_origin(p->u.t->x, p->u.t->y);
 	do_note(p, &bb, D_RUBBER);
 	break;
     case INST:  /* instance call */
 	def = db_lookup(p->u.i->name);
-	db_drawbounds(def->minx+p->u.i->x, 
-	              def->miny+p->u.i->y, 
-		      def->maxx+p->u.i->x, 
-		      def->maxy+p->u.i->y, 
-		      D_RUBBER);
+
+	xp = matrix_from_opts(p->u.i->opts);
+	xp->dx = p->u.i->x;
+	xp->dy = p->u.i->y;
+
+	x1 = def->minx;
+	y1 = def->miny;
+	x2 = def->maxx;
+        y2 = def->maxy;
+
+	jump(&bb, D_RUBBER);
+	set_layer(0,0);
+
+	xx = x1; yy = y1;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x1; yy = y2;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x2; yy = y2;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x2; yy = y1;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x1; yy = y1;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x2; yy = y2;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	jump(&bb, D_RUBBER);
+
+	xx = x1; yy = y2;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	xx = x2; yy = y1;
+	xform_point(xp, &xx, &yy);
+	draw(xx, yy, &bb, D_RUBBER);
+
+	jump(&bb, D_RUBBER);
+
+	xx = 0.0; yy = 0.0;
+	xform_point(xp, &xx, &yy);
+	xwin_draw_origin(xx,yy);
+
+	jump(&bb, D_RUBBER);
+
+	free(xp);
+
 	break;
     default:
 	eprintf("unknown record type: %d in db_highlight\n", p->type);

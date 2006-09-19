@@ -33,9 +33,6 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 	return(1);
     }
 
-    rl_saveprompt();
-    rl_setprompt("EQUATE> ");
-
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
@@ -135,6 +132,5 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 
     /* equate_print(); */
 
-    rl_restoreprompt();
     return (0);
 }

@@ -30,6 +30,8 @@ int com_area(LEXER *lp, char *arg)
     double x1, y1;
     double area;
     double cum_area=0.0;
+    char instname[BUFSIZE];
+    char *pinst = (char *) NULL;
 
     int my_layer=0; 	/* internal working layer */
 
@@ -63,8 +65,6 @@ int com_area(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("AREA> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -127,8 +127,13 @@ int com_area(LEXER *lp, char *arg)
 			}
 		    }
 		} else { 
-		    /* here need to handle a valid cell name */
-		    printf("looks like a descriptor to me: %s\n", word);
+		    if (db_lookup(word)) {
+		        strncpy(instname, word, BUFSIZE);
+			pinst = instname;
+		    } else {
+			printf("not a valid instance name: %s\n", word);
+			state = START;
+		    }
 		}
 	    } else {
 		token_err("AREA", lp, "expected DESC or NUMBER", token);
@@ -175,7 +180,7 @@ int com_area(LEXER *lp, char *arg)
 		    p_prev = NULL;
 		}
 
-		if ((p_best=db_ident(currep, x1,y1,0,my_layer, comp, 0)) != NULL) {
+		if ((p_best=db_ident(currep, x1,y1,0,my_layer, comp, pinst)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
 		    area = db_area(p_best);
@@ -211,7 +216,6 @@ int com_area(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 

@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.40 2006/09/03 00:23:57 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.40 2006/09/03 00:23:57 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -626,7 +626,7 @@ char **s;
 	    }
 
 	    if (xold != x || yold != y) {
-		if (xwin_display_state() == D_ON) {
+		if (xwin_display_state() == D_ON && xe.xmotion.window == win) {  /* RCW */
 		    rubber_draw(x, y);
 		}
 		xold=x;
@@ -1152,6 +1152,31 @@ double x, y;
 	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
 
     XDrawString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
+
+    XFlush(dpy);
+}
+
+void xwin_draw_origin(x,y) 
+double x, y;
+{
+    double delta, xx, yy;
+    extern unsigned int g_width, g_height;
+
+    xx = x-fmod(x,1.0/pow(10.0,RES));
+    yy = y-fmod(y,1.0/pow(10.0,RES));
+
+    if (g_width > g_height) {
+	delta = (double) dpy_width/100;
+    } else {
+	delta = (double) dpy_height/100;
+    }
+
+    R_to_V(&x,&y);
+
+    XDrawLine(dpy, win, gcx, 
+	    (int)x, (int)(y-delta), (int)x, (int)(y+delta));
+    XDrawLine(dpy, win, gcx, 
+	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
 
     XFlush(dpy);
 }

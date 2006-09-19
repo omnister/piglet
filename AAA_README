@@ -18,6 +18,29 @@ mouse.  The shell window should have a prompt:
 
 MAIN>
 
+All commands in piglet are terminated either with another command, or
+with a right mouse click, or with an ";" character.  If you don't
+terminate a command with a ";" or right-button, you can usually keep
+using it over again to make multiple MOVes or COPys.  Once you terminate
+a command, you have to type another command to start working again. 
+
+A few commands terminate the current action with a double click on the
+same coordinate.  An example of this is the "ADD L<layer>" add line
+command.  A double-click terminates the current line, but leaves you
+in the add line command to continue adding lines until you finally are
+ready to do something different.
+
+Anything that you can type, you can also enter by clicking on the menu.
+Piglet's graphical language is identical to it's command line language,
+so you can either type "ADD R6 x1,y1 x2,y2;" or you can click the
+mouse on "ADD" "R" "6" and then mouse the two coordinates.  
+
+Usually, it is only necessary to type on the keyboard for entering the
+names of cells, and for entering TEXT and NOTE strings.
+
+So open a piglet window and let's go through a tour of some commands:
+
+
 ----------------- GRID ---------------------
 
 Try playing with the grid.  If you type "gri 20 2;", you'll get a 20x20
@@ -36,7 +59,7 @@ Finally, you can make a non-isotropic grid with something like
 When entering points with the mouse, the clicks ALWAYS snap to the grid,
 giving a powerful way to enter precise coordinates.
 
-The grid also allows an option ":C<1-7>" which will set the color of the
+The grid also allows an option ":C<0-6>" which will set the color of the
 grid to any of the 8 system colors.  For example: "grid :c2 10 2" creates
 a red grid.  The colors are "white, red, green, blue, cyan, magenta,
 yellow".
@@ -57,7 +80,13 @@ HELP
 You can get a list of all commands by typing "?" or "HELP".  You can get a
 summary on just one command by typing "HELP <command>".  
 
-There are also UNIX style man pages in the ./web/man1p directory.
+There are also UNIX style man pages in the ./web/man1p directory.  If you
+did a "make install", these should be in your /usr/local/man/man1 directory.
+If this is in your MANPATH environment variable, you can type "man piglet"
+and get an overview of the editor.  There will be a list of commands at the
+end of the page that can also be viewed.  Each command has a separate
+man page so you can look at "man add_rect", "man move", "man copy", and so on.
+
 
 EDIT
 -----
@@ -69,6 +98,13 @@ mycell".
 SHOW
 ----
 
+OVERVIEW:
+Before you can add anything to your drawing you need to make some of the
+layers modifiable.  They default to "visible and locked" by default.  Type
+"SHO #E;" and you are set to go.  You'll need to do this everytime you edit
+a new cell.
+
+Now the details:
 The show command controls what layers are visible and modifiable in the
 drawing.  The default when starting to edit a new file is ALL layers
 visible and ALL layers non-modifiable.  This feature makes it much safer
@@ -110,6 +146,9 @@ Some examples:
 
 RECTANGLES
 ----------
+
+NOTE: Remember that you can't add anything until you type "SHO #E;" to
+unlock "Everything" and make the layers editable! 
 
 Now try adding a rectangle on layer 7 by typing "ADD R7" then clicking
 the two corners of your rectangle with your left mouse button.  You can
@@ -155,6 +194,10 @@ set keymap vi
 
 If you don't set anything, I think you get either an emacs or 
 up-arrow, down-arrow editing mechanism.
+
+When you use the CHAnge command on text or notes, the string of the
+note is put in the command buffer.  You can move up with command line
+editing and easily modify the string.
 
 WINDOWING
 ---------
@@ -254,6 +297,38 @@ philips-style screws by simply editing the original definition.  It will
 change in all the drawings that have called the cell, no matter how complex
 the nesting or the transformations applied.
 
+WRAP
+----
+
+You can wrap up any number of primitives by drawing a box around them with the WRAP command.
+These components are then "pushed" down one level of the drawing and named something like
+"NO_NAMExxx".  This new block can be moved, copied, scaled, mirrored and rotated.  You can also
+give the block a new name and save it as a cell.  If you don't give the WRAPped block a new
+name it will be automatically dismember (SMAshed) when you finally exit the edi.
+
+SMASH
+----
+
+Any cell that you add to the drawing can be SMAshed.  This will
+un-bundle all the components in the sub-cell and add them directly to
+the current drawing at the top level of hierarchy.  Be careful with this
+command as it can easily create an unmanageably huge number of
+components. 
+
+STRETCH
+-------
+
+An invaluable editing tool.  You can click on any vertex of a component and pull it to a new position.
+You can also use the :R option to draw a box around any number of vertices and pull them all together
+to an new position.  Lines and polygons will simply stretch to accomodate.
+
+CHANGE
+------
+
+If you click on any component using the CHA command, you may then enter any option such as :L<layer>,
+:F<fontsize>, :M<mirror_type>, :R<rotation> and the new option will be applied to the selected component.
+You can also click on text or notes and then enter a new string to replace the current value.
+
 SAVE
 ----
 
@@ -323,44 +398,8 @@ pbmtools package.
 PLOT
 ----
 
-The PLOT command creates an ASCII dump of the current device
-in the file "./<device_name>.plot.  This is in autoplot(1) format
-which is a simple list of coordinates one per line.  The file starts
-with three lines containing plot directives.  These are "back", which
-is a directive to allow right to left segments to be displayed, "nogrid",
-which turns off autoplots grid display, and "isotropic" which forces x and y
-axes to have the same scale. 
-
-The file then consists of x,y points, one set per line interspersed with
-"pen <pennumber>", "line <linetype>" and "jump" commands.  Points should
-be connected together unless there is an intervening "jump" command. 
-Pen color is changed with lines of the form "pen <pennumber>", where
-<pennumber> is an integer from 1 to 8. Line style is changed with the
-command "line <linetype>", with <linetype> an integer from 1 to 8.
-
-Here is an example plotfile for plotting a unit rectangle centered at the
-origin:
-
---------- cut here for rectangle.plot ------------
-nogrid
-isotropic
-back
-jump
-pen 1
-line 1
--0.5 -0.5
-0.5 -0.5
-0.5 0.5
--0.5 0.5
--0.5 -0.5
---------- cut here for rectangle.plot ------------
-
-The basic rendering engine creates output consisting of xy() coordinates
-for defining a drawing path, jump() commands which move to the next
-coordinate without drawing, pen(pen_number) to set colors, and
-line(line_type) to set line style.  These should be trivial to convert to
-either postscript or HPGL output.  
-
+The PLOT command creates a postcript dump of the current windowed device
+in the file "./<device_name>.ps. 
 
 IDENTIFY
 --------
@@ -378,45 +417,6 @@ coordinates to the screen.  No change is made to the database.
 
 MISSING STUFF
 -------------
-
-There are data structures and stubs for OVALS and ARCS.  These and others
-should be an easy project.  I would like to make an option for lines to
-do parametric spline curves.
-
-Support for isometric grids would be nice.
-
-Most conspicuous is the lack of "DELete", "MOVe", "COPy" and "STRetch". 
-This is the next big code push.  I'll start with the "IDEntify" command. 
-This will simply pass a coordinate to db_render().  As the screen is
-refreshed, the bounding box of every instance will be compared to the
-"IDEntify" coordinate.  The top-10 closest primitives will be saved in
-sorted order in a linked list.  The best match will be highlighted and
-it's name printed to stdout.  If this isn't the one the user had in
-mind, then the up/down arrows can be used to roll through the linked
-list until the correct primitive is selected. 
-
-Once "IDE" is working, it should be easy to use the functionality to
-implement "DEL" and "MOV".
-
-Next priority is the MENU.  This will be a simple text block in the corner
-of the display.  It will be a simple gridded block of every piglet command
-like:
-
-|ADD  |R|C|L|N|T|O|A|
-|EDI |SAV |PUR |WIN |
-|COP |MOV |DEL |INP |
-|:F|:R|:X|:Y|:M|:Z|||
-|0|1|2|3|4|5|6|7|8|9|
-...
-
-Each cell is color coded so that "DEL" can be something like
-red and "EDI" green.  When the mouse is clicked on a menu item,
-it simple causes the literal text of the menu to be injected into
-the parse stream.  The mechanism for this is already in place and
-is used to pass the mouse clicks into the parser as ascii representations
-of the mouse coordinates.  With such a simple menu in place, the editing
-is quite fast and efficient, requiring the keyboard only for precision 
-coordinate or text string entry.
 
 MACROS
 ------
@@ -453,3 +453,17 @@ drawing that is always lists the latest rev number for the drawing.
 You could also define variables that would make the cell automatically
 upgrade to the latest available version, or insist that the version be
 frozen at particular rev number.
+
+
+LEARN MORE
+---------
+
+Make sure and read the man pages for each command to discover more options.  Please
+write if you have any questions or suggestions.
+
+kind regards,
+--
+Rick Walker
+walker AT omnisterra DOT com
+
+

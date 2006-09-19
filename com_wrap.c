@@ -71,8 +71,6 @@ int com_wrap(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("WRAP> ");
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -324,6 +322,9 @@ int com_wrap(LEXER *lp, char *arg)
 			db_save(lp, newrep, wrap_inst_name);
 			newrep->modified=0;
 		    } 
+		    if (!anonymous) {
+		       free(wrap_inst_name);
+		    }
 		    wrap_inst_name=NULL;
 
 		    currep->modified++;
@@ -352,7 +353,6 @@ int com_wrap(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 

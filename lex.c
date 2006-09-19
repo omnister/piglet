@@ -49,15 +49,15 @@ typedef struct {
 COMMAND commands[] =
 {
     {"ADD", com_add, "add a component to the current device", 
-    "ADD A<layer> [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>\n\
-    ADD C<layer> [:W<width>] [:R<res>] [:Y<yxratio>] <xy1> <xy2>... <EOC>\n\
-    ADD <device> [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... <EOC>\n\
-    ADD L<layer> [:W<width>] <xy1> <xy2> [<xy3> ...]  <EOC>\n\
-    ADD N<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] \"string\" <xy> <EOC>\n\
-    ADD O<layer> [:W<width>] [:R<res>] <xy1> <xy2> <xy3>... <EOC>\n\
-    ADD P<layer> [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] <EOC>\n\
-    ADD R<layer> [:W<width>] <xy1> <xy2> <EOC>\n\
-    ADD T<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] \"string\" <xy> <EOC>" },
+    "ADD A<layer> [.<cnam>][@<snam>][:W<wid>][:R<res>] <xy1> <xy2> <xy3>... \n\
+    ADD C<layer> [.<cnam>][@<snam>][:W<wid>][:R<res>][:Y<yxratio>] <xy1> <xy2>... \n\
+    ADD <device> [.<cnam>][@<snam>][:M<mir>][:R<ang>][:X<x>][:Y<ratio>][:Z<slant>] <xy>...\n\
+    ADD L<layer> [.<cnam>][@<snam>][:W<wid>] <xy1> <xy2> [<xy3> ...]\n\
+    ADD N<layer> \n        [.<cnam>][@<snam>][:F<size>][:J<just>][:M<mir>][:R<ang>][:Y<ratio>][:Z<slant>]\"string\" <xy>\n\
+    ADD O<layer> [.<cnam>][@<snam>][:W<wid>][:R<res>] <xy1> <xy2> <xy3>...\n\
+    ADD P<layer> [.<cnam>][@<snam>][:W<wid>] <xy1> <xy2> <xy3> [<xy4>...]\n\
+    ADD R<layer> [.<cnam>][@<snam>][:W<wid>] <xy1> <xy2>\n\
+    ADD T<layer> \n        [.<cnam>][@<snam>][:F<size>][:J<just>][:M<mir>][:R<ang>][:Y<ratio>][:Z<slant>]\"string\" <xy>" },
     {"ARCHIVE", com_archive, "create an archive file of the specified device",
     	"ARC <EOC>"},
     {"AREA", com_area, "calculate and display the area of selected component", 
@@ -152,7 +152,8 @@ COMMAND commands[] =
     {"STEP", com_step, "copy a component in an array fashion",
     	"unimplemented"},
     {"STRETCH", com_stretch, "make a component larger or smaller",
-    	"STR { <xysel> <xyref> <xynewref> }" },
+    "STR [[<comp>[<layer>]] [:P] <xysel> <xyref> <xynewref> ...\n\
+    STR [[<comp>[<layer>]] :R <xyll> <xyur> <xyref> <xynewref> ..." },
     {"TIME", com_time, "print the system clock time",
     	"TIM <EOC>"},
     {"TRACE", com_trace, "highlight named signals",
@@ -303,7 +304,14 @@ LEXER *lp;
 		    token_flush_EOL(lp);
 		} else {
 		    if (debug) printf("MAIN: found command\n");
-		    retcode = ((*(command->func)) (lp, ""));
+
+    		    rl_saveprompt();
+		    sprintf(buf, "%s> ", command->name);
+		    rl_setprompt(buf);
+
+		    retcode = ((*(command->func)) (lp, "")); /* call command */
+
+                    rl_restoreprompt();
 		}
 		break;
 	    case EOL:
@@ -393,6 +401,9 @@ int is_comp(char c)
     	case 'C':
 	    return(CIRC);
 	    break;
+    	case 'I':
+	    return(INST);
+	    break;
     	case 'L':
 	    return(LINE);
 	    break;
@@ -428,7 +439,6 @@ int add_arc(LEXER *lp, int *layer)
 
 int add_oval(LEXER *lp, int *layer)
 {
-    rl_setprompt("ADD_OVAL> ");
     printf("in add_oval (unimplemented)\n");
     token_flush_EOL(lp);
     return(1);
@@ -444,7 +454,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
     if (currep != NULL) {
 	if (db_def_archive(currep)) {
 	    printf("unable to archive %s\n", currep->name);
-	    exit(-1);
+	    return(-1);
 	};
 	printf("    archived %s\n", currep->name);
 	currep->modified = 0;
@@ -655,6 +665,7 @@ char *arg;
 		break;
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
+		done++;
 		break;
 	    case EOC:		/* end of command */
 		done++;
@@ -706,6 +717,7 @@ char *arg;
     int debug=0;
     char *s = NULL;
     int i;
+
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
@@ -788,6 +800,8 @@ char *arg;
 	    need_redraw++;
 	}
 	linenumber=lp->line;
+    } else if (lp->mode == SEA) {
+	lp->mode = MAIN;
     } else if (lp->mode == PRO) {
         /* FIXME: need to check if PROCFILE is modified */
 	lp->mode = MAIN;
@@ -1115,6 +1129,7 @@ char *arg;
 	if (printed)
 	    printf("\n");
     }
+
     return (0);
 
 }
@@ -1184,9 +1199,6 @@ char *arg;
 
     if (debug) printf("in com_input\n");
 
-    rl_saveprompt();
-    rl_setprompt("INP> ");
-
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
 	if (debug) printf("COM_INPUT: got %s: %s\n",
@@ -1226,7 +1238,6 @@ char *arg;
 		break;
 	}
     }
-    rl_restoreprompt();
     return(0);
 }
 
@@ -1500,9 +1511,6 @@ char *arg;
     int done=0;
     char word[128];
 
-    rl_saveprompt();
-    rl_setprompt("PURGE> ");
-
     while(!done && (token=token_get(lp, word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
@@ -1527,7 +1535,6 @@ char *arg;
 	    	break;
 	}
     }
-    rl_restoreprompt();
     return (0);
 }
 
@@ -1543,8 +1550,6 @@ char *arg;
     int nfiles=0;
 
     if (debug) printf("in com_retrieve\n");
-    rl_saveprompt();
-    rl_setprompt("RET> ");
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -1586,7 +1591,6 @@ char *arg;
 		break;
 	}
     }
-    rl_restoreprompt();
     return(0);
 }
 

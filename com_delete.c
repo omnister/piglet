@@ -7,10 +7,20 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "lex.h"
+#include "rubber.h"
+
+#define POINT  0
+#define REGION 1
 
 /* 
     delete a component from the current device.
 */
+
+static double x1, y1;
+static double x2, y2;
+void delete_draw_box();
+SELPNT *selpnt;
+STACK *stack;
 
 int com_delete(LEXER *lp, char *arg)		
 {
@@ -19,16 +29,18 @@ int com_delete(LEXER *lp, char *arg)
 
     TOKEN token;
     char word[BUFSIZE];
-    int debug=1;
-    int done=0;
     int valid_comp=0;
     int i;
     DB_DEFLIST *p_best;
+    char instname[BUFSIZE];
+    char *pinst = (char *) NULL;
+    int debug=1;
+    int done=0;
+    int mode=POINT;
 
     int my_layer=0; 	/* internal working layer */
 
     int comp=ALL;
-    double x1,y1;
 
     /* check that we are editing a rep */
     if (currep == NULL ) {
@@ -58,8 +70,6 @@ int com_delete(LEXER *lp, char *arg)
 
 */
 
-    rl_saveprompt();
-    rl_setprompt("DEL> ");
     while(!done) {
 	token = token_look(lp,word);
 	/* if (debug) printf("got %s: %s\n", tok2str(token), word); */
@@ -70,6 +80,23 @@ int com_delete(LEXER *lp, char *arg)
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
 		token_get(lp,word); /* ignore for now */
+                if (word[0]==':') {
+                    switch (toupper(word[1])) {
+                        case 'R':
+                            mode = REGION;
+                            break;
+                        case 'P':
+                            mode = POINT;
+                            break;
+                        default:
+                            printf("DELETE: bad option: %s\n", word);
+                            state=END;
+                            break;
+                    }
+                } else {
+                    printf("DELETE: bad option: %s\n", word);
+                    state = END;
+                }
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
@@ -80,13 +107,13 @@ int com_delete(LEXER *lp, char *arg)
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,word);
-	    	state = NUM1;
+	    	state = START;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
 		    if (strlen(word) == 1) {
-			my_layer = default_layer();
-			printf("using default layer=%d\n",my_layer);
+			/* my_layer = default_layer();
+			printf("using default layer=%d\n",my_layer); */
 			valid_comp++;	/* no layer given */
 		    } else {
 			valid_comp++;
@@ -121,8 +148,13 @@ int com_delete(LEXER *lp, char *arg)
 			}
 		    }
 		} else { 
-		    /* here need to handle a valid cell name */
-		    printf("looks like a descriptor to me: %s\n", word);
+		    if (db_lookup(word)) {
+		        strncpy(instname, word, BUFSIZE);
+			pinst = instname;
+		    } else {
+			printf("not a valid instance name: %s\n", word);
+			state = START;
+		    }
 		}
 	    } else {
 		token_err("DEL", lp, "expected DESC or NUMBER", token);
@@ -159,16 +191,20 @@ int com_delete(LEXER *lp, char *arg)
 		token_get(lp,word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
-		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, 0)) != NULL) {
-		    db_notate(p_best);	    /* print out id information */
-		    /* db_highlight(p_best); */
-		    db_unlink_component(currep, p_best); 
-		    need_redraw++;
+		if (mode == POINT) {
+		    if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
+		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			db_notate(p_best);	    /* print out id information */
+			db_unlink_component(currep, p_best); 
+			need_redraw++;
+		    } else {
+			printf("nothing here to delete...try SHO command?\n");
+		    }
+		    state = START;
 		} else {
-		    printf("nothing here to delete...try SHO command?\n");
+                    rubber_set_callback(delete_draw_box);
+                    state = NUM3;
 		}
-		state = START;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
@@ -179,6 +215,60 @@ int com_delete(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
+	case NUM3:              /* get pair of xy coordinates */
+            if (token == NUMBER) {
+                token_get(lp,word);
+                sscanf(word, "%lf", &x2);       /* scan it in */
+                state = COM2;
+            } else if (token == EOL) {
+                token_get(lp,word);     /* just ignore it */
+            } else if (token == EOC || token == CMD) {
+                state = END;
+            } else {
+                token_err("DELETE", lp, "expected NUMBER", token);
+                state = END;
+            }
+            break;
+        case COM2:
+            if (token == EOL) {
+                token_get(lp,word); /* just ignore it */
+            } else if (token == COMMA) {
+                token_get(lp,word);
+                state = NUM4;
+            } else {
+                token_err("DELETE", lp, "expected COMMA", token);
+                state = END;
+            }
+            break;
+        case NUM4:
+            if (token == NUMBER) {
+                token_get(lp,word);
+                sscanf(word, "%lf", &y2);       /* scan it in */
+                state = START;
+                rubber_clear_callback();
+                need_redraw++;
+
+                printf("DELETE: got %g,%g %g,%g\n", x1, y1, x2, y2);
+                stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
+		if (stack == NULL) {
+                    printf("nothing to delete, try SHO #E?\n");
+                } else {
+		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
+			db_notate(p_best);	    /* print out id information */
+			db_unlink_component(currep, p_best); 
+			need_redraw++;
+		    }
+                }
+	    } else if (token == EOL) {
+                token_get(lp,word);     /* just ignore it */
+            } else if (token == EOC || token == CMD) {
+                printf("DELETE: cancelling POINT\n");
+                state = END;
+            } else {
+                token_err("DELETE", lp, "expected NUMBER", token);
+                state = END;
+            }
+            break;
 	case END:
 	default:
 	    if (token == EOC || token == CMD) {
@@ -190,7 +280,6 @@ int com_delete(LEXER *lp, char *arg)
 	    break;
 	}
     }
-    rl_restoreprompt();
     return(1);
 }
 
@@ -214,6 +303,32 @@ int com_undo(LEXER *lp, char *arg)
 	need_redraw++;
     }
     return(0);
+}
+
+
+void delete_draw_box(x2, y2, count)
+double x2, y2;
+int count; /* number of times called */
+{
+        static double x1old, x2old, y1old, y2old;
+        BOUNDS bb;
+        bb.init=0;
+
+        if (count == 0) {               /* first call */
+            db_drawbounds(x1,y1,x2,y2,D_RUBBER);                /* draw new shape */
+        } else if (count > 0) {         /* intermediate calls */
+            db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
+            db_drawbounds(x1,y1,x2,y2,D_RUBBER);                /* draw new shape */
+        } else {                        /* last call, cleanup */
+            db_drawbounds(x1old,y1old,x2old,y2old,D_RUBBER);    /* erase old shape */
+        }
+
+        /* save old values */
+        x1old=x1;
+        y1old=y1;
+        x2old=x2;
+        y2old=y2;
+        jump(&bb, D_RUBBER);
 }
 
 

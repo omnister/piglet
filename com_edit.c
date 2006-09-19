@@ -43,9 +43,6 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 
     name[0]=0;
 
-    rl_saveprompt();
-    rl_setprompt("EDIT> ");
-
     while(!done) {
 	token = token_look(lp,word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
@@ -245,7 +242,6 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	}
     }
 
-    rl_restoreprompt();
     return(1);
 }
 

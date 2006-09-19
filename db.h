@@ -368,11 +368,47 @@ extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
 
+typedef struct selpnt {
+    DB_DEFLIST *p;
+    double *xsel;         /* pointers to coordinates in component */
+    double *ysel;
+    double xselorig;      /* original values prior to any applied offset */
+    double yselorig;
+    struct selpnt *next;
+    struct selpnt *prev;
+} SELPNT;
+
+extern SELPNT *selpnt_new(double *x,double *y, DB_DEFLIST *pdef);
+extern void selpnt_clear(SELPNT **selhead);
+extern void selpnt_print(SELPNT **selhead);
+extern void selpnt_save(SELPNT **selhead, double *x, double *y, DB_DEFLIST *pdef);
 
 DB_DEFLIST *db_ident(
 		DB_TAB *cell,
 		NUM x,
 		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+SELPNT  *db_ident2(
+		DB_TAB *cell,
+		NUM x,
+		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+SELPNT *db_ident_region2(
+		DB_TAB *cell,
+		NUM xx1,
+		NUM yy1,
+		NUM xx2,
+		NUM yy2,
 		int mode,
 		int pick_layer,
 		int comp,
@@ -459,3 +495,4 @@ void do_oval(), do_poly(), do_rect(), do_text();
 
 void xform_point(XFORM *xp, double *xx, double *yy); 
 XFORM *matrix_from_opts(OPTS *opts);
+

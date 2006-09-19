@@ -26,6 +26,9 @@ If you did a make install, you can get the top level man page with "man piglet"
 There are a few other archives inside the cells directory.  The archive
 files have "_I" as a suffix.  You can unpack them in the same way as
 PLAN.  For instance, retrieve "smorgasboard" by typing "ret smorgasboard;".  You can
-then edit the cell with "edi smorgasboard;". 
+then edit the cell with "edi smorgasboard;".
 
 Have fun!
+
+Rick Walker
+walker AT omnisterra DOT com

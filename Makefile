@@ -10,10 +10,10 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        com_add.o com_delete.o com_distance.o com_equate.o com_ident.o \
        com_copy.o com_move.o com_window.o com_point.o com_show.o postscript.o \
        com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o \
-       lock.o path.o stack.o
+       lock.o path.o stack.o selpnt.o
 
 TARS =QUICKSTART AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I \
-cells/H20919M1_I cells/PLAN_I cells/ALL_I cells/smorgasboard_I\
+cells/H20919M1_I cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I\
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
 db.h com_wrap.c com_smash.c draw.c eprintf.c eprintf.h eventnames.h equate.c \
@@ -23,9 +23,13 @@ NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
 man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
-path.h path.c lock.c stack.c piglogo.d
+selpnt.c path.h path.c lock.c stack.c piglogo.d
 
-CC=cc -O0 -ggdb -Wall
+# use "-O0" for valgrind memory usage checking
+# use "-ggdb" for gnu debugger
+
+#CC=cc -O0 -ggdb -Wall
+CC=cc -ggdb -Wall
 
 # we currently make pig.bin, and then run the binary under the
 # wrapper "pig" which catches and error backtrace with gdb
@@ -38,7 +42,7 @@ clean:
 	rm -r man/*1p man/*html
 
 pig.tar: $(TARS)
-	(q=`pwd`;p=`basename $$q`;cd ..;tar czvf - `for file in $(TARS);do echo $$p/$$file;done`>$$p/pig.tar.gz)
+	(q=`pwd`;p=`basename $$q`;cd ..;tar czvf - `for file in $(TARS);do echo $$p/$$file;done`>$$p/$$p.tar.gz)
 
 junk:
 	(mkdir dist/cells; mkdir dist/man; for file in $(TARS); do cp -a $$file dist/$$file; done)
@@ -79,8 +83,7 @@ com_point.o:      db.h xwin.h token.h lex.h rlgetc.h
 com_show.o:       db.h xwin.h token.h lex.h rlgetc.h 
 com_smash.o:      db.h xwin.h token.h rubber.h lex.h rlgetc.h 
 com_stretch.o:    db.h xwin.h token.h rubber.h lex.h rlgetc.h lock.h 
-com_stretchold2.o:db.h xwin.h token.h rubber.h lex.h rlgetc.h 
-com_stretchold.o: db.h xwin.h token.h rubber.h lex.h rlgetc.h 
+com_stretch.orig.o:db.h xwin.h token.h rubber.h lex.h rlgetc.h lock.h 
 com_window.o:     db.h xwin.h token.h rubber.h lex.h rlgetc.h eprintf.h 
 com_wrap.o:       rlgetc.h db.h token.h xwin.h lex.h rubber.h 
 coords.o:         db.h 
@@ -104,7 +107,10 @@ readfont.o:       readfont.h db.h
 readmenu.o:       readmenu.h db.h 
 rlgetc.o:         eprintf.h db.h xwin.h 
 rubber.o:         rubber.h 
+selpnt.o:         db.h 
 selpoint.o:       stack.h 
+seltab.o:         db.h 
+seltest.o:        db.h 
 stack.o:          stack.h 
 token.o:          token.h eprintf.h db.h xwin.h rlgetc.h lex.h 
 xwin.o:           eventnames.h db.h xwin.h token.h eprintf.h rubber.h lex.h readmenu.h path.h 
