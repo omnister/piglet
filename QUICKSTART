@@ -21,7 +21,7 @@ Now you can add lines with "ADD L<layer> x1,y1 x2,y2...;", or other components.
 Remember that all commands must end in either right mouse click, a ";" character,
 or the name of another command.
 
-If you did a make install, you can get the top level man page with "man piglet"
+If you did a "make install", you can get the top level man page with "man piglet"
 
 There are a few other archives inside the cells directory.  The archive
 files have "_I" as a suffix.  You can unpack them in the same way as

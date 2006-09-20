@@ -109,7 +109,6 @@ rlgetc.o:         eprintf.h db.h xwin.h
 rubber.o:         rubber.h 
 selpnt.o:         db.h 
 selpoint.o:       stack.h 
-seltab.o:         db.h 
 seltest.o:        db.h 
 stack.o:          stack.h 
 token.o:          token.h eprintf.h db.h xwin.h rlgetc.h lex.h 
