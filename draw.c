@@ -1822,7 +1822,9 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
 
        if (code == 0) {
-	    ; /* do nothing */
+	   if (init == 2) {		/* process closing segment */
+	       clipr(init, 0.0, 0.0 ,bb,mode); 
+	   }
        } else if (code == 1) { 	/* leaving */
 	    clipr(0, bound, yold + m*(bound-xold),bb,mode); nout++;
        } else if (code == 2) { 	/* entering */
@@ -1833,9 +1835,6 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
     } 
 
-    if (init == 2) {		/* process closing segment */
- 	clipr(init, 0.0, 0.0 ,bb,mode); 
-    }
 
     xold=x; yold=y;
     oldstate = state;
@@ -1849,6 +1848,7 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
+    int debug=0;
     static int npts=0;
     static int nout;
     static double xold=0.0;
@@ -1898,7 +1898,9 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
 
        if (code == 0) {
-	    ; /* do nothing */
+	    if (init == 2) {		/* process closing segment */
+		clipt(init, 0.0, 0.0 ,bb,mode);
+	    }
        } else if (code == 1) { 	/* leaving */
 	    clipt(0, bound, yold + m*(bound-xold),bb,mode); nout++;
        } else if (code == 2) { 	/* entering */
@@ -1909,9 +1911,6 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
     } 
 
-    if (init == 2) {		/* process closing segment */
- 	clipt(init, 0.0, 0.0 ,bb,mode); 
-    }
 
     xold=x; yold=y;
     oldstate = state;
@@ -1925,6 +1924,7 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
+    int debug=0;
     static int npts=0;
     static int nout;
     static double xold=0.0;
@@ -1974,7 +1974,9 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
 
        if (code == 0) {
-	    ; /* do nothing */
+	    if (init == 2) {		/* process closing segment */
+	        clipb(init, 0.0, 0.0 ,bb,mode);
+	    }
        } else if (code == 1) { 	/* leaving */
 	    if (dx) {
 		clipb(0, xold + (bound-yold)/m, bound,bb,mode);	 nout++;
@@ -1993,9 +1995,6 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
     } 
 
-    if (init == 2) {		/* process closing segment */
- 	clipb(init, 0.0, 0.0 ,bb,mode); 
-    }
 
     xold=x; yold=y;
     oldstate = state;
@@ -2009,6 +2008,7 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
+    int debug=0;
     static int npts=0;
     static int nout;
     static double xold=0.0;
@@ -2027,7 +2027,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	yold = 0.0;
 	/* init next in chain: l,r,t,b */
 	if (debug) printf("#clipb initialized\n");
-	emit(1,0.0,0.0,bb,mode,bb,mode);  nout++;
+	emit(1,0.0,0.0,bb,mode);  nout++;
 	return;
     }  
 
@@ -2131,7 +2131,9 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 		    if (nseg == 1) {
 			ps_start_line(PLOT_FD, x, y);
 		    } else {
-			ps_continue_line(PLOT_FD, x, y);
+			if (x!=xxold || y!=yyold) {
+			    ps_continue_line(PLOT_FD, x, y);
+			}
 		    }
 		}
 		/* save coords for filling polygons later */
