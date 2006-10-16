@@ -1,7 +1,6 @@
-
-MANDIR="/usr/local/man/man1p";
-BINDIR="/usr/local/bin";
-LIBDIR="/usr/local/lib/piglet";
+MANDIR=/usr/local/man/man1p
+BINDIR=/usr/local/bin
+LIBDIR=/usr/local/lib/piglet
  
 OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        eprintf.o geom_circle.o geom_rect.o geom_line.o \
@@ -23,7 +22,7 @@ NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
 man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
-selpnt.c path.h path.c lock.c stack.c piglogo.d
+selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d
 
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
@@ -58,6 +57,7 @@ install: man/piglet.1p pig.bin
 	@echo "########################################################"
 	mkdir -p $(MANDIR)
 	cp man/*1p $(MANDIR)
+	-mv $(BINDIR)/pig.bin $(BINDIR)/pig.bin.bak
 	cp pig.bin  $(BINDIR)
 	cp pig  $(BINDIR)
 	mkdir -p $(LIBDIR)
@@ -67,49 +67,228 @@ install: man/piglet.1p pig.bin
 	cp MENUDATA_V $(LIBDIR)
 	cp piglogo.d $(LIBDIR)
 
-#------- dependencies (made with mkdep script) --------------
+depend: ${OBJ}
+	cp makefile makefile.bak
+	sed -n -e '1,/^# DO NOT DELETE OR MODIFY THIS LINE/p' makefile \
+                > newmakefile
+	grep '^#include[ 	]*"' *.c \
+                | sed -e 's/:#include[  "]*\([a-z0-9\._A-Z]*\).*/: \1/' \
+                | sed -e 's/\.c:/.o:/' \
+                | sort | uniq >> newmakefile
+	mv makefile makefile.bak
+	mv newmakefile makefile
 
-com_add.o:        rlgetc.h db.h token.h xwin.h lex.h 
-com_area.o:       rlgetc.h db.h token.h xwin.h lex.h rubber.h 
-com_change.o:     rlgetc.h db.h token.h xwin.h lex.h eprintf.h opt_parse.h 
-com_copy.o:       rlgetc.h db.h token.h xwin.h lex.h rubber.h 
-com_delete.o:     rlgetc.h db.h token.h xwin.h lex.h 
-com_distance.o:   db.h xwin.h token.h lex.h rubber.h rlgetc.h 
-com_edit.o:       rlgetc.h db.h token.h xwin.h lex.h 
-com_equate.o:     db.h xwin.h token.h lex.h rlgetc.h equate.h 
-com_ident.o:      db.h xwin.h token.h rubber.h lex.h rlgetc.h 
-com_move.o:       rlgetc.h db.h token.h xwin.h lex.h rubber.h 
-com_point.o:      db.h xwin.h token.h lex.h rlgetc.h 
-com_show.o:       db.h xwin.h token.h lex.h rlgetc.h 
-com_smash.o:      db.h xwin.h token.h rubber.h lex.h rlgetc.h 
-com_stretch.o:    db.h xwin.h token.h rubber.h lex.h rlgetc.h lock.h 
-com_stretch.orig.o:db.h xwin.h token.h rubber.h lex.h rlgetc.h lock.h 
-com_window.o:     db.h xwin.h token.h rubber.h lex.h rlgetc.h eprintf.h 
-com_wrap.o:       rlgetc.h db.h token.h xwin.h lex.h rubber.h 
-coords.o:         db.h 
-db.o:             db.h eprintf.h rlgetc.h token.h xwin.h readfont.h rubber.h rlgetc.h 
-draw.o:           db.h rubber.h xwin.h postscript.h eprintf.h equate.h 
-eprintf.o:        eprintf.h 
-equate.o:         db.h equate.h 
-geom_arc.o:       db.h token.h lex.h xwin.h rubber.h rlgetc.h opt_parse.h 
-geom_circle.o:    db.h xwin.h token.h rubber.h lex.h rlgetc.h opt_parse.h 
-geom_inst.o:      db.h xwin.h token.h rubber.h opt_parse.h rlgetc.h lex.h 
-geom_line.o:      db.h token.h lex.h xwin.h rubber.h rlgetc.h opt_parse.h lock.h 
-geom_poly.o:      db.h token.h lex.h xwin.h rubber.h rlgetc.h opt_parse.h 
-geom_rect.o:      db.h xwin.h token.h rubber.h lex.h rlgetc.h opt_parse.h 
-geom_text.o:      db.h xwin.h token.h rubber.h opt_parse.h rlgetc.h 
-lex.o:            rlgetc.h db.h token.h xwin.h lex.h eprintf.h readfont.h equate.h path.h rubber.h 
-lock.o:           lock.h db.h xwin.h 
-opt_parse.o:      db.h opt_parse.h eprintf.h 
-path.o:           path.h 
-postscript.o:     postscript.h 
-readfont.o:       readfont.h db.h 
-readmenu.o:       readmenu.h db.h 
-rlgetc.o:         eprintf.h db.h xwin.h 
-rubber.o:         rubber.h 
-selpnt.o:         db.h 
-selpoint.o:       stack.h 
-seltest.o:        db.h 
-stack.o:          stack.h 
-token.o:          token.h eprintf.h db.h xwin.h rlgetc.h lex.h 
-xwin.o:           eventnames.h db.h xwin.h token.h eprintf.h rubber.h lex.h readmenu.h path.h 
+#-----------------------------------------------------------------
+# DO NOT PUT ANY DEPENDENCIES AFTER THE NEXT LINE -- they will go away
+# DO NOT DELETE OR MODIFY THIS LINE -- make depend uses it
+com_add.o: db.h
+com_add.o: lex.h
+com_add.o: rlgetc.h
+com_add.o: token.h
+com_add.o: xwin.h
+com_area.o: db.h
+com_area.o: lex.h
+com_area.o: rlgetc.h
+com_area.o: rubber.h
+com_area.o: token.h
+com_area.o: xwin.h
+com_change.o: db.h
+com_change.o: eprintf.h
+com_change.o: lex.h
+com_change.o: opt_parse.h
+com_change.o: rlgetc.h
+com_change.o: token.h
+com_change.o: xwin.h
+com_copy.o: db.h
+com_copy.o: lex.h
+com_copy.o: rlgetc.h
+com_copy.o: rubber.h
+com_copy.o: token.h
+com_copy.o: xwin.h
+com_delete.o: db.h
+com_delete.o: lex.h
+com_delete.o: rlgetc.h
+com_delete.o: rubber.h
+com_delete.o: token.h
+com_delete.o: xwin.h
+com_distance.o: db.h
+com_distance.o: lex.h
+com_distance.o: rlgetc.h
+com_distance.o: rubber.h
+com_distance.o: token.h
+com_distance.o: xwin.h
+com_edit.o: db.h
+com_edit.o: lex.h
+com_edit.o: rlgetc.h
+com_edit.o: token.h
+com_edit.o: xwin.h
+com_equate.o: db.h
+com_equate.o: equate.h
+com_equate.o: lex.h
+com_equate.o: rlgetc.h
+com_equate.o: token.h
+com_equate.o: xwin.h
+com_ident.o: db.h
+com_ident.o: lex.h
+com_ident.o: rlgetc.h
+com_ident.o: rubber.h
+com_ident.o: token.h
+com_ident.o: xwin.h
+com_move.o: db.h
+com_move.o: lex.h
+com_move.o: lock.h
+com_move.o: rlgetc.h
+com_move.o: rubber.h
+com_move.o: token.h
+com_move.o: xwin.h
+com_point.o: db.h
+com_point.o: lex.h
+com_point.o: rlgetc.h
+com_point.o: token.h
+com_point.o: xwin.h
+com_show.o: db.h
+com_show.o: lex.h
+com_show.o: rlgetc.h
+com_show.o: token.h
+com_show.o: xwin.h
+com_smash.o: db.h
+com_smash.o: lex.h
+com_smash.o: rlgetc.h
+com_smash.o: rubber.h
+com_smash.o: token.h
+com_smash.o: xwin.h
+com_stretch.o: db.h
+com_stretch.o: lex.h
+com_stretch.o: lock.h
+com_stretch.o: rlgetc.h
+com_stretch.o: rubber.h
+com_stretch.o: token.h
+com_stretch.o: xwin.h
+com_window.o: db.h
+com_window.o: eprintf.h
+com_window.o: lex.h
+com_window.o: rlgetc.h
+com_window.o: rubber.h
+com_window.o: token.h
+com_window.o: xwin.h
+com_wrap.o: db.h
+com_wrap.o: lex.h
+com_wrap.o: rlgetc.h
+com_wrap.o: rubber.h
+com_wrap.o: token.h
+com_wrap.o: xwin.h
+coords.o: db.h
+db.o: db.h
+db.o: eprintf.h
+db.o: readfont.h
+db.o: rlgetc.h
+db.o: rubber.h
+db.o: token.h
+db.o: xwin.h
+draw.o: db.h
+draw.o: eprintf.h
+draw.o: equate.h
+draw.o: postscript.h
+draworig.o: db.h
+draworig.o: eprintf.h
+draworig.o: equate.h
+draworig.o: postscript.h
+draworig.o: rubber.h
+draworig.o: xwin.h
+draw.o: rubber.h
+draw.o: xwin.h
+eprintf.o: eprintf.h
+equate.o: db.h
+equate.o: equate.h
+geom_arc.o: db.h
+geom_arc.o: lex.h
+geom_arc.o: opt_parse.h
+geom_arc.o: rlgetc.h
+geom_arc.o: rubber.h
+geom_arc.o: token.h
+geom_arc.o: xwin.h
+geom_circle.o: db.h
+geom_circle.o: lex.h
+geom_circle.o: opt_parse.h
+geom_circle.o: rlgetc.h
+geom_circle.o: rubber.h
+geom_circle.o: token.h
+geom_circle.o: xwin.h
+geom_inst.o: db.h
+geom_inst.o: lex.h
+geom_inst.o: opt_parse.h
+geom_inst.o: rlgetc.h
+geom_inst.o: rubber.h
+geom_inst.o: token.h
+geom_inst.o: xwin.h
+geom_line.o: db.h
+geom_line.o: lex.h
+geom_line.o: lock.h
+geom_line.o: opt_parse.h
+geom_line.o: rlgetc.h
+geom_line.o: rubber.h
+geom_line.o: token.h
+geom_line.o: xwin.h
+geom_poly.o: db.h
+geom_poly.o: lex.h
+geom_poly.o: opt_parse.h
+geom_poly.o: rlgetc.h
+geom_poly.o: rubber.h
+geom_poly.o: token.h
+geom_poly.o: xwin.h
+geom_rect.o: db.h
+geom_rect.o: lex.h
+geom_rect.o: opt_parse.h
+geom_rect.o: rlgetc.h
+geom_rect.o: rubber.h
+geom_rect.o: token.h
+geom_rect.o: xwin.h
+geom_text.o: db.h
+geom_text.o: opt_parse.h
+geom_text.o: rlgetc.h
+geom_text.o: rubber.h
+geom_text.o: token.h
+geom_text.o: xwin.h
+lex.o: db.h
+lex.o: eprintf.h
+lex.o: equate.h
+lex.o: lex.h
+lex.o: path.h
+lex.o: readfont.h
+lex.o: rlgetc.h
+lex.o: rubber.h
+lex.o: token.h
+lex.o: xwin.h
+lock.o: db.h
+lock.o: lock.h
+lock.o: xwin.h
+opt_parse.o: db.h
+opt_parse.o: eprintf.h
+opt_parse.o: opt_parse.h
+path.o: path.h
+postscript.o: postscript.h
+readfont.o: db.h
+readfont.o: readfont.h
+readmenu.o: db.h
+readmenu.o: readmenu.h
+rlgetc.o: db.h
+rlgetc.o: eprintf.h
+rlgetc.o: xwin.h
+rubber.o: rubber.h
+selpnt.o: db.h
+stack.o: stack.h
+token.o: db.h
+token.o: eprintf.h
+token.o: lex.h
+token.o: rlgetc.h
+token.o: token.h
+token.o: xwin.h
+xwin.o: db.h
+xwin.o: eprintf.h
+xwin.o: eventnames.h
+xwin.o: lex.h
+xwin.o: path.h
+xwin.o: readmenu.h
+xwin.o: rubber.h
+xwin.o: token.h
+xwin.o: xwin.h

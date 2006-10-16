@@ -14,7 +14,7 @@ aap    |MOV |COP |CHA |
 ypy    |IDE |POI |LIS |
 ygg    |DISP |DIST |  |
 ggg    |DUM |PLO |ARC |
-ggy    |RET |    |INP |
+gby    |RET |SPL |INP |
 ggb    |ARE |WRA |GRO |
 ggr    |STR |SMA |PUR |
 yrr    |EDI |DEL |EXI |
