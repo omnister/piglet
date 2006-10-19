@@ -11,6 +11,9 @@
 
 static char promptbuf[128];
 
+void token_set_mode(LEXER *lp, int mode) {
+    lp->parse = mode;
+}
 
 LEXER *token_stream_open(FILE *fp, char *name)  {
     LEXER *lp;
@@ -20,6 +23,7 @@ LEXER *token_stream_open(FILE *fp, char *name)  {
     lp->token_stream = fp;
     lp->mode = MAIN;
     lp->line = 1;	/* keep track of line number for stream */
+    lp->parse = 0;	/* parsing mode: 0=normal, 1=raw */
     return (lp);
 }
 
@@ -83,11 +87,19 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
     char *w;
     int debug=0;
 
+
     if (lp->bufp > 0) {		/* characters in pushback buffer */
 	strcpy(word, lp->tokbuf[--(lp->bufp)].word);
 	free(lp->tokbuf[lp->bufp].word);
 	lp->tokbuf[lp->bufp].word = (char *) NULL;
 	return(lp->tokbuf[lp->bufp].tok);
+    }
+
+    w=word;
+    if (lp->parse) {	/* raw mode */
+	*w++ = (char) procXevent();
+	*w = '\0';
+	return(RAW);	/* simply bypass readline */
     }
 
     w=word;
@@ -184,7 +196,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		    continue;
 
 		/* took this out because of ambiguity with mouse */
-		/* clicks like "ADD L1MOV", 1MOV becam ident rather */
+		/* clicks like "ADD L1MOV", 1MOV became ident rather */
 		/* than 1 and MOV being parsed separately */
 
 		/* } else if (isalnum(c) || (c=='_') || (c=='.') ) {

@@ -37,7 +37,7 @@ int com_change(LEXER *lp, char *arg)
     int valid_comp=0;
     double optval;
     int i;
-    DB_DEFLIST *p_best;
+    DB_DEFLIST *p_best = NULL;
     DB_TAB *p_tab;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
@@ -183,6 +183,12 @@ int com_change(LEXER *lp, char *arg)
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
+
+		if (p_best != NULL) {
+		    db_highlight(p_best); 	/* unhighlight it */
+		    p_best = NULL; 
+		}
+
 		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);
@@ -190,6 +196,7 @@ int com_change(LEXER *lp, char *arg)
 		        case NOTE:
 			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.n->text);
 			    add_history(buf);
+		            /* token_set_mode(lp, 1);	set raw for testing */
 			    break;
 			case TEXT:
 			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.t->text);
@@ -330,6 +337,15 @@ int com_change(LEXER *lp, char *arg)
 		    printf("can't add text to this kind of component\n");
 		    state = END;
 		}
+	    } else if (token == RAW) {	/* FIXME: a stub for testing RAW mode */
+	        /* token_get(lp,word);
+		printf("RAW: %s <%02x>\n",word, (unsigned int) word[0]);
+		fflush(stdout);
+		if (word[0]=='x') {
+		    token_set_mode(lp, 0);
+		}
+		*/
+		token_set_mode(lp, 0);
 	    } else {
 		    state = START;
 	    }

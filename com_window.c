@@ -21,8 +21,8 @@ int com_window(LEXER *lp, char *arg)
 {
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
-    extern int fit, nest;
     double scale=1.0;	/* default scale */
+    extern int fit, nest;
     
     TOKEN token;
     int done=0;

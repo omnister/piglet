@@ -9,9 +9,9 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        com_add.o com_delete.o com_distance.o com_equate.o com_ident.o \
        com_copy.o com_move.o com_window.o com_point.o com_show.o postscript.o \
        com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o \
-       lock.o path.o stack.o selpnt.o
+       lock.o path.o stack.o selpnt.o license.o
 
-TARS =QUICKSTART AAA_README cells/tone_I cells/slic_I cells/GLINKV3_I \
+TARS =QUICKSTART AAA_README COPYING cells/tone_I cells/slic_I cells/GLINKV3_I \
 cells/H20919M1_I cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I\
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
@@ -22,7 +22,7 @@ NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
 man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
-selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d
+selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c
 
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger

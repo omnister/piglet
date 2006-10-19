@@ -202,6 +202,8 @@ char **argv;
 	return(err);
     }
 
+    license();			/* print GPL notice */
+
     initX();			/* create window, load MENUDATA */
 
     findfile(PATH, "NOTEDATA.F", buf);
@@ -225,6 +227,7 @@ char **argv;
     initialize_readline();
 
     initialize_equates();
+
 
     findfile(PATH, "PROCDATA.P", buf);
     if (buf[0] == '\0') {
@@ -256,6 +259,50 @@ char **argv;
     return(1);
 }
 
+void winfit() 
+{
+    double xmin,ymin,xmax,ymax;
+    double dx,dy;
+
+    if (currep != NULL ) {
+	xmin = currep->minx;
+	ymin = currep->miny;
+	xmax = currep->maxx;
+	ymax = currep->maxy;
+
+	dx=(xmax-xmin);
+        dy=(ymax-ymin);
+        xmin-=dx/40.0;
+        xmax+=dx/40.0;
+        ymin-=dy/40.0;
+        ymax+=dy/40.0;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    } 
+}
+
+void pan(double x1, double y1) 
+{
+    double xmin,ymin,xmax,ymax;
+    double dx,dy;
+
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+
+	dx=(xmax-xmin);
+	dy=(ymax-ymin);
+	xmin=x1-dx/2.0;
+	xmax=x1+dx/2.0;
+	ymin=y1-dy/2.0;
+	ymax=y1+dy/2.0;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    }
+}
+
 void parse(lp)
 LEXER *lp;
 {
@@ -266,6 +313,8 @@ LEXER *lp;
     int retcode;
     COMMAND *command;
     COMMAND * find_command();
+    int state = 0;
+    double x1, y1;
 
     while((token=token_get(lp, word)) != EOF) {
         if (debug) printf("%s, line %d: IN MAIN: got %s: %s\n", 
@@ -296,32 +345,69 @@ LEXER *lp;
 		break;
 	}                           
 
-	switch(token) {
-	    case CMD:	/* find and call the command */
-		command = find_command(word);
-		if (command == NULL) {
-		    printf(" bad command\n");
-		    token_flush_EOL(lp);
-		} else {
-		    if (debug) printf("MAIN: found command\n");
+	switch(state) {
+	    case 0:
+		switch(token) {
+		    case CMD:	/* find and call the command */
+			command = find_command(word);
+			if (command == NULL) {
+			    printf(" bad command\n");
+			    token_flush_EOL(lp);
+			} else {
+			    if (debug) printf("MAIN: found command\n");
 
-    		    rl_saveprompt();
-		    sprintf(buf, "%s> ", command->name);
-		    rl_setprompt(buf);
+			    rl_saveprompt();
+			    sprintf(buf, "%s> ", command->name);
+			    rl_setprompt(buf);
 
-		    retcode = ((*(command->func)) (lp, "")); /* call command */
+			    retcode = ((*(command->func)) (lp, "")); /* call command */
 
-                    rl_restoreprompt();
+			    rl_restoreprompt();
+			}
+			break;
+		    case EOL:
+		    case END:
+		    case COMMA:
+			break;
+		    case EOC:
+			winfit();
+			break;
+		    case NUMBER:
+			if(sscanf(word, "%lg", &x1) != 1) {
+			    weprintf("bad number: %s\n", word);
+			}
+			state=1;
+			break;
+		    default:
+			printf("MAIN: expected COMMAND, got %s: %s\n",
+				tok2str(token), word);
+			token_flush_EOL(lp);
+			break;
 		}
 		break;
-	    case EOL:
-	    case END:
-	    case EOC:
-		break;
-	    default:
-		printf("MAIN: expected COMMAND, got %s: %s\n",
-			tok2str(token), word);
-		token_flush_EOL(lp);
+	    case 1:
+	       if (token == COMMA) {
+		   state=2;
+	       } else {
+		   token_unget(lp, token, word);
+	           state=0;
+	       } 
+	       break;
+	    case 2:
+	       if (token == NUMBER) {
+		   if(sscanf(word, "%lg", &y1) != 1) {
+		        weprintf("bad number: %s\n", word);
+		   }
+		   pan(x1,y1);
+	           state=0;
+	       } else {
+		   token_unget(lp, token, word);
+	           state=0;
+	       }
+	       break;
+	   default:
+	   	printf("bad case in lex()\n");
+		state=0;
 		break;
 	}
     }

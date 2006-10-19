@@ -496,3 +496,4 @@ void do_oval(), do_poly(), do_rect(), do_text();
 void xform_point(XFORM *xp, double *xx, double *yy); 
 XFORM *matrix_from_opts(OPTS *opts);
 
+void license();		/* from license.h */

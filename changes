@@ -1,4 +1,4 @@
-for file in *.c *.h Makefile NOTE* TEXT* AAA_README
+for file in *.c *.h Makefile MENU* PROC* NOTE* TEXT* AAA_README QUICKSTART piglogo.d
 do
     rcsdiff $file >/tmp/$file.changes 2>&1
     if [ $? != 0 ] 

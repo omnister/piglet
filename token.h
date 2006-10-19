@@ -11,6 +11,7 @@ typedef enum {
     BACK,	/* backup "^" */
     COMMA,	/* comma */
     END,	/* end of file */
+    RAW,	/* individual character mode */
     UNKNOWN	/* unknown token */
 } TOKEN;
 
@@ -34,6 +35,7 @@ typedef struct lexer {
     int bufp;			/* next free position in buf */
     int mode;			/* MAIN, EDI, PRO, ... etc */
     int line;			/* line number */
+    int parse;			/* parse mode: 0=normal, 1=raw */
 } LEXER;
 
 extern TOKEN  token_get(LEXER *lp, char *word);
@@ -45,3 +47,4 @@ extern int    token_flush(LEXER *lp);
 extern int    token_flush_EOL(LEXER *lp);
 extern int    token_err(char *module, LEXER *lp, char *expected, TOKEN token);
 extern char  *tok2str(TOKEN token);
+extern void   token_set_mode(LEXER *lp, int mode);

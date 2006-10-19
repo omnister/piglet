@@ -16,6 +16,17 @@ All the piglet built-in commands can be abbreviated to just three
 letters with one exception.  DISPLAY must be entered as "DISP" or "disp"
 to distinguish it from "DIStance". 
 
+Piglet makes use of the mouse scroll wheel if it exists.  Scrolling the
+mouse zooms in or out of the current x,y location.  By moving the mouse
+location while zooming it is possible to quickly zoom into any portion
+of a drawing.  Zooming can be used in the middle of an ADD command.  For
+example, one can mouse the starting coordinate of a line, zoom across
+the design, and then click the next coordinate. 
+
+When the editor is idle and not processing any command, the a right
+mouse click will "fit window" and a left click will recenter the display
+to the selected point. 
+
 Anything typed at the command line goes into a readline buffer.  
 A vi command history binding can be obtained by adding the lines
 

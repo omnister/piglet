@@ -167,7 +167,7 @@ int add_poly(LEXER *lp, int *layer)
 			coord_swap_last(CP, x1, y1);
 			coord_append(CP, x1,y1);
 			rubber_set_callback(draw_poly);
-			rubber_draw(x1,y1);
+			rubber_draw(x1,y1, 0);
 			state = NUM1;	/* loop till EOC */
 		    }
 		} else if (token == EOL) {

@@ -33,6 +33,12 @@ void clipl();   	  /* polygon clipping pipeline: clip left side */
 void clipr();   	  /* clip right side */
 void clipt();		  /* clip top */
 void clipb();		  /* clip bottom */
+void clip_setwindow();	  /* set clipping window */
+
+static double xmin;
+static double xmax;
+static double ymin;
+static double ymax;
 
 
 int pickcheck();
@@ -1292,7 +1298,7 @@ DB_DEFLIST *p;			/* component to display */
 	do_line(p, &bb, D_RUBBER);
 	break;
     case NOTE:  /* note definition */
-	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	/* db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER); */
 	xwin_draw_origin(p->u.n->x, p->u.n->y);
 	do_note(p, &bb, D_RUBBER);
 	break;
@@ -1307,7 +1313,7 @@ DB_DEFLIST *p;			/* component to display */
 	do_rect(p, &bb, D_RUBBER);
 	break;
     case TEXT:  /* text definition */
-	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	/* db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER); */
 	xwin_draw_origin(p->u.t->x, p->u.t->y);
 	do_note(p, &bb, D_RUBBER);
 	break;
@@ -1551,6 +1557,9 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     	return(0);
     }
 
+    /* clip to two pixels inside of actual window so we can see enclosing polys */
+    clip_setwindow(2.0, 2.0, (double) (g_width-3), (double) (g_height-3));
+
     if (nest == 0) {
 	unity_transform.r11 = 1.0;
 	unity_transform.r12 = 0.0;
@@ -1767,6 +1776,29 @@ int y;
     }
 }
 
+
+void clip_setwindow(x1, y1, x2, y2)
+double x1, y1, x2, y2;
+{
+    extern double xmin, ymin, xmax, ymax;
+    if (x1 < x2) {
+        xmin=x1;
+        xmax=x2;
+    } else {
+        xmin=x2;
+        xmax=x1;
+    }
+    if (y1 < y2) {
+        ymin=y1;
+        ymax=y2;
+    } else {
+        ymin=y2;
+        ymax=y1;
+    }
+    if (debug) printf("#set clip window: %g %g %g %g\n", xmin, ymin, xmax, ymax);
+}
+
+
 void clipl(init, x, y, bb, mode) 
 int init;
 double x;
@@ -1775,43 +1807,37 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
-    int debug=0;
     static int npts=0;
-    static int nout;
     static double xold=0.0;
     static double yold=0.0;
     static double xorig, yorig;
+    static int oldinside;
     double dx, dy, m;
-    static int oldstate;
     double bound;
-    int state, code;
+    int inside, code;
 
     npts++;
 	
     if (init == 1) {
-    	npts = 0; nout = 0;
-	/* init next in chain: l,r,t,b */
-	if (debug) printf("#clipl initialized\n");
+    	npts = 0; xold = 0.0; yold = 0.0;
 	clipr(1,0.0,0.0,bb,mode);  	/* CUSTOMIZE */
 	return;
     }  
 
-    if (debug) printf("#clipl got: %g %g\n", x, y);
-    bound = -10.0;	/* CUSTOMIZE */
-    bound = 0.0;	/* CUSTOMIZE */
+    if (debug) printf("#clipl got: %g %g: init %d\n", x, y, init);
+    bound = xmin;
 
     if (init == 2) {		/* process closing segment */
-       x = xorig;
-       y = yorig;
+       x = xorig; y = yorig;
     }
 
-    state = (x > bound);
-    code = oldstate+2*state;
+    inside = (x > bound);	/* CUSTOMIZE */
+    code = oldinside+2*inside;
 	
     if (npts == 1) {
 	xorig = x; yorig = y;
-    	if (state) {
-       	    clipr(0, x, y,bb,mode);  nout++;
+    	if (inside) {
+       	   clipr(0, x, y,bb,mode);  
 	}
     } else if (npts > 1) {
        dx = x-xold; dy = y-yold;
@@ -1821,23 +1847,24 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	  m = 1.0;
        }
 
-       if (code == 0) {
-	   if (init == 2) {		/* process closing segment */
-	       clipr(init, 0.0, 0.0 ,bb,mode); 
-	   }
+       if (code == 0) {		/* both outside */
+            ;
        } else if (code == 1) { 	/* leaving */
-	    clipr(0, bound, yold + m*(bound-xold),bb,mode); nout++;
+	    clipr(0, bound, yold + m*(bound-xold),bb,mode); 
        } else if (code == 2) { 	/* entering */
-	    clipr(0, bound, yold + m*(bound-xold),bb,mode); nout++;
-	    clipr(0, x, y,bb,mode); nout++;			
+	    clipr(0, bound, yold + m*(bound-xold),bb,mode); 
+	    clipr(0, x, y,bb,mode); 
        } else if (code == 3) {	/* both points inside */
-	    clipr(0, x, y,bb,mode); nout++;
+	    clipr(0, x, y,bb,mode); 
        }
     } 
 
+    if (init == 2) {		/* process closing segment */
+	clipr(init, 0.0, 0.0 ,bb,mode); 
+    }
 
     xold=x; yold=y;
-    oldstate = state;
+    oldinside = inside;
 }
 
 void clipr(init, x, y, bb, mode) 
@@ -1848,72 +1875,64 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
-    int debug=0;
     static int npts=0;
-    static int nout;
     static double xold=0.0;
     static double yold=0.0;
     static double xorig, yorig;
+    static int oldinside;
     double dx, dy, m;
-    static int oldstate;
     double bound;
-    int state, code;
+    int inside, code;
 
     npts++;
 	
     if (init == 1) {
-    	npts = 0; nout = 0;
-	xold = 0.0;
-	yold = 0.0;
-	/* init next in chain: l,r,t,b */
-	if (debug) printf("#clipr initialized\n");
-	clipt(1,0.0,0.0,bb,mode);  nout++;
+    	npts = 0; xold = 0.0; yold = 0.0;
+	clipt(1,0.0,0.0,bb,mode);  
 	return;
     }  
 
-    if (debug) printf("#clipr got: %g %g\n", x, y);
-    bound = (double) (g_width+10); 		/* CUSTOMIZE */
-    bound = (double) (g_width); 		/* CUSTOMIZE */
+    if (debug) printf("#clipr got: %g %g: init %d\n", x, y, init);
+    bound = xmax;
 
     if (init == 2) {		/* process closing segment */
-       x = xorig;
-       y = yorig;
+       x = xorig; y = yorig;
     }
 
-    state  = (x < bound); 		/* CUSTOMIZE */
-    code = oldstate+2*state;
+    inside = (x < bound); 		/* CUSTOMIZE */
+    code = oldinside+2*inside;
 
     if (npts == 1) {
 	xorig = x; yorig = y;
-    	if (state) {
-	   clipt(0, x, y,bb,mode); nout++;
+    	if (inside) {
+	   clipt(0, x, y,bb,mode); 
 	}
     } else if (npts > 1) {
-       dx = x-xold;
-       dy = y-yold;
+       dx = x-xold; dy = y-yold;
        if (dx != 0.0) {
 	  m = dy/dx;
        } else {
 	  m = 1.0;
        }
 
-       if (code == 0) {
-	    if (init == 2) {		/* process closing segment */
-		clipt(init, 0.0, 0.0 ,bb,mode);
-	    }
+       if (code == 0) {		/* both outside */
+	    ;
        } else if (code == 1) { 	/* leaving */
-	    clipt(0, bound, yold + m*(bound-xold),bb,mode); nout++;
+	    clipt(0, bound, yold + m*(bound-xold),bb,mode); 
        } else if (code == 2) { 	/* entering */
-	    clipt(0, bound, yold + m*(bound-xold),bb,mode); nout++;
-	    clipt(0, x, y,bb,mode); nout++;			
+	    clipt(0, bound, yold + m*(bound-xold),bb,mode); 
+	    clipt(0, x, y,bb,mode); 
        } else if (code == 3) {	/* both points inside */
-	    clipt(0, x, y,bb,mode); nout++;
+	    clipt(0, x, y,bb,mode); 
        }
     } 
 
+    if (init == 2) {		/* process closing segment */
+	clipt(init, 0.0, 0.0 ,bb,mode);
+    }
 
     xold=x; yold=y;
-    oldstate = state;
+    oldinside = inside;
 }
 
 void clipt(init, x, y, bb, mode) 
@@ -1924,49 +1943,40 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
-    int debug=0;
     static int npts=0;
-    static int nout;
     static double xold=0.0;
     static double yold=0.0;
     static double xorig, yorig;
+    static int oldinside;
     double dx, dy, m;
-    static int oldstate;
     double bound;
-    int state, code;
+    int inside, code;
 
     npts++;
 	
     if (init == 1) {
-    	npts = 0; nout = 0;
-	xold = 0.0;
-	yold = 0.0;
-	/* init next in chain: l,r,t,b */
-	if (debug) printf("#clipt initialized\n");
-	clipb(1,0.0,0.0,bb,mode);  nout++;
+    	npts = 0; xold = 0.0; yold = 0.0;
+	clipb(1,0.0,0.0,bb,mode);  
 	return;
     }  
 
-    if (debug) printf("#clipt got: %g %g\n", x, y);
-    bound = (double) (g_height + 10); 		/* CUSTOMIZE */
-    bound = (double) (g_height); 		/* CUSTOMIZE */
+    if (debug) printf("#clipt got: %g %g: init %d\n", x, y, init);
+    bound = ymax;
 
     if (init == 2) {		/* process closing segment */
-       x = xorig;
-       y = yorig;
+       x = xorig; y = yorig;
     }
 
-    state = (y < bound); 	/* CUSTOMIZE */
-    code = oldstate+2*state;
+    inside = (y < bound); 	/* CUSTOMIZE */
+    code = oldinside+2*inside;
 
     if (npts == 1) {
 	xorig = x; yorig = y;
-    	if (state) {
+    	if (inside) {
 	   clipb(0, x, y,bb,mode); 
 	}
     } else if (npts > 1) {
-       dx = x-xold;
-       dy = y-yold;
+       dx = x-xold; dy = y-yold;
        if (dx != 0.0) {
 	  m = dy/dx;
        } else {
@@ -1974,30 +1984,31 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
 
        if (code == 0) {
-	    if (init == 2) {		/* process closing segment */
-	        clipb(init, 0.0, 0.0 ,bb,mode);
-	    }
+	    ;
        } else if (code == 1) { 	/* leaving */
 	    if (dx) {
-		clipb(0, xold + (bound-yold)/m, bound,bb,mode);	 nout++;
+		clipb(0, xold + (bound-yold)/m, bound,bb,mode);	 
 	    } else {
-		clipb(0, xold, bound,bb,mode); nout++;
+		clipb(0, xold, bound,bb,mode); 
 	    }
        } else if (code == 2) { 	/* entering */
 	    if (dx) {
-		clipb(0, xold + (bound-yold)/m, bound,bb,mode);	nout++;
+		clipb(0, xold + (bound-yold)/m, bound,bb,mode);	
 	    } else {
-		clipb(0, xold, bound,bb,mode);	nout++;
+		clipb(0, xold, bound,bb,mode);	
 	    }
-	    clipb(0, x, y,bb,mode);  nout++;
+	    clipb(0, x, y,bb,mode);  
        } else if (code == 3) {	/* both points inside */
-	    clipb(0, x, y,bb,mode);  nout++;
+	    clipb(0, x, y,bb,mode);  
        }
     } 
 
+    if (init == 2) {		/* process closing segment */ 
+        clipb(init, 0.0, 0.0 ,bb,mode);
+    }
 
     xold=x; yold=y;
-    oldstate = state;
+    oldinside = inside;
 }
 
 void clipb(init, x, y, bb, mode) 
@@ -2008,49 +2019,40 @@ BOUNDS *bb;		   /* bounding box */
 int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
 {
-    int debug=0;
     static int npts=0;
-    static int nout;
     static double xold=0.0;
     static double yold=0.0;
     static double xorig, yorig;
+    static int oldinside;
     double dx, dy, m;
-    static int oldstate;
     double bound;
-    int state, code;
+    int inside, code;
 
     npts++;
 	
     if (init == 1) {
-    	npts = 0; nout = 0;
-	xold = 0.0;
-	yold = 0.0;
-	/* init next in chain: l,r,t,b */
-	if (debug) printf("#clipb initialized\n");
-	emit(1,0.0,0.0,bb,mode);  nout++;
+    	npts = 0; xold = 0.0; yold = 0.0;
+	emit(1,0.0,0.0,bb,mode);  
 	return;
     }  
 
-    if (debug) printf("#clipb got: %g %g\n", x, y);
-    bound = -10.0; 		/* CUSTOMIZE */
-    bound = 0.0; 		/* CUSTOMIZE */
+    if (debug) printf("#clipb got: %g %g: init %d\n", x, y, init);
+    bound = ymin;
 
     if (init == 2) {		/* process closing segment */
-       x = xorig;
-       y = yorig;
+       x = xorig; y = yorig;
     }
 
-    state = (y > bound);		/* CUSTOMIZE */
-    code = oldstate+2*state;
+    inside = (y > bound);		/* CUSTOMIZE */
+    code = oldinside+2*inside;
 
     if (npts == 1) {
 	xorig = x; yorig = y;
-    	if (state) {
-	   emit(0, x, y,bb,mode);  nout++;
+    	if (inside) {
+	   emit(0, x, y,bb,mode);  
 	}
     } else if (npts > 1) {
-       dx = x-xold;
-       dy = y-yold;
+       dx = x-xold; dy = y-yold;
        if (dx != 0.0) {
 	  m = dy/dx;
        } else {
@@ -2058,27 +2060,31 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
        }
 
        if (code == 0) {
-	    ; /* do nothing */
+            ;
        } else if (code == 1) { 	/* leaving */
 	    if (dx) {
-		emit(0, xold + (bound-yold)/m, bound,bb,mode);	nout++;
+		emit(0, xold + (bound-yold)/m, bound,bb,mode);	
 	    } else {
-		emit(0, xold, bound,bb,mode); nout++;
+		emit(0, xold, bound,bb,mode); 
 	    }
        } else if (code == 2) { 	/* entering */
 	    if (dx) {
-		emit(0, xold + (bound-yold)/m, bound,bb,mode);	nout++;
+		emit(0, xold + (bound-yold)/m, bound,bb,mode);	
 	    } else {
-		emit(0, xold, bound,bb,mode);	nout++;
+		emit(0, xold, bound,bb,mode);	
 	    }
-	    emit(0, x, y,bb,mode); nout++;
+	    emit(0, x, y,bb,mode); 
        } else if (code == 3) {	/* both points inside */
-	    emit(0, x, y,bb,mode); nout++;
+	    emit(0, x, y,bb,mode); 
        }
     } 
 
+    if (init == 2) {
+         emit(init, 0.0, 0.0 ,bb,mode);
+    }
+
     xold=x; yold=y;
-    oldstate = state;
+    oldinside = inside;
 }
 
 void emit(init, x, y, bb, mode) 
@@ -2091,16 +2097,23 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     static int nseg=0; 
     static double xxold = 0.0;
     static double yyold = 0.0;
+    static double xorig, yorig;
     double xp, yp;
     int debug=0;
 
+    if (debug) printf("#emit got: %g %g\n", x, y);
+
     nseg++;
+
+    if (nseg == 1) {
+	xorig = x; yorig = y;
+    }
 
     if (init == 1) {
     	nseg = 0;
-    } 
-
-    if (debug) printf("#emit got: %g %g\n", x, y);
+    } else if (init == 2) {
+       x = xorig; y = yorig;	/* close the polygon */
+    }
 
     if (nseg && mode != D_READIN) {
 	if (mode == D_PICK) {   /* no drawing just pick checking */
@@ -2212,11 +2225,12 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     /* extreme zooming on a large drawing.  When the transformed points */
     /* exceeded ~2^18, the X11 routines would overflow and the improperly */
     /* clipped lines would alias back onto the screen...  Adding the */
-    /* Cohen-Sutherland clipper completely eliminated this problem. */
-    /* I couldn't find the dynamic range of Xlib documented anywhere. */
-    /* I was surprised that the range was not equal to the full 2^32 bit */
-    /* range of an unsigned int (RCW). Note: 12/28/2004 I did see a reference */
-    /* to a 16 bit limitation for primitives in Xlib in the O'Reilly book */
+    /* Cohen-Sutherland (and later Cohen-Hodgman) clipper completely */
+    /* eliminated this problem.  I couldn't find the dynamic range of Xlib */
+    /* documented anywhere.  I was surprised that the range was not equal */
+    /* to the full 2^32 bit range of an unsigned int (RCW). Note: 12/28/2004 */
+    /* I did see a reference to a 16 bit limitation for primitives in Xlib */
+    /* in the O'Reilly book */
 
     if (mode != D_READIN) {
 	if (!nseg) {

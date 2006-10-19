@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.41 2006/09/20 20:52:56 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.42 2006/10/19 05:10:36 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -74,6 +74,8 @@ int grid_color = 1;	/* 1 through 6 for different colors */
 int grid_notified = 0;
 
 int need_redraw=0;
+
+static double x,y;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -472,6 +474,11 @@ void dosplash() {
 	x2 = splashrep->vp_xmax;
 	y2 = splashrep->vp_ymax;
 
+	x1 = splashrep->minx; 
+	y1 = splashrep->miny;
+	x2 = splashrep->maxx;
+	y2 = splashrep->maxy;
+	
         grid_xd = splashrep->grid_xd;
         grid_yd = splashrep->grid_yd;
         grid_xs = splashrep->grid_xs;
@@ -485,7 +492,7 @@ void dosplash() {
 	if (wratio > dratio) {	/* world is taller,skinnier than display */
 	    scale=0.9*((double) g_height)/(y2-y1);
 	} else {			/* world is shorter,fatter than display */
-	    scale=0.9*((double) g_height)/(y2-y1);
+	    scale=0.9*((double) g_width)/(x2-x1);
 	}
 
 	xoffset = (((double) g_width)/2.0) -  ((x1+x2)/2.0)*scale;
@@ -495,10 +502,8 @@ void dosplash() {
 
 }
 
-static double x,y;
 
-int procXevent(fp)
-FILE *fp;
+int procXevent()
 {
     /* readline select stuff */
     int nf, nfds, cn, in; 
@@ -529,7 +534,7 @@ FILE *fp;
 		    currep->grid_xs, currep->grid_ys, 
 		    currep->grid_xo, currep->grid_yo);
 		if (xwin_display_state() == D_ON) {
-		    rubber_draw(x, y); 
+		    rubber_draw(x, y, 1); 
 		}
 		XFlush(dpy);
 	    } else {
@@ -572,6 +577,30 @@ FILE *fp;
     }
 }
 
+void zoom(int dir, double scale)
+{
+    double xmin,ymin,xmax,ymax;
+    extern double x,y;
+
+    if (dir < 0) {
+       scale = 1.0/scale;
+    }
+
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+
+	xmin=x-(x-xmin)*scale;
+	xmax=x+(xmax-x)*scale;
+	ymin=y-(y-ymin)*scale;
+	ymax=y+(ymax-y)*scale;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    }
+}
+
 void xwin_doXevent(s)
 char **s;
 {
@@ -581,6 +610,7 @@ char **s;
     int debug=0;
 
     static char buf[BUF_SIZE];
+    static char tmp[BUF_SIZE];
     static double xold,yold;
     unsigned long all = 0xffffffff;
 
@@ -588,7 +618,7 @@ char **s;
     static char keybuf[10];
     static int keybufsize=10;
     KeySym keysym;
-    XComposeStatus compose;
+    XComposeStatus *compose;
     BOUNDS bb;
 
     if (need_redraw) {
@@ -601,7 +631,7 @@ char **s;
 		currep->grid_xs, currep->grid_ys,
 		currep->grid_xo, currep->grid_yo);
 	    if (xwin_display_state() == D_ON) {
-		rubber_draw(x, y);
+		rubber_draw(x, y, 1);
 	    }
 	    XFlush(dpy);
 	} else {
@@ -627,7 +657,7 @@ char **s;
 
 	    if (xold != x || yold != y) {
 		if (xwin_display_state() == D_ON && xe.xmotion.window == win) {  /* RCW */
-		    rubber_draw(x, y);
+		    rubber_draw(x, y, 0);
 		}
 		xold=x;
 		yold=y;
@@ -721,6 +751,13 @@ char **s;
 			sprintf(buf," ;\n");
 			*s = buf;
 			break;
+		    case 4: /* mouse scroll button (up/out) */
+		    	zoom(1,1.2);
+			break;
+		    case 5: /* mouse scroll button (in/down) */
+		    	zoom(-1,1.1);
+			break;
+			/* RIGHT button returns EOC */
 		    default:
 			/* just ignore unexpected events... */
 			/* my laptop touchpad mouse makes random */
@@ -755,10 +792,16 @@ char **s;
 	case KeyPress:
 	    if (debug) printf("EVENT LOOP: got KeyPress\n");
 	    charcount = XLookupString((XKeyEvent * ) &xe, keybuf, 
-			    keybufsize, &keysym, &compose);
+			    keybufsize, &keysym, compose);
 
 	    if (charcount >= 1) {
 		*s = keybuf;
+	    } else {
+		if (compose == NULL) {
+		    tmp[0]=(char) ((char)keysym - 64);
+		    tmp[1]='\0';
+		    *s = tmp;
+	        }
 	    }
 	    
 	    break;
@@ -1481,7 +1524,7 @@ double x1,y1,x2,y2;
 	if (currep != NULL) {
 	    currep->scale=((double) g_width)/(x2-x1);
 	} else {
-	    scale=((double) g_height)/(y2-y1);
+	    scale=((double) g_width)/(x2-x1);
 	}
     }
 

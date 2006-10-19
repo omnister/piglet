@@ -44,7 +44,7 @@ int fonttab[2][256];
 int xdef[2][MAXPOINT];
 int ydef[2][MAXPOINT];
 
-int fillable[2] = {0,0};
+int fillable[2] = {0,1};
 
 void writechar(c,x,y,xf,id,bb,mode)
 int c;
@@ -261,8 +261,9 @@ int *py;
 
     eatwhite(fp);
     if ((c=getc(fp)) != ',') {
-	fprintf(stderr,"error at line %d: expected a comma\n", line);
-	exit(2);
+	ungetc(c,fp);
+	/* make comma optional to read graffy fonts */
+	/* fprintf(stderr,"error at line %d: expected a comma\n", line); exit(2); */
     }
 
     eatwhite(fp);

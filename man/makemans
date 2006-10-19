@@ -1,6 +1,6 @@
 cat commandlist | awk '
     BEGIN {
-    	version = "0.6"
+    	version = "0.8"
 	author = "Rick Walker (walker AT omnisterra DOT com)"
 	webhome = "http://www.omnisterra.com/walker/linux/piglet/intro.htm"
 	inblank=0
@@ -83,7 +83,7 @@ function dumpman() {
     	print ".TH " fullname, "1P \"PD Piglet Users Manual\"" > manname
 	print ".ad b" >> manname
 	print ".SH NAME" >> manname
-	print fullname, desc >> manname
+	print fullname, "-", desc >> manname
 	print ".SH SYNOPSIS" >> manname
 	print "\\fB" usage "\\fR">>manname
 	print ".SH DESCRIPTION" >> manname
@@ -111,6 +111,6 @@ END {
 
 '
 
-cp *1p /usr/local/man/man1p
+#cp *1p /usr/local/man/man1p
 
 exit 0

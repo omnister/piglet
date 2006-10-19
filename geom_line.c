@@ -153,7 +153,7 @@ int add_line(LEXER *lp, int *layer)
 		    token_get(lp,word); 	/* eat it */
 		    if (debug) printf("dropping coord\n");
 		    rubber_clear_callback(); 
-		    rubber_draw(x2, y2);
+		    rubber_draw(x2, y2, 0);
 		    printf("num coords %d\n", coord_count(CP));
 		    if ((count = coord_count(CP)) >= 3) {
 			coord_drop(CP);  /* drop last coord */
@@ -164,7 +164,7 @@ int add_line(LEXER *lp, int *layer)
 		    	printf("can't drop last point!\n");
 		    }
 		    rubber_set_callback(draw_line); 
-		    rubber_draw(x2, y2);
+		    rubber_draw(x2, y2, 0);
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
@@ -226,7 +226,7 @@ int add_line(LEXER *lp, int *layer)
 			coord_append(CP, x2,y2);
 			setlockpoint(x2,y2);
 			rubber_set_callback(draw_line);
-			rubber_draw(x2,y2);
+			rubber_draw(x2,y2, 0);
 			state = NUM3;	/* loop till EOC */
 		    }
 

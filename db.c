@@ -2174,13 +2174,18 @@ int mode; 	/* drawing mode */
 
 		jump(bb,mode);
 	    
-		draw(xa, ya, bb, mode);
-		draw(xb, yb, bb, mode);
 
 		if( width != 0) {
+		    startpoly(bb,mode);
+		    draw(xa, ya, bb, mode);
+		    draw(xb, yb, bb, mode);
 		    draw(xc, yc, bb, mode);
 		    draw(xd, yd, bb, mode);
 		    draw(xa, ya, bb, mode);
+		    endpoly(bb,mode);
+		} else {
+		    draw(xa, ya, bb, mode);
+		    draw(xb, yb, bb, mode);
 		}
 
 		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */

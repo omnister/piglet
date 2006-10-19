@@ -67,9 +67,11 @@ void rubber_clear_callback()
  *  all calls with count >0.  
  */
 
-void rubber_draw(x,y)
+void rubber_draw(x,y,init)
 double x, y;
+int init;
 {
+    if (init) count=0;
     int debug=0;
     if (rubber_callback != NULL) {
 	if (debug) printf("rubber_draw: drawing: %g %g %d\n", x,y, count); 
