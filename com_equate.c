@@ -67,8 +67,19 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 			} 
 			if (debug) printf("got mask %s\n", word+2);
 		        break;
-		    case 'O':	/* fill flag */
-			fill=1;;
+		    case '0':	/* fill flag */
+			if (fill == 0) {
+			    fill=1;
+			}
+			break;
+		    case 'F':	/* fill flag */
+			fill = atoi(word+2);
+			if (fill < 0 || fill > 7) {
+			    printf("EQUATE: bad fill: %c\n", word[2]);
+			    done++;
+			    token_flush_EOL(lp);
+			} 
+			if (debug) printf("got fill %s\n", word+2);
 		        break;
 		    case 'B':	/* boundary */
 		    case 'D':	/* detail */

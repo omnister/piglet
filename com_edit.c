@@ -169,26 +169,26 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    show_init(currep);
 		    need_redraw++;
 
-		  /* 
-		  should decompose this into routines
-		  FILE *search(char *cellname);
-    		  readin(FILE *fp); 
-		  */
+		    /* 
+		    should decompose this into routines
+		    FILE *search(char *cellname);
+		    readin(FILE *fp); 
+		    */
 
 		    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
 
 		    if (readin(buf,1,EDI) == 0) {   /* cannot find copy on disk */
 			if (debug) printf("calling dowin 1\n");
-			do_win(lp, 4, -100.0, -100.0, 100.0, 100.0, 1.0);
+			do_win(lp, 4, -150.0, -150.0, 150.0, 150.0, 1.0);
 			if (old_rep == NULL ) {
 			    currep->being_edited = 1;
 			} else {
 			    /* push the stack */
 			    currep->being_edited = old_rep->being_edited+1;
 			}
-		    } else { 	/* found copy on disk so read it in */
-
-			if (debug) printf("calling dowin 2\n");
+		    } else { 	/* found copy and read it in */
+			if (debug) printf("calling dowin 2: %g %g %g %g\n", 
+				currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax);
 			do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax, 1.0); 
 			currep->modified = 0;
 

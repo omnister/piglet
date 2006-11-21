@@ -4,6 +4,10 @@ Compiling and Installing
 
 OK.  Just type "make" and you should have a working piglet.
 
+You can play with it in the src directory until you decide
+you like it.  Then you can run "make install" with sufficient
+priviledges to create and write in /usr/local/bin and /usr/local/man/man1.
+
 Getting Started
 ---------------
 
@@ -31,14 +35,14 @@ in the add line command to continue adding lines until you finally are
 ready to do something different.
 
 Anything that you can type, you can also enter by clicking on the menu.
-Piglet's graphical language is identical to it's command line language,
+Piglet's graphical language is identical to its command line language,
 so you can either type "ADD R6 x1,y1 x2,y2;" or you can click the
 mouse on "ADD" "R" "6" and then mouse the two coordinates.  
 
 Usually, it is only necessary to type on the keyboard for entering the
 names of cells, and for entering TEXT and NOTE strings.
 
-So open a piglet window and let's go through a tour of some commands:
+Open a piglet window and let's go through a tour of some commands:
 
 
 ----------------- GRID ---------------------
@@ -213,6 +217,12 @@ simplify things by using the ":N<nest_level>" of the WIN command.  "WIN
 :N0" will show all sub-cells as bounding boxes.  "WIN :N1" will show all
 sub-cells of sub-cells as bounding boxes, and so on. 
 
+Piglet also allows zooming at all times with the mouse scroll button.
+It will zoom in/out of the current mouse location on the screen.  If
+you scroll out from one location and then in from another, you can 
+effectively pan the window from one location to another.  This feature
+even works while in the middle of adding long and complicated
+components, such as a line. 
 
 ADDING LINES
 -----
@@ -220,7 +230,9 @@ ADDING LINES
 You can add lines with "ADD L<layer_number>".  Keep clicking your
 coordinates with your left-mouse button.  Double-clicking on the same point
 will terminate the line and still let you create new lines.  Right-clicking
-or typing ";" will terminate both the line and the command.
+or typing ";" will terminate both the line and the command.  If it is
+a long line and you need to place the coordinates accurately, you can
+zoom around in the middle of the command using the mouse scroll button.
 
 Lines can have width.  Typing "ADD L7 :W20" will let you enter a line
 with a width of 20.  The default is a width of zero.

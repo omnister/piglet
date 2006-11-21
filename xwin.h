@@ -23,7 +23,7 @@ extern void snapxy_major();
 void xwin_draw_line(int x1, int y1, int x2, int y2);
 void xwin_xor_line(int x1, int y1, int x2, int y2);
 void xwin_fill_poly();
-void xwin_set_pen(int pen);
+void xwin_set_pen_line_fill(int pen, int line, int fill);
 typedef enum {D_ON, D_OFF, D_TOGGLE} DISPLAYSTATE;
 void xwin_display_set_state( DISPLAYSTATE state );
 int  xwin_display_state();
@@ -38,7 +38,6 @@ extern void xwin_draw_text(double x, double y, char *s);
 extern void xwin_draw_point(double x, double y);
 extern void xwin_draw_origin(double x, double y);
 extern void xwin_draw_circle(double x, double y);
-extern void xwin_set_line();
 void xwin_grid_pts( 
     double xd, double yd,
     double xs, double ys, 
@@ -53,4 +52,5 @@ void xwin_set_rubber_callback();
 void xwin_clear_rubber_callback();
 
 extern char version[];
+extern void init_stipples();
 

@@ -80,6 +80,7 @@ int com_window(LEXER *lp, char *arg)
 		token_get(lp, word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
+		 token_get(lp, word); 
 		 if (debug) printf("calling do_win 1 inside com window\n");
 		 do_win(lp, 0, 0.0, 0.0, 0.0, 0.0, scale);
 		 fit = 0;
@@ -182,7 +183,7 @@ int com_window(LEXER *lp, char *arg)
 		    fit = 0;
 		    scale = 1;
 		} else {
-		     if (debug) printf("calling do_win 4 inside com window\n");
+		    if (debug) printf("calling do_win 4 inside com window\n");
 		    do_win(lp, 4, x1, y1, x2, y2, scale);    /* zoom */
 		    fit = 0;
 		    scale = 1;
@@ -226,6 +227,7 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	ymin = currep->vp_ymin;
 	xmax = currep->vp_xmax;
 	ymax = currep->vp_ymax;
+	if (debug) printf("setting xmin inside do_win() = %g\n", xmin);
     } else {
 	xmin = -100.0;
 	ymin = -100.0;
@@ -243,6 +245,7 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	ymin=y1-dx/2.0;
 	xmax=x1+dx/2.0;
 	ymax=y1+dx/2.0;
+	if (debug) printf("setting xmin inside do_win() = %g\n", xmin);
     } else if (n==4) {		/* how vp_xmin gets loaded during readin */
 	if (currep != NULL) {
 	    currep->vp_xmin=x1;
@@ -254,6 +257,7 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	ymin=y1;
 	xmax=x2;
 	ymax=y2;
+	if (debug) printf("setting currep->xmin inside do_win() = %g %g %g %g\n", xmin, ymin, xmax, ymax);
     } else if (n==0) {
     	;
     } else {
@@ -312,6 +316,7 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
     if (xmin == 0 && ymin == 0 && xmax == 0 && ymax == 0) {
 	;	/* don't set the window to a null size */
     } else {
+	if (debug) printf("do_win() calling xwin_window_set = %g %g %g %g\n", xmin, ymin, xmax, ymax);
 	xwin_window_set(xmin,ymin,xmax,ymax);
     }
     if (debug) printf("leaving dowin()\n");

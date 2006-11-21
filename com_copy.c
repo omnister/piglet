@@ -33,7 +33,7 @@ int com_copy(LEXER *lp, char *arg)
 
     TOKEN token;
     char word[BUFSIZE];
-    int debug=1;
+    int debug=0;
     int done=0;
     int valid_comp=0;
     int i;

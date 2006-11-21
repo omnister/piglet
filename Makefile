@@ -9,10 +9,9 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        com_add.o com_delete.o com_distance.o com_equate.o com_ident.o \
        com_copy.o com_move.o com_window.o com_point.o com_show.o postscript.o \
        com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o \
-       lock.o path.o stack.o selpnt.o license.o
+       lock.o path.o stack.o selpnt.o license.o stipple.o
 
-TARS =QUICKSTART AAA_README COPYING cells/tone_I cells/slic_I cells/GLINKV3_I \
-cells/H20919M1_I cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I\
+TARS =QUICKSTART AAA_README COPYING \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
 db.h com_wrap.c com_smash.c draw.c eprintf.c eprintf.h eventnames.h equate.c \
@@ -20,9 +19,14 @@ equate.h geom_circle.c geom_inst.c geom_line.c geom_arc.c  geom_poly.c \
 geom_rect.c geom_text.c lex.c lex.h Makefile PROCDATA.P MENUDATA_V \
 NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
-postscript.c pig postscript.h readmenu.h readmenu.c man/commandlist \
-man/makemans man/seeallso com_area.c com_edit.c com_stretch.c stack.h \
-selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c
+postscript.c pig postscript.h readmenu.h readmenu.c \
+com_area.c com_edit.c com_stretch.c stack.h \
+selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c 
+
+CELLS= cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
+cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
+
+MANS=man/commandlist man/makemans man/seeallso 
 
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
@@ -40,11 +44,20 @@ clean:
 	rm -f *.o pig.bin
 	rm -r man/*1p man/*html
 
-pig.tar: $(TARS)
-	(q=`pwd`;p=`basename $$q`;cd ..;tar czvf - `for file in $(TARS);do echo $$p/$$file;done`>$$p/$$p.tar.gz)
+tar: $(TARS)
+	(  d=`date +%F`;\
+	   q=`pwd`;\
+	   p=`basename $$q`;\
+	   rm -rf $$p$$d;\
+	   mkdir $$p$$d;\
+	   cp -rp $(TARS) $$p$$d;\
+	   mkdir $$p$$d/cells;\
+	   cp -rp $(CELLS) $$p$$d/cells;\
+	   mkdir $$p$$d/man;\
+	   cp -rp $(MANS) $$p$$d/man;\
+	   tar czvf - $$p$$d >$$p$$d.tar.gz;\
+	)
 
-junk:
-	(mkdir dist/cells; mkdir dist/man; for file in $(TARS); do cp -a $$file dist/$$file; done)
 
 man/piglet.1p: man/commandlist
 	(cd man; ./makemans)

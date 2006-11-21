@@ -36,6 +36,7 @@ int draw_grid();
 void paint_pane(); 
 int dump_window(); 
 int xwin_display_state();
+extern Pixmap stipple[];
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
@@ -43,10 +44,9 @@ XFORM  unity_transform;
 /*XFORM  screen_transform; */
 /*XFORM  *xp = &screen_transform; */
 
-
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.42 2006/10/19 05:10:36 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.42 2006/10/19 05:10:36 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -90,69 +90,6 @@ static char icon_bitmap_bits[] = {
 #define TOO_SMALL 0
 #define BIG_ENOUGH 1
 
-/* stipple definitions */
-
-#define STIPW 8
-#define STIPH 8 
-
-static char stip_bits3[] = {	/* 8x+4 negative slope diagonal */
-    0x20, 0x10,
-    0x08, 0x04, 
-    0x02, 0x01,
-    0x80, 0x40
-};
-
-static char stip_bits2[] = {	/* 8x+4 negative slope diagonal */
-    0x08, 0x04,
-    0x02, 0x01,
-    0x80, 0x40,
-    0x20, 0x10
-};
-
-static char stip_bits1[] = {	/* 8x negative slope diagonal */
-    0x80, 0x40,
-    0x20, 0x10,
-    0x08, 0x04,
-    0x02, 0x01
-};
-
-static char stip_bits[] = {	/* 8x diagonal crosshatch */
-    0x82, 0x44, 0x28, 0x10,
-    0x28, 0x44, 0x82, 0x01
-};
-
-static char stip_bits4[] = {	/* 8x+4 negative slope diagonal */
-    0x02, 0x01,
-    0x80, 0x40,
-    0x20, 0x10,
-    0x08, 0x04
-};
-
-
-#define three_width 3
-#define three_height 3
-
-static char three_bits0[] = {
-   0x01, 0x00, 0x00};
-static char three_bits1[] = {
-   0x02, 0x00, 0x00};
-static char three_bits2[] = {
-   0x04, 0x00, 0x00};
-static char three_bits3[] = {
-   0x00, 0x01, 0x00};
-static char three_bits4[] = {
-   0x00, 0x02, 0x00};
-static char three_bits5[] = {
-   0x00, 0x04, 0x00};
-static char three_bits6[] = {
-   0x00, 0x00, 0x01};
-static char three_bits7[] = {
-   0x00, 0x00, 0x02};
-static char three_bits8[] = {
-   0x00, 0x00, 0x04};
-
-Pixmap stipple[128];
-
 /* for select in XEvent loop */
 #ifndef FD_SET
 #define FD_SET(n, p)    ((p)->fds_bits[0] |= (1 << ((n) % 32)))
@@ -187,7 +124,7 @@ MENUENTRY menutab[MAX_MENU];
 
 XFontStruct *font_info;
 
-#define MAX_COLORS 8
+#define MAX_COLORS 10
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 #define MAX_LINETYPE 7
 
@@ -197,7 +134,7 @@ int initX()
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
     char *window_name = "PD_Piglet: Personal Interactive Graphic Layout EdiTor";
-    char *icon_name = "rigel";
+    char *icon_name = "rigel";	/* rick's interactive graphic editor */
     Pixmap icon_pixmap;
     XSizeHints *size_hints;
     XIconSize *size_list;
@@ -209,8 +146,6 @@ int initX()
     char *dpy_name = NULL;
 
     int debug=0;
-    int i,j;
-    char a;
 
     /* menu stuff */
     char *string;
@@ -253,7 +188,6 @@ int initX()
 
     /* Size window */
     top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
-
 
     /* figure out menu sizes */
     string = "X";
@@ -358,7 +292,6 @@ int initX()
     XFree(wm_hints);
     free(class_hints->res_name);
     XFree(class_hints);
-    
 
     /* Select event types wanted */
     XSelectInput(dpy, topwin, ExposureMask | KeyPressMask |
@@ -378,57 +311,16 @@ int initX()
     getGC(win, &gcb, font_info);
     getGC(win, &gcx, font_info);
 
-    stipple[0] = XCreateBitmapFromData(dpy, win, stip_bits, 
-	(unsigned int) STIPW, (unsigned int) STIPH);
-    stipple[1] = XCreateBitmapFromData(dpy, win, stip_bits1, 
-	(unsigned int) STIPW, (unsigned int) STIPH);
-    stipple[2] = XCreateBitmapFromData(dpy, win, stip_bits2, 
-	(unsigned int) STIPW, (unsigned int) STIPH);
-    stipple[3] = XCreateBitmapFromData(dpy, win, stip_bits3, 
-	(unsigned int) STIPW, (unsigned int) STIPH);
-    stipple[4] = XCreateBitmapFromData(dpy, win, stip_bits4, 
-	(unsigned int) STIPW, (unsigned int) STIPH);
-
-    for (i=0; i<=9; i++) {	/* make random stipples */
-    	for (j=0; j<STIPW; j++) {
-	    a = (unsigned char) (drand48()*255.0);
-	    a &= (unsigned char) (drand48()*255.0);
-
-/*
-	    a &= (unsigned char) (drand48()*255.0);
-	    a &= (unsigned char) (drand48()*255.0);
-	    a &= (unsigned char) (drand48()*255.0);
-*/
-	    stip_bits[j] = (unsigned char) a;
-	}
-	stipple[i] = XCreateBitmapFromData(dpy, win, stip_bits, 
-	    (unsigned int) STIPW, (unsigned int) STIPH);
-    }
-
-    stipple[0] = XCreateBitmapFromData(dpy, win, three_bits0,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[1] = XCreateBitmapFromData(dpy, win, three_bits1,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[2] = XCreateBitmapFromData(dpy, win, three_bits2,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[3] = XCreateBitmapFromData(dpy, win, three_bits3, 
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[4] = XCreateBitmapFromData(dpy, win, three_bits4,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[5] = XCreateBitmapFromData(dpy, win, three_bits5,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[6] = XCreateBitmapFromData(dpy, win, three_bits6,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[7] = XCreateBitmapFromData(dpy, win, three_bits7,
-	(unsigned int) three_width, (unsigned int) three_height);
-    stipple[8] = XCreateBitmapFromData(dpy, win, three_bits8,
-	(unsigned int) three_width, (unsigned int) three_height);
+    init_stipples();
 
     XSetFillStyle(dpy, gcx, FillStippled);
+    XSetFillRule(dpy, gcx, WindingRule);
+    /* XSetFunction(dpy, gcx, GXinvert); */ 
     XSetFunction(dpy, gcx, GXxor);
 
     XSetStipple(dpy, gcb, stipple[0]);	   /* use gcb for polygon filling */
     XSetFillStyle(dpy, gcb, FillStippled);
+    XSetFillRule(dpy, gcb, WindingRule);
 
     /* dpy windows */
     XMapWindow(dpy, topwin);
@@ -839,7 +731,7 @@ XFontStruct *font_info;
     /* Specify font */
     XSetFont(dpy, *gc, font_info->fid);
 
-    /* Specify black foreground since default window background
+    /* Specify black foreground since :efault window background
     is white and default foreground is undefined */
 
     XSetBackground(dpy, *gc, BlackPixel(dpy, scr));
@@ -880,7 +772,7 @@ int x1,y1,x2,y2;
 void xwin_draw_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
 {
-    /* XSetFunction(dpy, gca, GXcopy);  */
+    /* XSetFunction(dpy, gca, GXor); */
     if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gca, x1, y1, x2, y2);
     }
@@ -895,9 +787,13 @@ int n;
     }
 }
 
-void xwin_set_pen(pen)
-int pen;
+void xwin_set_pen_line_fill(int pen, int line, int fill) 
 {
+    int dash_n;
+    int dash_offset;
+    int line_style;
+    char dash_list[5];
+
     /* FIXME: should avoid accessing out of bounds of colors[]
      * also should cache different pen colors to avoid having to keep
      * sending messages to server.  Currently this is enforced because
@@ -916,16 +812,6 @@ int pen;
 
     XSetForeground(dpy, gca, colors[pen]);	/* for lines */
     XSetForeground(dpy, gcb, colors[pen]);	/* for polygon fill */
-    XSetStipple(dpy, gcb, stipple[pen%8]);	/* use gcb for polygon filling */
-}
-
-void xwin_set_line(line)
-int line;
-{
-    int dash_n;
-    int dash_offset;
-    int line_style;
-    char dash_list[5];
 
     /* FIXME:should cache different pen colors to avoid having to keep
      * sending messages to server.  
@@ -978,8 +864,18 @@ int line;
     dash_offset=0;
     XSetLineAttributes(dpy, gca, 0, line_style, CapButt, JoinRound); 
     XSetDashes(dpy, gca, dash_offset, dash_list, dash_n);
-}    
 
+    /* optimize out unnecessary Xserver calls */
+    static int oldfill=(-9999);
+    if (fill == oldfill) return;
+
+    if (fill <= 1) {
+        XSetFillStyle(dpy, gcb, FillSolid);
+    } else {
+        XSetFillStyle(dpy, gcb, FillStippled);
+	XSetStipple(dpy, gcb, stipple[(fill-2)*10+pen]);	/* use gcb for polygon filling */
+    }
+}
 
 int draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
 Window win;
@@ -1488,8 +1384,7 @@ double x1,y1,x2,y2;
 
     grid_notified=0;	/* never yet evaluated the grid visibility */ 
 
-    if (debug) printf("xwin_window_set called with %f %f %f %f\n",
-    	x1,y1,x2,y2); 
+    if (debug) printf("xwin_window_set called with %f %f %f %f\n", x1,y1,x2,y2); 
 
     if (x2 < x1) {		/* canonicalize the selection rectangle */
 	tmp = x2; x2 = x1; x1 = tmp;
@@ -1594,7 +1489,9 @@ int init_colors()
 	"cyan",
 	"magenta",
 	"yellow",
-	"white"
+	"white",
+	"#b0b0b0",
+	"#505050"
     };
 
     XColor exact_def;

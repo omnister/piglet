@@ -921,11 +921,11 @@ killed and all unsaved changes will be permanently lost.
 
 N: EQUate
 D: Assign pen/line type to a mask layer
-U: EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:O] [:B|:D|:S|:I] [<label>] <layer>
+U: EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:F<fill>] [:B|:D|:S|:I] [<label>] <layer>
 S: complete
 T: {
 
-Associate a mask layer with a color, plotting pen, and a mnemonic
+Associate a mask layer with a color, fill pattern, plotting pen, and a mnemonic
 description of its use.  All layers are initally set to detail, solid
 green, unfilled, and not plotted. 
 
@@ -939,21 +939,23 @@ EQUate commands may only be entered, LISted, and SAVed in the PROCESS subsystem.
 
 Here are a few lines from a typical PROCDATA.P file:
 
+
 .nf
-EQU :C1 :P1 :M0 :B boundary 0
-EQU :C2 :P2 :M1 :D layer1 1
-EQU :C3 :P3 :M2 :D layer2 2
-EQU :C4 :P4 :M3 :D layer3 3
-EQU :C5 :P5 :M4 :S layer4 4
-EQU :C6 :P6 :M5 :S layer5 5
-EQU :C7 :P7 :M6 :I layer6 6
-EQU :C1 :P1 :M0 :I layer7 7
-EQU :C2 :P2 :M1 :I layer8 8
+EQU :C7 :P7 :M0 :D :F0 boundary  0
+EQU :C1 :P1 :M0 :D :F0 layer1  1
+EQU :C2 :P2 :M1 :D :F0 layer2  2
+EQU :C3 :P3 :M1 :D :F0 layer3  3
+EQU :C4 :P4 :M2 :D :F1 layer4  4
+EQU :C5 :P5 :M2 :D :F1 layer5  5
+EQU :C6 :P6 :M3 :D :F2 layer6  6
+EQU :C7 :P7 :M3 :D :F2 layer7  7
+EQU :C8 :P1 :M4 :D :F2 layer8  8
+EQU :C9 :P2 :M4 :D :F2 layer9  9
 .fi
 
 The first line, for example, says that layer 0 is named "boundary",
-drawn with color 1 (white), plotted with pen 1, and uses line type 0
-(solid). 
+drawn with color 7 (white), plotted with pen 7, filled with pattern 0 (unfilled)
+and uses line type 0 (solid). 
 
 .SS OPTIONS
 .TP
@@ -972,6 +974,20 @@ lines, D gives dotted lines, and B gives broken (dashed lines).  Line
 types can also be designated by numbers.  0-2 are synonymous with S,D,B. 
 3 gives "dot-dash", 4 gives "long-short", 5 gives "large-broken", 6
 gives "small-broken". 
+.TP
+.I <fill>
+Specify the fill pattern for polygons, rectangles, circles and lines, arcs with
+width.  0 gives an unfilled outline drawing. 1 gives a solid fill.  Since
+piglet draws by overwriting on the display, two overlapping solid fill patterns
+will cause the lower pattern to be obscured.  Fill patterns 2-7 are stipple
+patterns designed to have minimal pixel overlap and will allow overlapped
+geometries to be visible.  ":F2" gives a 45 degree rising crosshatch.  ":F3"
+gives a 45 degree falling crosshatch.  ":F4" gives a diagonal dot pattern.
+":F5" gives a rectilinear grid-like dot pattern.  ":F6" gives a brick-like
+set of staggered short horizontal lines.  ":F7" gives random dot stipples.
+Each family of stipples consists of a set of 10 different phase shifts
+corresponding to each pen color.  This prevents stipples of the same pattern,
+but different colors from obscuring each other.
 .TP
 .I :B|:D|:S|:I
 Specify the function of the mask layer. B is Boundary, D is Detail, 

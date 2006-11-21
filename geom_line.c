@@ -33,8 +33,8 @@ void draw_line();
 
 OPTS opts;
 
-static double x1=0.0;
-static double yy1=0.0;
+double x1=0.0;
+double yy1=0.0;
 
 int add_line(LEXER *lp, int *layer)
 {
@@ -90,8 +90,8 @@ int add_line(LEXER *lp, int *layer)
 		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
 		    token_get(lp,word);
-		    xold=x1;
 		    sscanf(word, "%lf", &x1);	/* scan it in */
+		    xold=x1;
 		    state = COM1;
 		} else if (token == EOL) {
 		    token_get(lp,word); 	/* just ignore it */
@@ -118,8 +118,8 @@ int add_line(LEXER *lp, int *layer)
 		if (debug) printf("in num2\n");
 		if (token == NUMBER) {
 		    token_get(lp,word);
-		    yold=y2;
 		    sscanf(word, "%lf", &yy1);	/* scan it in */
+		    yold=yy1;
 		    nsegs++;
 		    
 		    CP = coord_new(x1,yy1);
@@ -130,6 +130,7 @@ int add_line(LEXER *lp, int *layer)
 		    if (debug) coord_print(CP);
 
 		    rubber_set_callback(draw_line);
+		    x2 = x1; y2 = yy1;
 		    state = NUM3;
 		} else if (token == EOL) {
 		    token_get(lp,word); 	/* just ignore it */

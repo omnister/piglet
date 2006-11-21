@@ -1153,6 +1153,7 @@ int mode;
     fprintf(fp, "WIN %g,%g %g,%g;\n",
     	dp->minx, dp->miny, dp->maxx, dp->maxy);
     	/* dp->vp_xmin, dp->vp_ymin, dp->vp_xmax, dp->vp_ymax); */
+    	/* dp->minx, dp->miny, dp->maxx, dp->maxy); */
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	printdef(fp, p, NULL);
@@ -1225,30 +1226,30 @@ int new_layer;
     } else {
 	switch (p->type) {
 	    case ARC:
-		if (new_layer) p->u.a->layer = new_layer;
+		p->u.a->layer = new_layer;
 		break;
 	    case CIRC:
-		if (new_layer) p->u.c->layer = new_layer;
+		p->u.c->layer = new_layer;
 		break;
 	    case INST:
 		break;
 	    case LINE:
-		if (new_layer) p->u.l->layer = new_layer;
+		p->u.l->layer = new_layer;
 		break;
 	    case NOTE:
-		if (new_layer) p->u.n->layer = new_layer;
+		p->u.n->layer = new_layer;
 		break;
 	    case OVAL:
-		if (new_layer) p->u.o->layer = new_layer;
+		p->u.o->layer = new_layer;
 		break;
 	    case POLY:
-		if (new_layer) p->u.p->layer = new_layer;
+		p->u.p->layer = new_layer;
 		break;
 	    case RECT:
-		if (new_layer) p->u.r->layer = new_layer;
+		p->u.r->layer = new_layer;
 		break;
 	    case TEXT:
-		if (new_layer) p->u.t->layer = new_layer;
+		p->u.t->layer = new_layer;
 		break;
 	    default:
 		printf("db_change_layer: unknown case\n");
@@ -1930,6 +1931,94 @@ int mode;		/* drawing mode */
     int i;
     double r1, r2,theta,x,y,x1,y1,x2,y2;
     double theta_start;
+    double radius;
+    double width;
+    int res;
+
+    if ((def->u.c->opts->rotation) != 0.0) {
+	res = (int) (360.0/def->u.c->opts->rotation);	/* resolution */
+    } else {
+    	res = 64;
+    }
+
+    /* printf("# rendering circle\n"); */
+
+    x1 = (double) def->u.c->x1; 	/* center point */
+    y1 = (double) def->u.c->y1;
+
+    x2 = (double) def->u.c->x2;	/* point on circumference */
+    y2 = (double) def->u.c->y2;
+
+    /* if (mode==D_RUBBER) { xwin_draw_circle(x1,y1); xwin_draw_circle(x2,y2); } */
+    
+    jump(bb,mode); set_layer(def->u.c->layer, CIRC);
+
+    x = (double) (x2-x1);
+    y = (double) (y2-y1);
+
+    radius = sqrt(x*x+y*y);
+
+    theta_start = atan2(x,y);
+    startpoly(bb,mode);
+
+    width=def->u.c->opts->width;
+
+    if(width == 0.0) {
+
+	/* this next snippet of code works on the realization that an oval */
+	/* is really just the vector sum of two counter-rotating phasors */
+	/* of different lengths.  If r1=r and r2=0, you get a circle.  If you */
+	/* solve the math for r1, r2 as a function of major/minor axis widths */
+	/* you get the following.  If :Y<aspect_ratio> == 0.0, then the following */
+	/* defaults to a perfectly round circle... */
+
+	r1 = (1.0+def->u.c->opts->aspect_ratio)*radius/2.0;
+	r2 = (1.0-def->u.c->opts->aspect_ratio)*radius/2.0;
+
+	for (i=0; i<=res; i++) {	
+	    theta = ((double) i)*2.0*M_PI/((double) res);
+	    x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
+	    y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
+	    draw(x1+x, y1+y, bb, mode);
+	}
+    } else {
+	r1 = (1.0+def->u.c->opts->aspect_ratio)*radius/2.0+width/2.0;
+	r2 = (1.0-def->u.c->opts->aspect_ratio)*radius/2.0;
+	for (i=0; i<=res; i++) {
+	    theta = ((double) i)*2.0*M_PI/((double) res);
+	    x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
+	    y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
+	    draw(x1+x, y1+y, bb, mode);
+	}
+	r1 = (1.0+def->u.c->opts->aspect_ratio)*radius/2.0-width/2.0;
+	r2 = (1.0-def->u.c->opts->aspect_ratio)*radius/2.0;
+	for (i=res; i>=0; i--) {
+	    theta = ((double) i)*2.0*M_PI/((double) res);
+	    x = r1*sin(theta_start-theta) + r2*sin(theta_start+theta);
+	    y = r1*cos(theta_start-theta) + r2*cos(theta_start+theta);
+	    draw(x1+x, y1+y, bb, mode);
+	}
+    }
+    endpoly(bb,mode);	
+}
+
+/*
+r1 + r2 = r+w
+r1 - r2 = ar+w
+
+2r1 = (1+a)r + 2w
+2r2 = (1-a)r
+*/
+
+/* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
+void do_circ_orig(def, bb, mode)
+DB_DEFLIST *def;
+BOUNDS *bb;
+int mode;		/* drawing mode */
+{
+    int i;
+    double r1, r2,theta,x,y,x1,y1,x2,y2;
+    double theta_start;
     int res;
 
     COORDS *cp;
@@ -2006,6 +2095,42 @@ int mode;		/* drawing mode */
     }
 }
 
+/* --------------------------------------------------------- */
+
+/* quick and dirty stack for saving points.  Built-in 1024 */
+/* point limitation.  FIXME: change to linked list with no */
+/* size limit */
+
+static int n=0;
+typedef struct cc {
+    double x;
+    double y;
+} CC; 
+
+CC coordstack[1024];
+
+void clear() {
+   n=0;
+}
+
+void push(double x, double y) {
+   coordstack[n].x = x;
+   coordstack[n].y = y;
+   n++;
+}
+
+int pop(double *x, double *y) {
+   if (n>0) {
+       n--;
+       *x = coordstack[n].x;
+       *y = coordstack[n].y;
+       return 1;
+   } else {
+       return 0;
+   }
+}
+
+/* --------------------------------------------------------- */
 
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
 
@@ -2018,6 +2143,7 @@ int mode; 	/* drawing mode */
 
     double x1,y1,x2,y2,x3,y3,dx,dy,a;
     double xa,ya,xb,yb,xc,yc,xd,yd;
+    double xx, yy;
     double k,dxn,dyn;
     double width=0.0;
     int segment;
@@ -2052,7 +2178,12 @@ int mode; 	/* drawing mode */
      */
 
     /* printf("# rendering line\n"); */
+    jump(bb,mode);
     set_layer(def->u.l->layer, LINE);
+    if (width != 0.0) {
+        startpoly(bb,mode);
+	clear();
+    }
 
     temp = def->u.l->coords;
     x2=temp->coord.x;
@@ -2060,6 +2191,7 @@ int mode; 	/* drawing mode */
     temp = temp->next;
 
     /* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
+
 
     segment = 0;
     if (temp!=NULL) {
@@ -2069,7 +2201,7 @@ int mode; 	/* drawing mode */
 
 	    /* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
 
-	    if (width != 0) {
+	    if (width != 0.0) {
 		if (segment == 0) {
 		    dx = x2-x1; 
 		    dy = y2-y1;
@@ -2172,21 +2304,37 @@ int mode; 	/* drawing mode */
 		    }
 		}
 
-		jump(bb,mode);
-	    
+	    /* 
+	     *
+	     *
+	     *	    Each line segment with width:
+	     *
+	     *	    xy(a)---------xy(b)
+	     *      |                |
+	     *      |                |
+	     *	    xy(d)---------xy(c)
+	     *
+	     *      We immmediately draw() (xa,ya) (xb,yb)
+	     *      and push (xd,yd) (xc,yc) on a stack.
+	     *
+	     *      When finished with all segments, we pop
+	     *      and draw() all the points on the stack
+	     *      and finish the polygonal line with (xa,ya)
+	     *
+	     *
+	     */
 
-		if( width != 0) {
-		    startpoly(bb,mode);
-		    draw(xa, ya, bb, mode);
-		    draw(xb, yb, bb, mode);
-		    draw(xc, yc, bb, mode);
-		    draw(xd, yd, bb, mode);
-		    draw(xa, ya, bb, mode);
-		    endpoly(bb,mode);
-		} else {
-		    draw(xa, ya, bb, mode);
-		    draw(xb, yb, bb, mode);
-		}
+		/*
+		draw(xa, ya, bb, mode);
+		draw(xb, yb, bb, mode);
+		push(xd, yd);
+		push(xc, yc);
+		*/
+
+		draw(xd, yd, bb, mode);
+		draw(xc, yc, bb, mode);
+		push(xa, ya);
+		push(xb, yb);
 
 		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
 		/* check for co-linear reversal of path */
@@ -2210,6 +2358,13 @@ int mode; 	/* drawing mode */
 	    segment++;
 
 	} while(temp != NULL);
+
+	if (width != 0.0) {
+	    while (pop(&xx, &yy) != 0) {
+		draw(xx,yy,bb,mode);
+	    }
+	    endpoly(bb,mode);
+	}
     }
 }
 

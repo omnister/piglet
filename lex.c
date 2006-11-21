@@ -370,7 +370,7 @@ LEXER *lp;
 		    case COMMA:
 			break;
 		    case EOC:
-			winfit();
+			/* winfit(); printf("calling winfit\n"); */
 			break;
 		    case NUMBER:
 			if(sscanf(word, "%lg", &x1) != 1) {
@@ -398,7 +398,8 @@ LEXER *lp;
 		   if(sscanf(word, "%lg", &y1) != 1) {
 		        weprintf("bad number: %s\n", word);
 		   }
-		   pan(x1,y1);
+		   printf("calling pan\n");
+		   /* pan(x1,y1); */
 	           state=0;
 	       } else {
 		   token_unget(lp, token, word);
@@ -479,7 +480,6 @@ char *name;
 
 int is_comp(char c)
 {
-
     switch(toupper(c)) {
     	case 'A':
 	    return(ARC);
@@ -629,7 +629,7 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 		return(-1);
 	    } else { 					/* found it on disk, read it in */	
 		ed_rep = db_install(buf);  /* create blank stub */
-		printf("reading %s from disk\n", buf);
+		printf("loading %s from disk\n", buf);
 		my_lp = token_stream_open(fp, buf);
 
 		if (currep != NULL) {
@@ -1044,7 +1044,7 @@ char *arg;
 		    if (debug) printf("setting color: %d\n", (gridcolor%8));
 		    grid_state=G_ON;
 		    xwin_grid_state(grid_state);
-		    xwin_grid_color((gridcolor%8));
+		    xwin_grid_color((gridcolor%10));
 		} else {
 	    	    weprintf("bad option to GRID: %s\n", word);
 		    return(-1);
@@ -1250,7 +1250,7 @@ int mode;	/* EDI, MAIN, PRO, ... */
 	    show_set_modify(currep, ALL,0,1); 
 	}
 
-	printf ("reading %s from disk\n", filename);
+	printf ("loading %s from disk\n", filename);
 	xwin_display_set_state(D_OFF);
 	parse(my_lp);
 	xwin_display_set_state(D_ON);

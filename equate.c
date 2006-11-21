@@ -6,8 +6,8 @@
 /* private definitions */
 
 typedef struct flags {
-    unsigned int color    : 3;  /* Color, 3-bits, 0=Red, 1=G, ... BYPAW */
-    unsigned int fill     : 1;  /* 0=unfilled, 1=filled */
+    unsigned int color    : 4;  /* Color, 3-bits, 0=Red, 1=G, ... BYPAW, 60% grey, 33% grey */
+    unsigned int fill     : 3;  /* 0=unfilled, 1=solid, 2=stip, 3=45_up, 4=45_down */
     unsigned int masktype : 2;  /* 0=Detail, 1=Symbolic, 2=Interconnect */	
     unsigned int pen      : 3;  /* Pen, 3-bits (0=unused) */  
     unsigned int linetype : 3;  /* Mask: 0=Solid, 1=Dotted, 2=Broken */
@@ -52,14 +52,18 @@ static char *LINETYPE =  "SDB34567";
 static char *MASKTYPE =  "BDSI";
 
 int equate2color(int c) {
-   return(COLORTAB[c%8]);
+    if (c <= 7) {
+        return(COLORTAB[c]);
+    } else {
+    	return(c+'0');
+    }
 }
 
 /* parse character for 0-7, WRGB...Y or return -1 */
 int color2equate(char c) {
    char *i;
    if (isdigit(c)) {
-       return((c-'0')%8);
+       return((c-'0'));
    } else if ((i=strchr(COLORTAB, toupper(c)))) {
        return((int)(i-COLORTAB));
    } else {
@@ -95,7 +99,7 @@ int linetype2equate(char c) {
    }
 }
 
-/* EQUATE :C[1-7WRGBCMY] :P[0-8] :M[DSI] :[SDB] INSTBOUN 0 */
+/* EQUATE :C[1-7WRGBCMY] :P[0-7] :M[DSI] :F[0-7] :[SDB] INSTBOUN 0 */
 int equate_print() {
     int i;
     for (i=0; i<MAX_LAYER; i++) {
@@ -104,9 +108,7 @@ int equate_print() {
 	    printf(":P%d ", equates[i].flags.pen);
 	    printf(":M%c ", equate2linetype(equates[i].flags.linetype));
 	    printf(":%c ", equate2masktype(equates[i].flags.masktype));
-	    if (equates[i].flags.fill) {
-		printf(":O ");
-	    }
+	    printf(":F%d ", equates[i].flags.fill);
 	    printf("%s %d;\n", equates[i].label, i);
 	}
     };
