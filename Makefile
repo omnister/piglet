@@ -1,8 +1,14 @@
 MANDIR=/usr/local/man/man1p
 BINDIR=/usr/local/bin
 LIBDIR=/usr/local/lib/piglet
+
+# for Fedora core 3, x-64:
+#XLIB=-lX11 -L/usr/X11R6/lib64
+# for x86
+XLIB=-lX11 -L/usr/X11R6/lib 
+
  
-OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
+OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        eprintf.o geom_circle.o geom_rect.o geom_line.o \
        geom_poly.o geom_text.o geom_inst.o geom_arc.o\
        rlgetc.o token.o lex.o coords.o com_change.o\
@@ -11,7 +17,7 @@ OBJS= db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
        com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o \
        lock.o path.o stack.o selpnt.o license.o stipple.o
 
-TARS =QUICKSTART AAA_README COPYING \
+TARS=QUICKSTART AAA_README COPYING \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
 db.h com_wrap.c com_smash.c draw.c eprintf.c eprintf.h eventnames.h equate.c \
@@ -23,7 +29,7 @@ postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c 
 
-CELLS= cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
+CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
 
 MANS=man/commandlist man/makemans man/seeallso 
@@ -38,7 +44,7 @@ CC=cc -ggdb -Wall
 # wrapper "pig" which catches and error backtrace with gdb
 
 pig.bin: $(OBJS) man/piglet.1p
-	$(CC) $(OBJS) -o pig.bin -lreadline -lX11 -L/usr/X11R6/lib -lm -lcurses
+	$(CC) $(OBJS) -o pig.bin -lreadline $(XLIB) -lm -lcurses
 
 clean: 
 	rm -f *.o pig.bin
@@ -81,15 +87,15 @@ install: man/piglet.1p pig.bin
 	cp piglogo.d $(LIBDIR)
 
 depend: ${OBJ}
-	cp makefile makefile.bak
-	sed -n -e '1,/^# DO NOT DELETE OR MODIFY THIS LINE/p' makefile \
+	cp Makefile Makefile.bak
+	sed -n -e '1,/^# DO NOT DELETE OR MODIFY THIS LINE/p' Makefile \
                 > newmakefile
 	grep '^#include[ 	]*"' *.c \
                 | sed -e 's/:#include[  "]*\([a-z0-9\._A-Z]*\).*/: \1/' \
                 | sed -e 's/\.c:/.o:/' \
                 | sort | uniq >> newmakefile
-	mv makefile makefile.bak
-	mv newmakefile makefile
+	mv Makefile Makefile.bak
+	mv newmakefile Makefile
 
 #-----------------------------------------------------------------
 # DO NOT PUT ANY DEPENDENCIES AFTER THE NEXT LINE -- they will go away
@@ -202,12 +208,6 @@ draw.o: db.h
 draw.o: eprintf.h
 draw.o: equate.h
 draw.o: postscript.h
-draworig.o: db.h
-draworig.o: eprintf.h
-draworig.o: equate.h
-draworig.o: postscript.h
-draworig.o: rubber.h
-draworig.o: xwin.h
 draw.o: rubber.h
 draw.o: xwin.h
 eprintf.o: eprintf.h
@@ -290,6 +290,8 @@ rlgetc.o: xwin.h
 rubber.o: rubber.h
 selpnt.o: db.h
 stack.o: stack.h
+stipple.o: db.h
+stipple.o: xwin.h
 token.o: db.h
 token.o: eprintf.h
 token.o: lex.h

@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.42 2006/10/19 05:10:36 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.43 2007/01/03 09:30:26 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -350,6 +350,47 @@ int initX()
     return(0);
 }
 
+void zoom(int dir, double scale)
+{
+    double xmin,ymin,xmax,ymax;
+    extern double x,y;
+
+    if (dir < 0) {
+       scale = 1.0/scale;
+    }
+
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+
+	xmin=x-(x-xmin)*scale;
+	xmax=x+(xmax-x)*scale;
+	ymin=y-(y-ymin)*scale;
+	ymax=y+(ymax-y)*scale;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    }
+}
+
+static int pan_x = 0;
+static int pan_y = 0;
+void pan_init(int x, int y) {
+   pan_x=x;
+   pan_y=y;
+}
+
+void pan_update(int x, int y) {
+   if (pan_x-x > 10) {
+	zoom(1,1.2);
+	pan_x=x;
+   } else if (pan_x-x < -10) {
+	zoom(-1,1.1);
+	pan_x=x;
+   }
+}
+
 void dosplash() {
     DB_TAB *splashrep;
     extern double scale,xoffset,yoffset;
@@ -469,30 +510,6 @@ int procXevent()
     }
 }
 
-void zoom(int dir, double scale)
-{
-    double xmin,ymin,xmax,ymax;
-    extern double x,y;
-
-    if (dir < 0) {
-       scale = 1.0/scale;
-    }
-
-    if (currep != NULL) {
-	xmin = currep->vp_xmin;
-	ymin = currep->vp_ymin;
-	xmax = currep->vp_xmax;
-	ymax = currep->vp_ymax;
-
-	xmin=x-(x-xmin)*scale;
-	xmax=x+(xmax-x)*scale;
-	ymin=y-(y-ymin)*scale;
-	ymax=y+(ymax-y)*scale;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    }
-}
-
 void xwin_doXevent(s)
 char **s;
 {
@@ -538,13 +555,17 @@ char **s;
 	case MotionNotify:
 	    if (debug) printf("EVENT LOOP: got Motion\n");
 
-	    x = (double) xe.xmotion.x;
-	    y = (double) xe.xmotion.y;
-	    V_to_R(&x,&y);
-	    snapxy(&x,&y);
-	    sprintf(buf,"(%-8g,%-8g)", x, y);
-	    if (xwin_display_state() == D_ON) {
-		XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
+	    if (!button_down) {
+		x = (double) xe.xmotion.x;
+		y = (double) xe.xmotion.y;
+		V_to_R(&x,&y);
+		snapxy(&x,&y);
+		sprintf(buf,"(%-8g,%-8g)", x, y);
+		if (xwin_display_state() == D_ON) {
+		    XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
+		}
+	    } else {
+		pan_update(xe.xmotion.x, xe.xmotion.y);
 	    }
 
 	    if (xold != x || yold != y) {
@@ -614,7 +635,6 @@ char **s;
 	    if (xe.xexpose.window == win) {
 		switch (xe.xbutton.button) {
 		    case 1:	/* left button */
-			button_down=1;
 			x = (double) xe.xmotion.x;
 			y = (double) xe.xmotion.y;
 			V_to_R(&x,&y);
@@ -637,6 +657,8 @@ char **s;
 			if (debug) printf("EVENT LOOP: got ButtonPress\n");
 			break;
 		    case 2:	/* middle button */
+			button_down=1;
+			pan_init(xe.xmotion.x, xe.xmotion.y);
 			break;
 		    case 3: /* right button */
 			/* RIGHT button returns EOC */

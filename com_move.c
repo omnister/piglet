@@ -373,6 +373,7 @@ int com_move(LEXER *lp, char *arg)
 			db_highlight(tmp->p);
 		    }
 		}
+		selpnt_clear(&selpnt);	/* RCW */
 		currep->modified++;
 		need_redraw++;
 		state = START;

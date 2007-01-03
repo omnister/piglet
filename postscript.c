@@ -75,8 +75,8 @@ setting landscape
 
     xmid = (llx+urx)/2.0;
     ymid = (lly+ury)/2.0;
-    xdel = fabs(urx-llx);
-    ydel = fabs(ury-lly);
+    xdel = 1.05*fabs(urx-llx);
+    ydel = 1.05*fabs(ury-lly);
 
     pdx=8.5;
     pdy=11.0;

@@ -414,7 +414,7 @@ char *name;			/* instance name restrict or NULL */
     DB_DEFLIST *p;
     DB_DEFLIST *p_best=NULL;	
     COORDS *coords;
-    SELPNT *selpnt=NULL;	/* gets returned */
+    SELPNT *selpnt;	/* gets returned */
     int debug=0;
     BOUNDS childbb;
     double pick_score=0.0;
@@ -584,10 +584,9 @@ char *name;			/* instance name restrict or NULL */
 
     if (p_best != NULL) {
 	p = p_best;
-	if (selpnt != NULL) {
-	    selpnt_clear(&selpnt);
-	    selpnt = NULL;
-	}
+	selpnt = NULL;
+	/* selpnt_clear(&selpnt); */
+
 	switch (p->type) {
 
 	case ARC:

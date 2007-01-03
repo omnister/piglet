@@ -29,4 +29,4 @@ then
 fi
 
 
-rm pig.tmp.*
+rm pig.tmp.$$

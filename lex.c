@@ -398,8 +398,7 @@ LEXER *lp;
 		   if(sscanf(word, "%lg", &y1) != 1) {
 		        weprintf("bad number: %s\n", word);
 		   }
-		   printf("calling pan\n");
-		   /* pan(x1,y1); */
+		   pan(x1,y1);
 	           state=0;
 	       } else {
 		   token_unget(lp, token, word);
