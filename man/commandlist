@@ -21,11 +21,12 @@ mouse zooms in or out of the current x,y location.  By moving the mouse
 location while zooming it is possible to quickly zoom into any portion
 of a drawing.  Zooming can be used in the middle of an ADD command.  For
 example, one can mouse the starting coordinate of a line, zoom across
-the design, and then click the next coordinate. 
+the design, and then click the next coordinate.   If you prefer not to
+use the scroll wheel, piglet can also zoom by clicking on a point with the
+middle button and dragging either right or left to zoom in and out.
 
-When the editor is idle and not processing any command, the a right
-mouse click will "fit window" and a left click will recenter the display
-to the selected point. 
+When the editor is idle and not processing any command, a 
+left mouse click will recenter the display on the selected point. 
 
 Anything typed at the command line goes into a readline buffer.  
 A vi command history binding can be obtained by adding the lines

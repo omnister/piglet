@@ -250,6 +250,7 @@ int com_change(LEXER *lp, char *arg)
 			    }
 			    if (state != END) {
 				new_layer = (int) optval;
+				printf("calling db_set_layer with %d\n", new_layer);
 				db_set_layer(p_best, new_layer);
 				currep->modified++;
 				need_redraw++;

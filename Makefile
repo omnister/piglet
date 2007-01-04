@@ -3,7 +3,7 @@ BINDIR=/usr/local/bin
 LIBDIR=/usr/local/lib/piglet
 
 # for Fedora core 3, x-64:
-#XLIB=-lX11 -L/usr/X11R6/lib64
+#XLIB=-lX11 -L/usr/X11R6/lib 
 # for x86
 XLIB=-lX11 -L/usr/X11R6/lib 
 
@@ -87,15 +87,15 @@ install: man/piglet.1p pig.bin
 	cp piglogo.d $(LIBDIR)
 
 depend: ${OBJ}
-	cp Makefile Makefile.bak
-	sed -n -e '1,/^# DO NOT DELETE OR MODIFY THIS LINE/p' Makefile \
+	cp makefile makefile.bak
+	sed -n -e '1,/^# DO NOT DELETE OR MODIFY THIS LINE/p' makefile \
                 > newmakefile
 	grep '^#include[ 	]*"' *.c \
                 | sed -e 's/:#include[  "]*\([a-z0-9\._A-Z]*\).*/: \1/' \
                 | sed -e 's/\.c:/.o:/' \
                 | sort | uniq >> newmakefile
-	mv Makefile Makefile.bak
-	mv newmakefile Makefile
+	mv makefile makefile.bak
+	mv newmakefile makefile
 
 #-----------------------------------------------------------------
 # DO NOT PUT ANY DEPENDENCIES AFTER THE NEXT LINE -- they will go away
@@ -208,6 +208,12 @@ draw.o: db.h
 draw.o: eprintf.h
 draw.o: equate.h
 draw.o: postscript.h
+draworig.o: db.h
+draworig.o: eprintf.h
+draworig.o: equate.h
+draworig.o: postscript.h
+draworig.o: rubber.h
+draworig.o: xwin.h
 draw.o: rubber.h
 draw.o: xwin.h
 eprintf.o: eprintf.h
@@ -290,8 +296,6 @@ rlgetc.o: xwin.h
 rubber.o: rubber.h
 selpnt.o: db.h
 stack.o: stack.h
-stipple.o: db.h
-stipple.o: xwin.h
 token.o: db.h
 token.o: eprintf.h
 token.o: lex.h
