@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "stack.h"
 
+#define RES 6
+
 /* these definitions map bit fields in an int skipping every other */
 /* bit allowing circle visibility to be set with x|CIRC, and circle */
 /* modifiability with x|(CIRC*2) (eg: the next higher bit */
@@ -36,16 +38,13 @@ int show[MAX_LAYER];
 
 /*   definition of hierarchical editor data structures 
  *
- *
  *   (this chain from HEAD is the cell definition symbol table)
  *
- *   all insertions are made at TAIL to avoid reversing definition order
+ *   all insertions are made at the tail to avoid reversing definition order
  *   everytime an archive is made and retrieved (a classic HP Piglet bug
  *   which made it very difficult to run a diff(1) on two versions of an
  *   archive file.
  *
- *                                              TAIL--|
- *                                                    v 
  *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
  *                           |                |                  |
  *                           |               ...                ...
@@ -57,11 +56,56 @@ int show[MAX_LAYER];
  *                                  v  [db_line]
  *                                [db_rect]
  *
- *   actually db_deflist chains are also double-linked with both head and tail,
- *   but this is not shown here for simplicity...
+ *   actually both db_tab and db_deflist chains are doubly-linked,
+ *   but this is not shown here for simplicity...  
  *
  */
 
+/*
+ *  OK, we use doubly-linked lists all over the place in piglet.
+ *  Here's how they work, since I've never seen this sort of
+ *  list described before.
+ *
+ *  Each element of the list has pointers to the next element
+ *  and pointers to the previous element.  db_deflist
+ *  elements are defined like:
+ *
+ *	typedef struct db_deflist {
+ *          ... (various stuff);
+ *	    struct db_deflist *next;    // to link to another
+ *	    struct db_deflist *prev;    // and to the previous
+ *	} DB_DEFLIST;
+ *
+ * Here is a picture.  "HEAD" is defined as "DB_DEFLIST *HEAD", and is
+ * the head pointer.  We have three db_deflist structures linked
+ * together here, first (F), second (S) and last (L).  Last->next points
+ * at NULL. 
+ * 
+ * Every cell->next points at the next one in line except for the last
+ * one which points at NULL.  Every cell->prev points at the previous
+ * one except the first one which points at the last one. 
+ *
+ * New cells get inserted at HEAD->prev. 
+ *
+ *             +--prev----------------+
+ *             |                      v
+ *   HEAD-->[ F ]-next->[ S ]-next->[ L ]--next-->NULL
+ *           ^           | ^           |
+ *           |           | |           |
+ *           +-prev------+ +-prev------+
+ *
+ * It is an almost completely circular doubly-linked
+ * list with HEAD pointing at the first element, and with
+ * the last element marked by having its next pointer pointing at NULL.
+ *
+ * When you look at the code for manipulating these lists (db_tabs,
+ * (db_deflists in db.c, coords in coords.c, and stacks in stack.c),
+ * it is often helpful to draw out one of these diagrams for both
+ * before and after the operation to make sure you've properly 
+ * handled all the links.
+ *
+ * Happy hacking!  RCW 01/12/07
+ */
 
 #define MAXFILENAME 128
 
@@ -145,7 +189,8 @@ typedef struct db_tab {
     int is_tmp_rep;		/* used to mark temporary instances created by WRAP */
 
     struct db_deflist *dbhead;  /* pointer to first cell definition */
-    struct db_deflist *dbtail;  /* pointer to last cell definition */
+    STACK  *undo;		/* place for keeping older versions */
+    STACK  *redo;               /* place for keeping newer versions */
 
     struct db_deflist *deleted; 	/* most recently deleted comp */
 
@@ -183,6 +228,7 @@ extern void append_opt( char *s );
 extern void discard_opts( void );
 extern OPTS *opt_alloc( char *s );
 extern OPTS *first_opt, *last_opt; 
+extern int  is_ortho(OPTS *opts);	
 
 #define MIRROR_OFF 0
 #define MIRROR_X   1
@@ -355,7 +401,9 @@ extern void db_def_print(
 	    );
 
 extern int db_def_archive(
-		DB_TAB *sp
+		DB_TAB *sp,
+		int smash,	/* if !==0, smash the archive */
+		int process	/* if !==0, include process file in archive */
 	    );
 
 #define FILL_OFF 0
@@ -497,3 +545,7 @@ void xform_point(XFORM *xp, double *xx, double *yy);
 XFORM *matrix_from_opts(OPTS *opts);
 
 void license();		/* from license.h */
+
+int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho);
+int db_cksum(DB_TAB *cell);
+

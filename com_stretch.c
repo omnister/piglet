@@ -66,7 +66,6 @@ int com_stretch(LEXER *lp, char *arg)
     double *xmin, *xmax, *ymin, *ymax;
     double d, distance, dbest;
     COORDS *coords;
-    double xx, yy;
     double *xsel,*ysel;
     double *xselold,*yselold;
     double *xselfirst,*yselfirst;
@@ -506,37 +505,6 @@ int com_stretch(LEXER *lp, char *arg)
 			state = NUM9;
 			break;
 
-			
-		    case (POLY+99):
-			coords = p_best->u.p->coords;
-
-			xx = coords->coord.x;
-			yy = coords->coord.y;
-			distance = dist(xx-x4, yy-y4);
-			dbest = distance;
-			xsel = &(coords->coord.x);
-			ysel = &(coords->coord.y);
-			coords = coords->next;
-
-			while(coords != NULL) {
-			    xx = coords->coord.x;
-			    yy = coords->coord.y;
-			    distance = dist(xx-x4, yy-y4);
-			    if (distance < dbest) {
-				xsel = &(coords->coord.x);
-				ysel = &(coords->coord.y);
-				dbest = distance;
-			    }
-			    coords = coords->next;
-			}
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM9;
-			break;
-
-
 		    case RECT:
 			xmin = &(p_best->u.r->x1);
 			xmax = &(p_best->u.r->x2);
@@ -665,6 +633,7 @@ int com_stretch(LEXER *lp, char *arg)
 		}
 		state = START;
 		rubber_clear_callback();
+		currep->modified++;
 		need_redraw++;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */

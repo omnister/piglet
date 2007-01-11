@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.42 2006/10/19 05:10:36 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.44 2007/01/11 19:17:11 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -383,7 +383,7 @@ void pan_init(int x, int y) {
 
 void pan_update(int x, int y) {
    if (pan_x-x > 10) {
-	zoom(1,1.2);
+	zoom(1,1.1);
 	pan_x=x;
    } else if (pan_x-x < -10) {
 	zoom(-1,1.1);
@@ -1148,6 +1148,7 @@ double *x, *y;
     extern double grid_xo, grid_xd;
     extern double grid_yo, grid_yd;
     double xo, yo, xd, yd;
+    double xx, yy;
     int debug=0;
 
     if (currep != NULL) {
@@ -1168,12 +1169,16 @@ double *x, *y;
 
     /* adapted from Graphic Gems, v1 p630 (round to nearest int fxn) */
 
-    *x = (double) ((*x)>0 ? 
+    xx = (double) ((*x)>0 ? 
 	xd*( (int) ((((*x)-xo)/xd)+0.5))+xo :
 	xd*(-(int) (0.5-(((*x)-xo)/xd)))+xo);
-    *y = (double) ((*y)>0 ? 
+    yy = (double) ((*y)>0 ? 
 	yd*( (int) ((((*y)-yo)/yd)+0.5))+yo : 
 	yd*(-(int) (0.5-(((*y)-yo)/yd)))+yo);
+
+    *x = xx-fmod(xx,1.0/pow(10.0,RES));
+    *y = yy-fmod(yy,1.0/pow(10.0,RES));
+
 }
 
 void snapxy_major(x,y)	/* snap to grid ticks multiplied by ds,dy */

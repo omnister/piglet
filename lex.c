@@ -334,7 +334,7 @@ LEXER *lp;
 		break;
 	    case EDI:
 		if (currep != NULL) {
-		    sprintf(buf, "EDIT %s> ", currep->name);
+		    sprintf(buf, "EDIT %s (%x)> ", currep->name, db_cksum(currep));
 		    rl_setprompt(buf);
 		} else {
 		    rl_setprompt("EDIT> ");
@@ -398,7 +398,7 @@ LEXER *lp;
 		   if(sscanf(word, "%lg", &y1) != 1) {
 		        weprintf("bad number: %s\n", word);
 		   }
-		   pan(x1,y1);
+		   /* pan(x1,y1); */
 	           state=0;
 	       } else {
 		   token_unget(lp, token, word);
@@ -529,46 +529,73 @@ int add_oval(LEXER *lp, int *layer)
     return(1);
 }
 
+/*  ARCHIVE  [{+|-}cmpnt[msk]]  [{:N|:L}lvl] [:P] [:R] [:H] [:S] devicename [filename] */
+
 int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
+    TOKEN token;
+    int done=0;
+    char word[128];
+    int smash = 0;
+    int process = 0;
+    XFORM *xp;
+
     need_redraw++; 
 
-    /* check for :P option to write PROCDATA info */
+    /* FIXME: check for :P option to write PROCDATA info */
     /* make sure and purge PROCDATA on read in */
 
+    while(!done && (token=token_get(lp, word)) != EOF) {
+	switch(token) {
+	    case OPT:		/* option */
+		if (strncasecmp(word, ":S", 2) == 0) { /* smash archive */
+		    smash++;
+		} else if (strncasecmp(word, ":P", 2) == 0) { /* include process file */
+		    process++;	/* FIXME: parsed, but not currently used */
+		} else {
+	    	    weprintf("bad option to ARCHIVE: %s\n", word);
+		    return(-1);
+		}
+	        break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case NUMBER: 	/* number */
+	    case IDENT: 	/* identifier */
+	    case QUOTE: 	/* quoted string */
+	    case END:		/* end of file */
+	    case EOL:		/* newline or carriage return */
+	    case COMMA:		/* comma */
+		break;
+	    default:
+		eprintf("bad case in com_archive");
+		break;
+	}
+    }
+
     if (currep != NULL) {
-	if (db_def_archive(currep)) {
-	    printf("unable to archive %s\n", currep->name);
-	    return(-1);
-	};
-	printf("    archived %s\n", currep->name);
-	currep->modified = 0;
+	if (!smash) {
+	    if (db_def_archive(currep, smash, process)) {
+		printf("unable to archive %s\n", currep->name);
+		return(-1);
+	    };
+	    printf("    archived %s\n", currep->name);
+	    currep->modified = 0;
+	} else {
+	    xp = (XFORM *) emalloc(sizeof(XFORM));
+	    xp->r11 = 1.0; xp->r12 = 0.0; xp->r21 = 0.0; xp->r22 = 1.0;
+	    xp->dx  = 0.0; xp->dy  = 0.0;
+	    db_arc_smash(currep, xp, 1);
+	    free(xp);
+	}
     } else {
 	printf("error: not currently editing a cell\n");
     }    	
 
-    /*
-	if(<name> != curr_name() && name != NULL) {
-	    if (exists_on_disk(name)) {
-		if_ask("do you want to overwrite?",name)
-		    writedb(currdev, name);
-		    mark_unmodified(name);
-	    } else {
-	    	writedb(currdev,name)
-		mark_unmodified(name);
-	    }
-	} else {
-	    if (currrname == NULL) {
-		prompt for new name or break
-	    }
-	    writedb(currdev, currname);
-	    mark_unmodified(name);
-	}
-    */
-
     return (0);
 }
-
 
 /* now in com_area.c */
 /* com_area(LEXER *lp, char *arg) */	  /* display area of selected component */

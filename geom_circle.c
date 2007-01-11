@@ -172,7 +172,6 @@ int count; /* number of times called */
 	bb.init=0;
 
         dbtab.dbhead = &dbdeflist;
-        dbtab.dbtail = &dbdeflist;
         dbtab.next = NULL;
 	dbtab.name = "callback";
 

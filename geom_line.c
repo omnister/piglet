@@ -284,7 +284,6 @@ int count; /* number of times called */
 	lockpoint(&x2, &y2, currep->lock_angle); 
 
         dbtab.dbhead = &dbdeflist;
-        dbtab.dbtail = &dbdeflist;
         dbtab.next = NULL;
 	dbtab.name = "callback";
 

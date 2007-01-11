@@ -28,7 +28,6 @@ char *PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 
 /* master symbol table pointers */
 static DB_TAB *HEAD = 0;
-static DB_TAB *TAIL = 0;
 
 /* global drawing variables */
 XFORM unity_transform;
@@ -133,7 +132,7 @@ char *s;
 
     /* this is written to ensure that a db_print is */
     /* not in reversed order...  New structures are */
-    /* added at the end of the list using TAIL      */
+    /* added at the end of the list using HEAD->prev */
 
     sp = (DB_TAB *) emalloc(sizeof(struct db_tab));
     sp->name = emalloc(strlen(s)+1); /* +1 for '\0' */
@@ -142,7 +141,8 @@ char *s;
     sp->next   = (DB_TAB *) 0; 
     sp->prev   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
-    sp->dbtail = (struct db_deflist *) 0; 
+    sp->undo = (STACK *) 0; 
+    sp->redo = (STACK *) 0; 
     sp->deleted = (struct db_deflist *) 0; 
     sp->background = (char *) 0;
 
@@ -176,13 +176,12 @@ char *s;
     sp->flag = 0;
 
     if (HEAD ==(DB_TAB *) 0) {	/* first element */
-	HEAD = TAIL = sp;
+	HEAD = sp;
+	sp->prev = sp;
     } else {
-	sp->prev = TAIL;
-	if (TAIL != (DB_TAB *) 0) {
-	    TAIL->next = sp;		/* current tail points to new */
-	}
-	TAIL = sp;			/* and tail becomes new */
+	sp->prev = HEAD->prev;
+	HEAD->prev->next = sp;
+	HEAD->prev = sp;
     }
 
     return (sp);
@@ -268,12 +267,12 @@ char *s;
 		need_redraw++;
 	    }
 
-	    if (HEAD==sp) {
+	    if (HEAD==sp) {		/* first in chain */
 		HEAD=sp->next;
 	    }
 
-	    if (TAIL==sp) {
-		TAIL=sp->prev;
+	    if (HEAD->prev==sp) {	/* last in chain */
+		HEAD->prev=sp->prev;
 	    }
 
 	    if (sp->prev != (DB_TAB *) 0) {
@@ -287,6 +286,9 @@ char *s;
 	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	    db_free_component(p);
 	}
+
+	/* FIXME: also free sp->undo and sp->redo stacks to prevent
+	   memory leaking */
     
 	free(sp->name);
 	free(sp->background);
@@ -711,9 +713,87 @@ char *name;
     return(err);
 }
 
+/* call it with unity xform in xp, ortho == 1 */
 
-int db_def_archive(sp) 
-DB_TAB *sp;
+int db_arc_smash(cell, xform, ortho)
+DB_TAB *cell;
+XFORM *xform;
+int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
+{
+    extern XFORM unity_transform;
+
+    DB_DEFLIST *p;
+    XFORM *xp;
+    XFORM *child_xform;
+    int child_ortho;
+
+    if (cell == NULL) {
+        printf("bad reference in db_render\n");
+    	return(0);
+    }
+
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+	switch (p->type) {
+        case ARC:   /* arc definition */
+        case CIRC:  /* circle definition */
+        case LINE:  /* line definition */
+        case NOTE:  /* note definition */
+        case OVAL:  /* oval definition */
+        case POLY:  /* polygon definition */
+	case RECT:  /* rectangle definition */
+        case TEXT:  /* text definition */
+	    /* print_smash_def(p, child_xform, ortho); */
+	    /* if ortho, then just emit primitive based on xform */
+	    /* otherwise convert primitive to polygon */
+	    break;
+        case INST:  /* recursive instance call */
+
+	    /* create transformation matrix from options */
+	    xp = matrix_from_opts(p->u.i->opts);
+
+	    xp->dx += p->u.i->x;
+	    xp->dy += p->u.i->y;
+
+	    child_xform = compose(xp,xform);
+            free(xp);
+
+	    child_ortho = ortho && is_ortho(p->u.i->opts);
+
+	    /* instances are called by name, not by pointer */
+	    /* otherwise, it is possible to PURGE a cell in */
+	    /* memory and then reference a bad pointer, causing */
+	    /* a crash... so instances are always accessed */
+	    /* with a db_lookup() call */
+
+	    if (db_lookup(p->u.i->name) == NULL) {
+
+		printf("skipping ref to %s, no longer in memory\n", p->u.i->name);
+
+	    	/* FIXME: try to reread the definition from disk */
+		/* this can only happen when a memory copy has */
+		/* been purged */
+
+	    } else {
+		/* printf("calling %s, ortho=%d\n", p->u.i->name, child_ortho); */
+		db_arc_smash(db_lookup(p->u.i->name), child_xform, child_ortho);
+	    }
+
+	    free(child_xform);
+
+	    break;
+	default:
+	    eprintf("unknown record type: %d in db_arc_smash\n", p->type);
+	    return(1);
+	    break;
+	}
+    }
+    return(1);
+}
+
+/* write out archive file for sp, smash it is smash !=0 */
+/* FIXME: include process file in process !=0 */
+
+int db_def_archive(DB_TAB *sp, int smash, int process) 
 {
     FILE *fp;
     char buf[MAXFILENAME];
@@ -726,10 +806,9 @@ DB_TAB *sp;
     err+=((fp = fopen(buf, "w+")) == 0); 
 
     fp = fopen(buf, "w+"); 
-
     
     for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
-	dp->flag=0;
+	dp->flag=0;  /* clear recursion flag */
     }
     fprintf(fp,"$FILES\n%s\n",sp->name);
 
@@ -747,7 +826,7 @@ DB_TAB *sp;
 
     /* now print out definitions of every cell from bottom to top */
 
-    db_def_arch_recurse(fp,sp);
+    db_def_arch_recurse(fp,sp,smash);
     db_def_print(fp, sp, ARCHIVE);
 
     err+=(fclose(fp) != 0);
@@ -772,8 +851,6 @@ DB_TAB *sp;
    uses the stack_push() and stack_pop() routines to reverse the order
    of the cell references. 
 */
- 
- 
 
 int db_def_files_recurse(fp,sp) 
 FILE *fp;
@@ -791,9 +868,10 @@ DB_TAB *sp;
     return(0); 	
 }
 
-int db_def_arch_recurse(fp,sp) 
+int db_def_arch_recurse(fp,sp,smash) 
 FILE *fp;
 DB_TAB *sp;
+int smash;
 {
     DB_DEFLIST *p; 
 
@@ -887,7 +965,6 @@ int *retval;
 /* notation for numbers that are very close but not equal to zero.  So, we use */
 /* the fmod function to make all numbers multiples of 1/(10^RES) */
 
-#define RES 6
 
 void printcoords(FILE *fp, XFORM *xp, double x, double y) {
     double xx, yy;
@@ -1121,12 +1198,172 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	break;
 
     default:
-	eprintf("unknown record type (%d) in db_def_print\n", p->type );
+	eprintf("unknown record type (%d) in printdef\n", p->type );
 	break;
     }
 
     free(xp);
 }
+
+/* ------------------------------------------- */
+
+static int digestvalue;
+
+void digestinit(void) {
+    extern int digestvalue;
+    digestvalue = 0;
+}
+
+void digestint(int x) {
+    extern int digestvalue;
+    digestvalue *= 13;
+    digestvalue += x;
+}
+
+void digestdouble(double a) {
+    extern int digestvalue;
+    unsigned char *p;
+    int debug=0;
+    int i;
+
+    if (debug) printf("(%12.12g)", a);
+    p = (unsigned char *) &a;
+    for (i=0; i<sizeof(double); i++) {
+	if (debug) printf("%d ", (char) p[i]);
+	digestvalue *= 13;
+	digestvalue += (char) p[i];
+    }
+    if (debug) printf("\n");
+}
+
+void digeststr(char *s) {
+    while(*s != 0) {
+	digestint((int) *s);
+        ++s;
+    }
+}
+
+void digestopts(OPTS *opts, char *optstring) {
+    extern int digestvalue;
+    int debug=0;
+    unsigned char *p;
+    int i;
+
+    p = (unsigned char *) opts;
+    for (i=0; i<sizeof(*opts); i++) {
+	if (debug) printf("%d ", p[i]);
+	digestvalue *= 13;
+	digestvalue += p[i];
+    }
+    if (debug) printf("\n");
+    if (opts->cname != NULL) digeststr(opts->cname);
+    if (opts->sname != NULL) digeststr(opts->sname);
+}
+
+void digestcoords(COORDS *cp) {
+    int debug=0;
+    COORDS *p=cp;
+
+    while(p != NULL) {
+        digestdouble(p->coord.x);
+        digestdouble(p->coord.y);
+	if (debug) printf("%g %g\n", p->coord.x, p->coord.y);
+	p = p->next;
+    }
+}
+
+int digestval() {
+    return(digestvalue);
+}
+
+void cksum(DB_DEFLIST *p) {
+
+    switch (p->type) {
+
+    case ARC:  /* arc definition */
+
+	digestint(p->u.a->layer);
+        digestopts(p->u.a->opts, ARC_OPTS);
+	digestdouble(p->u.a->x1); digestdouble(p->u.a->y1);
+	digestdouble(p->u.a->x2); digestdouble(p->u.a->y2);
+	digestdouble(p->u.a->x3); digestdouble(p->u.a->y3);
+	break;
+
+    case CIRC:  /* circle definition */
+
+	digestint(p->u.c->layer);
+        digestopts(p->u.c->opts, CIRC_OPTS);
+	digestdouble(p->u.c->x1); digestdouble(p->u.c->y1);
+	digestdouble(p->u.c->x2); digestdouble(p->u.c->y2);
+	break;
+
+    case LINE:  /* line definition */
+
+	digestint(p->u.l->layer);
+        digestopts(p->u.l->opts, LINE_OPTS);
+        digestcoords(p->u.l->coords);
+	break;
+
+    case NOTE:  /* note definition */
+
+	digestint(p->u.n->layer);
+	digestopts(p->u.n->opts, TEXT_OPTS);
+	digeststr(p->u.n->text);
+	digestdouble(p->u.n->x); digestdouble(p->u.n->y);
+	break;
+
+    case OVAL:  /* oval definition */
+
+	break;
+
+    case POLY:  /* polygon definition */
+
+	digestint(p->u.p->layer);
+	digestopts(p->u.p->opts, POLY_OPTS);
+        digestcoords(p->u.p->coords);
+	break;
+
+    case RECT:  /* rectangle definition */
+
+	digestint(p->u.r->layer);
+	digestopts(p->u.r->opts, RECT_OPTS);
+	digestdouble(p->u.r->x1); digestdouble(p->u.r->y1);
+	digestdouble(p->u.r->x2); digestdouble(p->u.r->y2);
+	break;
+
+    case TEXT:  /* text definition */
+
+	digestint(p->u.t->layer);
+	digestopts(p->u.t->opts, TEXT_OPTS);
+	digeststr(p->u.t->text);
+	digestdouble(p->u.t->x); digestdouble(p->u.t->y);
+	break;
+
+    case INST:  /* instance call */
+
+	digeststr(p->u.i->name);
+	digestopts(p->u.i->opts, INST_OPTS);
+	digestdouble(p->u.i->x); digestdouble(p->u.i->y);
+	break;
+
+    default:
+	eprintf("unknown record type (%d) in cksum\n", p->type );
+	break;
+    }
+}
+
+int db_cksum(dp) 
+DB_TAB *dp;
+{
+    DB_DEFLIST *p; 
+
+    digestinit();
+    for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+	cksum(p);
+    }
+    return(digestval());
+}
+
 
 void db_def_print(fp, dp, mode) 
 FILE *fp;
@@ -1166,21 +1403,26 @@ int mode;
     }
 }
 
+//          +++++++++++++++
+//          |             v
+//   H-->[ f ]-->[ s ]-->[ l ]--->/
+//        ^       | ^      | 
+//        +-------- +------  
+
 void db_unlink_component(cell, dp) 
-DB_TAB *cell;
-struct db_deflist *dp;
+DB_TAB *cell;			/* current rep */
+struct db_deflist *dp;          /* pbest */
 {
 
     if(dp == NULL) {
     	printf("can't delete a null instance\n");
-    }else if(dp->prev == NULL ) {		/* first one the list */
+    } else if(cell->dbhead == dp ) {	/* first one the list */
 	cell->dbhead = dp->next;
 	if (dp->next != NULL) {
 	    dp->next->prev = dp->prev;
 	}
     } else if(dp->next == NULL ) {	/* last in the list */
 	dp->prev->next = dp->next;
-	cell->dbtail = dp->prev;
     } else {				/* somewhere in the chain */
 	dp->prev->next = dp->next;
 	dp->next->prev = dp->prev;
@@ -1192,6 +1434,12 @@ struct db_deflist *dp;
     currep->deleted = dp;		/* save for one level of undo */
     currep->modified++;
 }
+
+//          +++++++++++++++
+//          |             v
+//   H-->[ f ]-->[ s ]-->[ l ]--->/
+//        ^       | ^      | 
+//        +-------- +------  
 
 void db_insert_component(cell,dp) 
 DB_TAB *cell;
@@ -1205,13 +1453,12 @@ struct db_deflist *dp;
 
     /* add definition at *end* of list */
     if (cell->dbhead == NULL) {
-	cell->dbhead = cell->dbtail = dp;
+	cell->dbhead = dp;
+	dp->prev = dp;	/* only one, so prev points at itself */
     } else {
-	dp->prev = cell->dbtail; 	/* doubly linked list */
-	if (cell->dbtail != NULL) {
-	    cell->dbtail->next = dp;
-	}
-	cell->dbtail = dp;
+	dp->prev = cell->dbhead->prev; 	/* doubly linked list */
+	cell->dbhead->prev->next = dp;
+	cell->dbhead->prev = dp;
     }
 
     cell->modified++;

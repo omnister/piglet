@@ -582,9 +582,10 @@ char *name;			/* instance name restrict or NULL */
 	}
     }
 
+    selpnt = NULL;
+
     if (p_best != NULL) {
 	p = p_best;
-	selpnt = NULL;
 	/* selpnt_clear(&selpnt); */
 
 	switch (p->type) {
@@ -1482,6 +1483,22 @@ double *yy;
     *yy=y;
 }
 
+/* return 1 if no shear, non-ortho rotate, or non-isotropic scale */
+int is_ortho(OPTS *opts)	      
+{
+    int retval = 1;	/* assume is ortho */
+
+    /* opts->mirror; */
+    /* opts->scale */
+
+    if (fmod(opts->rotation,90.0) != 0.0) retval = 0;
+    if (opts->slant != 0.0) retval = 0;
+    if (opts->aspect_ratio != 1.0) retval = 0;
+    if (opts->slant != 0.0) retval = 0;
+
+    return(retval);
+}
+
 XFORM *matrix_from_opts(opts) /* initialize xfrom matrix from options */
 OPTS *opts;
 {
@@ -1529,7 +1546,6 @@ OPTS *opts;
 
     return(xp);
 } 
-
 
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
@@ -1674,6 +1690,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 		/* been purged */
 
 	    } else {
+		/* mat_print(global_transform); */
 		db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
 	    }
 

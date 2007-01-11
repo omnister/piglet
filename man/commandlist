@@ -577,9 +577,9 @@ U: ARC <eoc>
 S: good
 T: {
 Creates an human readable ASCII file containing all the commands
-needed to reconstruct the current device and any sub-cells.  The archive file 
-contains definitions of all the sub-cells used in the drawing, thereby
-preserving the hierarchy.
+needed to reconstruct the current device and any sub-cells.  
+The archive file contains definitions of all the sub-cells 
+used in the drawing, thereby preserving the hierarchy.
 }
 
 N: AREa
