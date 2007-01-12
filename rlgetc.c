@@ -165,8 +165,12 @@ char *prompt;
 
 void initialize_readline()
 {
-    /* Allow conditional parsing of the ~/.inputrc file. */
-    rl_readline_name = (char *) estrdup(progname());
+    /* Allow conditional parsing of an inputrc file. */
+
+    /* commented out to force readline to use the default */
+    /* .inputrc name */
+
+    /* rl_readline_name = (char *) estrdup(progname()); */
 
     /* Now tell readline where to get characters 
      *

@@ -42,8 +42,13 @@ mouse on "ADD" "R" "6" and then mouse the two coordinates.
 Usually, it is only necessary to type on the keyboard for entering the
 names of cells, and for entering TEXT and NOTE strings.
 
-Open a piglet window and let's go through a tour of some commands:
+All commands that change the drawing can be undone with the UNDO
+command.  Any command that is UNDO can be reapplied with the REDO
+command.  The depth of the UNDO command is limited only by the
+available memory.  This makes it safe to explore piglet's commands.
+If you make a mistake, just UNDO it!
 
+Open a piglet window and let's go through a tour of some commands:
 
 ----------------- GRID ---------------------
 

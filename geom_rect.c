@@ -17,8 +17,6 @@
  *                       +-(:FILL)----+
  */
 
-/* FIXME: this version does not yet parse any options */
-
 static double x1, y1;
 void draw_box();
 
@@ -48,9 +46,10 @@ int add_rect(LEXER *lp, int *layer)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    db_checkpoint(lp);
 	    if (token == OPT ) {
 		token_get(lp,word); 
-		if (opt_parse(word, LINE_OPTS, &opts) == -1) {
+		if (opt_parse(word, RECT_OPTS, &opts) == -1) {
 		    state = END;
 		} else {
 		    state = START;

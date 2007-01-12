@@ -192,8 +192,6 @@ typedef struct db_tab {
     STACK  *undo;		/* place for keeping older versions */
     STACK  *redo;               /* place for keeping newer versions */
 
-    struct db_deflist *deleted; 	/* most recently deleted comp */
-
     char *background;		/* cell to display as background */
 
     struct db_tab *next;    	/* to link to next */
@@ -547,5 +545,8 @@ XFORM *matrix_from_opts(OPTS *opts);
 void license();		/* from license.h */
 
 int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho);
-int db_cksum(DB_TAB *cell);
+int db_cksum(DB_DEFLIST *cell);
+DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head);
+int db_checkpoint();
+void db_free(DB_DEFLIST *dp);
 

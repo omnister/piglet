@@ -125,25 +125,17 @@ DB_TAB *db_lookup(char *name)           /* find name in db */
     return(NULL);              	/* 0 ==> not found */
 } 
 
-DB_TAB *db_install(s)		/* install s in db */
-char *s;
-{
+DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     DB_TAB *sp;
 
-    /* this is written to ensure that a db_print is */
-    /* not in reversed order...  New structures are */
-    /* added at the end of the list using HEAD->prev */
-
     sp = (DB_TAB *) emalloc(sizeof(struct db_tab));
-    sp->name = emalloc(strlen(s)+1); /* +1 for '\0' */
-    strcpy(sp->name, s);
+    sp->name = NULL;
 
     sp->next   = (DB_TAB *) 0; 
     sp->prev   = (DB_TAB *) 0; 
     sp->dbhead = (struct db_deflist *) 0; 
     sp->undo = (STACK *) 0; 
     sp->redo = (STACK *) 0; 
-    sp->deleted = (struct db_deflist *) 0; 
     sp->background = (char *) 0;
 
     sp->vp_xmin = -100.0; 
@@ -174,6 +166,22 @@ char *s;
     sp->being_edited = 0;
     sp->is_tmp_rep = 0;
     sp->flag = 0;
+
+    return(sp);
+}
+
+DB_TAB *db_install(s)		/* install s in db */
+char *s;
+{
+    DB_TAB *sp;
+
+    /* this is written to ensure that a db_print is */
+    /* not in reversed order...  New structures are */
+    /* added at the end of the list using HEAD->prev */
+
+    sp = new_dbtab();
+    sp->name = emalloc(strlen(s)+1); /* +1 for '\0' */
+    strcpy(sp->name, s);
 
     if (HEAD ==(DB_TAB *) 0) {	/* first element */
 	HEAD = sp;
@@ -241,6 +249,13 @@ void db_list_db() 			/* print names of all cells in memory */
     }
 }
 
+void db_free(DB_DEFLIST *dp) {		/* free an entire definition list */
+    DB_DEFLIST *p;
+    for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
+	db_free_component(p);
+    }
+}
+
 void db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
 char *s;
@@ -287,9 +302,15 @@ char *s;
 	    db_free_component(p);
 	}
 
-	/* FIXME: also free sp->undo and sp->redo stacks to prevent
-	   memory leaking */
-    
+	/* free sp->undo and sp->redo stacks to prevent memory leak */
+
+        while ((p = (DB_DEFLIST *) stack_pop(&(sp->undo)))!=NULL) {              /* clear out undo stack */
+	     db_free(p);
+	}
+        while ((p = (DB_DEFLIST *) stack_pop(&(sp->redo)))!=NULL) {              /* clear out redo stack */
+	     db_free(p);
+	}
+
 	free(sp->name);
 	free(sp->background);
 	free(sp);
@@ -338,7 +359,6 @@ char *s;
 /* Rectangles rotated by non-multiples of 90 degrees */
 /* are converted into equivalent polygons */
 
-
 DB_DEFLIST *db_copy_component(p, pinstdef) 		/* create a copy of a component */
 DB_DEFLIST *p;	       /* component to be copied */
 DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
@@ -364,6 +384,11 @@ DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
     dp->next = NULL;
     dp->prev = NULL;
     dp->type = p->type;
+
+    dp->xmin = p->xmin;
+    dp->ymin = p->ymin;
+    dp->xmax = p->xmax;
+    dp->ymax = p->ymax;
 
     switch (p->type) {
     case ARC:  /* arc definition */
@@ -540,6 +565,56 @@ DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
 	break;
     }
     return (dp);
+}
+
+/* push copy of currep if changed w.r.t. old copy */
+
+int db_checkpoint(LEXER *lp) {	
+    int cknew;
+    int ckold;
+    DB_DEFLIST *copy;
+    int debug = 0;
+
+    if (currep == NULL || strcmp(lp->name, "STDIN") != 0) {
+       return(0);
+    }
+
+    cknew = db_cksum(currep->dbhead);
+    ckold = db_cksum((DB_DEFLIST *) stack_top(&(currep->undo)));
+
+    if (cknew != ckold) {
+        copy = db_copy_deflist(currep->dbhead); /* copy db_deflist chain */
+
+	if (debug) printf("pushing save copy onto undo stack\n");
+	stack_push(&(currep->undo), (char *) copy);
+
+        while ((copy = (DB_DEFLIST *) stack_pop(&(currep->redo)))!=NULL) { 
+	    db_free(copy); 			/* clear out redo stack */
+	}
+
+	return(1);
+    }
+    return(0);
+}
+
+DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head) {	/* copy db_deflist chain */
+
+    DB_DEFLIST *p;
+    DB_DEFLIST *tmp;
+    DB_DEFLIST *copy=NULL;
+
+    for (p=head; p!=(DB_DEFLIST *)0; p=p->next) {
+	tmp=db_copy_component(p, NULL);
+        if (copy == NULL) {
+           copy=tmp;
+           copy->prev = tmp;
+        } else {
+           copy->prev->next = tmp;
+           tmp->prev = copy->prev;
+           copy->prev = tmp;
+        }
+    } 
+    return(copy);
 }
 
 void db_free_component(p) 		/* recycle memory for component */
@@ -1353,15 +1428,19 @@ void cksum(DB_DEFLIST *p) {
 }
 
 int db_cksum(dp) 
-DB_TAB *dp;
+DB_DEFLIST *dp;
 {
     DB_DEFLIST *p; 
 
-    digestinit();
-    for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	cksum(p);
+    if (dp==NULL) {
+        return(0); 
+    } else {
+	digestinit();
+	for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
+	    cksum(p);
+	}
+	return(digestval());
     }
-    return(digestval());
 }
 
 
@@ -1387,10 +1466,10 @@ int mode;
 	dp->grid_xs, dp->grid_ys,
 	dp->grid_xo, dp->grid_yo);
 
-    fprintf(fp, "WIN %g,%g %g,%g;\n",
-    	dp->minx, dp->miny, dp->maxx, dp->maxy);
-    	/* dp->vp_xmin, dp->vp_ymin, dp->vp_xmax, dp->vp_ymax); */
-    	/* dp->minx, dp->miny, dp->maxx, dp->maxy); */
+    fprintf(fp, "WIN ");
+    printcoords(fp, &unity_transform, dp->minx, dp->miny);
+    printcoords(fp, &unity_transform, dp->maxx, dp->maxy);
+    fprintf(fp, ";\n");
 
     for (p=dp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
 	printdef(fp, p, NULL);
@@ -1428,10 +1507,7 @@ struct db_deflist *dp;          /* pbest */
 	dp->next->prev = dp->prev;
     }
 
-    if (currep->deleted != NULL) {
-	db_free_component(currep->deleted);	/* gone for good now! */
-    } 
-    currep->deleted = dp;		/* save for one level of undo */
+    db_free_component(dp);	        /* gone for good now! */
     currep->modified++;
 }
 

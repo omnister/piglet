@@ -83,6 +83,7 @@ int com_copy(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    db_checkpoint(lp);
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
 		token_get(lp,word); /* ignore for now */

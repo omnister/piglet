@@ -63,7 +63,7 @@ cat commandlist | awk '
 		fullname=toupper(name)
 		manname=tolower(fullname) ".1p"
 		manref=tolower(fullname) "(1p)"
-		print manref >> "seeallso.tmp"
+		print manref >> "seealso.tmp"
 		dumpman()
 		name=""
 		stat=""
@@ -92,10 +92,10 @@ function dumpman() {
 	#print ".SH FEATURES" >> manname
 	#print ".SH ADMINISTRATION" >> manname
 	print ".SH SEE ALSO" >> manname
-	while (getline foo <"seeallso") {
+	while (getline foo <"seealso") {
 	    print foo >> manname
 	}
-	close("seeallso");
+	close("seealso");
 	#print ".SH DIAGNOSTICS" >> manname
 	print ".SH AUTHOR" >> manname
 	print author >> manname
@@ -106,7 +106,7 @@ function dumpman() {
 }
 
 END {
-	system ("mv seeallso.tmp seeallso")
+	system ("mv seealso.tmp seealso")
 }
 
 '

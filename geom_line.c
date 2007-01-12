@@ -64,6 +64,7 @@ int add_line(LEXER *lp, int *layer)
 	} 
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
+		db_checkpoint(lp);
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {

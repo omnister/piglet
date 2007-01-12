@@ -110,6 +110,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	} 
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
+	        db_checkpoint(lp);
 		rubber_set_callback(draw_inst_bb);
 		if (token == OPT ) {
 		    token_get(lp, word); 

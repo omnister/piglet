@@ -22,6 +22,7 @@ extern void snapxy();
 extern void snapxy_major();
 void xwin_draw_line(int x1, int y1, int x2, int y2);
 void xwin_xor_line(int x1, int y1, int x2, int y2);
+void xwin_rubber_line(int x1, int y1, int x2, int y2);
 void xwin_fill_poly();
 void xwin_set_pen_line_fill(int pen, int line, int fill);
 typedef enum {D_ON, D_OFF, D_TOGGLE} DISPLAYSTATE;

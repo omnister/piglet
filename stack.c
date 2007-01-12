@@ -18,6 +18,15 @@ STACK *stack_new()
     return(tmp);
 }
 
+int stack_depth(STACK **stack)
+{
+    if (*stack == NULL) {
+        return(0);
+    } else {
+	return((*stack)->count);
+    }
+}
+
 void stack_push(stack, pointer)
 STACK **stack;
 char *pointer;
@@ -28,8 +37,10 @@ char *pointer;
 
     if (*stack == NULL) {	/* first call */
 	tmp->next = NULL;
+	tmp->count = 1;
     } else {			/* subsequent calls */
         tmp->next = *stack;	
+	tmp->count = (*stack)->count+1;
     }
     *stack = tmp;
     /* stack_print(stack);  */
@@ -59,7 +70,7 @@ STACK **stack;
 
      STACK *s;
 
-     if (stack == NULL) {
+     if (*stack == NULL) {
      	return;
      }
      while ((s=(STACK *)stack_pop(stack)) != NULL) {
@@ -86,14 +97,29 @@ STACK **stack;
      return(0);
 }
 
+char *stack_top(stack) 		/* return top of stack w/o pop */
+STACK **stack;
+{
+     char *p;
+
+     if (*stack == NULL) {
+     	return NULL;
+     }
+     if (*stack != NULL) {
+	 p = (*stack)->saved;
+     }
+     return p;
+}
+     
+
 char *stack_walk(stack)		/* each call returns a new entry, modifies stack */ 
 STACK **stack;
 {
      char *p;
-     if (stack == NULL) {
+     if (*stack == NULL) {
      	return NULL;
      }
-     if (stack != NULL) {
+     if (*stack != NULL) {
 	 p = (*stack)->saved;
 	 *stack = (*stack)->next;
      }

@@ -79,6 +79,7 @@ int com_wrap(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    db_checkpoint(lp);
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
 		token_get(lp,word); 
@@ -356,32 +357,6 @@ int com_wrap(LEXER *lp, char *arg)
     return(1);
 }
 
-
-/*
-
-    if (!done) {
-	if (valid_comp) {
-	} else { 
-	    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-		if((token=token_get(lp,word)) != IDENT) {
-		    printf("DEL INST: bad inst name: %s\n", word);
-		    done++;
-		}
-	    }
-	    if (debug) printf("calling del_inst with %s\n", word);
-	    if (!show_check_modifiable(currep, INST, my_layer)) {
-		    printf("INST component is not modifiable!\n");
-	    } else {
-		;
-	    }
-	}
-    }
-} else if (token == QUOTE) {
-    if (!show_check_modifiable(currep, INST, my_layer)) {
-	    printf("INST component is not modifiable!\n");
-    } else {
-	;
-*/
 
 void wrap_draw_box(x3, y3, count)
 double x3, y3;

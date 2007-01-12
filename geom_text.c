@@ -72,6 +72,7 @@ int mode;
 	} 
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
+	        db_checkpoint(lp);
 		if (token == OPT ) {
 		    token_get(lp, word); 
 		    if (nargs > 1) {

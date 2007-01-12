@@ -110,7 +110,7 @@ Window topwin;
 Window win;
 Window menuwin;
 GC gca, gcb;
-GC gcx;
+GC gcx, gcg;
 
 /* Menu definitions */
 
@@ -308,17 +308,21 @@ int initX()
 
     /* Create GC for text and drawing */
     getGC(win, &gca, font_info);
-    getGC(win, &gcb, font_info);
-    getGC(win, &gcx, font_info);
+    getGC(win, &gcb, font_info);	/* gcb for polygon filling */
+    getGC(win, &gcg, font_info);	/* gcg for grid */
+    getGC(win, &gcx, font_info);	/* gcx for highlighting */
 
     init_stipples();
 
+    XSetFillStyle(dpy, gcg, FillStippled);	
+    XSetFillRule(dpy, gcg, WindingRule);
+    XSetFunction(dpy, gcg, GXxor);
+
     XSetFillStyle(dpy, gcx, FillStippled);
     XSetFillRule(dpy, gcx, WindingRule);
-    /* XSetFunction(dpy, gcx, GXinvert); */ 
     XSetFunction(dpy, gcx, GXxor);
 
-    XSetStipple(dpy, gcb, stipple[0]);	   /* use gcb for polygon filling */
+    XSetStipple(dpy, gcb, stipple[0]);
     XSetFillStyle(dpy, gcb, FillStippled);
     XSetFillRule(dpy, gcb, WindingRule);
 
@@ -382,12 +386,19 @@ void pan_init(int x, int y) {
 }
 
 void pan_update(int x, int y) {
-   if (pan_x-x > 10) {
-	zoom(1,1.1);
-	pan_x=x;
-   } else if (pan_x-x < -10) {
-	zoom(-1,1.1);
-	pan_x=x;
+   int dx;
+   int dy;
+
+   dx = pan_x-x;
+   dy = pan_y-y;
+   
+   if (abs(dx)+abs(dy) > 10) {
+       if (dx > dy) {
+	  zoom(1,1.1);
+       } else {
+	  zoom(-1,1.1);
+       }
+       pan_x=x; pan_y=y;
    }
 }
 
@@ -463,7 +474,7 @@ int procXevent()
 	    if (currep != NULL ) {
 		bb.init=0;
 		db_render(currep,0,&bb,0);  /* render the current rep */
-		draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+		draw_grid(win, gcg, currep->grid_xd, currep->grid_yd,
 		    currep->grid_xs, currep->grid_ys, 
 		    currep->grid_xo, currep->grid_yo);
 		if (xwin_display_state() == D_ON) {
@@ -472,7 +483,7 @@ int procXevent()
 		XFlush(dpy);
 	    } else {
 		dosplash();
-		draw_grid(win, gcx, grid_xd, grid_yd,
+		draw_grid(win, gcg, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
 	    }
 	}
@@ -519,6 +530,7 @@ char **s;
     int debug=0;
 
     static char buf[BUF_SIZE];
+    static char pickbuf[BUF_SIZE];
     static char tmp[BUF_SIZE];
     static double xold,yold;
     unsigned long all = 0xffffffff;
@@ -536,7 +548,7 @@ char **s;
 	if (currep != NULL ) {
 	    bb.init=0;
 	    db_render(currep,0,&bb,0); /* render the current rep */
-	    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+	    draw_grid(win, gcg, currep->grid_xd, currep->grid_yd,
 		currep->grid_xs, currep->grid_ys,
 		currep->grid_xo, currep->grid_yo);
 	    if (xwin_display_state() == D_ON) {
@@ -545,7 +557,7 @@ char **s;
 	    XFlush(dpy);
 	} else {
 	    dosplash();
-	    draw_grid(win, gcx, grid_xd, grid_yd,
+	    draw_grid(win, gcg, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
 	}
     }
@@ -562,7 +574,7 @@ char **s;
 		snapxy(&x,&y);
 		sprintf(buf,"(%-8g,%-8g)", x, y);
 		if (xwin_display_state() == D_ON) {
-		    XDrawImageString(dpy,win,gcx,20, 20, buf, strlen(buf));
+		    XDrawImageString(dpy,win,gcg,20, 20, buf, strlen(buf));
 		}
 	    } else {
 		pan_update(xe.xmotion.x, xe.xmotion.y);
@@ -594,10 +606,10 @@ char **s;
 		break;
 	    if (xe.xexpose.window == win) {
 		if (currep != NULL ) {
-		    draw_grid(win, gcx, currep->grid_xd, currep->grid_yd,
+		    draw_grid(win, gcg, currep->grid_xd, currep->grid_yd,
 			currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
 		} else {
-		    draw_grid(win, gcx, grid_xd, grid_yd,
+		    draw_grid(win, gcg, grid_xd, grid_yd,
 			grid_xs, grid_ys, grid_xo, grid_yo);
 		}
 	    }  
@@ -639,7 +651,7 @@ char **s;
 			y = (double) xe.xmotion.y;
 			V_to_R(&x,&y);
 
-			/* FIXME: put in facility to turn off snapping for fine picking */
+			/* FIXME: turn off snapping for fine picking */
 			/*
 			if (snap==0) {
 			    snap=1;
@@ -651,8 +663,8 @@ char **s;
 			snapxy(&x,&y);
 
 			/* returning mouse loc as a string */
-			sprintf(buf," %f, %f\n", x, y);
-			*s = buf;
+			sprintf(pickbuf," %f, %f\n", x, y);
+			*s = pickbuf;
 
 			if (debug) printf("EVENT LOOP: got ButtonPress\n");
 			break;
@@ -662,8 +674,8 @@ char **s;
 			break;
 		    case 3: /* right button */
 			/* RIGHT button returns EOC */
-			sprintf(buf," ;\n");
-			*s = buf;
+			sprintf(pickbuf," ;\n");
+			*s = pickbuf;
 			break;
 		    case 4: /* mouse scroll button (up/out) */
 		    	zoom(1,1.2);
@@ -691,8 +703,8 @@ char **s;
 			   break;
 			case 3:
 			   /* RIGHT button returns EOC */
-			   sprintf(buf," ;\n");
-			   *s = buf;
+			   sprintf(pickbuf," ;\n");
+			   *s = pickbuf;
 			   break;
 			default:
 			   /* printf("b: unexpected button event: %d",
@@ -783,13 +795,24 @@ XFontStruct **font_info;
 /* this routine is used for doing the rubber band drawing during interactive */
 /* point selection.  It is identical to xwin_draw_line() but uses an xor style */
 
-void xwin_xor_line(x1, y1, x2, y2)
+/* used for grid, color changes with GRID :C<grid_color> */
+void xwin_xor_line(x1, y1, x2, y2)	
+int x1,y1,x2,y2;
+{
+    if (xwin_display_state() == D_ON) {
+	XDrawLine(dpy, win, gcg, x1, y1, x2, y2);
+    }
+}
+
+/* always use white for XOR, otherwise goes black on some color */
+void xwin_rubber_line(x1, y1, x2, y2)	
 int x1,y1,x2,y2;
 {
     if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gcx, x1, y1, x2, y2);
     }
 }
+
 
 void xwin_draw_line(x1, y1, x2, y2)
 int x1,y1,x2,y2;
@@ -1529,7 +1552,7 @@ int init_colors()
     int debug=0;
 
     /* try to allocate colors for PseudoColor, TrueColor,
-     * DirectCOlor, and StaticColor; use balack and white
+     * DirectColor, and StaticColor; use black and white
      * for StaticGray and GrayScale */
 
     default_depth = DefaultDepth(dpy, scr);

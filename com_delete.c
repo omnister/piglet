@@ -78,6 +78,7 @@ int com_delete(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    db_checkpoint(lp);
 	    if (token == OPT ) {
 		token_get(lp,word); /* ignore for now */
                 if (word[0]==':') {
@@ -282,29 +283,6 @@ int com_delete(LEXER *lp, char *arg)
     }
     return(1);
 }
-
-int com_undo(LEXER *lp, char *arg)		
-{
-    /* check that we are editing a rep */
-    printf("in UNDO\n");
-    if (currep == NULL) {
-	printf("UNDO: must do \"EDIT <name>\" before UNDO\n");
-	token_flush_EOL(lp);
-	return(1);
-    }
-
-    if (currep->deleted == NULL) {
-	printf("UNDO: nothing left to UNDO\n");
-	token_flush_EOL(lp);
-	return(1);
-    } else {
-	db_insert_component(currep,currep->deleted);
-	currep->deleted=NULL;
-	need_redraw++;
-    }
-    return(0);
-}
-
 
 void delete_draw_box(x2, y2, count)
 double x2, y2;

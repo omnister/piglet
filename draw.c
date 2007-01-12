@@ -1296,6 +1296,7 @@ DB_DEFLIST *p;			/* component to display */
 	do_circ(p, &bb, D_RUBBER);
 	break;
     case LINE:  /* line definition */
+	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	do_line(p, &bb, D_RUBBER);
 	break;
     case NOTE:  /* note definition */
@@ -1308,9 +1309,11 @@ DB_DEFLIST *p;			/* component to display */
 	do_oval(p, &bb, D_RUBBER);
 	break;
     case POLY:  /* polygon definition */
+	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	do_poly(p, &bb, D_RUBBER);
 	break;
     case RECT:  /* rectangle definition */
+	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	do_rect(p, &bb, D_RUBBER);
 	break;
     case TEXT:  /* text definition */
@@ -2148,7 +2151,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	} else if ((mode == D_RUBBER)) { /* xor rubber band drawing */
 	    if (drawon) {
 		if (X && (nseg > 1)) {
-		    xwin_xor_line((int)xxold,(int)yyold,(int)x,(int)y);
+		    xwin_rubber_line((int)xxold,(int)yyold,(int)x,(int)y);
 		}
 	    }
 	} else {		/* regular drawing */

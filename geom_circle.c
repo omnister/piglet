@@ -42,6 +42,7 @@ int add_circ(LEXER *lp, int *layer)
 	} 
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
+		db_checkpoint(lp);
 		if (token == OPT ) {
 		    token_get(lp, word); /* ignore for now */
 		    /* FIXME: do bound checking on opts */

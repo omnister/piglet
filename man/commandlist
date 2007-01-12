@@ -28,6 +28,12 @@ middle button and dragging either right or left to zoom in and out.
 When the editor is idle and not processing any command, a 
 left mouse click will recenter the display on the selected point. 
 
+All commands which modify the drawing geometry can be undone with
+the UNDO command.  The UNDO depth is limited only by available memory.
+Any undone operations can be redone with the REDO command. 
+Once the user is satisfied with the state of the drawing, and proceeds 
+to modify the geometry further, the REDO buffer is cleared.
+
 Anything typed at the command line goes into a readline buffer.  
 A vi command history binding can be obtained by adding the lines
 
@@ -793,8 +799,7 @@ T: {
 Deletes a component from the current device.  Optionally can be restricted
 to only delete a specified <component> and <layer>.  In any case, only
 components which have been made modifiable by the SHOW command can be
-deleted.  The most recent deleted component can be restored by the UNDO
-command.
+deleted.  
 
 Components to be deleted can be selected either by point or by region. 
 The default mode is select by point.  However, if you change to delete
@@ -1459,6 +1464,32 @@ is typed, the editor will be killed and all unsaved changes will be
 permanently lost.   BYE and QUIT are synonyms.
 }
 
+N: REDo
+D: REDo the last command
+U: RED <EOC>
+S: complete
+T: {
+Reapplies any change to the current cell reversed by the UNDo command.
+
+Piglet makes a copy of the entire device definition list before any 
+change and pushes it on an undo stack associated with each device.
+The depth of the stack is only limited by available memory.
+
+When an UNDo is performed, the state prior to the UNDo is pushed on
+the REDo stack.  UNDo and REDo can be performed in any order up
+to the limits of the saved information.  
+
+When the user finally makes a change to the cell
+with the any of the ADD, CHAnge, COPy, DELete, MOVe, SMAsh, STRetch,
+or WRAp commands, the contents of the REDo stack are
+cleared.
+
+The information in both the UNDo and REDo stacks is
+lost when the editor is exited.
+
+REDo prints the depth of both the UNDO and REDo stacks.
+}
+
 N: RETrieve
 D: read commands from an ARCHIVE file
 S: complete
@@ -1732,28 +1763,31 @@ A positive slant leans to the right, approximating an italic font.
 
 
 N: UNDo
-D: Undo the last DELETE command
+D: Undo the last command
 U: UND <EOC>
-S: one level, delete only
+S: complete
 T: {
-Restores the last deleted component.  Currently only one level of UNDO
-is available.  
-.SS IMPLEMENTATION DETAILS
-UNDO is currently written to simply save a pointer to the last deleted
-component in the device structure.  UNDO simply re-links the pointer
-back into the device definition list.  Because of this simple
-implementation, UNDO only works for DELETE but not MOVE and COPY.
+Reverses the last change to the current cell.  UNDO reverses changes
+made with the ADD CHAnge COPy DELete MOVe SMAsh STRetch and WRAp
+commands.
 
-The commercial editor Graffy makes a copy of the entire device
-definition list before any change and stores it on a stack associated
-with each device.  This allows multiple levels of UNDO and also works
-with every command.  The depth of the stack is user-settable to control
-the amount of memory used.
+Piglet makes a copy of the entire device definition list before any 
+change and pushes it on an undo stack associated with each device.
+The depth of the stack is only limited by available memory.
 
-Graffy also extends the UNDO command to have ":B" and ":E" options.  The
-":B" option turns off command-by-command state saving, and batches up all
-changes until the ":E" option is given.  A subsequent UNDO will restore the
-state to that before the ":B" option was given.
+When an UNDo is performed, the state prior to the UNDo is pushed on
+the REDo stack.  UNDo and REDo can be performed in any order up
+to the limits of the saved information.  
+
+When the user finally makes a change to the cell
+with the any of the ADD, CHAnge, COPy, DELete, MOVe, SMAsh, STRetch,
+or WRAp commands, the contents of the REDo stack are
+cleared.
+
+The information in both the UNDo and REDo stacks is
+lost when the editor is exited.
+
+UNDO prints the depth of both the UNDO and REDo stacks.
 }
 
 N: UNIts

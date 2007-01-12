@@ -18,6 +18,9 @@ readable/writable (#)).
 
 Now you can add lines with "ADD L<layer> x1,y1 x2,y2...;", or other components.
 
+All commands that change the drawing can be undone with UNDO, and redone with
+REDO.  The UNDO depth is limited only by available memory.
+
 Remember that all commands must end in either right mouse click, a ";" character,
 or the name of another command.
 

@@ -86,6 +86,7 @@ int com_stretch(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    db_checkpoint(lp);
 	    if (token == OPT ) {
 		token_get(lp,word); 
 		if (word[0]==':') {

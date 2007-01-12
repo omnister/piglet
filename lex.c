@@ -33,7 +33,7 @@ int com_group(), com_help(),  com_identify();
 int com_input(), com_interrupt(), com_layer(), com_level();
 int com_list(), com_lock(), com_macro(), com_menu();
 int com_move(), com_plot(), com_point(), com_process();
-int com_purge(), com_retrieve(), com_save(), com_search();
+int com_purge(), com_redo(), com_retrieve(), com_save(), com_search();
 int com_set(), com_shell(), com_show(), com_smash();
 int com_split(), com_step(), com_stretch(), com_time(), com_trace();
 int com_tslant(), com_undo(), com_units(), com_version(), com_window();
@@ -131,6 +131,8 @@ COMMAND commands[] =
     	"PUR <cellname>"},
     {"QUIT", com_bye, "terminate edit session",
     	"QUI <EOC>"},
+    {"REDO", com_redo, "redo the last command", 
+    	"REDo <EOC>"},
     {"RETRIEVE", com_retrieve, "read commands from an ARCHIVE file",
     	"RET <archivefile>"},
     {"SAVE", com_save, "save the current file or device to disk",
@@ -334,8 +336,14 @@ LEXER *lp;
 		break;
 	    case EDI:
 		if (currep != NULL) {
-		    sprintf(buf, "EDIT %s (%x)> ", currep->name, db_cksum(currep));
+		    if (debug) {
+			sprintf(buf, "EDIT %s (%d,%d)> ", currep->name, 
+		        stack_depth(&(currep->undo))-1, stack_depth(&(currep->redo)));
+		    } else {
+			sprintf(buf, "EDIT %s> ", currep->name);
+		    }
 		    rl_setprompt(buf);
+		    db_checkpoint(lp);
 		} else {
 		    rl_setprompt("EDIT> ");
 		}

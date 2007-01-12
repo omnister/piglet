@@ -9,13 +9,13 @@ XLIB=-lX11 -L/usr/X11R6/lib
 
  
 OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
-       eprintf.o geom_circle.o geom_rect.o geom_line.o \
-       geom_poly.o geom_text.o geom_inst.o geom_arc.o\
-       rlgetc.o token.o lex.o coords.o com_change.o\
-       com_add.o com_delete.o com_distance.o com_equate.o com_ident.o \
-       com_copy.o com_move.o com_window.o com_point.o com_show.o postscript.o \
-       com_area.o com_wrap.o com_smash.o readmenu.o com_edit.o com_stretch.o \
-       lock.o path.o stack.o selpnt.o license.o stipple.o
+   eprintf.o geom_circle.o geom_rect.o geom_line.o geom_poly.o \
+   geom_text.o geom_inst.o geom_arc.o rlgetc.o token.o lex.o \
+   coords.o com_change.o com_add.o com_delete.o com_distance.o \
+   com_equate.o com_ident.o com_copy.o com_move.o com_window.o \
+   com_point.o com_show.o com_area.o com_wrap.o com_smash.o \
+   readmenu.o com_edit.o com_stretch.o com_undo.o postscript.o \
+   lock.o path.o stack.o selpnt.o license.o stipple.o
 
 TARS=QUICKSTART AAA_README COPYING \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
@@ -26,13 +26,13 @@ geom_rect.c geom_text.c lex.c lex.h Makefile PROCDATA.P MENUDATA_V \
 NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
-com_area.c com_edit.c com_stretch.c stack.h \
+com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c 
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
 
-MANS=man/commandlist man/makemans man/seeallso 
+MANS=man/commandlist man/makemans man/seealso 
 
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
@@ -183,6 +183,11 @@ com_stretch.o: rlgetc.h
 com_stretch.o: rubber.h
 com_stretch.o: token.h
 com_stretch.o: xwin.h
+com_undo.o: db.h
+com_undo.o: lex.h
+com_undo.o: rlgetc.h
+com_undo.o: token.h
+com_undo.o: xwin.h
 com_window.o: db.h
 com_window.o: eprintf.h
 com_window.o: lex.h
