@@ -246,12 +246,18 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	xmax=x1+dx/2.0;
 	ymax=y1+dx/2.0;
 	if (debug) printf("setting xmin inside do_win() = %g\n", xmin);
-    } else if (n==4) {		/* how vp_xmin gets loaded during readin */
+
+    } else if (n==4) {		/* how cell bounds get loaded during readin */
 	if (currep != NULL) {
 	    currep->vp_xmin=x1;
 	    currep->vp_xmax=x2;
 	    currep->vp_ymin=y1;
 	    currep->vp_ymax=y2;
+
+	    currep->minx=x1;
+	    currep->maxx=x2;
+	    currep->miny=y1;
+	    currep->maxy=y2;
 	}
     	xmin=x1;
 	ymin=y1;
