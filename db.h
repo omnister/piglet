@@ -501,9 +501,11 @@ extern void db_highlight();
 extern void db_print_opts();
 extern void db_insert_component();
 extern void db_purge();
+extern void db_unlink_cell(DB_TAB *sp);
 extern int  db_exists();
 extern void db_list_db();
 extern double  dist(double x, double y);
+extern int ask( /* LEXER *lp, char *msg */ ); 
 
 extern int db_plot();			/* plot the device to a file */
 

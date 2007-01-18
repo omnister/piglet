@@ -143,13 +143,15 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 
 			old_rep = currep;
 
-			/* the old policy was to just dump it if it was not modified */
-			/* Now we leave being_edited */
-			/* alone and use it to manage an edit stack.  When we EXIT a cell */
-			/* with being_edited = N, we then re-edit the next cell in the db */
-			/* with the highest being_edited < N.  We have to do a search for */
-			/* the biggest one because of the possibility that a cell could be */
-			/* purged along the way... */
+			/* the old policy was to just dump it if it was */
+			/* not modified  Now we leave being_edited */
+			/* alone and use it to manage an edit stack.  */
+			/* When we EXIT a cell with being_edited = N, */
+			/* we then re-edit the next cell in the db */
+			/* with the highest being_edited < N. We have to */
+			/* do a search for the biggest one because of */
+			/* the possibility that a cell could be */
+			/* purged along the way...  */
 		    }
 		}
 
@@ -162,6 +164,12 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		if (debug) printf("got %s\n", name); 
 
 		lp->mode = EDI;
+
+		if ((new_rep=db_lookup(name)) != NULL) { 
+		    if (ask(lp, "Cell already in memory, read in a new copy?")) {
+		        db_unlink_cell(new_rep);
+		    }
+		}
 	    
 		if ((new_rep=db_lookup(name)) == NULL) { /* Not already in memory */
 
@@ -170,9 +178,9 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    need_redraw++;
 
 		    /* 
-		    should decompose this into routines
-		    FILE *search(char *cellname);
-		    readin(FILE *fp); 
+		       should decompose this into routines
+		       FILE *search(char *cellname);
+		       readin(FILE *fp); 
 		    */
 
 		    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
@@ -188,8 +196,11 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 			}
 		    } else { 	/* found copy and read it in */
 			if (debug) printf("calling dowin 2: %g %g %g %g\n", 
-				currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax);
-			do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, currep->vp_xmax, currep->vp_ymax, 1.0); 
+				currep->vp_xmin, currep->vp_ymin, 
+				currep->vp_xmax, currep->vp_ymax);
+
+			do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, 
+			        currep->vp_xmax, currep->vp_ymax, 1.0); 
 			currep->modified = 0;
 
 			if (old_rep == NULL ) {
@@ -202,6 +213,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 			show_init(currep);
 			need_redraw++;
 		    }
+
 		} else {			/* was already in memory */
 		    if (new_rep->being_edited) {
 		       printf("can't edit the same cell twice!\n");

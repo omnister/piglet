@@ -190,9 +190,9 @@ int count; /* number of times called */
 	    draw(x1,yy1, &bb, D_RUBBER);
 	    xwin_draw_point(x1, yy1);
 	    xwin_draw_point(x2, y2);
-	    xwin_draw_text(x2, (yy1+y2)/2.0, dybuf);
+	    xwin_draw_text(x2, (yy1+2.0*y2)/3.0, dybuf);
 	    xwin_draw_text((x1+x2)/2.0, yy1, dxbuf);
-	    xwin_draw_text((x1+x2)/2.0, (yy1+y2)/2.0, dxybuf);
+	    xwin_draw_text((2.0*x1+x2)/3.0, (2.0*yy1+y2)/3.0, dxybuf);
 	} else if (count > 0) {		/* intermediate calls */
 	    jump(&bb, D_RUBBER); /* erase old shape */
 	    draw(x1old,y1old, &bb, D_RUBBER);
@@ -201,17 +201,17 @@ int count; /* number of times called */
 	    draw(x1old,y1old, &bb, D_RUBBER);
 	    xwin_draw_point(x1old, y1old);
 	    xwin_draw_point(x2old, y2old);
-	    xwin_draw_text(x2old, (y1old+y2old)/2.0, dybufold);
+	    xwin_draw_text(x2old, (y1old+2.0*y2old)/3.0, dybufold);
 	    xwin_draw_text((x1old+x2old)/2.0, y1old, dxbufold);
-	    xwin_draw_text((x1old+x2old)/2.0, (y1old+y2old)/2.0, dxybufold);
+	    xwin_draw_text((2.0*x1old+x2old)/3.0, (2.0*y1old+y2old)/3.0, dxybufold);
 	    jump(&bb, D_RUBBER); /* draw new shape */
 	    draw(x1,yy1, &bb, D_RUBBER);
 	    draw(x2,y2, &bb, D_RUBBER);
 	    draw(x2,yy1, &bb, D_RUBBER);
 	    draw(x1,yy1, &bb, D_RUBBER);
-	    xwin_draw_text(x2, (yy1+y2)/2.0, dybuf);
+	    xwin_draw_text(x2, (yy1+2.0*y2)/3.0, dybuf);
 	    xwin_draw_text((x1+x2)/2.0, yy1, dxbuf);
-	    xwin_draw_text((x1+x2)/2.0, (yy1+y2)/2.0, dxybuf);
+	    xwin_draw_text((2.0*x1+x2)/3.0, (2.0*yy1+y2)/3.0, dxybuf);
 	    xwin_draw_point(x1, yy1);
 	    xwin_draw_point(x2, y2);
 	} else {			/* last call, cleanup */
@@ -222,9 +222,9 @@ int count; /* number of times called */
 	    draw(x1old,y1old, &bb, D_RUBBER);
 	    xwin_draw_point(x1old, y1old);
 	    xwin_draw_point(x2old, y2old);
-	    xwin_draw_text(x2old, (y1old+y2old)/2.0, dybufold);
+	    xwin_draw_text(x2old, (y1old+2.0*y2old)/3.0, dybufold);
 	    xwin_draw_text((x1old+x2old)/2.0, y1old, dxbufold);
-	    xwin_draw_text((x1old+x2old)/2.0, (y1old+y2old)/2.0, dxybufold);
+	    xwin_draw_text((2.0*x1old+x2old)/3.0, (2.0*y1old+y2old)/3.0, dxybufold);
 	}
 
 	/* save old values */

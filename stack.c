@@ -102,11 +102,14 @@ STACK **stack;
 {
      char *p;
 
+
      if (*stack == NULL) {
      	return NULL;
      }
      if (*stack != NULL) {
 	 p = (*stack)->saved;
+     } else {
+	 p = NULL;
      }
      return p;
 }

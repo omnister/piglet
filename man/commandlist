@@ -901,8 +901,16 @@ returns to editing the previous device.  There is no limit to the number
 of edits that can be stacked, except for the the constraint that no
 individual cell may appear more than once in the edit stack.
 
-If the newly specified device is already in memory, the memory copy will
-be used.  If the device is not already in memory, a search will be made
+If the newly specified device is already in memory, the user will
+be asked:
+.nf
+    "Cell already in memory, read in a new copy?: (y/n)?"
+.fi
+If "y" is typed, the memory copy will be discarded and a new
+copy read in from disk.  If "n" is typed, the old memory copy
+will be used, continuing the edit from where it was last EXIted.
+
+If the device is not already in memory, a search will be made
 for a definition of the device on disk.  If found, the disk definition
 will be read into memory and used.  If the device is neither in memory
 nor on disk, a new empty device will be created with the name <device>. 

@@ -256,6 +256,48 @@ void db_free(DB_DEFLIST *dp) {		/* free an entire definition list */
     }
 }
 
+void db_unlink_cell(DB_TAB *sp) {
+
+    DB_DEFLIST *p;
+
+    if (currep == sp) {
+	currep = NULL;
+	need_redraw++;
+    }
+
+    if (HEAD==sp) {		/* first in chain */
+	HEAD=sp->next;
+    }
+
+    if (HEAD!=NULL && HEAD->prev==sp) {	/* last in chain */
+	HEAD->prev=sp->prev;
+    }
+
+    if (sp->prev != (DB_TAB *) 0) {
+	sp->prev->next = sp->next;
+    }
+    if (sp->next != (DB_TAB *) 0) {
+	sp->next->prev = sp->prev;
+    }
+
+    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+	db_free_component(p);
+    }
+
+    /* free sp->undo and sp->redo stacks to prevent memory leak */
+
+    while ((p = (DB_DEFLIST *) stack_pop(&(sp->undo)))!=NULL) {              /* clear out undo stack */
+	 db_free(p);
+    }
+    while ((p = (DB_DEFLIST *) stack_pop(&(sp->redo)))!=NULL) {              /* clear out redo stack */
+	 db_free(p);
+    }
+
+    free(sp->name);
+    free(sp->background);
+    free(sp);
+}
+
 void db_purge(lp, s)			/* remove all definitions for s */
 LEXER *lp;
 char *s;
@@ -269,51 +311,12 @@ char *s;
     int flag=0;
 
     if ((sp=db_lookup(s))) { 	/* in memory */
-
         snprintf(buf, MAXFILENAME, "delete %s from memory", s);
         if (strcmp(lp->name, "STDIN") !=0 || ask(lp, buf)) {
-
-	    flag=1;
-
 	    if (debug) printf("db_purge: unlinking %s from db\n", s);
-
-	    if (currep == sp) {
-		currep = NULL;
-		need_redraw++;
-	    }
-
-	    if (HEAD==sp) {		/* first in chain */
-		HEAD=sp->next;
-	    }
-
-	    if (HEAD->prev==sp) {	/* last in chain */
-		HEAD->prev=sp->prev;
-	    }
-
-	    if (sp->prev != (DB_TAB *) 0) {
-		sp->prev->next = sp->next;
-	    }
-	    if (sp->next != (DB_TAB *) 0) {
-		sp->next->prev = sp->prev;
-	    }
+	    db_unlink_cell(sp);
+	    flag=1;
 	}
-
-	for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	    db_free_component(p);
-	}
-
-	/* free sp->undo and sp->redo stacks to prevent memory leak */
-
-        while ((p = (DB_DEFLIST *) stack_pop(&(sp->undo)))!=NULL) {              /* clear out undo stack */
-	     db_free(p);
-	}
-        while ((p = (DB_DEFLIST *) stack_pop(&(sp->redo)))!=NULL) {              /* clear out redo stack */
-	     db_free(p);
-	}
-
-	free(sp->name);
-	free(sp->background);
-	free(sp);
     } 
 
     /* FIXME: later on this will get extended to include a search */
@@ -585,7 +588,7 @@ int db_checkpoint(LEXER *lp) {
     if (cknew != ckold) {
         copy = db_copy_deflist(currep->dbhead); /* copy db_deflist chain */
 
-	if (debug) printf("pushing save copy onto undo stack\n");
+	if (debug) printf("pushing save copy onto undo stack new:%x old:%x\n", cknew, ckold);
 	stack_push(&(currep->undo), (char *) copy);
 
         while ((copy = (DB_DEFLIST *) stack_pop(&(currep->redo)))!=NULL) { 
@@ -1319,18 +1322,15 @@ void digeststr(char *s) {
 }
 
 void digestopts(OPTS *opts, char *optstring) {
-    extern int digestvalue;
-    int debug=0;
-    unsigned char *p;
-    int i;
-
-    p = (unsigned char *) opts;
-    for (i=0; i<sizeof(*opts); i++) {
-	if (debug) printf("%d ", p[i]);
-	digestvalue *= 13;
-	digestvalue += p[i];
-    }
-    if (debug) printf("\n");
+    digestdouble(opts->font_size);
+    digestint(opts->mirror);
+    digestint(opts->font_num);
+    digestint(opts->justification);
+    digestdouble(opts->rotation);
+    digestdouble(opts->width);
+    digestdouble(opts->scale);
+    digestdouble(opts->aspect_ratio);
+    digestdouble(opts->slant);
     if (opts->cname != NULL) digeststr(opts->cname);
     if (opts->sname != NULL) digeststr(opts->sname);
 }
@@ -1353,10 +1353,13 @@ int digestval() {
 
 void cksum(DB_DEFLIST *p) {
 
+    int debug = 0;
+
     switch (p->type) {
 
     case ARC:  /* arc definition */
 
+        if (debug) printf("arc ");
 	digestint(p->u.a->layer);
         digestopts(p->u.a->opts, ARC_OPTS);
 	digestdouble(p->u.a->x1); digestdouble(p->u.a->y1);
@@ -1366,6 +1369,7 @@ void cksum(DB_DEFLIST *p) {
 
     case CIRC:  /* circle definition */
 
+        if (debug) printf("circ %g %g %g %g ", p->u.c->x1, p->u.c->y1, p->u.c->x2, p->u.c->y2);
 	digestint(p->u.c->layer);
         digestopts(p->u.c->opts, CIRC_OPTS);
 	digestdouble(p->u.c->x1); digestdouble(p->u.c->y1);
@@ -1374,6 +1378,7 @@ void cksum(DB_DEFLIST *p) {
 
     case LINE:  /* line definition */
 
+        if (debug) printf("line ");
 	digestint(p->u.l->layer);
         digestopts(p->u.l->opts, LINE_OPTS);
         digestcoords(p->u.l->coords);
@@ -1381,6 +1386,7 @@ void cksum(DB_DEFLIST *p) {
 
     case NOTE:  /* note definition */
 
+        if (debug) printf("note ");
 	digestint(p->u.n->layer);
 	digestopts(p->u.n->opts, TEXT_OPTS);
 	digeststr(p->u.n->text);
@@ -1393,6 +1399,7 @@ void cksum(DB_DEFLIST *p) {
 
     case POLY:  /* polygon definition */
 
+        if (debug) printf("poly ");
 	digestint(p->u.p->layer);
 	digestopts(p->u.p->opts, POLY_OPTS);
         digestcoords(p->u.p->coords);
@@ -1400,6 +1407,7 @@ void cksum(DB_DEFLIST *p) {
 
     case RECT:  /* rectangle definition */
 
+        if (debug) printf("rect ");
 	digestint(p->u.r->layer);
 	digestopts(p->u.r->opts, RECT_OPTS);
 	digestdouble(p->u.r->x1); digestdouble(p->u.r->y1);
@@ -1408,6 +1416,7 @@ void cksum(DB_DEFLIST *p) {
 
     case TEXT:  /* text definition */
 
+        if (debug) printf("text %s ", p->u.t->text);
 	digestint(p->u.t->layer);
 	digestopts(p->u.t->opts, TEXT_OPTS);
 	digeststr(p->u.t->text);
@@ -1416,6 +1425,7 @@ void cksum(DB_DEFLIST *p) {
 
     case INST:  /* instance call */
 
+        if (debug) printf("inst ");
 	digeststr(p->u.i->name);
 	digestopts(p->u.i->opts, INST_OPTS);
 	digestdouble(p->u.i->x); digestdouble(p->u.i->y);
@@ -1431,6 +1441,7 @@ int db_cksum(dp)
 DB_DEFLIST *dp;
 {
     DB_DEFLIST *p; 
+    int debug=0;
 
     if (dp==NULL) {
         return(0); 
@@ -1438,6 +1449,7 @@ DB_DEFLIST *dp;
 	digestinit();
 	for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
 	    cksum(p);
+	    if (debug) printf("# %d %d\n", (int) p, digestval());
 	}
 	return(digestval());
     }
