@@ -360,8 +360,12 @@ int com_stretch(LEXER *lp, char *arg)
 
 		    case ARC:
 
+		        /* we are running through every point in 
+			   the component looking for the one closest
+			   to the pick point ... */
+
 			xsel = xmin = &(p_best->u.a->x1);
-			xsel = ymin = &(p_best->u.a->y1);
+			ysel = ymin = &(p_best->u.a->y1);
 			dbest = d = dist(*xmin-x4, *ymin-y4);
 
 			xmin = &(p_best->u.a->x2);

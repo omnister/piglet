@@ -1,6 +1,11 @@
+# this script parses the "commandlist" file and
+# formats it into man and html pages.  All updates
+# to the documentation should be done to the commandlist
+# file rather than the generated pages
+
 cat commandlist | awk '
     BEGIN {
-    	version = "0.8"
+    	version = "0.95"
 	author = "Rick Walker (walker AT omnisterra DOT com)"
 	webhome = "http://www.omnisterra.com/walker/linux/piglet/intro.htm"
 	inblank=0
@@ -80,7 +85,7 @@ cat commandlist | awk '
     }
 
 function dumpman() {
-    	print ".TH " fullname, "1P \"PD Piglet Users Manual\"" > manname
+    	print ".TH " fullname, "1P \"PD Piglet Users Manual\" \"\" \"PD Piglet Users Manual\"" > manname
 	print ".ad b" >> manname
 	print ".SH NAME" >> manname
 	print fullname, "-", desc >> manname

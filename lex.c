@@ -261,50 +261,6 @@ char **argv;
     return(1);
 }
 
-void winfit() 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL ) {
-	xmin = currep->minx;
-	ymin = currep->miny;
-	xmax = currep->maxx;
-	ymax = currep->maxy;
-
-	dx=(xmax-xmin);
-        dy=(ymax-ymin);
-        xmin-=dx/40.0;
-        xmax+=dx/40.0;
-        ymin-=dy/40.0;
-        ymax+=dy/40.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    } 
-}
-
-void pan(double x1, double y1) 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL) {
-	xmin = currep->vp_xmin;
-	ymin = currep->vp_ymin;
-	xmax = currep->vp_xmax;
-	ymax = currep->vp_ymax;
-
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=x1-dx/2.0;
-	xmax=x1+dx/2.0;
-	ymin=y1-dy/2.0;
-	ymax=y1+dy/2.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    }
-}
-
 void parse(lp)
 LEXER *lp;
 {
@@ -378,7 +334,6 @@ LEXER *lp;
 		    case COMMA:
 			break;
 		    case EOC:
-			/* winfit(); printf("calling winfit\n"); */
 			break;
 		    case NUMBER:
 			if(sscanf(word, "%lg", &x1) != 1) {

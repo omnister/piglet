@@ -13,7 +13,7 @@
 #define POINT 0
 #define REGION 1
 
-static double x1, y1, x2, y2, x3, y3, x4, y4;
+static double x1, y1, x2, y2, x3, y3, x4, y4, x4old, y4old;
 void draw_bbox();
 void move_draw_point();
 void move_draw_box();
@@ -104,10 +104,10 @@ int com_move(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == EOL || token == EOC) {
 		token_get(lp,word); 	/* just eat it up */
 		state = START;
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,word);
@@ -288,7 +288,25 @@ int com_move(LEXER *lp, char *arg)
 		state = COM3;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
+		token_get(lp,word); 
+		rubber_clear_callback();
+		for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+		    if (tmp->xsel != NULL) {
+		       *(tmp->xsel) = tmp->xselorig;
+		    }
+		    if (tmp->ysel != NULL) {
+		       *(tmp->ysel) = tmp->yselorig;
+		    }
+		    if (tmp->p != NULL) {
+			db_highlight(tmp->p);
+		    }
+		}
+		selpnt_clear(&selpnt);	
+		currep->modified++;
+		need_redraw++;
+		state = START;
+	    } else if (token == CMD) {
 		state = END;	
 	    } else {
 		token_err("MOVE", lp, "expected NUMBER", token);
@@ -312,7 +330,8 @@ int com_move(LEXER *lp, char *arg)
 	    if (token == NUMBER) {
 		token_get(lp,word);
 		sscanf(word, "%lf", &y3);	/* scan it in */
-		printf("got %g %g\n", x3, y3);
+		x4 = x3; y4 = y3;
+		if (debug) printf("got %g %g\n", x3, y3);
 		rubber_set_callback(move_draw_point);
 		state = NUM7;
 	    } else if (token == EOL) {
@@ -333,6 +352,14 @@ int com_move(LEXER *lp, char *arg)
 		state = COM4;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
+	    } else if (token == EOC) {
+		token_get(lp,word); 
+		rubber_clear_callback();
+		move_draw_point(x4, y4, 0);
+		selpnt_clear(&selpnt);	
+		currep->modified++;
+		need_redraw++;
+		state = START;
 	    } else {
 		token_err("MOVE", lp, "expected NUMBER", token);
 		printf("aborting MOV\n");
@@ -361,23 +388,21 @@ int com_move(LEXER *lp, char *arg)
 	    if (token == NUMBER) {
 		token_get(lp,word);
 		sscanf(word, "%lf", &y4);	/* scan it in */
-		printf("got %g %g\n", x4, y4);
-		rubber_clear_callback();
-		for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
-		    if (tmp->xsel != NULL) {
-		       *(tmp->xsel) = tmp->xselorig + x4 - x3;
-		    }
-		    if (tmp->ysel != NULL) {
-		       *(tmp->ysel) = tmp->yselorig + y4 - y3;
-		    }
-		    if (tmp->p != NULL) {
-			db_highlight(tmp->p);
-		    }
+		if (debug) printf("got %g %g\n", x4, y4);
+		if (x4old == x4 && y4old == y4) { /* double click */	
+		    rubber_clear_callback();
+		    move_draw_point(x4, y4, 0);
+		    selpnt_clear(&selpnt);	
+		    currep->modified++;
+		    need_redraw++;
+		    state = START;
+		} else {
+		    move_draw_point(x4, y4, 0);
+		    currep->modified++;
+		    need_redraw++;
+		    state = NUM7;		/* RCW XX */
 		}
-		selpnt_clear(&selpnt);	/* RCW */
-		currep->modified++;
-		need_redraw++;
-		state = START;
+		x4old=x4; y4old=y4;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else {
@@ -390,7 +415,7 @@ int com_move(LEXER *lp, char *arg)
 	    break;
 	case END:
 	default:
-	    if (token == EOC || token == CMD) {
+	    if (token == CMD) {
 		;
 	    } else {
 		token_flush_EOL(lp);
