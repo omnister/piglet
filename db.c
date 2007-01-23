@@ -269,7 +269,7 @@ void db_unlink_cell(DB_TAB *sp) {
 	HEAD=sp->next;
     }
 
-    if (HEAD!=NULL && HEAD->prev==sp) {	/* last in chain */
+    if (HEAD->prev==sp) {	/* last in chain */
 	HEAD->prev=sp->prev;
     }
 

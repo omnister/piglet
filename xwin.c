@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.45 2007/01/18 19:12:58 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.45 2007/01/18 19:12:58 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -76,10 +76,6 @@ int grid_notified = 0;
 int need_redraw=0;
 
 static double x,y;
-static int xa,ya; 	/* remember raw button coords */
-static int xb,yb; 	/* remember raw button coords */
-static int xr,yr; 	/* remember raw button coords */
-static int moved=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -382,51 +378,6 @@ void zoom(int dir, double scale)
     }
 }
 
-void winfit() 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL ) {
-	xmin = currep->minx;
-	ymin = currep->miny;
-	xmax = currep->maxx;
-	ymax = currep->maxy;
-
-	dx=(xmax-xmin);
-        dy=(ymax-ymin);
-        xmin-=dx/40.0;
-        xmax+=dx/40.0;
-        ymin-=dy/40.0;
-        ymax+=dy/40.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    } 
-}
-
-void pan(double x1, double y1) 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL) {
-	xmin = currep->vp_xmin;
-	ymin = currep->vp_ymin;
-	xmax = currep->vp_xmax;
-	ymax = currep->vp_ymax;
-
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=x1-dx/2.0;
-	xmax=x1+dx/2.0;
-	ymin=y1-dy/2.0;
-	ymax=y1+dy/2.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    }
-}
-
-
 static int pan_x = 0;
 static int pan_y = 0;
 void pan_init(int x, int y) {
@@ -626,10 +577,7 @@ char **s;
 		    XDrawImageString(dpy,win,gcg,20, 20, buf, strlen(buf));
 		}
 	    } else {
-		xr = xe.xmotion.x;
-		yr = xe.xmotion.y;
-		pan_update(xr, yr);
-		moved=1;
+		pan_update(xe.xmotion.x, xe.xmotion.y);
 	    }
 
 	    if (xold != x || yold != y) {
@@ -694,21 +642,6 @@ char **s;
 	case ButtonRelease:
 	    button_down=0;
 	    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
-
-	    if (xe.xexpose.window == win) {
-		switch (xe.xbutton.button) {
-		    case 2:	/* left button */
-			if (abs(xa-xb) < 3 && abs(ya-yb) < 3) {
-			   winfit();
-			} else if (!moved || (abs(xb-xr) < 3 && abs(yb-yr) < 3)) {
-			   pan(x,y);
-			}
-		        break;
-		    default:
-		        break;
-		}
-	    }
-	    moved=0;
 	    break;
 	case ButtonPress:
 	    if (xe.xexpose.window == win) {
@@ -716,7 +649,7 @@ char **s;
 		    case 1:	/* left button */
 			x = (double) xe.xmotion.x;
 			y = (double) xe.xmotion.y;
-		        V_to_R(&x,&y);
+			V_to_R(&x,&y);
 
 			/* FIXME: turn off snapping for fine picking */
 			/*
@@ -737,10 +670,7 @@ char **s;
 			break;
 		    case 2:	/* middle button */
 			button_down=1;
-			xa = xb; ya = yb;	
-			xr = xb = xe.xmotion.x;
-			yr = yb = xe.xmotion.y;
-			pan_init(xb,yb);
+			pan_init(xe.xmotion.x, xe.xmotion.y);
 			break;
 		    case 3: /* right button */
 			/* RIGHT button returns EOC */
