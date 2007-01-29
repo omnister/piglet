@@ -143,6 +143,11 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     sp->vp_xmax = 100.0; 
     sp->vp_ymax = 100.0; 
 
+    sp->old_xmin = -100.0; 
+    sp->old_ymin = -100.0; 
+    sp->old_xmax = 100.0; 
+    sp->old_ymax = 100.0; 
+
     sp->minx = -100.0; 
     sp->miny = -100.0; 
     sp->maxx = 100.0; 
@@ -269,7 +274,7 @@ void db_unlink_cell(DB_TAB *sp) {
 	HEAD=sp->next;
     }
 
-    if (HEAD->prev==sp) {	/* last in chain */
+    if (HEAD!=NULL && HEAD->prev==sp) {	/* last in chain */
 	HEAD->prev=sp->prev;
     }
 

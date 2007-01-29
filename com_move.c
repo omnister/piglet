@@ -19,6 +19,73 @@ void move_draw_point();
 void move_draw_box();
 SELPNT *selpnt, *tmp;
 
+int getnum(LEXER *lp, char *cmd, double *px, double *py)
+{
+    int done=0;
+    TOKEN token;
+    char word[BUFSIZE];
+    int state = 1;
+    int debug = 0;
+
+   printf("in getnum\n");
+
+    while(!done) {
+	token = token_look(lp,word);
+	if (debug) printf("got %s: %s\n", tok2str(token), word);
+	if (token==CMD) {
+	    state=4;
+	} 
+
+	switch(state) {	
+	case 1:		/* get pair of xy coordinates */
+	    if (debug) printf("in NUM1\n");
+	    if (token == NUMBER) {
+		token_get(lp,word);
+		sscanf(word, "%lf", px);	/* scan it in */
+		state = 2;
+	    } else if (token == EOL) {
+		token_get(lp,word); 	/* just ignore it */
+	    } else if (token == EOC || token == CMD) {
+		state = 4;	
+	    } else {
+		token_err(cmd, lp, "expected NUMBER", token);
+		state = 4; 
+	    }
+	    break;
+	case 2:		
+	    if (debug) printf("in COM1\n");
+	    if (token == EOL) {
+		token_get(lp,word); /* just ignore it */
+	    } else if (token == COMMA) {
+		token_get(lp,word);
+		state = 3;
+	    } else {
+		token_err(cmd, lp, "expected COMMA", token);
+		state = 4;
+	    }
+	    break;
+	case 3:
+	    if (debug) printf("in NUM2\n");
+	    if (token == NUMBER) {
+		token_get(lp,word);
+		sscanf(word, "%lf", py);	/* scan it in */
+		return(1);
+	    } else if (token == EOL) {
+		token_get(lp,word); 	/* just ignore it */
+	    } else if (token == EOC || token == CMD) {
+		state = 4;
+	    } else {
+		token_err(cmd, lp, "expected NUMBER", token);
+		state = 4; 
+	    }
+	    break;
+	case 4:		
+	    done++;
+	}
+    }
+    return(0);	
+}
+
 /* 
     move a component in the current device.
     MOV <restrictor> { xysel xyref xynewref } ... <EOC>
@@ -34,7 +101,7 @@ int com_move(LEXER *lp, char *arg)
     char word[BUFSIZE];
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
-    int debug=0;
+    int debug=1;
     int valid_comp=0;
     int i;
     int mode=POINT;
@@ -165,38 +232,9 @@ int com_move(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (debug) printf("in NUM1\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("MOVE", lp, "expected COMMA", token);
+	    if (!getnum(lp, "MOVE", &x1, &y1)) {
 	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (debug) printf("in NUM2\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
+	    } else {
 		if (mode == POINT) {
 		    /* printf("calling db_ident, 
 		        %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp); */
@@ -215,45 +253,12 @@ int com_move(LEXER *lp, char *arg)
                     rubber_set_callback(move_draw_box);
                     state = NUM3; 
 		 }
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
-	        state = END;
-	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
 	    }
 	    break;
         case NUM3:              /* get pair of xy coordinates */
-            if (token == NUMBER) {
-                token_get(lp,word);
-                sscanf(word, "%lf", &x2);       /* scan it in */
-                state = COM2;
-            } else if (token == EOL) {
-                token_get(lp,word);     /* just ignore it */
-            } else if (token == EOC || token == CMD) {
-                state = END;
-            } else {
-                token_err("IDENT", lp, "expected NUMBER", token);
-                state = END;
-            }
-            break;
-        case COM2:
-            if (token == EOL) {
-                token_get(lp,word); /* just ignore it */
-            } else if (token == COMMA) {
-                token_get(lp,word);
-                state = NUM4;
-            } else {
-                token_err("IDENT", lp, "expected COMMA", token);
-                state = END;
-            }
-            break;
-        case NUM4:
-            if (token == NUMBER) {
-                token_get(lp,word);
-                sscanf(word, "%lf", &y2);       /* scan it in */
+	    if (!getnum(lp, "MOVE", &x2, &y2)) {
+	        state = END;
+	    } else {
 		rubber_clear_callback();
                 selpnt=db_ident_region2(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
 		if (selpnt == NULL) {
@@ -269,79 +274,36 @@ int com_move(LEXER *lp, char *arg)
                      }
 		    state = NUM5;
 		}
-            } else if (token == EOL) {
-                token_get(lp,word);     /* just ignore it */
-            } else if (token == EOC || token == CMD) {
-                printf("IDENT: cancelling POINT\n");
-                state = END;
-            } else {
-                token_err("IDENT", lp, "expected NUMBER", token);
-                state = END;
-            }
+	    }
             break;
-
 	case NUM5:
-	    if (debug) printf("in NUM5\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x3);	/* scan it in */
-		state = COM3;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC) {
-		token_get(lp,word); 
-		rubber_clear_callback();
-		for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
-		    if (tmp->xsel != NULL) {
-		       *(tmp->xsel) = tmp->xselorig;
+	    if (!getnum(lp, "MOVE", &x3, &y3)) {
+	        if ((token = token_look(lp,word)) == EOC) {
+		    token_get(lp,word); 
+		    rubber_clear_callback();
+		    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+			if (tmp->xsel != NULL) {
+			   *(tmp->xsel) = tmp->xselorig;
+			}
+			if (tmp->ysel != NULL) {
+			   *(tmp->ysel) = tmp->yselorig;
+			}
+			if (tmp->p != NULL) {
+			    db_highlight(tmp->p);
+			}
 		    }
-		    if (tmp->ysel != NULL) {
-		       *(tmp->ysel) = tmp->yselorig;
-		    }
-		    if (tmp->p != NULL) {
-			db_highlight(tmp->p);
-		    }
+		    selpnt_clear(&selpnt);	
+		    currep->modified++;
+		    need_redraw++;
+		    state = START;
+		} else {
+		    state = END;
 		}
-		selpnt_clear(&selpnt);	
-		currep->modified++;
-		need_redraw++;
-		state = START;
-	    } else if (token == CMD) {
-		state = END;	
 	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM3:		
-	    if (debug) printf("in COM3\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM6;
-	    } else {
-		token_err("MOVE", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM6:
-	    if (debug) printf("in NUM6\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y3);	/* scan it in */
 		x4 = x3; y4 = y3;
 		if (debug) printf("got %g %g\n", x3, y3);
 		rubber_set_callback(move_draw_point);
 		state = NUM7;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("MOVE: cancelling POINT\n");
-	        state = END;
-	    } else {
-		token_err("MOVE", lp, "expected NUMBER", token);
-		state = END; 
 	    }
 	    break;
 	case NUM7:

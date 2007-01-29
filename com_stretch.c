@@ -371,12 +371,12 @@ int com_stretch(LEXER *lp, char *arg)
 			xmin = &(p_best->u.a->x2);
 			ymin = &(p_best->u.a->y2);
 			d = dist(*xmin-x4, *ymin-y4);
-			if (d < dbest) { xsel = xmin, ysel = ymax; dbest = d; }
+			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
 			xmin = &(p_best->u.a->x3);
 			ymin = &(p_best->u.a->y3);
 			d = dist(*xmin-x4, *ymin-y4);
-			if (d < dbest) { xsel = xmin, ysel = ymax; dbest = d; }
+			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
 			selpnt_clear(&selpnt);
 			selpnt_save(&selpnt, xsel, ysel, NULL);

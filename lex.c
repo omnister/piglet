@@ -261,50 +261,6 @@ char **argv;
     return(1);
 }
 
-void winfit() 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL ) {
-	xmin = currep->minx;
-	ymin = currep->miny;
-	xmax = currep->maxx;
-	ymax = currep->maxy;
-
-	dx=(xmax-xmin);
-        dy=(ymax-ymin);
-        xmin-=dx/40.0;
-        xmax+=dx/40.0;
-        ymin-=dy/40.0;
-        ymax+=dy/40.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    } 
-}
-
-void pan(double x1, double y1) 
-{
-    double xmin,ymin,xmax,ymax;
-    double dx,dy;
-
-    if (currep != NULL) {
-	xmin = currep->vp_xmin;
-	ymin = currep->vp_ymin;
-	xmax = currep->vp_xmax;
-	ymax = currep->vp_ymax;
-
-	dx=(xmax-xmin);
-	dy=(ymax-ymin);
-	xmin=x1-dx/2.0;
-	xmax=x1+dx/2.0;
-	ymin=y1-dy/2.0;
-	ymax=y1+dy/2.0;
-
-	xwin_window_set(xmin,ymin,xmax,ymax);
-    }
-}
-
 void parse(lp)
 LEXER *lp;
 {
@@ -378,7 +334,6 @@ LEXER *lp;
 		    case COMMA:
 			break;
 		    case EOC:
-			/* winfit(); printf("calling winfit\n"); */
 			break;
 		    case NUMBER:
 			if(sscanf(word, "%lg", &x1) != 1) {
@@ -1623,41 +1578,6 @@ char *arg;
     return (0);
 }
 
-int com_purge(lp, arg)		/* remove device from memory and disk */
-LEXER *lp;
-char *arg;
-{
-    TOKEN token;
-    int done=0;
-    char word[128];
-
-    while(!done && (token=token_get(lp, word)) != EOF) {
-	switch(token) {
-	    case IDENT: 	/* identifier */
-	        db_purge(lp, word);
-		done++;
-	    	break;
-	    case CMD:		/* command */
-		token_unget(lp, token, word);
-		done++;
-		break;
-	    case EOC:		/* end of command */
-		done++;
-		break;
-	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
-	    case COMMA:		/* comma */
-	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
-	    case END:		/* end of file */
-	    default:
-		; /* eat em up! */
-	    	break;
-	}
-    }
-    return (0);
-}
-
 int com_retrieve(lp, arg)	/* read commands from an ARCHIVE file */
 LEXER *lp;
 char *arg;
@@ -1724,6 +1644,7 @@ char *arg;
     char name[128];
     int debug=0;
     int nfiles=0;
+    DB_DEFLIST *copy;
 
     need_redraw++; 
    
@@ -1780,6 +1701,18 @@ char *arg;
 		} else {
 		    printf("saved %s\n", currep->name);
 		    currep->modified = 0;
+
+		    /* flush the UNDO/REDO buffers eventually, we should */
+		    /* get rid of modified  flag and just monitor UNDO depth */
+
+		    while ((copy = (DB_DEFLIST *) stack_pop(&(currep->undo)))!=NULL) { 
+			db_free(copy); 			/* clear out undo stack */
+		    }
+
+		    while ((copy = (DB_DEFLIST *) stack_pop(&(currep->redo)))!=NULL) { 
+			db_free(copy); 			/* clear out redo stack */
+		    }
+
 		}
 	    } else {
 		/* printf("SAVE: cell not modified - no save done\n"); */

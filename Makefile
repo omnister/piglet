@@ -15,15 +15,16 @@ OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
    com_equate.o com_ident.o com_copy.o com_move.o com_window.o \
    com_point.o com_show.o com_area.o com_wrap.o com_smash.o \
    readmenu.o com_edit.o com_stretch.o com_undo.o postscript.o \
-   lock.o path.o stack.o selpnt.o license.o stipple.o
+   lock.o path.o stack.o selpnt.o license.o stipple.o com_purge.c
 
 TARS=QUICKSTART AAA_README COPYING \
 changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
-com_copy.c com_move.c  com_point.c com_show.c com_window.c coords.c db.c \
-db.h com_wrap.c com_smash.c draw.c eprintf.c eprintf.h eventnames.h equate.c \
-equate.h geom_circle.c geom_inst.c geom_line.c geom_arc.c  geom_poly.c \
-geom_rect.c geom_text.c lex.c lex.h Makefile PROCDATA.P MENUDATA_V \
-NOTEDATA.F opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
+com_copy.c com_move.c  com_point.c com_show.c com_window.c com_purge.c \
+coords.c db.c db.h com_wrap.c com_smash.c draw.c eprintf.c \
+eprintf.h eventnames.h equate.c equate.h geom_circle.c geom_inst.c \
+geom_line.c geom_arc.c  geom_poly.c geom_rect.c geom_text.c \
+lex.c lex.h Makefile PROCDATA.P MENUDATA_V NOTEDATA.F \
+opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \

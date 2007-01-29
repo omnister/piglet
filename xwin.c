@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.45 2007/01/18 19:12:58 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.45 2007/01/18 19:12:58 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -76,6 +76,10 @@ int grid_notified = 0;
 int need_redraw=0;
 
 static double x,y;
+static int xa,ya; 	/* remember raw button coords */
+static int xb,yb; 	/* remember raw button coords */
+static int xr,yr; 	/* remember raw button coords */
+static int moved=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
@@ -378,6 +382,51 @@ void zoom(int dir, double scale)
     }
 }
 
+void winfit() 
+{
+    double xmin,ymin,xmax,ymax;
+    double dx,dy;
+
+    if (currep != NULL ) {
+	xmin = currep->minx;
+	ymin = currep->miny;
+	xmax = currep->maxx;
+	ymax = currep->maxy;
+
+	dx=(xmax-xmin);
+        dy=(ymax-ymin);
+        xmin-=dx/40.0;
+        xmax+=dx/40.0;
+        ymin-=dy/40.0;
+        ymax+=dy/40.0;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    } 
+}
+
+void pan(double x1, double y1) 
+{
+    double xmin,ymin,xmax,ymax;
+    double dx,dy;
+
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+
+	dx=(xmax-xmin);
+	dy=(ymax-ymin);
+	xmin=x1-dx/2.0;
+	xmax=x1+dx/2.0;
+	ymin=y1-dy/2.0;
+	ymax=y1+dy/2.0;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    }
+}
+
+
 static int pan_x = 0;
 static int pan_y = 0;
 void pan_init(int x, int y) {
@@ -573,11 +622,14 @@ char **s;
 		V_to_R(&x,&y);
 		snapxy(&x,&y);
 		sprintf(buf,"(%-8g,%-8g)", x, y);
-		if (xwin_display_state() == D_ON) {
+		if (xwin_display_state() == D_ON && xe.xmotion.window == win) {
 		    XDrawImageString(dpy,win,gcg,20, 20, buf, strlen(buf));
 		}
 	    } else {
-		pan_update(xe.xmotion.x, xe.xmotion.y);
+		xr = xe.xmotion.x;
+		yr = xe.xmotion.y;
+		pan_update(xr, yr);
+		moved=1;
 	    }
 
 	    if (xold != x || yold != y) {
@@ -642,6 +694,22 @@ char **s;
 	case ButtonRelease:
 	    button_down=0;
 	    if (debug) printf("EVENT LOOP: got ButtonRelease\n");
+
+	    if (xe.xexpose.window == win) {
+		switch (xe.xbutton.button) {
+		    case 2:	/* left button */
+			if (abs(xa-xb) < 3 && abs(ya-yb) < 3) {
+			   winfit();
+			   xa = xb = ya = yb = -1; 	/* set to impossible values */
+			} else if (!moved || (abs(xb-xr) < 3 && abs(yb-yr) < 3)) {
+			   pan(x,y);
+			}
+		        break;
+		    default:
+		        break;
+		}
+	    }
+	    moved=0;
 	    break;
 	case ButtonPress:
 	    if (xe.xexpose.window == win) {
@@ -649,7 +717,7 @@ char **s;
 		    case 1:	/* left button */
 			x = (double) xe.xmotion.x;
 			y = (double) xe.xmotion.y;
-			V_to_R(&x,&y);
+		        V_to_R(&x,&y);
 
 			/* FIXME: turn off snapping for fine picking */
 			/*
@@ -670,7 +738,10 @@ char **s;
 			break;
 		    case 2:	/* middle button */
 			button_down=1;
-			pan_init(xe.xmotion.x, xe.xmotion.y);
+			xa = xb; ya = yb;	
+			xr = xb = xe.xmotion.x;
+			yr = yb = xe.xmotion.y;
+			pan_init(xb,yb);
 			break;
 		    case 3: /* right button */
 			/* RIGHT button returns EOC */
@@ -1662,6 +1733,39 @@ void xwin_raise_window()
     XRaiseWindow(dpy, topwin);
 }
 
+/* given a shiftmask, return how many bits to shift */
+/* it into position... look at most max bits */
+
+int shift_from_mask(int mask, int max) {
+
+    int bit, tmp, shift;
+
+    tmp = mask;
+    bit = tmp & 1;
+    shift=0;
+    while(bit != 1 && shift<max) {
+       tmp = tmp>>1;
+       bit = tmp & 1;
+       shift++;
+    }
+    return (shift);
+}
+
+//  typical values...
+// width  = 612
+// height = 576
+// byte_order = LSBFirst
+// bitmap unit=32
+// bitmap_bit_order = LSBFirst
+// bitmap pad = 32
+// depth = 24
+// bytes_per_line = 2448
+// bit_per_pixel = 32
+// red mask= 16711680
+// green mask= 65280
+// blue mask= 255
+
+
 int dump_window(window, gc, width, height) 
 Window window;
 GC gc;
@@ -1674,7 +1778,8 @@ unsigned int width, height;
     int R,G,B;
     int fd;
     int i;
-    int debug=0;
+    int debug=1;
+    int rshift, gshift, bshift;
 
     XSync(dpy,0);
 
@@ -1717,6 +1822,13 @@ unsigned int width, height;
 	printf("blue mask= %d\n", (int) xi->blue_mask);
     }
 
+    /* compute bit shift values */
+
+    rshift=shift_from_mask(xi->red_mask, 8*xi->bitmap_unit);
+    gshift=shift_from_mask(xi->green_mask, 8*xi->bitmap_unit);
+    bshift=shift_from_mask(xi->blue_mask, 8*xi->bitmap_unit);
+    printf("rs: %d, gs: %d, bs: %d\n",rshift, gshift, bshift);
+
     sprintf(buf, "%s.ppm", currep->name);
 
     printf("dumping to %s", buf);
@@ -1737,15 +1849,16 @@ unsigned int width, height;
 	   pixel = XGetPixel(xi, x, y);	
 
 	   R=pixel & xi->red_mask;
-	   R = R>>10;
-	   buf[0] = (unsigned char) 255*R/64;
+	   R = R>>rshift;
+	   buf[0] = (unsigned char) R;
 
 	   G=pixel & xi->green_mask;
-	   G = G>>5;
-	   buf[1] = (unsigned char) 255*G/64;
+	   G = G>>gshift;
+	   buf[1] = (unsigned char) G;
 
 	   B=pixel & xi->blue_mask;
-	   buf[2] = (unsigned char) 255*B/32;
+	   B = B>>bshift;
+	   buf[2] = (unsigned char) B;
 
 	   write(fd, buf, 3);
 	}

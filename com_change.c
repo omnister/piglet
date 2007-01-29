@@ -186,7 +186,7 @@ int com_change(LEXER *lp, char *arg)
 
 		if (p_best != NULL) {
 		    db_highlight(p_best); 	/* unhighlight it */
-		    p_best = NULL; 
+		    p_best = NULL;
 		}
 
 		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
@@ -292,6 +292,7 @@ int com_change(LEXER *lp, char *arg)
 				retval=opt_parse(word, LINE_OPTS, (p_best->u.l->opts));
 				break;
 			    case NOTE:
+				printf("calling opt_parse for notes\n");
 				retval=opt_parse(word, NOTE_OPTS, (p_best->u.n->opts));
 				break;
 			    case OVAL:
@@ -304,6 +305,7 @@ int com_change(LEXER *lp, char *arg)
 				retval=opt_parse(word, RECT_OPTS, (p_best->u.r->opts));
 				break;
 			    case TEXT:
+				printf("calling opt_parse for notes\n");
 				retval=opt_parse(word, TEXT_OPTS, (p_best->u.t->opts));
 				break;
 			    default:
@@ -347,7 +349,7 @@ int com_change(LEXER *lp, char *arg)
 		*/
 		token_set_mode(lp, 0);
 	    } else {
-		    state = START;
+		state = START;
 	    }
 	    break;
 	case END:

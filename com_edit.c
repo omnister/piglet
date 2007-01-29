@@ -165,8 +165,8 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 
 		lp->mode = EDI;
 
-		if ((new_rep=db_lookup(name)) != NULL) { 
-		    if (ask(lp, "Cell already in memory, read in a new copy?")) {
+		if ((new_rep=db_lookup(name)) != NULL && new_rep->modified) { 
+		    if (ask(lp, "modified cell already in memory, read in a new copy?")) {
 		        db_unlink_cell(new_rep);
 		    }
 		}

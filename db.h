@@ -157,6 +157,8 @@ typedef struct db_tab {
 
     double vp_xmin, vp_xmax;	/* for storing window parameters */
     double vp_ymin, vp_ymax;
+    double old_xmin, old_xmax;	/* for storing old win parms for win :z */
+    double old_ymin, old_ymax;
     double scale;
     double xoffset, yoffset;
 
@@ -404,6 +406,12 @@ extern int db_def_archive(
 		int process	/* if !==0, include process file in archive */
 	    );
 
+extern void printdef(
+		FILE *fp, 
+		DB_DEFLIST *p, 
+		DB_DEFLIST *pinstdef
+	    );
+
 #define FILL_OFF 0
 #define FILL_ON 1
 #define FILL_TOGGLE 2
@@ -551,4 +559,6 @@ int db_cksum(DB_DEFLIST *cell);
 DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head);
 int db_checkpoint();
 void db_free(DB_DEFLIST *dp);
+int readin();
+int loadrep();
 

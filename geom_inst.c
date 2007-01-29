@@ -12,46 +12,25 @@
 static double bb_xmin, bb_ymin, bb_xmax, bb_ymax;
 void draw_inst_bb();
 
-int add_inst(LEXER *lp, char *inst_name)
+int loadrep(char *inst_name) 
 {
-    enum {START,NUM1,COM1,NUM2,END} state = START;
-
-    double x1, y1;
-    int done=0;
-    TOKEN token;
-    OPTS opts;
-    char word[BUFSIZE];
     char buf[BUFSIZE];
-    int debug=0;
     FILE *fp;
     LEXER *my_lp;
+    extern XFORM *global_transform;
+    XFORM *save_transform;
 
     DB_TAB *ed_rep;
     char *save_rep;
+    int retval=1;
 
     BOUNDS bb;
-    XFORM *xp;
-
-    double xx, yy;
-
-    opt_set_defaults(&opts);
-
-    rl_saveprompt();
-    rl_setprompt("ADD_INST> ");
-
-    if (debug) printf("currep = %s\n", currep->name);
-    if (debug) printf("adding inst %s\n", inst_name);
-
-    /* don't destroy it if it's already in memory */
-    if (debug) printf("calling db_lookup with %s\n", inst_name);
 
     if ((ed_rep = db_lookup(inst_name)) == NULL) {	/* not in memory */
 
 	snprintf(buf, MAXFILENAME, "./cells/%s.d", inst_name);
 	if((fp = fopen(buf, "r")) == 0) { 		/* cannot find copy on disk */	
-	    printf("can't add a null instance: %s\n", inst_name);
-	    token_flush_EOL(lp);
-	    done++;
+	    retval=0;
 	} else { 					/* found it on disk, read it in */	
 	    ed_rep = db_install(inst_name);  /* create blank stub */
 	    printf("reading %s from disk\n", buf);
@@ -71,7 +50,11 @@ int add_inst(LEXER *lp, char *inst_name)
 	    show_set_visible(currep, ALL, 0,1);		/* and make it visible */
 	    currep->modified = 0;
     	    bb.init=0;
+
+	    save_transform = global_transform;
 	    db_render(currep, 0, &bb, D_READIN); 	/* set boundbox, etc */
+	    global_transform = save_transform;
+
 	    xwin_display_set_state(D_ON);
 	    
 	    token_stream_close(my_lp); 
@@ -83,6 +66,42 @@ int add_inst(LEXER *lp, char *inst_name)
 		currep=NULL;
 	    }
 	}
+    }
+    return(retval);
+}
+
+int add_inst(LEXER *lp, char *inst_name)
+{
+    enum {START,NUM1,COM1,NUM2,END} state = START;
+
+    double x1, y1;
+    int done=0;
+    TOKEN token;
+    OPTS opts;
+    char word[BUFSIZE];
+    int debug=0;
+
+    DB_TAB *ed_rep;
+
+    XFORM *xp;
+
+    double xx, yy;
+
+    opt_set_defaults(&opts);
+
+    rl_saveprompt();
+    rl_setprompt("ADD_INST> ");
+
+    if (debug) printf("currep = %s\n", currep->name);
+    if (debug) printf("adding inst %s\n", inst_name);
+
+    /* don't destroy it if it's already in memory */
+    if (debug) printf("calling db_lookup with %s\n", inst_name);
+
+    if (loadrep(inst_name) == 0) {
+	printf("can't add a null instance: %s\n", inst_name);
+	token_flush_EOL(lp);
+	done++;
     }
 
     if ((ed_rep = db_lookup(inst_name)) == 0) {

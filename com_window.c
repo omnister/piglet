@@ -11,6 +11,7 @@
 static double x1, y1;
 int fit=0;		/* don't fit */
 int nest=9;		/* default nesting level */
+int lastwin=0;		/* go back to last window */
 int bounds=0;		/* default pick boundary display level */
 
 OPTS opts;
@@ -29,6 +30,7 @@ int com_window(LEXER *lp, char *arg)
     char word[BUFSIZE];
     int debug=0;
     double x2, y2;
+    lastwin = 0;
 
     if (debug) printf("com_window\n");
 
@@ -69,6 +71,8 @@ int com_window(LEXER *lp, char *arg)
 		    }
 		} else if (strncasecmp(word, ":O", 2) == 0) {
 			db_set_fill(FILL_TOGGLE);
+		} else if (strncasecmp(word, ":Z", 2) == 0) {
+			lastwin++;
 		} else {
 	    	     printf("WIN: bad option: %s\n", word);
 		     state = END;
@@ -249,10 +253,10 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 
     } else if (n==4) {		/* how cell bounds get loaded during readin */
 	if (currep != NULL) {
-	    currep->vp_xmin=x1;
-	    currep->vp_xmax=x2;
-	    currep->vp_ymin=y1;
-	    currep->vp_ymax=y2;
+	    // currep->vp_xmin=x1;
+	    // currep->vp_xmax=x2;
+	    // currep->vp_ymin=y1;
+	    // currep->vp_ymax=y2;
 
 	    currep->minx=x1;
 	    currep->maxx=x2;
@@ -317,12 +321,34 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
 	ymax=((ymax+ymin)/2.0)+(dy*scale);
     } 
 
+    if (currep != NULL && lastwin) {
+        if (debug) printf("setting old values\n");
+	xmin = currep->old_xmin;
+	ymin = currep->old_ymin; 
+	xmax = currep->old_xmax;
+	ymax = currep->old_ymax;
+    }
+
+    if (currep != NULL) {
+        if (debug) printf("saving old values values\n");
+	currep->old_xmin = currep->vp_xmin;
+	currep->old_ymin = currep->vp_ymin;
+	currep->old_xmax = currep->vp_xmax;
+	currep->old_ymax = currep->vp_ymax;
+
+	currep->vp_xmin=xmin;
+	currep->vp_ymin=ymin;
+	currep->vp_xmax=xmax;
+	currep->vp_ymax=ymax;
+    }
+
     if (debug) printf("%g %g %g %g\n", xmin, ymin, xmax, ymax);
 
     if (xmin == 0 && ymin == 0 && xmax == 0 && ymax == 0) {
 	;	/* don't set the window to a null size */
     } else {
-	if (debug) printf("do_win() calling xwin_window_set = %g %g %g %g\n", xmin, ymin, xmax, ymax);
+	if (debug) printf("calling xwin_window_set = %g %g %g %g\n",
+	    xmin, ymin, xmax, ymax);
 	xwin_window_set(xmin,ymin,xmax,ymax);
     }
     if (debug) printf("leaving dowin()\n");

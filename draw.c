@@ -1206,69 +1206,69 @@ DB_DEFLIST *p;			/* print out identifying information */
 
     if (p == NULL) {
     	printf("db_notate: no component!\n");
-    }
-
-    switch (p->type) {
-    case ARC:  /* arc definition */
-	printf("   ARC %d (%s) end1=%.5g,%.5g end2=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
-		p->u.a->layer, equate_get_label(p->u.a->layer), p->u.a->x1, p->u.a->y1, 
-		p->u.a->x2, p->u.a->y2, p->u.a->x3, p->u.a->y3);
-	db_print_opts(stdout, p->u.a->opts, ARC_OPTS);
-	printf("\n");
-	break;
-    case CIRC:  /* circle definition */
-	printf("   CIRC %d (%s) center=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
-		p->u.c->layer, equate_get_label(p->u.c->layer), p->u.c->x1, 
-		p->u.c->y1, p->u.c->x2, p->u.c->y2);
-	db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
-	printf("\n");
-	break;
-    case LINE:  /* line definition */
-	printf("   LINE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.l->layer, equate_get_label(p->u.l->layer), 
-		p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
-	printf("\n");
-	break;
-    case NOTE:  /* note definition */
-	printf("   NOTE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.n->layer, equate_get_label(p->u.n->layer), 
-		p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.n->opts, NOTE_OPTS);
-	printf(" \"%s\"\n", p->u.n->text);
-	break;
-    case OVAL:  /* oval definition */
-	break;
-    case POLY:  /* polygon definition */
-	printf("   POLY %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.p->layer, equate_get_label(p->u.p->layer),
-		p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.p->opts, POLY_OPTS);
-	printf("\n");
-	break;
-    case RECT:  /* rectangle definition */
-	printf("   RECT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.r->layer, equate_get_label(p->u.r->layer),
-		p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
-	printf("\n");
-	break;
-    case TEXT:  /* text definition */
-	printf("   TEXT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.t->layer, equate_get_label(p->u.r->layer),
-		p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
-	printf(" \"%s\"\n", p->u.t->text);
-	break;
-    case INST:  /* instance call */
-	printf("   INST %s LL=%.5g,%.5g UR=%.5g,%.5g ", 
-		p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
-	db_print_opts(stdout, p->u.i->opts, INST_OPTS);
-	printf("\n");
-	break;
-    default:
-	eprintf("unknown record type: %d in db_notate\n", p->type);
-	break;
+    } else {
+	switch (p->type) {
+	case ARC:  /* arc definition */
+	    printf("   ARC %d (%s) end1=%.5g,%.5g end2=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
+		    p->u.a->layer, equate_get_label(p->u.a->layer), p->u.a->x1, p->u.a->y1, 
+		    p->u.a->x2, p->u.a->y2, p->u.a->x3, p->u.a->y3);
+	    db_print_opts(stdout, p->u.a->opts, ARC_OPTS);
+	    printf("\n");
+	    break;
+	case CIRC:  /* circle definition */
+	    printf("   CIRC %d (%s) center=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
+		    p->u.c->layer, equate_get_label(p->u.c->layer), p->u.c->x1, 
+		    p->u.c->y1, p->u.c->x2, p->u.c->y2);
+	    db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
+	    printf("\n");
+	    break;
+	case LINE:  /* line definition */
+	    printf("   LINE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.l->layer, equate_get_label(p->u.l->layer), 
+		    p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.l->opts, LINE_OPTS);
+	    printf("\n");
+	    break;
+	case NOTE:  /* note definition */
+	    printf("   NOTE %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.n->layer, equate_get_label(p->u.n->layer), 
+		    p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.n->opts, NOTE_OPTS);
+	    printf(" \"%s\"\n", p->u.n->text);
+	    break;
+	case OVAL:  /* oval definition */
+	    break;
+	case POLY:  /* polygon definition */
+	    printf("   POLY %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.p->layer, equate_get_label(p->u.p->layer),
+		    p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.p->opts, POLY_OPTS);
+	    printf("\n");
+	    break;
+	case RECT:  /* rectangle definition */
+	    printf("   RECT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.r->layer, equate_get_label(p->u.r->layer),
+		    p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
+	    printf("\n");
+	    break;
+	case TEXT:  /* text definition */
+	    printf("   TEXT %d (%s) LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.t->layer, equate_get_label(p->u.r->layer),
+		    p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.t->opts, TEXT_OPTS);
+	    printf(" \"%s\"\n", p->u.t->text);
+	    break;
+	case INST:  /* instance call */
+	    printf("   INST %s LL=%.5g,%.5g UR=%.5g,%.5g ", 
+		    p->u.i->name, p->xmin, p->ymin, p->xmax, p->ymax);
+	    db_print_opts(stdout, p->u.i->opts, INST_OPTS);
+	    printf("\n");
+	    break;
+	default:
+	    eprintf("unknown record type: %d in db_notate\n", p->type);
+	    break;
+	}
     }
 }
 
@@ -1300,28 +1300,25 @@ DB_DEFLIST *p;			/* component to display */
 	do_line(p, &bb, D_RUBBER);
 	break;
     case NOTE:  /* note definition */
-	/* db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER); */
+	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	xwin_draw_origin(p->u.n->x, p->u.n->y);
-	do_note(p, &bb, D_RUBBER);
+	/* do_note(p, &bb, D_RUBBER); */
 	break;
-    case OVAL:  /* oval definition */
+    case OVAL: /* oval definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
-	do_oval(p, &bb, D_RUBBER);
-	break;
-    case POLY:  /* polygon definition */
+	do_oval(p, &bb, D_RUBBER); break;
+    case POLY: /* polygon definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
-	do_poly(p, &bb, D_RUBBER);
-	break;
-    case RECT:  /* rectangle definition */
+	do_poly(p, &bb, D_RUBBER); break;
+    case RECT: /* rectangle definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
-	do_rect(p, &bb, D_RUBBER);
-	break;
-    case TEXT:  /* text definition */
-	/* db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER); */
+	do_rect(p, &bb, D_RUBBER); break;
+    case TEXT: /* text definition */
+	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	xwin_draw_origin(p->u.t->x, p->u.t->y);
-	do_note(p, &bb, D_RUBBER);
+	/* do_note(p, &bb, D_RUBBER); */
 	break;
-    case INST:  /* instance call */
+    case INST: /* instance call */
 	def = db_lookup(p->u.i->name);
 
 	xp = matrix_from_opts(p->u.i->opts);
@@ -1684,17 +1681,18 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 
 	    childbb.init=0;
 
+	    /* try to reread the definition from disk */
+	    /* this can only happen when a memory copy has */
+	    /* been purged */
+
 	    if (db_lookup(p->u.i->name) == NULL) {
+		loadrep(p->u.i->name);
+	    } 
 
-		printf("skipping ref to %s, no longer in memory\n", p->u.i->name);
-
-	    	/* FIXME: try to reread the definition from disk */
-		/* this can only happen when a memory copy has */
-		/* been purged */
-
-	    } else {
-		/* mat_print(global_transform); */
+	    if (db_lookup(p->u.i->name) != NULL) {
 		db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
+	    } else {
+	        printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
 	    }
 
 	    p->xmin = childbb.xmin;
@@ -1715,9 +1713,9 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 		    childbb.xmax, childbb.ymax, D_BB);
 	    }
 
-	    free(global_transform); free(xp);	
+	    free(global_transform); 
+	    free(xp);	
 	    global_transform = save_transform;	/* set transform back */
-           
 
 	    break;
 	default:

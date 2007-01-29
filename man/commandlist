@@ -1808,7 +1808,7 @@ S: complete
 
 N: WINdow
 D: Change the current window parameters
-U: WINdow :X[<scale>] [:N<physical>] [:F] [:O] [<xy1> [<xy2>]] <EOC>
+U: WINdow :X[<scale>] [:N<physical>] [:F] [:Z] [:O] [<xy1> [<xy2>]] <EOC>
 S: good
 T: {
 Window with no arguments simply refreshes the display.  With only <xy1>
@@ -1841,6 +1841,9 @@ Only display nesting down to <physical> number of hierarchy levels (default=3)
 .TP
 .I :O 
 Toggle filled polygon display  (default=unfilled)
+.TP
+.I :Z 
+Toggles window to previous settings.
 }
 
 N: WRAp

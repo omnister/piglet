@@ -178,7 +178,8 @@ int com_identify(LEXER *lp, char *arg)
 		    }
 		    if ((p_best=db_ident(currep, x1,y1,0, my_layer, comp , pinst)) != NULL) {
 			db_highlight(p_best);	
-			db_notate(p_best);	/* print information */
+			printdef(stdout, p_best, NULL);
+			// db_notate(p_best);	/* print information */
 			area = db_area(p_best);
 			if (area >= 0) {
 			    printf("   area = %g\n", area);
@@ -237,7 +238,8 @@ int com_identify(LEXER *lp, char *arg)
 		stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
 		while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
 		    db_highlight(p_best);	
-		    db_notate(p_best);		/* print information */
+		    printdef(stdout, p_best, NULL);
+		    // db_notate(p_best);		/* print information */
 		    area = db_area(p_best);
 		    if (area >= 0) {
 			printf("   area = %g\n", area);
