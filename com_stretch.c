@@ -40,7 +40,6 @@ static double x1, yy1;
 static double x2, y2;
 static double x3, y3;
 static double x4, y4;
-static double x5, y5;
 void stretch_draw_box();
 void stretch_draw_point();
 SELPNT *selpnt;
@@ -51,11 +50,10 @@ DB_DEFLIST *p_best;
 int com_stretch(LEXER *lp, char *arg)
 {
     enum {START,
-          NUM1,COM1,NUM2,	/* xysel, xyll: x1, yy1 */
-	  NUM3,COM2,NUM4,	/* xyur:        x2, y2  */
-	  NUM5,COM3,NUM6,       /* ----:        x3, y3  */
-	  NUM7,COM4,NUM8,	/* xyref:       x4, y4  */	
-	  NUM9,COM5,NUM10,	/* xyloc:       x5, y5  */
+          NUM1,	/* xysel, xyll: x1, yy1 */
+	  NUM2,	/* xyur:        x2, y2  */
+	  NUM3,	/* xyref:       x3, y3  */	
+	  NUM4,	/* xyloc:       x4, y4  */
 	  END} state = START;
 
     int done=0;
@@ -169,35 +167,7 @@ int com_stretch(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("STR", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &yy1);	/* scan it in */
-
+            if (getnum(lp, "STRETCH", &x1, &yy1)) {
 		if (p_prev != NULL) {
 		    /* db_highlight(p_prev); */ /* unhighlight it */
 		    p_prev = NULL;
@@ -205,14 +175,14 @@ int com_stretch(LEXER *lp, char *arg)
 		if (mode == POINT) {
 		    if ((p_best=db_ident(currep, x1,yy1,1, my_layer, comp, pinst)) != NULL) {
 			db_highlight(p_best); 
-			state = NUM7;
+			state = NUM3;
 		    } else {
 			printf("    nothing here to STRETCH, try SHO #E?\n");
 			state = START;
 		    }
 		} else {			/* mode == REGION */
 		    rubber_set_callback(stretch_draw_box);
-		    state = NUM3;
+		    state = NUM2;
 		}
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
@@ -225,37 +195,10 @@ int com_stretch(LEXER *lp, char *arg)
 	    }
 	    break;
 
-	case NUM3:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x2);	/* scan it in */
-		state = COM2;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM2:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM4;
-	    } else {
-		token_err("STR", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM4:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y2);	/* scan it in */
+	case NUM2:		/* get pair of xy coordinates */
+            if (getnum(lp, "STRETCH", &x2, &y2)) {
 		rubber_clear_callback();
-		state = NUM7;
+		state = NUM3;
 		selpnt=db_ident_region2(currep, x1,yy1, x2, y2, 2, my_layer, comp, pinst);
 
 		if (selpnt == NULL) {
@@ -281,77 +224,9 @@ int com_stretch(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-	case NUM5:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x3);	/* scan it in */
-		state = COM3;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM3:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM6;
-	    } else {
-		token_err("STR", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM6:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y3);	/* scan it in */
-		state = NUM7;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("STR: cancelling POINT\n");
-	        state = END;
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case NUM7:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x4);	/* scan it in */
-		state = COM4;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM4:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM8;
-	    } else {
-		token_err("STR", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-
-	case NUM8:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y4);	/* scan it in */
-		state = NUM9;
+	case NUM3:		/* get pair of xy coordinates */
+            if (getnum(lp, "STRETCH", &x3, &y3)) {
+		state = NUM4;
 
 		if (mode == POINT) {
 		    db_highlight(p_best);		/* unhighlight it */
@@ -366,23 +241,23 @@ int com_stretch(LEXER *lp, char *arg)
 
 			xsel = xmin = &(p_best->u.a->x1);
 			ysel = ymin = &(p_best->u.a->y1);
-			dbest = d = dist(*xmin-x4, *ymin-y4);
+			dbest = d = dist(*xmin-x3, *ymin-y3);
 
 			xmin = &(p_best->u.a->x2);
 			ymin = &(p_best->u.a->y2);
-			d = dist(*xmin-x4, *ymin-y4);
+			d = dist(*xmin-x3, *ymin-y3);
 			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
 			xmin = &(p_best->u.a->x3);
 			ymin = &(p_best->u.a->y3);
-			d = dist(*xmin-x4, *ymin-y4);
+			d = dist(*xmin-x3, *ymin-y3);
 			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
 			selpnt_clear(&selpnt);
 			selpnt_save(&selpnt, xsel, ysel, NULL);
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case CIRC:
@@ -393,7 +268,7 @@ int com_stretch(LEXER *lp, char *arg)
 			selpnt_save(&selpnt, xsel, ysel, NULL);
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case INST:
@@ -404,7 +279,7 @@ int com_stretch(LEXER *lp, char *arg)
 			selpnt_save(&selpnt, xsel, ysel, NULL);
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case LINE:
@@ -412,7 +287,7 @@ int com_stretch(LEXER *lp, char *arg)
 
 			xsel = &(coords->coord.x);
 			ysel = &(coords->coord.y);
-			distance = dist((*xsel)-x4, (*ysel)-y4);
+			distance = dist((*xsel)-x3, (*ysel)-y3);
 			dbest = distance;
 			coords = coords->next;
 			selpnt_clear(&selpnt);
@@ -425,8 +300,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    ysel = &(coords->coord.y);
 
 			    /* test midpoint */
-			    distance = dist( ((*xsel+*xselold)/2.0)-x4,
-					     ((*ysel+*yselold)/2.0)-y4 );
+			    distance = dist( ((*xsel+*xselold)/2.0)-x3,
+					     ((*ysel+*yselold)/2.0)-y3 );
 			    if (distance < dbest) {
 				dbest = distance;
 				selpnt_clear(&selpnt);
@@ -434,7 +309,7 @@ int com_stretch(LEXER *lp, char *arg)
 			        selpnt_save(&selpnt, xselold, yselold, NULL);
 			    }
 
-			    distance = dist(*xsel-x4, *ysel-y4);
+			    distance = dist(*xsel-x3, *ysel-y3);
 			    if (distance < dbest) {
 				dbest = distance;
 				selpnt_clear(&selpnt);
@@ -444,7 +319,7 @@ int com_stretch(LEXER *lp, char *arg)
 			}
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case NOTE:
@@ -455,7 +330,7 @@ int com_stretch(LEXER *lp, char *arg)
 			selpnt_save(&selpnt, xsel, ysel, NULL);
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case POLY:
@@ -464,7 +339,7 @@ int com_stretch(LEXER *lp, char *arg)
 			xselfirst = xsel = &(coords->coord.x);		/* first point */
 			yselfirst = ysel = &(coords->coord.y);
 
-			distance = dist((*xsel)-x4, (*ysel)-y4);
+			distance = dist((*xsel)-x3, (*ysel)-y3);
 			dbest = distance;
 			coords = coords->next;
 			selpnt_clear(&selpnt);
@@ -477,8 +352,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    ysel = &(coords->coord.y);
 
 			    /* test midpoint */
-			    distance = dist( ((*xsel+*xselold)/2.0)-x4,	/* mid points */
-					     ((*ysel+*yselold)/2.0)-y4 );
+			    distance = dist( ((*xsel+*xselold)/2.0)-x3,	/* mid points */
+					     ((*ysel+*yselold)/2.0)-y3 );
 			    if (distance < dbest) {
 				dbest = distance;
 				selpnt_clear(&selpnt);
@@ -486,7 +361,7 @@ int com_stretch(LEXER *lp, char *arg)
 				selpnt_save(&selpnt, xselold, yselold, NULL);
 			    }
 
-			    distance = dist(*xsel-x4, *ysel-y4);		/* next points */
+			    distance = dist(*xsel-x3, *ysel-y3);		/* next points */
 			    if (distance < dbest) {
 				dbest = distance;
 				selpnt_clear(&selpnt);
@@ -495,8 +370,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    coords = coords->next;
 			}
 
-			distance = dist( ((*xsel+*xselfirst)/2.0)-x4,	/* between first/last */
-					 ((*ysel+*yselfirst)/2.0)-y4 );
+			distance = dist( ((*xsel+*xselfirst)/2.0)-x3,	/* between first/last */
+					 ((*ysel+*yselfirst)/2.0)-y3 );
 			if (distance < dbest) {
 			    dbest = distance;
 			    selpnt_clear(&selpnt);
@@ -507,7 +382,7 @@ int com_stretch(LEXER *lp, char *arg)
 
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case RECT:
@@ -519,27 +394,27 @@ int com_stretch(LEXER *lp, char *arg)
 			/* check the eight sides + vertices */
 
 			xsel = xmin, ysel = ymin;
-			dbest = d = dist(*xmin-x4, *ymin-y4);
+			dbest = d = dist(*xmin-x3, *ymin-y3);
 
-			d = dist(*xmin-x4, *ymax-y4);
+			d = dist(*xmin-x3, *ymax-y3);
 			if (d < dbest) { xsel = xmin, ysel = ymax; dbest = d; }
 
-			d = dist(*xmax-x4, *ymax-y4);
+			d = dist(*xmax-x3, *ymax-y3);
 			if (d < dbest) { xsel = xmax, ysel = ymax; dbest = d; }
 
-			d = dist(*xmax-x4, *ymin-y4);
+			d = dist(*xmax-x3, *ymin-y3);
 			if (d < dbest) { xsel = xmax, ysel = ymin; dbest = d; }
 
-			d = dist(*xmin-x4, ((*ymin+*ymax)/2.0)-y4);
+			d = dist(*xmin-x3, ((*ymin+*ymax)/2.0)-y3);
 			if (d < dbest) { xsel = xmin, ysel = NULL; dbest = d; }
 
-			d = dist(*xmax-x4, ((*ymin+*ymax)/2.0)-y4);
+			d = dist(*xmax-x3, ((*ymin+*ymax)/2.0)-y3);
 			if (d < dbest) { xsel = xmax, ysel = NULL; dbest = d; }
 
-			d = dist(((*xmin+*xmax)/2.0)-x4, *ymin-y4);
+			d = dist(((*xmin+*xmax)/2.0)-x3, *ymin-y3);
 			if (d < dbest) { xsel = NULL, ysel = ymin; dbest = d; }
 
-			d = dist(((*xmin+*xmax)/2.0)-x4, *ymax-y4);
+			d = dist(((*xmin+*xmax)/2.0)-x3, *ymax-y3);
 			if (d < dbest) { xsel = NULL, ysel = ymax; dbest = d; }
 			
 			selpnt_clear(&selpnt);
@@ -551,7 +426,7 @@ int com_stretch(LEXER *lp, char *arg)
 
 			/* xwin_draw_circle(*xsel, *ysel); */
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    case TEXT:
@@ -562,7 +437,7 @@ int com_stretch(LEXER *lp, char *arg)
 			selpnt_save(&selpnt, xsel, ysel, NULL);
 			rubber_set_callback(stretch_draw_point);
 
-			state = NUM9;
+			state = NUM4;
 			break;
 
 		    default:
@@ -595,46 +470,10 @@ int com_stretch(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-	case NUM9:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x5);	/* scan it in */
-		state = COM5;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("aborting STR\n");
-		rubber_clear_callback();
-		stretch_draw_point(x4, y4, 0);
-		state = END;	
-	    } else {
-		token_err("STR", lp, "expected NUMBER", token);
-		printf("aborting STR\n");
-		rubber_clear_callback();
-		stretch_draw_point(x4, y4, 0);
-		state = END; 
-	    }
-	    break;
-	case COM5:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM10;
-	    } else {
-		token_err("STR", lp, "expected COMMA", token);
-		printf("aborting STR\n");
-		rubber_clear_callback();
-		stretch_draw_point(x4, y4, 0);
-	        state = END;
-	    }
-	    break;
-	case NUM10:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y5);	/* scan it in */
-		if (x4 == x5 && y4 == y5) {
-		    stretch_draw_point(x4, y4, 0);
+	case NUM4:		/* get pair of xy coordinates */
+            if (getnum(lp, "STRETCH", &x4, &y4)) {
+		if (x3 == x4 && y3 == y4) {
+		    stretch_draw_point(x3, y3, 0);
 		}
 		state = START;
 		rubber_clear_callback();
@@ -645,13 +484,13 @@ int com_stretch(LEXER *lp, char *arg)
 	    } else if (token == EOC || token == CMD) {
 		printf("aborting STR\n");
 		rubber_clear_callback();
-		stretch_draw_point(x4, y4, 0);
+		stretch_draw_point(x3, y3, 0);
 	        state = END;
 	    } else {
 		token_err("STR", lp, "expected NUMBER", token);
 		printf("aborting STR\n");
 		rubber_clear_callback();
-		stretch_draw_point(x4, y4, 0);
+		stretch_draw_point(x3, y3, 0);
 		state = END; 
 	    }
 	    break;
@@ -682,16 +521,16 @@ void stretch_draw_point(double xx, double yy, int count)
 	   printf("in stretch_draw_point: %g %g\n", xx, yy);
 	}
         
-	setlockpoint(x4, y4);
+	setlockpoint(x3, y3);
 	lockpoint(&xx, &yy, currep->lock_angle);
 
         if (count == 0) {               /* first call */
 	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
-		   *(tmp->xsel) = tmp->xselorig + xx - x4;
+		   *(tmp->xsel) = tmp->xselorig + xx - x3;
 		}
 	        if (tmp->ysel != NULL) {
-		   *(tmp->ysel) = tmp->yselorig + yy - y4;
+		   *(tmp->ysel) = tmp->yselorig + yy - y3;
 		}
 		if (tmp->p != NULL) {
 		    db_highlight(tmp->p);
@@ -700,10 +539,10 @@ void stretch_draw_point(double xx, double yy, int count)
         } else if (count > 0) {         /* intermediate calls */
 	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
-		   *(tmp->xsel) = tmp->xselorig + xxold - x4;
+		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
 		}
 	        if (tmp->ysel != NULL) {
-		   *(tmp->ysel) = tmp->yselorig + yyold - y4;
+		   *(tmp->ysel) = tmp->yselorig + yyold - y3;
 		}
 		if (tmp->p != NULL) {
 		    db_highlight(tmp->p);
@@ -711,10 +550,10 @@ void stretch_draw_point(double xx, double yy, int count)
 	    }
 	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
-		   *(tmp->xsel) = tmp->xselorig + xx - x4;
+		   *(tmp->xsel) = tmp->xselorig + xx - x3;
 		}
 	        if (tmp->ysel != NULL) {
-		   *(tmp->ysel) = tmp->yselorig + yy - y4;
+		   *(tmp->ysel) = tmp->yselorig + yy - y3;
 		}
 		if (tmp->p != NULL) {
 		    db_highlight(tmp->p);
@@ -723,10 +562,10 @@ void stretch_draw_point(double xx, double yy, int count)
         } else {                        /* last call, cleanup */
 	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
-		   *(tmp->xsel) = tmp->xselorig + xxold - x4;
+		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
 		}
 	        if (tmp->ysel != NULL) {
-		   *(tmp->ysel) = tmp->yselorig + yyold - y4;
+		   *(tmp->ysel) = tmp->yselorig + yyold - y3;
 		}
 		if (tmp->p != NULL) {
 		    db_highlight(tmp->p);

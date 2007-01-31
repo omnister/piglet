@@ -112,6 +112,13 @@ com_area.o: rlgetc.h
 com_area.o: rubber.h
 com_area.o: token.h
 com_area.o: xwin.h
+com_changeedit.o: db.h
+com_changeedit.o: eprintf.h
+com_changeedit.o: lex.h
+com_changeedit.o: opt_parse.h
+com_changeedit.o: rlgetc.h
+com_changeedit.o: token.h
+com_changeedit.o: xwin.h
 com_change.o: db.h
 com_change.o: eprintf.h
 com_change.o: lex.h
@@ -166,6 +173,12 @@ com_point.o: lex.h
 com_point.o: rlgetc.h
 com_point.o: token.h
 com_point.o: xwin.h
+com_purge.o: db.h
+com_purge.o: lex.h
+com_purge.o: rlgetc.h
+com_purge.o: rubber.h
+com_purge.o: token.h
+com_purge.o: xwin.h
 com_show.o: db.h
 com_show.o: lex.h
 com_show.o: rlgetc.h

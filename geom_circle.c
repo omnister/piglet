@@ -17,7 +17,7 @@ void draw_circle();
 
 int add_circ(LEXER *lp, int *layer)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,NUM2,END} state = START;
 
     int done=0;
     TOKEN token;
@@ -64,36 +64,9 @@ int add_circ(LEXER *lp, int *layer)
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    state = COM1;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("CIRCLE", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM1:		
-		if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM2;
-		} else {
-		    token_err("CIRCLE", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM2:
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &y1);	/* scan it in */
+		if (getnum(lp, "CIRCLE", &x1, &y1)) {
 		    rubber_set_callback(draw_circle);
-		    state = NUM3;
+		    state = NUM2;
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
@@ -103,37 +76,8 @@ int add_circ(LEXER *lp, int *layer)
 		    state = END; 
 		}
 		break;
-	    case NUM3:		/* get pair of xy coordinates */
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &x2);	/* scan it in */
-		    state = COM2;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("CIRCLE", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM2:		
-		if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM4;
-		} else if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else {
-		    token_err("CIRCLE", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM4:
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &y2);	/* scan it in */
+	    case NUM2:		/* get pair of xy coordinates */
+		if (getnum(lp, "CIRCLE", &x2, &y2)) {
 		    state = START;
 		    db_add_circ(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		    rubber_clear_callback();

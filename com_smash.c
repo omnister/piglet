@@ -35,7 +35,7 @@ STACK *stack;
 
 int com_smash(LEXER *lp, char *arg)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,END} state = START;
 
     int done=0;
     TOKEN token;
@@ -46,6 +46,7 @@ int com_smash(LEXER *lp, char *arg)
     DB_DEFLIST *p;
     DB_DEFLIST *dp;
     char *instname=NULL;
+    int mode = POINT;
     int ncoords=0;
     DB_TAB *smashrep;
     
@@ -62,6 +63,12 @@ int com_smash(LEXER *lp, char *arg)
 		token_get(lp,word);  
 		if (word[0]==':') {
 		    switch (toupper(word[1])) {
+			case 'R':
+			    mode = REGION;
+			    break;
+			case 'P':
+			    mode = POINT;
+			    break;
 			default:
 			    printf("SMASH: bad option: %s\n", word);
 			    state=END;
@@ -93,36 +100,7 @@ int com_smash(LEXER *lp, char *arg)
 	       lastx1=x1;
 	       lasty1=yy1;
 	    }
-
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("SMASH", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("SMASH", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &yy1);	/* scan it in */
-
+            if (getnum(lp, "SMASH", &x1, &yy1)) {
 		if (p_prev != NULL) {
 		    db_highlight(p_prev);	/* unhighlight it */
 		    p_prev = NULL;

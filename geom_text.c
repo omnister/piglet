@@ -33,7 +33,7 @@ LEXER *lp;
 int *layer;
 int mode;
 {
-    enum {START,NUM1,COM1,NUM2,END} state = START;
+    enum {START,NUM1,END} state = START;
 
     char word[BUFSIZE];
     int done=0;
@@ -111,36 +111,7 @@ int mode;
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    state = COM1;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    printf(" cancelling ADD %s\n", type);
-		    state = END; 
-		} else {
-		    token_err(type, lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM1:		
-		if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM2;
-		} else {
-		    token_err(type, lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM2:
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &y1);	/* scan it in */
-
+		if (getnum(lp, "TEXT", &x1, &y1)) {
 		    if (strlen(str) == 0) {
 		    	printf("ADD %s: no string given\n", type);
 			state = START;

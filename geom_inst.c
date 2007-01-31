@@ -72,7 +72,7 @@ int loadrep(char *inst_name)
 
 int add_inst(LEXER *lp, char *inst_name)
 {
-    enum {START,NUM1,COM1,NUM2,END} state = START;
+    enum {START,NUM1,END} state = START;
 
     double x1, y1;
     int done=0;
@@ -198,35 +198,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (token == NUMBER) {
-		    token_get(lp, word); 
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    state = COM1;
-		} else if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == EOC  || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("INST", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM1:		
-		if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM2;
-		} else {
-		    token_err("INST", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM2:
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    sscanf(word, "%lf", &y1);	/* scan it in */
-		    
+		if (getnum(lp, "INST", &x1, &y1)) {
 		    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
 		    rubber_clear_callback();
 		    need_redraw++;

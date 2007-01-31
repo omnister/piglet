@@ -16,7 +16,7 @@ static double x1, y1;
 
 int com_point(LEXER *lp, char *arg)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,END} state = START;
 
     int done=0;
     TOKEN token;
@@ -46,35 +46,8 @@ int com_point(LEXER *lp, char *arg)
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("POINT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("POINT", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
+	case NUM1:
+            if (getnum(lp, "POINT", &x1, &y1)) {
 		xwin_draw_point(x1, y1);
 		state = NUM1;
 	    } else if (token == EOL) {

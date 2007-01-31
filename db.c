@@ -254,6 +254,49 @@ void db_list_db() 			/* print names of all cells in memory */
     }
 }
 
+//          ++++++++++++++++++++++++
+//          |                      v
+//   H-->[ f ]-->[ n ]-->[ s ]-->[ l ]--->/
+//        ^       | ^      |^      |
+//        +-------- +------ +-------
+
+void db_fsck(DB_DEFLIST *dp) {		/* do a logical scan of a deflist */
+    DB_DEFLIST *p;
+    DB_DEFLIST *pold;
+    DB_DEFLIST *next;
+    DB_DEFLIST *nextold;
+    DB_DEFLIST *prev;
+    DB_DEFLIST *prevold;
+    DB_DEFLIST *final;
+    int count=0;
+
+    final = dp->prev; 	/* prev of first should point at last */
+    nextold=NULL;
+    prevold=NULL;
+
+    for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
+	next = p->next;
+	prev = p->prev;
+       
+        if (count) {
+	   if (p != nextold) printf("err1\n"); 
+	   if (prev != pold) printf("err2\n"); 
+	}
+
+	if (next == NULL && p != final) {
+	    printf("bad tail pointer\n");
+	}
+
+        printf("D:%d T:%d, P: %d, N:%d\n",
+	(int) p, (int) p->type, (int) p->prev, (int) p->next);
+
+	count++;
+	pold=p;
+	nextold=next;
+	prevold=prev;
+    }
+}
+
 void db_free(DB_DEFLIST *dp) {		/* free an entire definition list */
     DB_DEFLIST *p;
     for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
@@ -270,11 +313,9 @@ void db_unlink_cell(DB_TAB *sp) {
 	need_redraw++;
     }
 
-    if (HEAD==sp) {		/* first in chain */
+    if (HEAD==sp) {				/* first in chain */
 	HEAD=sp->next;
-    }
-
-    if (HEAD!=NULL && HEAD->prev==sp) {	/* last in chain */
+    } else if (HEAD!=NULL && HEAD->prev==sp) {	/* last in chain */
 	HEAD->prev=sp->prev;
     }
 
@@ -1518,7 +1559,8 @@ struct db_deflist *dp;          /* pbest */
 	    dp->next->prev = dp->prev;
 	}
     } else if(dp->next == NULL ) {	/* last in the list */
-	dp->prev->next = dp->next;
+	dp->prev->next = NULL;
+	cell->dbhead->prev = dp->prev;
     } else {				/* somewhere in the chain */
 	dp->prev->next = dp->next;
 	dp->next->prev = dp->prev;
@@ -1538,10 +1580,6 @@ void db_insert_component(cell,dp)
 DB_TAB *cell;
 struct db_deflist *dp;
 {
-    /* this may be a recycled cell pointer */
-    /* from a delete, so clean it up */
-
-    dp->prev = NULL;
     dp->next = NULL;
 
     /* add definition at *end* of list */

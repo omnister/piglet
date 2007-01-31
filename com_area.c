@@ -17,7 +17,7 @@
 int com_area(LEXER *lp, char *arg)		
 {
 
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,END} state = START;
+    enum {START,NUM1,END} state = START;
 
     TOKEN token;
     char word[BUFSIZE];
@@ -142,37 +142,7 @@ int com_area(LEXER *lp, char *arg)
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
 	    if (debug) printf("in NUM1\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("AREA", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("AREA", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (debug) printf("in NUM2\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
+            if (getnum(lp, "AREA", &x1, &y1)) {
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
 
 		if (p_prev != NULL) {
@@ -219,30 +189,4 @@ int com_area(LEXER *lp, char *arg)
     return(1);
 }
 
-
-/*
-
-    if (!done) {
-	if (valid_comp) {
-	} else { 
-	    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-		if((token=token_get(lp,word)) != IDENT) {
-		    printf("DEL INST: bad inst name: %s\n", word);
-		    done++;
-		}
-	    }
-	    if (debug) printf("calling del_inst with %s\n", word);
-	    if (!show_check_modifiable(currep, INST, my_layer)) {
-		    printf("INST component is not modifiable!\n");
-	    } else {
-		;
-	    }
-	}
-    }
-} else if (token == QUOTE) {
-    if (!show_check_modifiable(currep, INST, my_layer)) {
-	    printf("INST component is not modifiable!\n");
-    } else {
-	;
-*/
 

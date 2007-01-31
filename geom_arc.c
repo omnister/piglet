@@ -20,7 +20,7 @@ int add_arc(lp, layer)
 LEXER *lp;
 int *layer;
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,END,ERR} state = START;
+    enum {START,NUM1,NUM2,NUM3,END} state = START;
 
     int debug=0;
     int done=0;
@@ -70,40 +70,24 @@ int *layer;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    xold=x1;
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    state = COM1;
+                if (getnum(lp, "ARC", &x1, &yy1)) {
+		    state = NUM2;
 		} else if (token == EOL) {
 		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
+		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
 		    token_err("ARC", lp, "expected NUMBER", token);
 		    state = END; 
 		}
 		break;
-	    case COM1:		
-		if (debug) printf("in com1\n");
-		if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp,word);
-		    state = NUM2;
-		} else {
-		    token_err("ARC", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM2:
+	    case NUM2:		/* get pair of xy coordinates */
 		if (debug) printf("in num2\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &yy1);	/* scan it in */
+                if (getnum(lp, "ARC", &x2, &y2)) {
+		    rubber_set_callback(draw_arc);
 		    state = NUM3;
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
+		    token_get(lp,word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -113,83 +97,7 @@ int *layer;
 		break;
 	    case NUM3:		/* get pair of xy coordinates */
 		if (debug) printf("in num3\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &x2);	/* scan it in */
-		    state = COM2;
-		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("ARC", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM2:		
-		if (debug) printf("in com2\n");
-		if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp,word);
-		    state = NUM4;
-		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else {
-		    token_err("ARC", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM4:
-		if (debug) printf("in num4\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &y2);	/* scan it in */
-		    rubber_set_callback(draw_arc);
-		    state = NUM5;
-		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else if (token == EOC || CMD) {
-		    state = END; 
-		} else {
-		    token_err("ARC", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case NUM5:		/* get pair of xy coordinates */
-		if (debug) printf("in num5\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &x3);	/* scan it in */
-		    state = COM3;
-		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("ARC", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM3:		
-		if (debug) printf("in com3\n");
-		if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp,word);
-		    state = NUM6;
-		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else {
-		    token_err("ARC", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM6:
-		if (debug) printf("in num4\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &y3);	/* scan it in */
+                if (getnum(lp, "ARC", &x3, &y3)) {
 		    db_add_arc(currep, *layer, opt_copy(&opts), x1, yy1, x2, y2, x3, y3);
 		    need_redraw++;
 		    rubber_clear_callback();

@@ -1,8 +1,8 @@
 #define BUFSIZE 100
 
 typedef enum {
-    IDENT, 	/* identifier */
-    CMD,	/* command */
+    IDENT, 	/* identifier */			
+    CMD,	/* command (an ident found in commands[]) */
     QUOTE, 	/* quoted string */
     NUMBER, 	/* number */
     OPT,	/* option */
@@ -14,6 +14,27 @@ typedef enum {
     RAW,	/* individual character mode */
     UNKNOWN	/* unknown token */
 } TOKEN;
+
+/* 
+	tokens required for a simple shell:
+
+	T_WORD, <alphanum>*	IDENT
+	T_SEMI, ;		EOC
+	T_NL,   '\n'		EOL
+	T_EOF,  <EOF>		END
+	T_BAR,  |
+	T_AMP,  &
+	T_GT,   >
+	T_GTGT, >>
+	T_LT,   <
+	T_VAR,  $<WORD>
+	T_ERROR
+
+	need to add T_VAR to piglet
+	and take "|&><" out of IDENT regexp
+	add in T_BAR, T_AMP, T_GT, T_GTGT, T_LT
+
+*/
 
 
 #define MAIN 0
@@ -48,3 +69,4 @@ extern int    token_flush_EOL(LEXER *lp);
 extern int    token_err(char *module, LEXER *lp, char *expected, TOKEN token);
 extern char  *tok2str(TOKEN token);
 extern void   token_set_mode(LEXER *lp, int mode);
+extern int    getnum(LEXER *lp, char *cmd, double *px, double *py);

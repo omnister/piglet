@@ -33,7 +33,7 @@ STACK *stack;
 
 int com_identify(LEXER *lp, char *arg)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,NUM2,END} state = START;
 
     TOKEN token;
     char word[BUFSIZE];
@@ -141,36 +141,8 @@ int com_identify(LEXER *lp, char *arg)
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("IDENT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("IDENT", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
+	case NUM1:
+            if (getnum(lp, "IDENT", &x1, &y1)) {
 		if (mode==POINT) {
 		    if (p_prev != NULL) {
 			db_highlight(p_prev);	/* unhighlight it */
@@ -179,7 +151,7 @@ int com_identify(LEXER *lp, char *arg)
 		    if ((p_best=db_ident(currep, x1,y1,0, my_layer, comp , pinst)) != NULL) {
 			db_highlight(p_best);	
 			printdef(stdout, p_best, NULL);
-			// db_notate(p_best);	/* print information */
+			db_notate(p_best);	/* print information */
 			area = db_area(p_best);
 			if (area >= 0) {
 			    printf("   area = %g\n", area);
@@ -189,7 +161,7 @@ int com_identify(LEXER *lp, char *arg)
 		    state = START;
 		} else {			/* mode == REGION */
 		    rubber_set_callback(ident_draw_box);
-		    state = NUM3;
+		    state = NUM2;
 		}
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
@@ -201,35 +173,8 @@ int com_identify(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-	case NUM3:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x2);	/* scan it in */
-		state = COM2;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("IDENT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM2:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM4;
-	    } else {
-		token_err("IDENT", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM4:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y2);	/* scan it in */
+	case NUM2:
+            if (getnum(lp, "IDENT", &x2, &y2)) {
 		state = START;
 		rubber_clear_callback();
 		need_redraw++;
@@ -239,7 +184,7 @@ int com_identify(LEXER *lp, char *arg)
 		while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
 		    db_highlight(p_best);	
 		    printdef(stdout, p_best, NULL);
-		    // db_notate(p_best);		/* print information */
+		    db_notate(p_best);		/* print information */
 		    area = db_area(p_best);
 		    if (area >= 0) {
 			printf("   area = %g\n", area);

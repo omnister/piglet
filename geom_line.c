@@ -38,7 +38,7 @@ double yy1=0.0;
 
 int add_line(LEXER *lp, int *layer)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END,ERR} state = START;
+    enum {START,NUM1,NUM2,END,ERR} state = START;
 
     int count;
     TOKEN token;
@@ -88,39 +88,9 @@ int add_line(LEXER *lp, int *layer)
 		xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (debug) printf("in num1\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    xold=x1;
-		    state = COM1;
-		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("LINE", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM1:		
-		if (debug) printf("in com1\n");
-		if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp,word);
-		    state = NUM2;
-		} else {
-		    token_err("LINE", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM2:
-		if (debug) printf("in num2\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    sscanf(word, "%lf", &yy1);	/* scan it in */
-		    yold=yy1;
+		xold=x1;
+		yold=yy1;
+		if (getnum(lp, "LINE", &x1, &yy1)) {
 		    nsegs++;
 		    
 		    CP = coord_new(x1,yy1);
@@ -132,7 +102,7 @@ int add_line(LEXER *lp, int *layer)
 
 		    rubber_set_callback(draw_line);
 		    x2 = x1; y2 = yy1;
-		    state = NUM3;
+		    state = NUM2;
 		} else if (token == EOL) {
 		    token_get(lp,word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
@@ -142,59 +112,11 @@ int add_line(LEXER *lp, int *layer)
 		    state = END; 
 		}
 		break;
-	    case NUM3:		/* get pair of xy coordinates */
-		if (debug) printf("in num3\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    xold=x2;
-		    sscanf(word, "%lf", &x2);	/* scan it in */
-		    state = COM2;
-		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == BACK) {
-		    token_get(lp,word); 	/* eat it */
-		    if (debug) printf("dropping coord\n");
-		    rubber_clear_callback(); 
-		    rubber_draw(x2, y2, 0);
-		    printf("num coords %d\n", coord_count(CP));
-		    if ((count = coord_count(CP)) >= 3) {
-			coord_drop(CP);  /* drop last coord */
-			coord_swap_last(CP, x2, y2);
-			coord_get(CP, count-2, &x2, &y2);
-			setlockpoint(x2,y2);
-		    } else {
-		    	printf("can't drop last point!\n");
-		    }
-		    rubber_set_callback(draw_line); 
-		    rubber_draw(x2, y2, 0);
-		} else if (token == EOC || token == CMD) {
-		    state = END; 
-		} else {
-		    token_err("LINE", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM2:		
-		if (debug) printf("in com2\n");
-		if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp,word);
-		    state = NUM4;
-		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else {
-		    token_err("LINE", lp, "expected COMMA", token);
-		    state = END;	
-		}
-		break;
-	    case NUM4:
-		if (debug) printf("in num4\n");
-		if (token == NUMBER) {
-		    token_get(lp,word);
-		    yold=y2;
-		    sscanf(word, "%lf", &y2);	/* scan it in */
-
+	    case NUM2:		/* get pair of xy coordinates */
+		if (debug) printf("in num2\n");
+		xold=x2;
+		yold=y2;
+		if (getnum(lp, "LINE", &x2, &y2)) {
 		    nsegs++;
 
 		    /* two identical clicks terminates this line */
@@ -229,12 +151,27 @@ int add_line(LEXER *lp, int *layer)
 			setlockpoint(x2,y2);
 			rubber_set_callback(draw_line);
 			rubber_draw(x2,y2, 0);
-			state = NUM3;	/* loop till EOC */
+			state = NUM2;	/* loop till EOC */
 		    }
-
 		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
-		} else if (token == EOC || CMD) {
+		    token_get(lp,word); 	/* just ignore it */
+		} else if (token == BACK) {
+		    token_get(lp,word); 	/* eat it */
+		    if (debug) printf("dropping coord\n");
+		    rubber_clear_callback(); 
+		    rubber_draw(x2, y2, 0);
+		    printf("num coords %d\n", coord_count(CP));
+		    if ((count = coord_count(CP)) >= 3) {
+			coord_drop(CP);  /* drop last coord */
+			coord_swap_last(CP, x2, y2);
+			coord_get(CP, count-2, &x2, &y2);
+			setlockpoint(x2,y2);
+		    } else {
+		    	printf("can't drop last point!\n");
+		    }
+		    rubber_set_callback(draw_line); 
+		    rubber_draw(x2, y2, 0);
+		} else if (token == EOC || token == CMD) {
 		    state = END; 
 		} else {
 		    token_err("LINE", lp, "expected NUMBER", token);

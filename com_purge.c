@@ -43,12 +43,6 @@ char *arg;
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
-	    case COMMA:		/* comma */
-	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
-	    case END:		/* end of file */
 	    default:
 		; /* eat em up! */
 	    	break;

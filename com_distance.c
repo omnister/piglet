@@ -23,7 +23,7 @@ void draw_dist();
 
 int com_distance(LEXER *lp, char *arg)
 {
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
+    enum {START,NUM1,NUM2,END} state = START;
 
     double x2,y2;
 
@@ -55,37 +55,10 @@ int com_distance(LEXER *lp, char *arg)
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("DISTANCE", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("DISTANCE", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &yy1);	/* scan it in */
+	case NUM1:
+            if (getnum(lp, "DISTANCE", &x1, &yy1)) {
 		rubber_set_callback(draw_dist);
-		state = NUM3;
+		state = NUM2;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
@@ -96,35 +69,8 @@ int com_distance(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-	case NUM3:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x2);	/* scan it in */
-		state = COM2;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("DISTANCE", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM2:		
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM4;
-	    } else {
-		token_err("DISTANCE", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM4:
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y2);	/* scan it in */
+	case NUM2:
+            if (getnum(lp, "DISTANCE", &x2, &y2)) {
 	        printf("xy1=(%g,%g) xy2=(%g,%g) dx=%g, dy=%g, dxy=%g theta=%g (deg.)\n",
 	        x1, yy1, x2, y2, fabs(x1-x2), fabs(yy1-y2),
 	        sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0)),

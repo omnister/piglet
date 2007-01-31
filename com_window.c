@@ -97,37 +97,7 @@ int com_window(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp, word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp, word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("   cancelling WIN\n");
-		state = END;	
-	    } else {
-		printf("WIN: expected NUMBER, got: %s\n",
-		    tok2str(token));
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (token == EOL) {
-		token_get(lp, word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp, word);
-		state = NUM2;
-	    } else {
-		printf("WIN: expected COMMA: got: %s!\n", 
-		    tok2str(token));
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (token == NUMBER) {
-		token_get(lp, word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
+            if (getnum(lp, "WIN", &x1, &y1)) {
 		rubber_set_callback(draw_bounds);
 		state = NUM3;
 	    } else if (token == EOL) {
@@ -142,41 +112,7 @@ int com_window(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM3:		/* get pair of xy coordinates */
-	    if (token == NUMBER) {
-		token_get(lp, word);
-		sscanf(word, "%lf", &x2);	/* scan it in */
-		state = COM2;
-	    } else if (token == EOL) {
-		token_get(lp, word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		if (debug) printf("WIN: doing pan\n");
-		if (debug) printf("calling do_win 2 inside com window\n");
-		do_win(lp, 2, x1, y1, 0.0, 0.0, scale);
-		fit = 0;
-		scale = 1;
-	        state = END;
-	    } else {
-		printf("WIN: expected COORD, got: %s\n",
-		    tok2str(token));
-		state = END; 
-	    }
-	    break;
-	case COM2:		
-	    if (token == EOL) {
-		token_get(lp, word); 	/* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp, word);
-		state = NUM4;
-	    } else if (token == EOL) {
-		token_get(lp, word); /* just ignore it */
-	    } else {
-		printf("WIN: expected COMMA, got:%s\n", 
-		    tok2str(token));
-		state = END;	
-	    }
-	    break;
-	case NUM4:
-	    if (token == NUMBER) {
+            if (getnum(lp, "WIN", &x2, &y2)) {
 		state = START;
 		token_get(lp, word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
@@ -193,12 +129,16 @@ int com_window(LEXER *lp, char *arg)
 		    scale = 1;
 		}
 	    } else if (token == EOL) {
-		token_get(lp, word); /* just ignore it */
+		token_get(lp, word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("WIN: cancelling WIN\n");
-		state = END; 
+		if (debug) printf("WIN: doing pan\n");
+		if (debug) printf("calling do_win 2 inside com window\n");
+		do_win(lp, 2, x1, y1, 0.0, 0.0, scale);
+		fit = 0;
+		scale = 1;
+	        state = END;
 	    } else {
-		printf("WIN: expected NUMBER, got: %s\n",
+		printf("WIN: expected COORD, got: %s\n",
 		    tok2str(token));
 		state = END; 
 	    }

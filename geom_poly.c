@@ -92,42 +92,10 @@ int add_poly(LEXER *lp, int *layer)
 		xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-
-		if (debug) printf("in num1\n");
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    xold=x1;
-		    sscanf(word, "%lf", &x1);	/* scan it in */
-		    state = COM1;
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC || token == CMD) {
-		    state = END;
-		} else {
-		    token_err("POLY", lp, "expected NUMBER", token);
-		    state = END; 
-		}
-		break;
-	    case COM1:		
-		if (debug) printf("in com1\n");
-		if (token == EOL) {
-		    token_get(lp, word); /* just ignore it */
-		} else if (token == COMMA) {
-		    token_get(lp, word);
-		    state = NUM2;
-		} else {
-		    token_err("POLY", lp, "expected COMMA", token);
-		    state = END; 
-		}
-		break;
-	    case NUM2:
-
-		if (debug) printf("in num2, nsegs=%d\n", nsegs);
-		if (token == NUMBER) {
-		    token_get(lp, word);
-		    yold=y1;
-		    sscanf(word, "%lf", &y1);	/* scan it in */
-
+		if (debug) printf("in num1, nsegs=%d\n", nsegs);
+		xold=x1;
+		yold=y1;
+		if (getnum(lp, "POLY", &x1, &y1)) {
 		    nsegs++;
 
 		    if (nsegs == 1) {
@@ -174,8 +142,7 @@ int add_poly(LEXER *lp, int *layer)
 		} else if (token == EOL) {
 		    token_get(lp, word); 	/* just ignore it */
 		} else if (token == EOC) {
-		    printf("   cancelling ADD POLY\n");
-		    done++;
+		    state = END; 
 		} else if (token == CMD) {
 		    state = END; 
 		} else {

@@ -1203,10 +1203,12 @@ DB_DEFLIST *p;			/* return the area of component p */
 void db_notate(p)
 DB_DEFLIST *p;			/* print out identifying information */
 {
+    int debug=1;
 
     if (p == NULL) {
     	printf("db_notate: no component!\n");
     } else {
+	if (debug) printf("%d:", (int) p);
 	switch (p->type) {
 	case ARC:  /* arc definition */
 	    printf("   ARC %d (%s) end1=%.5g,%.5g end2=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 

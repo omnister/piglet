@@ -559,6 +559,7 @@ int db_cksum(DB_DEFLIST *cell);
 DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head);
 int db_checkpoint();
 void db_free(DB_DEFLIST *dp);
+void db_fsck(DB_DEFLIST *dp);
 int readin();
 int loadrep();
 

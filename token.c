@@ -282,3 +282,73 @@ char *tok2str(TOKEN token)
 	default: return("UNKNOWN"); 	break;
     }
 }
+
+int getnum(LEXER *lp, char *cmd, double *px, double *py)
+{
+    int done=0;
+    TOKEN token;
+    char word[BUFSIZE];
+    int state = 1;
+    int debug = 0;
+
+    if (debug) printf("in getnum\n");
+
+    while(!done) {
+	token = token_look(lp,word);
+	if (debug) printf("got %s: %s\n", tok2str(token), word);
+	if (token==CMD) {
+	    state=4;
+	} 
+
+	switch(state) {	
+	case 1:		/* get pair of xy coordinates */
+	    if (debug) printf("in NUM1\n");
+	    if (token == NUMBER) {
+		token_get(lp,word);
+		sscanf(word, "%lf", px);	/* scan it in */
+		state = 2;
+	    } else if (token == EOL) {
+		token_get(lp,word); 	/* just ignore it */
+	    } else if (token == EOC || token == CMD) {
+		state = 4;	
+	    } else {
+		token_err(cmd, lp, "expected NUMBER", token);
+		state = 4; 
+	    }
+	    break;
+	case 2:		
+	    if (debug) printf("in COM1\n");
+	    if (token == EOL) {
+		token_get(lp,word); /* just ignore it */
+	    } else if (token == COMMA) {
+		token_get(lp,word);
+		state = 3;
+	    } else if (token == NUMBER) {	/* this line makes the comma optional */
+		state = 3;
+	    } else {
+		token_err(cmd, lp, "expected COMMA", token);
+		state = 4;
+	    }
+	    break;
+	case 3:
+	    if (debug) printf("in NUM2\n");
+	    if (token == NUMBER) {
+		token_get(lp,word);
+		sscanf(word, "%lf", py);	/* scan it in */
+		return(1);
+	    } else if (token == EOL) {
+		token_get(lp,word); 	/* just ignore it */
+	    } else if (token == EOC || token == CMD) {
+		state = 4;
+	    } else {
+		token_err(cmd, lp, "expected NUMBER", token);
+		state = 4; 
+	    }
+	    break;
+	case 4:		
+	    done++;
+	}
+    }
+    return(0);	
+}
+

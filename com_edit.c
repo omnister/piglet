@@ -30,7 +30,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     DB_DEFLIST *p_best;
     double xmin, ymin, xmax, ymax;
 
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,DOIT,END} state = START;
+    enum {START,NUM1,DOIT,END} state = START;
 
 /* an edi parse loop that will allow picking of instances for EIP */
 
@@ -78,39 +78,9 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:		/* get pair of xy coordinates */
-	    if (debug) printf("in NUM1\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("EDIT", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,word);
-		state = NUM2;
-	    } else {
-		token_err("EDIT", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
+	case NUM1:
 	    if (debug) printf("in NUM2\n");
-	    if (token == NUMBER) {
-		token_get(lp,word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
+            if (getnum(lp, "EDIT", &x1, &y1)) {
 		if ((p_best=db_ident(currep, x1,y1,1, 0, INST, 0)) != NULL) {
 		    db_notate(p_best);	    /* print out id information */
 		    db_highlight(p_best);

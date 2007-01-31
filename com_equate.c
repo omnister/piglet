@@ -120,9 +120,6 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 		break;
 	    case EOL:		/* newline or carriage return */
 	        break;
-	    case COMMA:		/* comma */
-	    case QUOTE: 	/* quoted string */
-	    case END:		/* end of file */
 	    default:
 		printf("EQUATE: expected OPT, got %s %s\n", tok2str(token), word);
 		done++;

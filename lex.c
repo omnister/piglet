@@ -793,7 +793,6 @@ char *arg;
     char *s = NULL;
     int i;
 
-
     while(!done && (token=token_get(lp, word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
 	switch(token) {

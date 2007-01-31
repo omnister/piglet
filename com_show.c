@@ -138,11 +138,6 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 		break;
 	    case EOL:		/* newline or carriage return */
 	        break;
-	    case NUMBER: 	/* number */
-	    case IDENT: 	/* identifier */
-	    case COMMA:		/* comma */
-	    case QUOTE: 	/* quoted string */
-	    case END:		/* end of file */
 	    default:
 		printf("SHOW: expected OPT, got %s %s\n", tok2str(token), word);
 		done++;
