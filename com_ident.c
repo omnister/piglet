@@ -177,7 +177,6 @@ int com_identify(LEXER *lp, char *arg)
             if (getnum(lp, "IDENT", &x2, &y2)) {
 		state = START;
 		rubber_clear_callback();
-		need_redraw++;
 
 		printf("IDENT: got %g,%g %g,%g\n", x1, y1, x2, y2);
 		stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
@@ -190,6 +189,7 @@ int com_identify(LEXER *lp, char *arg)
 			printf("   area = %g\n", area);
 		    }
 		}
+		need_redraw++;
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {

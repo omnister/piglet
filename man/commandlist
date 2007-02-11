@@ -1616,20 +1616,35 @@ Layer number, "0" or omitted designates all layers.  Not used
 when <component> is an instance name.
 }
 
+
+
 N: SMAsh
 D: Replace an instance with its components
-U: SMASH [<device_name>] {<coord>} EOC
+U: SMASH <device_name> [[:P] <xysel>] | [:R <xy1> <xy2>] ... EOC
 S: partial
 T: {
 
 The SMAsh command will replace a selected instance with copies of the
-individual components that define the instance.  The instance closest to
-<coord> is selected.  If <device_name> is given, then only instances of
+individual components that define the instance.  
+
+Instances to be smashed can be selected either by point or by region. 
+The default mode is select by point.  However, if you change to select
+by region with :R, you can later change back with :P.  The selection
+mode is "sticky" so you can do multiple smashes of the same type
+without re-entering the option. 
+
+When selecting by point, an <xysel> selects and highlights the instance
+to be smashed.  The instance closest to <xysel> is selected. 
+If <device_name> is given, then only instances of
 <device_name> can be selected.  The first <coord> simply highlights the
 instance.  The SMAsh is only performed after EOC, which can be a
 double-click on the same <coord> or a command terminating semi-colon
 (;).  Using a double-click allows multiple SMAshes to be performed with
 one command. 
+
+The :R options allows selection by region.  A bounding box is selected
+with <xy1> and <xy2>.  A rubberband rectangle will be displayed once
+<xy1> is entered.  When <xy2> is entered the bounded instances are smashed.
 
 Instances to be SMAshed can be scaled, mirrored, or rotated.  Instances
 that have been sheared with the :Z option or aspected with the :Y option
@@ -1643,6 +1658,17 @@ will be smashed into equivalent polygons.
 Smashing should be done with care.  Smashing a instance destroys the
 hierarchy of the drawing and can tremendously increase the number of
 components in a device. 
+
+.SS OPTIONS
+.TP
+.I :P
+Smash by Point (default).  Smash the single instance closest to <xysel>. 
+.TP
+.I :R 
+Smash by Region.  Smash zero or more instances whose bounding boxes
+are entirely contained within the rectangular region defined by <xy1> &
+<xy2>.   When selecting by region, a rubber-banded rectangle will be drawn 
+after the first coordinate to help the user define the region.
 
 }
 

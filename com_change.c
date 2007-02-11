@@ -26,12 +26,12 @@
 int com_change(LEXER *lp, char *arg)		
 {
 
-    enum {START,NUM1,OPT,END} state = START;
+    enum {START,NUM1,COM1,NUM2,OPT,NUM3,COM2,NUM4,END} state = START;
 
     TOKEN token;
     char word[BUFSIZE];
     char buf[MAXBUF];
-    int debug=1;
+    int debug=0;
     int done=0;
     int retval;
     int valid_comp=0;
@@ -152,10 +152,9 @@ int com_change(LEXER *lp, char *arg)
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:
-            if (getnum(lp, "AREA", &x1, &y1)) {
+	case NUM1:		/* get pair of xy coordinates */
+	    if (getnum(lp, "CHA", &x1, &y1)) {
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-
 		if (p_best != NULL) {
 		    db_highlight(p_best); 	/* unhighlight it */
 		    p_best = NULL; 
@@ -184,8 +183,7 @@ int com_change(LEXER *lp, char *arg)
 	    } else if (token == EOL) {
 		token_get(lp,word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
-		printf("CHA: cancelling POINT\n");
-	        state = OPT;
+		state = END;	
 	    } else {
 		token_err("CHA", lp, "expected NUMBER", token);
 		state = END; 

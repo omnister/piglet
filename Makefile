@@ -112,13 +112,6 @@ com_area.o: rlgetc.h
 com_area.o: rubber.h
 com_area.o: token.h
 com_area.o: xwin.h
-com_changeedit.o: db.h
-com_changeedit.o: eprintf.h
-com_changeedit.o: lex.h
-com_changeedit.o: opt_parse.h
-com_changeedit.o: rlgetc.h
-com_changeedit.o: token.h
-com_changeedit.o: xwin.h
 com_change.o: db.h
 com_change.o: eprintf.h
 com_change.o: lex.h

@@ -21,12 +21,7 @@ void draw_poly();
 automatically cull any colinear points as they are entered, should
 eliminate any consecutive duplicate points, should not allow any polys
 with less than three vertices, etc...  The user should not be able to
-enter a malformed geometry.  There is currently a tricky case where the
-user clicks xy1, xy2, and then EOC while setting on the xy2 point.  This
-enters a three-vertex poly with the last two points identical.  This
-gets saved, and causes a crash next time it is read back in since the
-last dup points create a false EOC */
-
+enter a malformed geometry. */
 
 /*
  *
@@ -40,6 +35,7 @@ last dup points create a false EOC */
 OPTS opts;
 
 static double x1, y1;
+static double xx, yy;
 
 int add_poly(LEXER *lp, int *layer)
 {
@@ -93,9 +89,15 @@ int add_poly(LEXER *lp, int *layer)
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1, nsegs=%d\n", nsegs);
-		xold=x1;
-		yold=y1;
-		if (getnum(lp, "POLY", &x1, &y1)) {
+		if (token == EOL) {
+		    token_get(lp, word); 	/* just ignore it */
+		} else if (token == EOC) {
+		    state = END; 
+		} else if (token == CMD) {
+		    state = END; 
+		} else if (getnum(lp, "POLY", &xx, &yy)) {
+		    xold=x1; yold=y1;
+		    x1 = xx; y1 = yy;
 		    nsegs++;
 
 		    if (nsegs == 1) {
@@ -139,12 +141,6 @@ int add_poly(LEXER *lp, int *layer)
 			rubber_draw(x1,y1, 0);
 			state = NUM1;	/* loop till EOC */
 		    }
-		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
-		} else if (token == EOC) {
-		    state = END; 
-		} else if (token == CMD) {
-		    state = END; 
 		} else {
 		    token_err("POLY", lp, "expected NUMBER", token);
 		    state = END; 

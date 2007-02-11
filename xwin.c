@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.45 2007/01/18 19:12:58 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.46 2007/02/11 17:12:31 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -1730,7 +1730,14 @@ int mode;
 
 void xwin_raise_window()
 {
-    XRaiseWindow(dpy, topwin);
+   XRaiseWindow(dpy, topwin);
+   // XMapRaised(dpy, topwin);
+   XFlush(dpy);
+   XSync(dpy, False);
+   XFlush(dpy);
+   XSync(dpy, False);
+   XFlush(dpy);
+   XSync(dpy, False);
 }
 
 /* given a shiftmask, return how many bits to shift */
@@ -1744,9 +1751,15 @@ int shift_from_mask(int mask, int max) {
     bit = tmp & 1;
     shift=0;
     while(bit != 1 && shift<max) {
-       tmp = tmp>>1;
+       tmp = tmp>>1;	/* shift down to 1 */
        bit = tmp & 1;
        shift++;
+    }
+    bit = tmp & 128;
+    while(bit != 128 && shift>1) {
+       tmp = tmp<<1;	/* shift up to 128 */
+       bit = tmp & 128;
+       shift--;
     }
     return (shift);
 }

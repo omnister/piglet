@@ -792,6 +792,7 @@ char *arg;
     int debug=0;
     char *s = NULL;
     int i;
+    extern void do_win();                /* found in com_window */
 
     while(!done && (token=token_get(lp, word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
@@ -802,8 +803,8 @@ char *arg;
 		break;
 	    case EOC:		/* end of command */
 		done++;
+
 		xwin_raise_window();
-		need_redraw++;
 
 		/* FIXME: horrible kludge, we have to wait until the display is properly */
 		/* updated.  How do you know when everything has been properly sloshed */
@@ -811,10 +812,11 @@ char *arg;
 		/* on my system */
 
 		for (i=0; i<=20; i++) {
-		    xwin_doXevent(s);
+		     xwin_doXevent(&s);
 		}
+
 		xwin_dump_graphics();
-		xwin_doXevent(s);
+		xwin_doXevent(&s);
 		break;
 	    case EOL:		/* newline or carriage return */
 	    	break;	/* ignore */
