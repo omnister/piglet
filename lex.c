@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
@@ -20,6 +21,7 @@
 #include "equate.h"
 #include "path.h"
 #include "rubber.h"
+#include "ev.h"
 
 int readin();
 
@@ -140,11 +142,9 @@ COMMAND commands[] =
     {"SEARCH", com_search, "modify the search path",
     	"unimplemented"},
     {"SET", com_set, "set environment variables",
-    	"unimplemented"},
+    	"SET VAR VALUE"},
     {"SHELL", com_shell, "run a program from within the editor",
-    	"unimplemented"},
-    {"!", com_shell, "Synonym for `shell'",
-    	"unimplemented"},
+    	"called implicitly, simply type the name of executable in $PATH"},
     {"SHOW", com_show, "define which kinds of things to display",
     	"SHOW {+|-|#}{EACILN0PRT}<layer>"},
     {"SMASH", com_smash, "replace an instance with its components", 
@@ -204,11 +204,16 @@ char **argv;
 	return(err);
     }
 
+    if (!EVinit()) {
+    	 printf("can't initialize environment\n");
+     	 exit(6);
+    }
+
     license();			/* print GPL notice */
 
     initX();			/* create window, load MENUDATA */
 
-    findfile(PATH, "NOTEDATA.F", buf);
+    findfile(PATH, "NOTEDATA.F", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file NOTEDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -217,7 +222,7 @@ char **argv;
 	loadfont(buf,0);	/* load NOTE, TEXT definitions */
     }
 
-    findfile(PATH, "TEXTDATA.F", buf);
+    findfile(PATH, "TEXTDATA.F", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file TEXTDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -231,7 +236,7 @@ char **argv;
     initialize_equates();
 
 
-    findfile(PATH, "PROCDATA.P", buf);
+    findfile(PATH, "PROCDATA.P", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not PROCDATA.P in $PATH\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -240,7 +245,7 @@ char **argv;
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
 
-    findfile(PATH, "piglogo.d", buf);
+    findfile(PATH, "piglogo.d", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not find piglogo in $PATH\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -268,6 +273,7 @@ LEXER *lp;
     TOKEN token;
     char word[128];
     char buf[128];
+    char *path;
     int retcode;
     COMMAND *command;
     COMMAND * find_command();
@@ -340,6 +346,26 @@ LEXER *lp;
 			    weprintf("bad number: %s\n", word);
 			}
 			state=1;
+			break;
+		    case IDENT:
+
+			path=EVget("PATH");
+			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
+			    token_unget(lp, token, word);
+
+			    rl_saveprompt();
+			    command = find_command("SHELL");
+			    sprintf(buf, "%s> ", command->name);
+			    rl_setprompt(buf);
+			    retcode = ((*(command->func)) (lp, "")); /* call command */
+			    rl_restoreprompt();
+
+			} else {
+			    printf("MAIN: expected COMMAND, got %s: %s\n",
+				    tok2str(token), word);
+			    token_flush_EOL(lp);
+			    break;
+			}
 			break;
 		    default:
 			printf("MAIN: expected COMMAND, got %s: %s\n",
@@ -1754,24 +1780,10 @@ char *arg;
     return (0);
 }
 
-int com_set(lp, arg)		/* set environment variables */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_set\n");
-    return (0);
-}
-
-int com_shell(lp, arg)		/* run a program from within the editor */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_shell\n");
-    return (0);
-}
-
-/* com_show(lp, arg)	 define which kinds of things to display */
-/* com_smash(lp, arg)	 replace an instance with its components */
+/* int com_set(lp, arg)		set environment variables */
+/* int com_shell(lp, arg)	run a program from within the editor */
+/* com_show(lp, arg)	        define which kinds of things to display */
+/* com_smash(lp, arg)	        replace an instance with its components */
 
 int com_split(lp, arg)		/* cut a component into two halves */
 LEXER *lp;

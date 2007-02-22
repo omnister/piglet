@@ -199,7 +199,7 @@ int initX()
 
     load_font(&font_info);
 
-    findfile(PATH, "MENUDATA_V", buf);
+    findfile(PATH, "MENUDATA_V", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file MENUDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);
