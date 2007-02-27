@@ -244,7 +244,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			continue;
 		}
 	    case INWORD:
-		if (!isalnum(c) && (c!='_') && (c!='.') && (c!='/') ) {
+		if (!isalnum(c) && (c!='_') && (c!='.') ) {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
 		    if (lookup_command(word)) {

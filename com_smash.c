@@ -35,6 +35,7 @@
  *
  *
  */
+ */
 
 STACK *stack;
 static double x1, yy1;		/* y1 name conflicts with <math.h> */
