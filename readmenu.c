@@ -3,6 +3,7 @@
 
 #include "readmenu.h"
 #include "db.h"
+#include <string.h>
 
 #define MAX 16
 int getcolor();
@@ -25,6 +26,8 @@ int testmain() {
 }
 */
 
+#define MAXBUF 256
+
 int loadmenu(m, maxcell, s, lw, mr) 
 MENUENTRY m[];	/* structure for storing the information */
 int maxcell;		/* maximum number of menu cells allocated */
@@ -33,10 +36,8 @@ int *lw;		/* max columns */
 int *mr;		/* max rows */
 {
 
-    char * line = NULL;
     FILE *fp;
     int n;
-    size_t length;
     char *p;
     int x, y;
     int k, w;
@@ -45,6 +46,7 @@ int *mr;		/* max rows */
     int count;
     int c;
     int width;
+    char line[MAXBUF];
 
 
     if ((fp = fopen(s, "r")) == NULL) {
@@ -55,7 +57,12 @@ int *mr;		/* max rows */
     count=0;
     y=0;
     w=0;
-    while((n = getline(&line, &length, fp)) != -1) {
+
+    // eliminate GNU-specific getline call, but using fgets instead...
+    // while((n = getline(&line, &length, fp)) != -1) {
+
+    while(fgets(line, MAXBUF, fp) != 0) {
+	n = strlen(line);
         line[n-1] = '\0';  	/* eliminate the newline */
 	x=0;	/* xlocation of start of string on line */
 	k=0;	/* index of field */
@@ -98,11 +105,11 @@ int *mr;		/* max rows */
 	    ; /* ignore all other lines */
 	}
 	*mr = y;
-        free(line);
-	line = (char *) NULL;
+        // free(line);
+	// line = (char *) NULL;
     }
-    free(line);
-    line = (char *) NULL;
+    // free(line);
+    // line = (char *) NULL;
     return(count);
 }
 

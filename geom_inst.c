@@ -12,17 +12,16 @@
 static double bb_xmin, bb_ymin, bb_xmax, bb_ymax;
 void draw_inst_bb();
 
-int loadrep(char *inst_name) 
+int loadrep(char *inst_name)
 {
     char buf[BUFSIZE];
     FILE *fp;
-    LEXER *my_lp;
     extern XFORM *global_transform;
     XFORM *save_transform;
 
     DB_TAB *ed_rep;
-    char *save_rep;
     int retval=1;
+    char *save_rep;
 
     BOUNDS bb;
 
@@ -32,9 +31,7 @@ int loadrep(char *inst_name)
 	if((fp = fopen(buf, "r")) == 0) { 		/* cannot find copy on disk */	
 	    retval=0;
 	} else { 					/* found it on disk, read it in */	
-	    ed_rep = db_install(inst_name);  /* create blank stub */
 	    printf("reading %s from disk\n", buf);
-	    my_lp = token_stream_open(fp, buf);
 
 	    if (currep != NULL) {
 		save_rep=strsave(currep->name);
@@ -42,22 +39,14 @@ int loadrep(char *inst_name)
 		save_rep=NULL;
 	    }
 
-	    currep = ed_rep;
-	    xwin_display_set_state(D_OFF);
-	    show_set_modify(currep, ALL, 0,1);		/* make rep modifiable */
-	    parse(my_lp);
-	    show_set_modify(currep, ALL, 0,0);		/* set rep not modifiable */
-	    show_set_visible(currep, ALL, 0,1);		/* and make it visible */
+	    currep =  db_install(inst_name);  		/* create blank stub */
+	    readin(buf, 1, EDI, NULL);
 	    currep->modified = 0;
-    	    bb.init=0;
 
+    	    bb.init=0;
 	    save_transform = global_transform;
 	    db_render(currep, 0, &bb, D_READIN); 	/* set boundbox, etc */
 	    global_transform = save_transform;
-
-	    xwin_display_set_state(D_ON);
-	    
-	    token_stream_close(my_lp); 
 
 	    if (save_rep != NULL) {
 		currep=db_lookup(save_rep);

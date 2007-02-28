@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
@@ -20,6 +21,7 @@
 #include "equate.h"
 #include "path.h"
 #include "rubber.h"
+#include "ev.h"
 
 int readin();
 
@@ -140,11 +142,9 @@ COMMAND commands[] =
     {"SEARCH", com_search, "modify the search path",
     	"unimplemented"},
     {"SET", com_set, "set environment variables",
-    	"unimplemented"},
+    	"SET VAR VALUE"},
     {"SHELL", com_shell, "run a program from within the editor",
-    	"unimplemented"},
-    {"!", com_shell, "Synonym for `shell'",
-    	"unimplemented"},
+    	"called implicitly, simply type the name of executable in $PATH"},
     {"SHOW", com_show, "define which kinds of things to display",
     	"SHOW {+|-|#}{EACILN0PRT}<layer>"},
     {"SMASH", com_smash, "replace an instance with its components", 
@@ -204,11 +204,16 @@ char **argv;
 	return(err);
     }
 
+    if (!EVinit()) {
+    	 printf("can't initialize environment\n");
+     	 exit(6);
+    }
+
     license();			/* print GPL notice */
 
     initX();			/* create window, load MENUDATA */
 
-    findfile(PATH, "NOTEDATA.F", buf);
+    findfile(PATH, "NOTEDATA.F", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file NOTEDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -217,7 +222,7 @@ char **argv;
 	loadfont(buf,0);	/* load NOTE, TEXT definitions */
     }
 
-    findfile(PATH, "TEXTDATA.F", buf);
+    findfile(PATH, "TEXTDATA.F", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file TEXTDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -231,7 +236,7 @@ char **argv;
     initialize_equates();
 
 
-    findfile(PATH, "PROCDATA.P", buf);
+    findfile(PATH, "PROCDATA.P", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not PROCDATA.P in $PATH\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -240,7 +245,7 @@ char **argv;
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
 
-    findfile(PATH, "piglogo.d", buf);
+    findfile(PATH, "piglogo.d", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not find piglogo in $PATH\n");
 	printf("PATH=\"%s\"\n", PATH);
@@ -268,6 +273,7 @@ LEXER *lp;
     TOKEN token;
     char word[128];
     char buf[128];
+    char *path;
     int retcode;
     COMMAND *command;
     COMMAND * find_command();
@@ -340,6 +346,26 @@ LEXER *lp;
 			    weprintf("bad number: %s\n", word);
 			}
 			state=1;
+			break;
+		    case IDENT:
+
+			path=EVget("PATH");
+			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
+			    token_unget(lp, token, word);
+
+			    rl_saveprompt();
+			    command = find_command("SHELL");
+			    sprintf(buf, "%s> ", command->name);
+			    rl_setprompt(buf);
+			    retcode = ((*(command->func)) (lp, "")); /* call command */
+			    rl_restoreprompt();
+
+			} else {
+			    printf("MAIN: expected COMMAND, got %s: %s\n",
+				    tok2str(token), word);
+			    token_flush_EOL(lp);
+			    break;
+			}
 			break;
 		    default:
 			printf("MAIN: expected COMMAND, got %s: %s\n",
@@ -568,14 +594,9 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
     TOKEN token;
     int done=0;
     char buf[128];
-    char buf2[128];
     char word[128];
     int nnums=0;
     DB_TAB *ed_rep;
-    FILE *fp;
-    LEXER *my_lp;
-    char *save_rep;
-    BOUNDS bb;
 
     buf[0]='\0';
     while(!done && (token=token_get(lp, word)) != EOF) {
@@ -605,50 +626,19 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 	}
     }
 
-
     if (currep == NULL) {
         printf("    BACKGROUND: not currently editing any cell, can't set background\n");
         return(-1);
     } else if (nnums==1) {
+
 	if ((ed_rep = db_lookup(buf)) == NULL) {	/* not in memory */
-
-	    snprintf(buf2, MAXFILENAME, "./cells/%s.d", buf);
-	    if((fp = fopen(buf2, "r")) == 0) { 		/* cannot find copy on disk */	
-		printf("    BACKGROUND: specified cell: %s, doesn't exist\n", buf);
-		return(-1);
-	    } else { 					/* found it on disk, read it in */	
-		ed_rep = db_install(buf);  /* create blank stub */
-		printf("loading %s from disk\n", buf);
-		my_lp = token_stream_open(fp, buf);
-
-		if (currep != NULL) {
-		    save_rep=strsave(currep->name);
-		} else {
-		    save_rep=NULL;
-		}
-
-		currep = ed_rep;
-		xwin_display_set_state(D_OFF);
-		show_set_modify(currep, ALL, 0,1);		/* make rep modifiable */
-		parse(my_lp);
-		show_set_modify(currep, ALL, 0,0);		/* set rep not modifiable */
-		show_set_visible(currep, ALL, 0,1);		/* and make it visible */
-		currep->modified = 0;
-		bb.init=0;
-		db_render(currep, 0, &bb, D_READIN); 	/* set boundbox, etc */
-		xwin_display_set_state(D_ON);
-		
-		token_stream_close(my_lp); 
-
-		if (save_rep != NULL) {
-		    currep=db_lookup(save_rep);
-		    free(save_rep);
-		} else {
-		    currep=NULL;
-		}
+	    if (loadrep(buf)) {				/* valid load */
+		currep->background = strsave(buf);
 	    }
-	}
-        currep->background = strsave(buf);
+	} else {					/* already in mem */
+	    currep->background = strsave(buf);
+        }
+
     } else if (nnums==0) {
 	if (currep->background != NULL) {
 	    free(currep->background);
@@ -1242,6 +1232,7 @@ int mode;	/* EDI, MAIN, PRO, ... */
 
 	printf ("loading %s from disk\n", filename);
 	xwin_display_set_state(D_OFF);
+        
 	parse(my_lp);
 	xwin_display_set_state(D_ON);
 	token_stream_close(my_lp); 
@@ -1754,24 +1745,10 @@ char *arg;
     return (0);
 }
 
-int com_set(lp, arg)		/* set environment variables */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_set\n");
-    return (0);
-}
-
-int com_shell(lp, arg)		/* run a program from within the editor */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_shell\n");
-    return (0);
-}
-
-/* com_show(lp, arg)	 define which kinds of things to display */
-/* com_smash(lp, arg)	 replace an instance with its components */
+/* int com_set(lp, arg)		set environment variables */
+/* int com_shell(lp, arg)	run a program from within the editor */
+/* com_show(lp, arg)	        define which kinds of things to display */
+/* com_smash(lp, arg)	        replace an instance with its components */
 
 int com_split(lp, arg)		/* cut a component into two halves */
 LEXER *lp;

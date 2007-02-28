@@ -46,7 +46,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.46 2007/02/11 17:12:31 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.47 2007/02/28 04:52:58 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -199,7 +199,7 @@ int initX()
 
     load_font(&font_info);
 
-    findfile(PATH, "MENUDATA_V", buf);
+    findfile(PATH, "MENUDATA_V", buf, R_OK);
     if (buf[0] == '\0') {
 	printf("Could not file MENUDATA.F\n");
 	printf("PATH=\"%s\"\n", PATH);

@@ -1,5 +1,6 @@
-#include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +14,7 @@ char *PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 char *FILENAME="NOTEDATA.F";
 int main() {
     char buf[128];
-    findfile(PATH, FILENAME, buf);
+    findfile(PATH, FILENAME, buf, R_OK);
     if (buf[0] != '\0') {
 	printf("%s\n", buf);
     } else {
@@ -24,14 +25,13 @@ int main() {
 }
 */
 
-void findfile(const char *pathlist, const char *filename, char *retbuf) {
-    char path[128];
-    char buf[128];
-    char head[128];
-    char tail[128];
-    char full[128];
+int findfile(const char *pathlist, const char *filename, char *retbuf, int mode) {
+    char path[1024];
+    char buf[1024];
+    char head[1024];
+    char tail[1024];
+    char full[1024];
     char *p, *q;
-    FILE *fp;
 
     strcpy(path,pathlist);
     for (p=strtok(path, ":"); p!=NULL; p=strtok(NULL, ":")) {
@@ -58,13 +58,13 @@ void findfile(const char *pathlist, const char *filename, char *retbuf) {
 
 	strcat(full,filename);
 
-	if ((fp=fopen(full, "r")) != NULL) {
-	    fclose(fp);
+	if (access(full, mode) == 0) { 	    /* success */
 	    strcpy(retbuf, full);
-	    return;
-	} 
+	    return(1);
+	}
     }
     retbuf[0] = '\0';
+    return(0);
 }
 
 
