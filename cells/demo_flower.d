@@ -1,0 +1,10 @@
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN  -69.7976,-80 69.7976,80;
+ADD demo_petal  0,0;
+ADD demo_petal :R60  0,0;
+ADD demo_petal :R120  0,0;
+ADD demo_petal :R180  0,0;
+ADD demo_petal :R-60  0,0;
+ADD demo_petal :R-120  0,0;

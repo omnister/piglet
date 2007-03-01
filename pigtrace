@@ -1,7 +1,7 @@
 Using host libthread_db library "/lib/libthread_db.so.1".
 /* --------------------------------------------------------------------
     PD_Piglet: an engineering graphical editor with hierarchy.
-    Copyright (C) 2002,2003,2004,2005,2006  by Richard C. Walker.
+    Copyright (C) 2002-2007  by Richard C. Walker.
 
     Author's email: walker AT omnisterra DOT com
     Homepage: http://www.omnisterra.com/walker/linux/piglet/intro.htm
@@ -17,86 +17,55 @@ Using host libthread_db library "/lib/libthread_db.so.1".
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 -------------------------------------------------------------------- */
 
-loading /home/walker/piglet/releases.src/pig.2007.01.04/MENUDATA_V from disk
-loading /home/walker/piglet/releases.src/pig.2007.01.04/NOTEDATA.F from disk
-loading /home/walker/piglet/releases.src/pig.2007.01.04/TEXTDATA.F from disk
-loading /home/walker/piglet/releases.src/pig.2007.01.04/PROCDATA.P from disk
-loading /home/walker/piglet/releases.src/pig.2007.01.04/piglogo.d from disk
+loading /home/walker/piglet/piglet/piglet2007-03-01/MENUDATA_V from disk
+loading /home/walker/piglet/piglet/piglet2007-03-01/NOTEDATA.F from disk
+loading /home/walker/piglet/piglet/piglet2007-03-01/TEXTDATA.F from disk
+loading /home/walker/piglet/piglet/piglet2007-03-01/PROCDATA.P from disk
+loading /home/walker/piglet/piglet/piglet2007-03-01/piglogo.d from disk
 
-MAIN> Kret PLAN
-loading ./cells/PLAN_I from disk
-saved PLAN
-MAIN> edi KPLAN;
-EDIT PLAN> WIN :F ;
-EDIT PLAN> SHO #E; WRA	260.000000, 230.000000
-WRAP>  270.000000, 230.000000
-WRAP>  340.000000, 200.000000
-got 340 200
-EDIT PLAN> WIN N0 ;
-WIN: expected OPT or COORD, got: IDENT
-EDIT PLAN> WIN :N0 ;
-EDIT PLAN> WRA	310.000000, 210.000000
-WRAP>  260.000000, 230.000000
-WRAP>  350.000000, 190.000000
-got 350 190
-EDIT PLAN> IDE	300.000000, 210.000000
-   INST NONAME_001 LL=277.4,207.4 UR=333.4,215.8
-   area = 470.4
-IDENTIFY> WRA  310.000000, 210.000000
-WRAP>  260.000000, 230.000000
-WRAP>  350.000000, 190.000000
-got 350 190
-EDIT PLAN> WRA	310.000000, 210.000000
-WRAP>  250.000000, 240.000000
-WRAP>  370.000000, 180.000000
-got 370 180
-EDIT PLAN> IDE	310.000000, 210.000000
-   INST NONAME_003 LL=277.4,207.4 UR=333.4,215.8
-   area = 470.4
-IDENTIFY> SMA  300.000000, 210.000000
-   INST NONAME_003 LL=277.4,207.4 UR=333.4,215.8
-SMASH>	300.000000, 210.000000
-SMASH>	300.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	300.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	320.000000, 210.000000
-   INST NONAME_002 LL=277.4,207.4 UR=333.4,215.8
-SMASH>	320.000000, 210.000000
-SMASH>	320.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	320.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	320.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	320.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	300.000000, 210.000000
-   INST NONAME_001 LL=277.4,207.4 UR=333.4,215.8
-SMASH>	300.000000, 210.000000
-SMASH>	300.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	300.000000, 210.000000
-nothing here to smash, try SHO #e command?
-SMASH>	290.000000, 210.000000
-   INST NONAME_000 LL=277.4,207.4 UR=333.4,215.8
-SMASH>	290.000000, 210.000000
-SMASH>
-Program received signal SIGINT, Interrupt.
-0x00df1402 in __kernel_vsyscall ()
-#0  0x00df1402 in __kernel_vsyscall ()
-#1  0x006bbecd in ___newselect_nocancel () from /lib/libc.so.6
-#2  0x080580a2 in procXevent () at xwin.c:492
-#3  0x05024700 in rl_read_key () from /usr/lib/libreadline.so.5
-#4  0x05011c6e in readline_internal_char () from /usr/lib/libreadline.so.5
-#5  0x050120d7 in readline () from /usr/lib/libreadline.so.5
-#6  0x080617a7 in rl_gets (prompt=0x8997e98 "SMASH> ") at rlgetc.c:144
-#7  0x080618fe in rlgetc (fd=0x72f420) at rlgetc.c:200
-#8  0x0806223f in token_get (lp=0x895e040, word=0xbfb5d4b8 "\n") at token.c:106
-#9  0x08061acd in token_look (lp=0x895e040, word=0xbfb5d4b8 "\n") at token.c:53
-#10 0x0806fd84 in com_smash (lp=0x895e040, arg=0x8077e7c "") at com_smash.c:53
-#11 0x08062986 in parse (lp=0x895e040) at lex.c:363
-#12 0x080625ef in main (argc=129, argv=0x0) at lex.c:258
+MAIN> edi KKfooKls cells
+MAIN> ret ALL_I
+COM_RET: could not open ./cells/ALL_I_I
+MAIN> ret ALL_K
+loading ./cells/ALL_I from disk
+saved demo_petal
+saved demo_flower
+saved foo
+saved hatch
+saved ALL
+MAIN> edi ALL
+MAIN> win :f;
+EDIT ALL> IDE  80.000000, 80.000000
+ADD A1	0,0 100,100 30,30;
+152655848:   ARC 1 (layer1) end1=0,0 end2=100,100 pt_on_circumference=30,30
+IDENTIFY> SHO #E; MOV  75.000000, 80.000000
+got NUMBER: 75.000000
+in START
+got NUMBER: 75.000000
+got EOL:
+
+MOVE>  75.000000, 80.000000
+got 75 80
+got EOL:
+
+in NUM4
+MOVE>  -120.000000, 90.000000
+got NUMBER: -120.000000
+in NUM4
+got -120 90
+got EOL:
+
+in NUM4
+MOVE> DEL  -125.000000, 80.000000
+got CMD: DEL
+got comp 87381, layer 0
+152655848:   ARC 1 (layer1) end1=-200,0 end2=-100,100 pt_on_circumference=-170,30
+DELETE> save;
+saved ALL
+EDIT ALL> exit;
+MAIN> quit;
+
+Program exited normally.
 
 
 

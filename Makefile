@@ -31,7 +31,7 @@ rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c com_shell.c
+ev.c ev.h com_shell.c
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
@@ -175,6 +175,12 @@ com_purge.o: rlgetc.h
 com_purge.o: rubber.h
 com_purge.o: token.h
 com_purge.o: xwin.h
+com_shell.o: db.h
+com_shell.o: ev.h
+com_shell.o: lex.h
+com_shell.o: rlgetc.h
+com_shell.o: token.h
+com_shell.o: xwin.h
 com_show.o: db.h
 com_show.o: lex.h
 com_show.o: rlgetc.h
@@ -228,6 +234,7 @@ draw.o: xwin.h
 eprintf.o: eprintf.h
 equate.o: db.h
 equate.o: equate.h
+ev.o: ev.h
 geom_arc.o: db.h
 geom_arc.o: lex.h
 geom_arc.o: opt_parse.h
@@ -280,6 +287,7 @@ geom_text.o: xwin.h
 lex.o: db.h
 lex.o: eprintf.h
 lex.o: equate.h
+lex.o: ev.h
 lex.o: lex.h
 lex.o: path.h
 lex.o: readfont.h
