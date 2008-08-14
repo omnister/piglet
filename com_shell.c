@@ -55,7 +55,7 @@ int pig_system(char *s) {
    return(status);
 }
 
-int com_set(lp, arg)		/* set environment variables */
+int com_set(lp, arg)	/* set environment variables */
 LEXER *lp;
 char *arg;
 {

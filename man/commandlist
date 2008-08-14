@@ -1559,12 +1559,54 @@ D: Modify the search path
 S: unimplemented (moderate)
 
 N: SET
+D: Set or read a piglet environment variable
+U: SET [<variable> [<value]] 
 D: Set environment variables
-S: unimplemented (easy)
+S: partial
+T: {
+Piglet inheirits environment variables from the parent shell.  In
+addition, new variables can be created by using the SET command.  With
+two arguments, SET will set the variable named by the first argument to
+the value of the second argument.  With just one argument, SET will
+print the value of the variable named by the argument.  If called with
+no arguments, SET will print out the list of all currently defined
+variables preceeding each one with either [E] for exported variables or
+[P] for private variables.  If a UNIX command is run by typing its name 
+at the command prompt or as an argument to the SHELL command, then it
+enviroment will be initialized to include all of PIGLETs exported variables.
+
+The $PATH variable is used by the SHELL command to search for UNIX commands.
+It is initialized by the calling shell, but can be queried and modified within 
+PIGLET to customize the search path.  
+When entering a new PATH the argument to SET will need to be quoted to
+protect the ":" delimiters from being interpreted as PIGLET options. 
+
+Currently, this facility is just a stub but it will eventually be used
+to control most of PIGLETs internal defaults.  
+}
 
 N: SHEll
 D: Run a shell command from within the editor
-S: unimplemented (easy)
+U: SHELL [command string] <EOL>
+S: partial
+T: {
+Under most conditions, the user will not need to explicitly type the SHELL
+command. When you type a command at the text prompt, PIGLET searches for 
+an internal command of that name.  If it doesn't find one to execute, 
+then it looks through the $PATH variable to see if there is a UNIX command
+that can be executed.  If so, it spawns a subshell and runs the UNIX command
+sending stdout to the terminal.  This is a handy facility for running the UNIX
+ls(1) command.
+
+If SHELL is typed with no command string is given, an interactive shell is created.
+When the shell is killed, control will return to the PIGLET command interpreter.
+
+SHELL uses the $PATH variable to search for UNIX executables.  This
+variable is inheirited from the PIGLETs parent process, but may be
+queried and modified using the SET command.  When entering a new PATH
+the argument to SET will need to be quoted to protect the ":" delimiters
+from being interpreted as PIGLET options. 
+}
 
 N: SHOw
 D: Define which kinds of things to display

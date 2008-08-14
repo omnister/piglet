@@ -20,7 +20,7 @@ both the graphic window and the original shell window that you used to
 start piglet.  You can either type coordinates, or click them with the
 mouse.  The shell window should have a prompt:
 
-MAIN>
+    MAIN>
 
 All commands in piglet are terminated either with another command, or
 with a right mouse click, or with an ";" character.  If you don't
@@ -28,7 +28,28 @@ terminate a command with a ";" or right-button, you can usually keep
 using it over again to make multiple MOVes or COPys.  Once you terminate
 a command, you have to type another command to start working again. 
 
-A few commands terminate the current action with a double click on the
+If you are using KDE under linux, then it works best to set the text window
+just under the graphics window:
+
+	-------------
+	|           |
+	|  graphics |
+	|           |--
+	------------- |
+           | >text    |
+	   ------------
+
+and set your mouse focus preference to "Focus follows mouse".  That
+way you can use either typing or mouse clicking to enter coordinates.
+
+The latest version of piglet adds shell command capability.  When you
+type a command at the text prompt, piglet searches for an internal command
+of that name.  If it doesn't find one to execute, then it looks through
+the $PATH variable to see if there is a UNIX command that can be executed.
+If so, it spawns a subshell and runs the UNIX command sending stdout to
+the terminal.  This is a handy facility for running the ls command.
+
+A few PIGLET commands terminate the current action with a double click on the
 same coordinate.  An example of this is the "ADD L<layer>" add line
 command.  A double-click terminates the current line, but leaves you
 in the add line command to continue adding lines until you finally are
@@ -193,7 +214,7 @@ COMMAND LINE EDITING
 --------------------
 
 Anything typed at the command line goes into a readline buffer.  I have
-mine set up with a vi command history binding.  You can change the
+mine set up with a ksh-like vi command history binding.  You can change the
 binding by editing ~/.inputrc.  My file looks like:
 
 ------------ cut here for gnu readline ~/.inputrc file ----------
@@ -342,9 +363,16 @@ to an new position.  Lines and polygons will simply stretch to accomodate.
 CHANGE
 ------
 
-If you click on any component using the CHA command, you may then enter any option such as :L<layer>,
-:F<fontsize>, :M<mirror_type>, :R<rotation> and the new option will be applied to the selected component.
-You can also click on text or notes and then enter a new string to replace the current value.
+If you click on any component using the CHA command, you may then enter
+any option such as :L<layer>, :F<fontsize>, :M<mirror_type>,
+:R<rotation> and the new option will be applied to the selected
+component.  You can also click on text or notes and then enter a new
+string to replace the current value.   Command line editing is in effect.
+If you have your .inputrc file set up for vi command editing, then you can 
+type CHA, then click on a text or note, and use <esc>-k to
+pull up the old string definition.  You can then  edit the string 
+using ksh-like commands.  Use <enter> to replace the old text with the new
+string.
 
 SAVE
 ----
