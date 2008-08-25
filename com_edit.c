@@ -19,7 +19,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
     char name[128];
     char buf[128];
     int debug=0;
@@ -44,7 +44,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     name[0]=0;
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;
@@ -53,18 +53,18 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	case START:		/* get cellname or xy pick point */
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: requires a name or a selection point\n");
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		if (nfiles == 0) {
 		    strncpy(name, word, 128);
 		    nfiles++;
@@ -96,7 +96,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    state = START;
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: cancelling EDIT\n");
 	        state = END;

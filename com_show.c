@@ -33,7 +33,7 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
 
     int visible=0;
     int modifiable=0;
@@ -46,7 +46,7 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 	return(1);
     }
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
 		switch(toupper(word[0])) {

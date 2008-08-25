@@ -17,7 +17,7 @@
 int com_add(LEXER *lp, char *arg)		
 {
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int done=0;
     int valid_comp=0;
     int i;
@@ -55,7 +55,7 @@ int com_add(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_get(lp, word);
+	token = token_get(lp, &word);
 	if (token == IDENT) { 	
 
 	    /* check to see if is a valid comp descriptor */
@@ -134,7 +134,7 @@ int com_add(LEXER *lp, char *arg)
 		} else {  /* must be a identifier */
 		    /* check to see if "ADD I <name>" */
 		    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-			if((token=token_get(lp,word)) != IDENT) {
+			if((token=token_get(lp,&word)) != IDENT) {
 			    printf("ADD INST: bad inst name: %s\n", word);
 			    done++;
 			}

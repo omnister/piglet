@@ -29,7 +29,7 @@ int com_change(LEXER *lp, char *arg)
     enum {START,NUM1,COM1,NUM2,OPT,NUM3,COM2,NUM4,END} state = START;
 
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     char buf[MAXBUF];
     int debug=0;
     int done=0;
@@ -78,7 +78,7 @@ int com_change(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	/* if (debug) printf("got %s: %s\n", tok2str(token), word); */
 	if (token==CMD) {
 	    state=END;
@@ -86,18 +86,18 @@ int com_change(LEXER *lp, char *arg)
 	switch(state) {	
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
 		printf("CHA: ignoring option, please select component first\n");
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
@@ -181,7 +181,7 @@ int com_change(LEXER *lp, char *arg)
 		}
 		state = OPT;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
@@ -191,7 +191,7 @@ int com_change(LEXER *lp, char *arg)
 	    break;
 	case OPT:
 	    if (token == OPT ) {
-		token_get(lp, word); 
+		token_get(lp, &word); 
 
 		new_layer=0;
 		if (word[0] == ':' && (index("L", toupper(word[1])) != NULL)) { /* parse some options locally */
@@ -290,9 +290,9 @@ int com_change(LEXER *lp, char *arg)
 		    }
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == QUOTE) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 		if (p_best->type == NOTE) {
 		    free(p_best->u.n->text);
 		    p_best->u.n->text = strsave(word);
@@ -308,7 +308,7 @@ int com_change(LEXER *lp, char *arg)
 		    state = END;
 		}
 	    } else if (token == RAW) {	/* FIXME: a stub for testing RAW mode */
-	        /* token_get(lp,word);
+	        /* token_get(lp,&word);
 		printf("RAW: %s <%02x>\n",word, (unsigned int) word[0]);
 		fflush(stdout);
 		if (word[0]=='x') {

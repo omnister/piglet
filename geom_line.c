@@ -42,7 +42,7 @@ int add_line(LEXER *lp, int *layer)
 
     int count;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     double x2,y2;
     double xold, yold;
     int debug=0;
@@ -57,7 +57,7 @@ int add_line(LEXER *lp, int *layer)
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(lp, word);
+	token = token_look(lp, &word);
 	if (debug) {printf("got %s: %s\n", tok2str(token), word);}
 	if (token==CMD) {
 	    state=END;
@@ -68,7 +68,7 @@ int add_line(LEXER *lp, int *layer)
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(lp,word); 
+		    token_get(lp,&word); 
 		    if (opt_parse(word, LINE_OPTS, &opts) == -1) {
 		    	state = END;
 		    } else {
@@ -77,7 +77,7 @@ int add_line(LEXER *lp, int *layer)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just eat it up */
+		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
@@ -104,7 +104,7 @@ int add_line(LEXER *lp, int *layer)
 		    x2 = x1; y2 = yy1;
 		    state = NUM2;
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
+		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -154,9 +154,9 @@ int add_line(LEXER *lp, int *layer)
 			state = NUM2;	/* loop till EOC */
 		    }
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
+		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == BACK) {
-		    token_get(lp,word); 	/* eat it */
+		    token_get(lp,&word); 	/* eat it */
 		    if (debug) printf("dropping coord\n");
 		    rubber_clear_callback(); 
 		    rubber_draw(x2, y2, 0);

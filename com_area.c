@@ -20,7 +20,7 @@ int com_area(LEXER *lp, char *arg)
     enum {START,NUM1,END} state = START;
 
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int debug=0;
     int done=0;
     int valid_comp=0;
@@ -66,7 +66,7 @@ int com_area(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;
@@ -75,17 +75,17 @@ int com_area(LEXER *lp, char *arg)
 	case START:		/* get option or first xy pair */
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
@@ -165,7 +165,7 @@ int com_area(LEXER *lp, char *arg)
 		    state = START;
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("AREA: cancelling POINT\n");
 	        state = END;

@@ -14,6 +14,7 @@
 #include "readfont.h"	/* for writestring() */
 #include "rubber.h"
 #include "rlgetc.h"
+#include "ev.h"
 
 #define EPS 1e-6
 
@@ -23,7 +24,7 @@
 #define BB 2		/* draw bounding box and don't do xform */
 
 
-char *PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
+char *PIG_PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 
 
 /* master symbol table pointers */
@@ -127,6 +128,8 @@ DB_TAB *db_lookup(char *name)           /* find name in db */
 
 DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     DB_TAB *sp;
+    char *p;
+    int d;
 
     sp = (DB_TAB *) emalloc(sizeof(struct db_tab));
     sp->name = NULL;
@@ -153,16 +156,28 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     sp->maxx = 100.0; 
     sp->maxy = 100.0; 
 
-    /* FIXME: good place for an ENV variables to let */
-    /* user set the default grid color and step sizes */
-
     sp->grid_xd = 10.0;
     sp->grid_yd = 10.0;
     sp->grid_xs = 1.0;
     sp->grid_ys = 1.0;
     sp->grid_xo = 0.0;
     sp->grid_yo = 0.0;
+
+    /* FIXME: good place for an ENV variables to let */
+    /* user set the default grid color and step sizes */
+
+    if ((p=EVget("PIG_GRID")) != NULL) {
+    	if ((d=sscanf(p,"%lg %lg %lg %lg %lg %lg", 
+	    &sp->grid_xd, &sp->grid_yd, &sp->grid_xs,
+    	    &sp->grid_ys, &sp->grid_xo, &sp->grid_yo)) <= 0) {
+		printf("bad PIG_GRID=\"%s\"\n",p);
+	} 
+    } 
+
     sp->grid_color = 3;		
+    if( (p=EVget("PIG_GRID_COLOR")) != NULL) {
+        sp->grid_color=atoi(p);
+    }
 
     sp->display_state=G_ON;
     sp->logical_level=1;
@@ -205,7 +220,7 @@ LEXER *lp;
 char    *s;
 {
     TOKEN token;
-    char word[128];
+    char *word;
     char buf[128];
     int done=0;
 
@@ -214,7 +229,7 @@ char    *s;
     sprintf(buf,"%s: (y/n)? ", s);
     rl_setprompt(buf);
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "Y", 1) == 0) {
@@ -915,7 +930,7 @@ int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
 }
 
 /* write out archive file for sp, smash it is smash !=0 */
-/* FIXME: include process file in process !=0 */
+/* FIXME: include process file if process !=0 */
 
 int db_def_archive(DB_TAB *sp, int smash, int process) 
 {
@@ -1671,6 +1686,7 @@ double dx, dy;
 	break;
     case OVAL:  /* oval definition */
         /* FIXME: Not implemented */
+	/* for now just use oblique circles */
 	break;
     case POLY:  /* polygon definition */
 	coords = p->u.p->coords;

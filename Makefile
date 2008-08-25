@@ -220,6 +220,7 @@ com_wrap.o: xwin.h
 coords.o: db.h
 db.o: db.h
 db.o: eprintf.h
+db.o: ev.h
 db.o: readfont.h
 db.o: rlgetc.h
 db.o: rubber.h
@@ -317,6 +318,7 @@ stipple.o: db.h
 stipple.o: xwin.h
 token.o: db.h
 token.o: eprintf.h
+token.o: ev.h
 token.o: lex.h
 token.o: rlgetc.h
 token.o: token.h
@@ -324,6 +326,7 @@ token.o: xwin.h
 xwin.o: db.h
 xwin.o: eprintf.h
 xwin.o: eventnames.h
+xwin.o: ev.h
 xwin.o: lex.h
 xwin.o: path.h
 xwin.o: readmenu.h

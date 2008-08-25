@@ -15,7 +15,7 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 {
     TOKEN token;
     int done=0;
-    char word[MAXBUF];
+    char *word;
     char buf[MAXBUF] = "";
 
     int color = -1;
@@ -33,7 +33,7 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 	return(1);
     }
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
 		if (word[0] != ':') {

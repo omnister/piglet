@@ -29,11 +29,11 @@ int readin();
 
 int com_add(), com_archive(), com_area(), com_background();
 int com_bye(), com_change(), com_copy(), com_date(), com_define();
-int com_delete(), com_display(), com_distance(), com_dump(), com_edit();
-int com_equate(), com_exit(), com_files(), com_fsize(), com_grid();
-int com_group(), com_help(),  com_identify();
-int com_input(), com_interrupt(), com_layer(), com_level();
-int com_list(), com_lock(), com_macro(), com_menu();
+int com_delete(), com_display(), com_distance(), com_dump(); 
+int com_echo(), com_edit(), com_equate(), com_exit(), com_files();
+int com_fsize(), com_grid(), com_group(), com_help();
+int com_identify(), com_input(), com_interrupt(), com_layer();
+int com_level(), com_list(), com_lock(), com_macro(), com_menu();
 int com_move(), com_plot(), com_point(), com_process();
 int com_purge(), com_redo(), com_retrieve(), com_save(), com_search();
 int com_set(), com_shell(), com_show(), com_smash();
@@ -84,6 +84,8 @@ COMMAND commands[] =
     	"DISP [ON|OFF]"},
     {"DUMP", com_dump, "dump graphics window to file or printer",
         "DUM <EOC>"},
+    {"ECHO", com_echo, "print a shell variable",
+    	"ECHO <arguments> ... <EOC>"},
     {"EDIT", com_edit, "begin edit of an old or new device",
     	"EDI <device>"},
     {"EQUATE", com_equate, "define characteristics of a mask layer",
@@ -188,6 +190,7 @@ char **argv;
     LEXER *lp;		/* lexer struct for main cmd loop */
     int err=0;
     char buf[128];
+    char *pig_path;
 
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
@@ -204,6 +207,19 @@ char **argv;
 	return(err);
     }
 
+    /* set default environment variables */
+
+    EVset("PIG_PATH", PIG_PATH);		/* where piglet finds its files */
+    EVset("PIG_GRID_COLOR", "3");		/* grid color */
+    EVset("PIG_GRID", "10 10 1 1 0 0");		/* grid spec */
+    EVset("PIG_NOTEDATA_FILE", "NOTEDATA.F");	/* note font file */
+    EVset("PIG_MENUDATA_FILE", "MENUDATA_V");	/* note font file */
+    EVset("PIG_TEXTDATA_FILE", "TEXTDATA.F");	/* text font file */
+    EVset("PIG_PROCDATA_FILE", "PROCDATA.P");	/* text font file */
+    EVset("PIG_SPLASH_REP", "piglogo");		/* startup logo file */
+    EVset("PIG_FONT_SLANT", "0.0");		/* default for TSLANT command */
+    EVset("PIG_FONT_SIZE", "10.0");		/* default for FSIZE command */
+
     if (!EVinit()) {
     	 printf("can't initialize environment\n");
      	 exit(6);
@@ -213,19 +229,21 @@ char **argv;
 
     initX();			/* create window, load MENUDATA */
 
-    findfile(PATH, "NOTEDATA.F", buf, R_OK);
+    pig_path=EVget("PIG_PATH");
+
+    findfile(pig_path, EVget("PIG_NOTEDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not file NOTEDATA.F\n");
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not file NOTEDATA file: %s\n", EVget("PIG_NOTEDATA_FILE"));
+	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
 	loadfont(buf,0);	/* load NOTE, TEXT definitions */
     }
 
-    findfile(PATH, "TEXTDATA.F", buf, R_OK);
+    findfile(pig_path, EVget("PIG_TEXTDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not file TEXTDATA.F\n");
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not file TEXTDATA file: %s\n", EVget("PIG_TEXTDATA_FILE"));
+	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
 	loadfont(buf,1);	/* load NOTE, TEXT definitions */
@@ -235,20 +253,20 @@ char **argv;
 
     initialize_equates();
 
-
-    findfile(PATH, "PROCDATA.P", buf, R_OK);
+    findfile(pig_path, EVget("PIG_PROCDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not PROCDATA.P in $PATH\n");
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not PROCDATA file: %s\n", EVget("PIG_PROCDATA_FILE"));
+	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
 
-    findfile(PATH, "piglogo.d", buf, R_OK);
+    /* findfile(pig_path, EVget("PIG_SPLASH_REP"), buf, R_OK); */
+    findfile(pig_path, "piglogo.d", buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not find piglogo in $PATH\n");
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not find splash screen: %s\n", EVget("PIG_SPLASH_REP"));
+	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
         currep = db_install("piglogo");           /* create blank stub */
@@ -271,7 +289,7 @@ LEXER *lp;
 {
     int debug=0;
     TOKEN token;
-    char word[128];
+    char *word;
     char buf[128];
     char *path;
     int retcode;
@@ -280,7 +298,7 @@ LEXER *lp;
     int state = 0;
     double x1, y1;
 
-    while((token=token_get(lp, word)) != EOF) {
+    while((token=token_get(lp, &word)) != EOF) {
         if (debug) printf("%s, line %d: IN MAIN: got %s: %s\n", 
 	    lp->name,  lp->line, tok2str(token), word);
 	switch (lp->mode) {
@@ -524,7 +542,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
     int smash = 0;
     int process = 0;
     XFORM *xp;
@@ -534,7 +552,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
     /* FIXME: check for :P option to write PROCDATA info */
     /* make sure and purge PROCDATA on read in */
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":S", 2) == 0) { /* smash archive */
@@ -594,12 +612,12 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
     TOKEN token;
     int done=0;
     char buf[128];
-    char word[128];
+    char *word;
     int nnums=0;
     DB_TAB *ed_rep;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		strncpy(buf, word, 128);
@@ -713,11 +731,11 @@ char *arg;
     TOKEN token;
     int done=0;
     char buf[128];
-    char word[128];
+    char *word;
     DISPLAYSTATE display_state = D_TOGGLE;	
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "ON", 2) == 0) {
@@ -778,13 +796,13 @@ char *arg;
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
     int debug=0;
     char *s = NULL;
     int i;
     extern void do_win();                /* found in com_window */
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
 	switch(token) {
 	    case CMD:		/* command */
@@ -884,13 +902,13 @@ char *arg;
     TOKEN token;
     int done=0;
     char buf[128];
-    char word[128];
+    char *word;
     int debug=0;
 
     if (debug) printf("in com_files\n");
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 	        db_purge(lp, word);
@@ -923,11 +941,11 @@ char *arg;
     int done=0;
     int fsize;
     char buf[128];
-    char word[128];
+    char *word;
     int nnums=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &fsize) != 1 || fsize < 0.0) {
@@ -987,7 +1005,7 @@ char *arg;
     TOKEN token;
     int done=0;
     char buf[128];
-    char word[128];
+    char *word;
     int gridcolor=0;
     GRIDSTATE grid_state = G_TOGGLE;	
     double pts[6] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
@@ -999,7 +1017,7 @@ char *arg;
     double tmp;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (strncasecmp(word, "ON", 2) == 0) {
@@ -1143,13 +1161,13 @@ char *arg;
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
     int debug=0;
     register int i;
     int printed = 0;
     int size;
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 	    case CMD:		/* command */
@@ -1230,7 +1248,7 @@ int mode;	/* EDI, MAIN, PRO, ... */
 	    show_set_modify(currep, ALL,0,1); 
 	}
 
-	printf ("loading %s from disk\n", filename);
+	printf("loading %s\n", filename);
 	xwin_display_set_state(D_OFF);
         
 	parse(my_lp);
@@ -1259,7 +1277,7 @@ char *arg;
 {
     TOKEN token;
     char buf[MAXFILENAME];
-    char word[MAXFILENAME];
+    char *word;
     int debug=0;
     int done=0;
     int nfiles=0;
@@ -1267,7 +1285,7 @@ char *arg;
     if (debug) printf("in com_input\n");
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_INPUT: got %s: %s\n",
 			tok2str(token), word);
 	switch(token) {
@@ -1326,11 +1344,11 @@ char *arg;
     int done=0;
     int layer;
     char buf[128];
-    char word[128];
+    char *word;
     int nnums=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &layer) != 1) {
@@ -1384,11 +1402,11 @@ char *arg;
     int done=0;
     int level;
     char buf[128];
-    char word[128];
+    char *word;
     int nnums=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &level) != 1) {
@@ -1466,10 +1484,10 @@ char *arg;
     TOKEN token;
     int done=0;
     double angle;
-    char word[128];
+    char *word;
     int nnums=0;
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%lf", &angle) != 1) {
@@ -1576,7 +1594,7 @@ char *arg;
 {
     TOKEN token;
     char buf[MAXFILENAME];
-    char word[MAXFILENAME];
+    char *word;
     int debug=0;
     int done=0;
     int nfiles=0;
@@ -1584,7 +1602,7 @@ char *arg;
     if (debug) printf("in com_retrieve\n");
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_RETRIEVE: got %s: %s\n",
 			tok2str(token), word);
 	switch(token) {
@@ -1632,7 +1650,7 @@ char *arg;
 {
     TOKEN token;
     int done=0;
-    char word[128];
+    char *word;
     char name[128];
     int debug=0;
     int nfiles=0;
@@ -1643,7 +1661,7 @@ char *arg;
     if (debug) printf("    com_save <%s>\n", arg); 
 
     name[0]=0;
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
 		if (nfiles == 0) {
@@ -1805,11 +1823,11 @@ char *arg;
     int done=0;
     int slant;
     char buf[128];
-    char word[128];
+    char *word;
     int nnums=0;
 
     buf[0]='\0';
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
 		if(sscanf(word, "%d", &slant) != 1 || slant < -45.0 || slant > 45.0) {

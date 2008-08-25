@@ -26,7 +26,7 @@ int *layer;
     int done=0;
     int nsegs;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     double x3, y3;
     static double xold, yold;
 
@@ -38,7 +38,7 @@ int *layer;
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(lp, word);
+	token = token_look(lp, &word);
 	if (debug) {printf("got %s: %s\n", tok2str(token), word);}
 	if (token==CMD) {
 	    state=END;
@@ -49,7 +49,7 @@ int *layer;
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(lp,word); 
+		    token_get(lp,&word); 
 		    if (opt_parse(word, ARC_OPTS, &opts) == -1) {
 		    	state = END;
 		    } else {
@@ -58,7 +58,7 @@ int *layer;
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just eat it up */
+		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
@@ -73,7 +73,7 @@ int *layer;
                 if (getnum(lp, "ARC", &x1, &yy1)) {
 		    state = NUM2;
 		} else if (token == EOL) {
-		    token_get(lp,word); 	/* just ignore it */
+		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -87,7 +87,7 @@ int *layer;
 		    rubber_set_callback(draw_arc);
 		    state = NUM3;
 		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
+		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {
@@ -103,7 +103,7 @@ int *layer;
 		    rubber_clear_callback();
 		    state=START;
 		} else if (token == EOL) {
-		    token_get(lp,word); /* just ignore it */
+		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
 		} else {

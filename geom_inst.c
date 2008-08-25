@@ -67,7 +67,7 @@ int add_inst(LEXER *lp, char *inst_name)
     int done=0;
     TOKEN token;
     OPTS opts;
-    char word[BUFSIZE];
+    char *word;
     int debug=0;
 
     DB_TAB *ed_rep;
@@ -111,8 +111,8 @@ int add_inst(LEXER *lp, char *inst_name)
     }
 
     while (!done) {
-	token = token_look(lp, word);
-	/* printf("got %s: %s\n", tok2str(token), word); */
+	token = token_look(lp, &word);
+	/* printf("got %s: %s\n", tok2str(token), &word); */
 	if (token==CMD) {
 	    state=END;
 	} 
@@ -121,7 +121,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	        db_checkpoint(lp);
 		rubber_set_callback(draw_inst_bb);
 		if (token == OPT ) {
-		    token_get(lp, word); 
+		    token_get(lp, &word); 
 		    if (opt_parse(word, INST_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
@@ -177,7 +177,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just eat it up */
+		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
@@ -194,7 +194,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		    rubber_set_callback(draw_inst_bb);
 		    state = START;
 		} else if (token == EOL) {
-		    token_get(lp, word);
+		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
 		} else {

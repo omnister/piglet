@@ -28,7 +28,7 @@ int add_rect(LEXER *lp, int *layer)
 
     int done=0;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     double x2,y2;
     int debug=0;
 
@@ -39,7 +39,7 @@ int add_rect(LEXER *lp, int *layer)
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 	if (token==CMD) {
 	    state=END;
@@ -48,7 +48,7 @@ int add_rect(LEXER *lp, int *layer)
 	case START:		/* get option or first xy pair */
 	    db_checkpoint(lp);
 	    if (token == OPT ) {
-		token_get(lp,word); 
+		token_get(lp,&word); 
 		if (opt_parse(word, RECT_OPTS, &opts) == -1) {
 		    state = END;
 		} else {
@@ -57,7 +57,7 @@ int add_rect(LEXER *lp, int *layer)
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		 state = END;
@@ -71,7 +71,7 @@ int add_rect(LEXER *lp, int *layer)
 		rubber_set_callback(draw_box);
                 state = NUM2;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("   cancelling ADD RECT\n");
 		state = END;	
@@ -91,7 +91,7 @@ int add_rect(LEXER *lp, int *layer)
 		rubber_clear_callback();
 		need_redraw++; 
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("ADD RECT: cancelling ADD RECT\n");
 	        state = END;

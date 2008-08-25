@@ -27,7 +27,7 @@ int com_window(LEXER *lp, char *arg)
     
     TOKEN token;
     int done=0;
-    char word[BUFSIZE];
+    char *word;
     int debug=0;
     double x2, y2;
     lastwin = 0;
@@ -37,7 +37,7 @@ int com_window(LEXER *lp, char *arg)
     opt_set_defaults(&opts);
 
     while (!done) {
-	token = token_look(lp, word);
+	token = token_look(lp, &word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 	if (token==CMD) {
 	    state=END;
@@ -45,7 +45,7 @@ int com_window(LEXER *lp, char *arg)
 	switch(state) {	
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
-		token_get(lp, word); 
+		token_get(lp, &word); 
 		state = START;
 		if (strncasecmp(word, ":F", 2) == 0) {
 		     fit++;
@@ -81,10 +81,10 @@ int com_window(LEXER *lp, char *arg)
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp, word); 	/* just eat it up */
+		token_get(lp, &word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
-		 token_get(lp, word); 
+		 token_get(lp, &word); 
 		 if (debug) printf("calling do_win 1 inside com window\n");
 		 do_win(lp, 0, 0.0, 0.0, 0.0, 0.0, scale);
 		 fit = 0;
@@ -101,7 +101,7 @@ int com_window(LEXER *lp, char *arg)
 		rubber_set_callback(draw_bounds);
 		state = NUM3;
 	    } else if (token == EOL) {
-		token_get(lp, word); 	/* just ignore it */
+		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WIN: cancelling WIN\n");
 	        state = END;
@@ -114,7 +114,7 @@ int com_window(LEXER *lp, char *arg)
 	case NUM3:		/* get pair of xy coordinates */
             if (getnum(lp, "WIN", &x2, &y2)) {
 		state = START;
-		token_get(lp, word);
+		token_get(lp, &word);
 		sscanf(word, "%lf", &y2);	/* scan it in */
 		rubber_clear_callback();
 		if (x1==x2 && y1==y2) {
@@ -129,7 +129,7 @@ int com_window(LEXER *lp, char *arg)
 		    scale = 1;
 		}
 	    } else if (token == EOL) {
-		token_get(lp, word); 	/* just ignore it */
+		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("WIN: doing pan\n");
 		if (debug) printf("calling do_win 2 inside com window\n");

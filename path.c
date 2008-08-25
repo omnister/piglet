@@ -10,16 +10,16 @@
 char *home();
 
 /*
-char *PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
+char *PIG_PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 char *FILENAME="NOTEDATA.F";
 int main() {
     char buf[128];
-    findfile(PATH, FILENAME, buf, R_OK);
+    findfile(PIG_PATH, FILENAME, buf, R_OK);
     if (buf[0] != '\0') {
 	printf("%s\n", buf);
     } else {
-	printf("Could not file %s in $PATH\n", FILENAME);
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not file %s in $PIG_PATH\n", FILENAME);
+	printf("PIG_PATH=\"%s\"\n", PIG_PATH);
     }
     return(0);
 }

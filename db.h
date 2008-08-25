@@ -32,7 +32,7 @@
 
 #define MAX_LAYER 1024
 
-extern char *PATH;
+extern char *PIG_PATH;
 
 int show[MAX_LAYER];
 

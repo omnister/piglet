@@ -8,6 +8,7 @@
 #include "xwin.h"
 #include "rlgetc.h"
 #include "lex.h" 	/* for lookup_command() */
+#include "ev.h"
 
 static char promptbuf[128];
 
@@ -19,6 +20,7 @@ LEXER *token_stream_open(FILE *fp, char *name)  {
     LEXER *lp;
     lp = (LEXER *) emalloc(sizeof(struct lexer));
     lp->name = strsave(name);
+    lp->word[0] = '\0';
     lp->bufp = 0;  /* no characters in pushback buf */
     lp->token_stream = fp;
     lp->mode = MAIN;
@@ -47,11 +49,11 @@ int token_stream_close(LEXER *lp)  {
 }
 
 /* lookahead to see the next token */
-TOKEN token_look(LEXER *lp, char *word)
+TOKEN token_look(LEXER *lp, char **word)
 {
     TOKEN token;
     token=token_get(lp, word);
-    token_unget(lp, token, word);
+    token_unget(lp, token, *word);
     return token;
 }
 
@@ -72,37 +74,39 @@ int token_unget(LEXER *lp, TOKEN token, char *word)
 
 int token_flush_EOL(LEXER *lp) 
 {
-    char word[BUFSIZE];
+    char *word;
     TOKEN token;
-    while ((token=token_get(lp, word) != EOL)) {
+    while ((token=token_get(lp, &word) != EOL)) {
 	;
     }
     return(0);
 }
 
-TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
+TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 {
-    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM} state = NEUTRAL;
+    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM,INVAR} state = NEUTRAL;
     int c,d;
     char *w;
     int debug=0;
+    char *str;
 
+    *word = lp->word;		/* set up token text return value */
 
     if (lp->bufp > 0) {		/* characters in pushback buffer */
-	strcpy(word, lp->tokbuf[--(lp->bufp)].word);
+	strcpy(*word, lp->tokbuf[--(lp->bufp)].word);
 	free(lp->tokbuf[lp->bufp].word);
 	lp->tokbuf[lp->bufp].word = (char *) NULL;
 	return(lp->tokbuf[lp->bufp].tok);
     }
 
-    w=word;
+    w=lp->word;
     if (lp->parse) {	/* raw mode */
 	*w++ = (char) procXevent();
 	*w = '\0';
 	return(RAW);	/* simply bypass readline */
     }
 
-    w=word;
+    w=lp->word;
     while((c=rlgetc(lp->token_stream)) != EOF) {
 	switch(state) {
 	    case NEUTRAL:
@@ -114,13 +118,13 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		    case '\r':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning EOL: %s \n", word);
+			if (debug) printf("returning EOL: %s \n", lp->word);
 			lp->line++;
 			return(EOL);
 		    case ',':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning COMMA: %s \n", word);
+			if (debug) printf("returning COMMA: %s \n", lp->word);
 			return(COMMA);
 		    case '"':
 			state = INQUOTE;
@@ -131,7 +135,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		    case '^':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning BACK: %s \n", word);
+			if (debug) printf("returning BACK: %s \n", lp->word);
 			return(BACK);
 			continue;
 		    case ':':
@@ -141,7 +145,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		    case ';':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning EOC: %s \n", word);
+			if (debug) printf("returning EOC: %s \n", lp->word);
 			return(EOC);
 		    case '0':
 		    case '1':
@@ -170,9 +174,11 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			continue;
 		    case '@':
 			*w++ = c;
-			c = rlgetc(lp->token_stream);
-			rl_ungetc(c,lp->token_stream);
 			state = INOPT;
+			continue;
+		    case '$':
+			// *w++ = c; 	/* don't save the dollar */
+			state = INVAR;
 			continue;
 		    case '.':
 			*w++ = c;
@@ -207,8 +213,26 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		} else {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
-		    if (debug) printf("returning NUMBER: %s \n", word);
+		    if (debug) printf("returning NUMBER: %s \n", lp->word);
 		    return(NUMBER);
+		}
+	    case INVAR:
+		if (isalnum(c)) {
+		    *w++ = c;
+		    continue;
+		} else if (strchr("_+-.",c) != NULL) {
+		    *w++ = c;
+		    continue;
+		} else {
+		    rl_ungetc(c,lp->token_stream);
+		    *w = '\0';
+        	    if ((str=EVget(lp->word)) == NULL) {
+		       lp->word[0]='\0';
+		    } else {
+		       strcpy(lp->word, str);
+		    }
+		    if (debug) printf("returning QUOTE: %s \n", lp->word);
+		    return(QUOTE);
 		}
 	    case INOPT:
 		if (isalnum(c)) {
@@ -220,7 +244,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		} else {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
-		    if (debug) printf("returning OPT: %s \n", word);
+		    if (debug) printf("returning OPT: %s \n", lp->word);
 		    return(OPT);
 		}
 	    case INQUOTE:
@@ -236,7 +260,7 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 			continue;
 		    case '"':
 			*w = '\0';
-			if (debug) printf("returning QUOTE: %s \n", word);
+			if (debug) printf("returning QUOTE: %s \n", lp->word);
 			rl_restoreprompt();
 			return(QUOTE);
 		    default:
@@ -247,11 +271,11 @@ TOKEN token_get(LEXER *lp, char *word) /* collect and classify token */
 		if (!isalnum(c) && (c!='_') && (c!='.') && (c!='/') ) {
 		    rl_ungetc(c,lp->token_stream);
 		    *w = '\0';
-		    if (lookup_command(word)) {
-		        if (debug) printf("lookup returns CMD: %s\n", word);
+		    if (lookup_command(lp->word)) {
+		        if (debug) printf("lookup returns CMD: %s\n", lp->word);
 			return(CMD);
 		    } else {
-		        if (debug) printf("lookup returns IDENT: %s\n", word);
+		        if (debug) printf("lookup returns IDENT: %s\n", lp->word);
 			return(IDENT);
 		    }
 		}
@@ -283,18 +307,19 @@ char *tok2str(TOKEN token)
     }
 }
 
+
 int getnum(LEXER *lp, char *cmd, double *px, double *py)
 {
     int done=0;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int state = 1;
     int debug = 0;
 
     if (debug) printf("in getnum\n");
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=4;
@@ -304,11 +329,11 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 	case 1:		/* get pair of xy coordinates */
 	    if (debug) printf("in NUM1\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", px);	/* scan it in */
 		state = 2;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = 4;	
 	    } else {
@@ -319,9 +344,9 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 	case 2:		
 	    if (debug) printf("in COM1\n");
 	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
+		token_get(lp,&word); /* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		state = 3;
 	    } else if (token == NUMBER) {	/* this line makes the comma optional */
 		state = 3;
@@ -333,11 +358,11 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 	case 3:
 	    if (debug) printf("in NUM2\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", py);	/* scan it in */
 		return(1);
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = 4;
 	    } else {

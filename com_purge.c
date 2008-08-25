@@ -15,10 +15,10 @@ char *arg;
 {
     TOKEN token;
     int done=0;
-    char word[BUFSIZE];
+    char *word;
     int editlevel;
 
-    while(!done && (token=token_get(lp, word)) != EOF) {
+    while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
                 if (currep != NULL && strncmp(word, currep->name, BUFSIZE) == 0) {

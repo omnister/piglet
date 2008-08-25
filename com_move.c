@@ -31,7 +31,7 @@ int com_move(LEXER *lp, char *arg)
 
     int done=0;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
     int debug=1;
@@ -73,7 +73,7 @@ int com_move(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;
@@ -83,7 +83,7 @@ int com_move(LEXER *lp, char *arg)
 	    db_checkpoint(lp);
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
-		token_get(lp,word);
+		token_get(lp,&word);
                 if (word[0]==':') {
                     switch (toupper(word[1])) {
                         case 'R':
@@ -105,12 +105,12 @@ int com_move(LEXER *lp, char *arg)
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL || token == EOC) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
@@ -211,8 +211,8 @@ int com_move(LEXER *lp, char *arg)
             break;
 	case NUM3:
 	    if (!getnum(lp, "MOVE", &x3, &y3)) {
-	        if ((token = token_look(lp,word)) == EOC) {
-		    token_get(lp,word); 
+	        if ((token = token_look(lp,&word)) == EOC) {
+		    token_get(lp,&word); 
 		    rubber_clear_callback();
 		    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
 			if (tmp->xsel != NULL) {
@@ -265,9 +265,9 @@ int com_move(LEXER *lp, char *arg)
 		    x4old=x4; y4old=y4;
 	        } 
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
-		token_get(lp,word); 
+		token_get(lp,&word); 
 		rubber_clear_callback();
 		move_draw_point(x4, y4, 0);
 		selpnt_clear(&selpnt);	

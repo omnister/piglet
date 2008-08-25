@@ -29,11 +29,11 @@ int com_distance(LEXER *lp, char *arg)
 
     int done=0;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int debug=0;
 
     while (!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 	if (token==CMD) {
 	    state=END;
@@ -41,12 +41,12 @@ int com_distance(LEXER *lp, char *arg)
 	switch(state) {	
 	case START:		/* get option or first xy pair */
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		 state = END;
@@ -60,7 +60,7 @@ int com_distance(LEXER *lp, char *arg)
 		rubber_set_callback(draw_dist);
 		state = NUM2;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");
 	        state = END;
@@ -78,7 +78,7 @@ int com_distance(LEXER *lp, char *arg)
 		rubber_clear_callback();
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");
 	        state = END;

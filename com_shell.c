@@ -55,22 +55,64 @@ int pig_system(char *s) {
    return(status);
 }
 
+int com_echo(lp, arg)	/* echo variables */
+LEXER *lp;
+char *arg;
+{
+    char *word;	
+    TOKEN token;
+    int i;
+    int debug=0;
+
+    if (debug) printf("    com_echo\n");
+
+    i=0;
+    while((token=token_get(lp, &word)) != EOF && token != EOL) {
+    	printf("%s ",word);
+    }
+    printf("\n");
+
+    return (0);
+}
+
 int com_set(lp, arg)	/* set environment variables */
 LEXER *lp;
 char *arg;
 {
     int debug = 0;
-    char word[128];
+    char *word;
     char var[128];
     char val[128];
     char *str;
     TOKEN token;
+    int mode=0;
+    int n=0;
     int i;
 
     if (debug) printf("    com_set\n");
 
+    while((token=token_get(lp, &word)) == OPT) {
+	switch (toupper(word[1])) {
+	    case 'E':
+		mode += 1;	/* limit to exported vars */
+		break;
+	    case 'P':
+		mode += 2;	/* limit to private vars */
+		break;
+	    default:
+		printf("SET: bad option: %s\n", word);
+		return(1);
+	}
+	n++;
+    }
+    token_unget(lp, token, word);	
+
+    if (n==0) {		/* default is to print all env variables */
+       mode = 3;
+    }
+
     i=0;
-    while((token=token_get(lp, word)) == IDENT || token == QUOTE) {
+    while((token=token_get(lp, &word)) == IDENT || token == QUOTE) {
         if (i==0) strncpy(var,word, 128);
         if (i==1) strncpy(val,word, 128);
 	i++;
@@ -79,7 +121,7 @@ char *arg;
     if ((token != EOF && token != EOL) || i>2) {
        printf("SET: bad number of arguments\n");
     } else if (i==0) { 
-	EVprint();
+	EVprint(mode);
     } else if (i==1) { 
 	if ((str=EVget(var)) == NULL) {
 	   str="";
@@ -100,7 +142,7 @@ char *arg;
     int debug = 0;
     // char *shell;
     char cmd[1024];
-    char word[128];
+    char *word;
     TOKEN token;
 
     if (debug) printf("    com_shell\n");
@@ -109,7 +151,7 @@ char *arg;
     // }
 
     cmd[0] = '\0';
-    while((token=token_get(lp, word)) != EOF  && token != EOL) {
+    while((token=token_get(lp, &word)) != EOF  && token != EOL) {
         strncat(cmd, word, 1024);
         strncat(cmd, " ", 1024);
     }

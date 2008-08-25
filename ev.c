@@ -173,16 +173,16 @@ BOOLEAN EVupdate() /* build environment from symbol table */
    return(TRUE);
 }
 
-void EVprint() /* print the environment */
+void EVprint(int mode) /* print the environment */
 {
     struct varslot *vp;
     int i;
 
     for (i=0; i<HASHSIZE; i++) {
 	for (vp = hashtab[i]; vp != NULL; vp = vp->next) {
-	    printf("%3s %s=%s\n", 
-	        vp->exported ? "[E]":"[P]",
-	        vp->name, vp->defn);
+	    if (((mode & 1) && vp->exported) || ((mode & 2) && !vp->exported)) {
+	        printf("%3s %s=%s\n", vp->exported ? "[E]":"[P]", vp->name, vp->defn);
+	    }
 	}
     }
 }

@@ -52,6 +52,7 @@ typedef struct savetok {
 typedef struct lexer {
     char *name;			/* name of stream */
     FILE *token_stream;		/* file pointer to stream */
+    char word[1024];		/* token string value */
     SAVETOK tokbuf[BUFSIZE];
     int bufp;			/* next free position in buf */
     int mode;			/* MAIN, EDI, PRO, ... etc */
@@ -59,7 +60,7 @@ typedef struct lexer {
     int parse;			/* parse mode: 0=normal, 1=raw */
 } LEXER;
 
-extern TOKEN  token_get(LEXER *lp, char *word);
+extern TOKEN  token_get(LEXER *lp, char ** word);
 extern TOKEN  token_look();
 extern int    token_unget(LEXER *lp, TOKEN token, char *word); 
 extern LEXER *token_stream_open( FILE *fp, char *name );

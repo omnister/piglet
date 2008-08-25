@@ -32,7 +32,7 @@ int com_copy(LEXER *lp, char *arg)
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,NUM7,COM4,NUM8,END} state = START;
 
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int debug=0;
     int done=0;
     int valid_comp=0;
@@ -86,7 +86,7 @@ int com_copy(LEXER *lp, char *arg)
 	    db_checkpoint(lp);
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
 		if (word[0]==':') {
                     switch (toupper(word[1])) {
                         case 'R':
@@ -108,12 +108,12 @@ int com_copy(LEXER *lp, char *arg)
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
 		if ((comp = is_comp(toupper(word[0])))) {
@@ -170,11 +170,11 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM1:		/* get pair of xy coordinates */
 	    if (debug) printf("in NUM1\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &x1);	/* scan it in */
 		state = COM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
@@ -185,9 +185,9 @@ int com_copy(LEXER *lp, char *arg)
 	case COM1:		
 	    if (debug) printf("in COM1\n");
 	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
+		token_get(lp,&word); /* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		state = NUM2;
 	    } else {
 		token_err("COPY", lp, "expected COMMA", token);
@@ -197,7 +197,7 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM2:
 	    if (debug) printf("in NUM2\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &y1);	/* scan it in */
 
 		if (mode == POINT) {
@@ -218,7 +218,7 @@ int com_copy(LEXER *lp, char *arg)
                     state = NUM3;
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("COPY: cancelling POINT\n");
 	        state = END;
@@ -229,11 +229,11 @@ int com_copy(LEXER *lp, char *arg)
 	    break;
         case NUM3:              /* get pair of xy coordinates */
             if (token == NUMBER) {
-                token_get(lp,word);
+                token_get(lp,&word);
                 sscanf(word, "%lf", &x2);       /* scan it in */
                 state = COM2;
             } else if (token == EOL) {
-                token_get(lp,word);     /* just ignore it */
+                token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 rubber_clear_callback();
                 state = END;
@@ -245,9 +245,9 @@ int com_copy(LEXER *lp, char *arg)
             break;
         case COM2:
             if (token == EOL) {
-                token_get(lp,word); /* just ignore it */
+                token_get(lp,&word); /* just ignore it */
             } else if (token == COMMA) {
-                token_get(lp,word);
+                token_get(lp,&word);
                 state = NUM4;
             } else {
                 token_err("IDENT", lp, "expected COMMA", token);
@@ -257,7 +257,7 @@ int com_copy(LEXER *lp, char *arg)
             break;
         case NUM4:
             if (token == NUMBER) {
-                token_get(lp,word);
+                token_get(lp,&word);
                 sscanf(word, "%lf", &y2);       /* scan it in */
                 rubber_clear_callback();
                 xmin=x1;
@@ -267,7 +267,7 @@ int com_copy(LEXER *lp, char *arg)
                 stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
                 state = NUM5;
             } else if (token == EOL) {
-                token_get(lp,word);     /* just ignore it */
+                token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 rubber_clear_callback();
                 printf("IDENT: cancelling POINT\n");
@@ -281,11 +281,11 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM5:
 	    if (debug) printf("in NUM5\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &x3);	/* scan it in */
 		state = COM3;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		state = END;	
@@ -298,9 +298,9 @@ int com_copy(LEXER *lp, char *arg)
 	case COM3:		
 	    if (debug) printf("in COM3\n");
 	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
+		token_get(lp,&word); /* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		state = NUM6;
 	    } else {
 		token_err("COPY", lp, "expected COMMA", token);
@@ -310,7 +310,7 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM6:
 	    if (debug) printf("in NUM6\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &y3);	/* scan it in */
 		if (mode == POINT) {
 		    db_highlight(p_best);
@@ -318,7 +318,7 @@ int com_copy(LEXER *lp, char *arg)
 		rubber_set_callback(draw_cbox);
 		state = NUM7;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		printf("COPY: cancelling POINT\n");
@@ -332,11 +332,11 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM7:
 	    if (debug) printf("in NUM7\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &x4);	/* scan it in */
 		state = COM4;
 	    } else if (token == BACK) {
-		token_get(lp,word); 
+		token_get(lp,&word); 
 		if (p_new == NULL) {
 			;   /* just ignore it */
 		} else {
@@ -345,7 +345,7 @@ int com_copy(LEXER *lp, char *arg)
 		    need_redraw++;
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	
 	    } else {
@@ -357,9 +357,9 @@ int com_copy(LEXER *lp, char *arg)
 	case COM4:		
 	    if (debug) printf("in COM4\n");
 	    if (token == EOL) {
-		token_get(lp,word); /* just ignore it */
+		token_get(lp,&word); /* just ignore it */
 	    } else if (token == COMMA) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		state = NUM8;
 	    } else {
 		token_err("COPY", lp, "expected COMMA", token);
@@ -369,7 +369,7 @@ int com_copy(LEXER *lp, char *arg)
 	case NUM8:
 	    if (debug) printf("in NUM8\n");
 	    if (token == NUMBER) {
-		token_get(lp,word);
+		token_get(lp,&word);
 		sscanf(word, "%lf", &y4);	/* scan it in */
 		printf("got %g %g, last: %g %g\n", x4, y4, lastx, lasty);
 
@@ -403,7 +403,7 @@ int com_copy(LEXER *lp, char *arg)
 		    state = NUM7;
 		} 
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("COPY: cancelling POINT\n");
 	        state = END;
@@ -434,7 +434,7 @@ int com_copy(LEXER *lp, char *arg)
 	if (valid_comp) {
 	} else { 
 	    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-		if((token=token_get(lp,word)) != IDENT) {
+		if((token=token_get(lp,&word)) != IDENT) {
 		    printf("DEL INST: bad inst name: %s\n", word);
 		    done++;
 		}

@@ -23,6 +23,7 @@
 #include "lex.h"
 #include "readmenu.h"
 #include "path.h"
+#include "ev.h"
 
 extern void do_win();
 
@@ -46,7 +47,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.47 2007/02/28 04:52:58 walker Exp walker $";
+char version[] = "$Id: xwin.c,v 1.48 2008/08/25 16:26:45 walker Exp $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -138,7 +139,7 @@ int initX()
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
     char *window_name = "PD_Piglet: Personal Interactive Graphic Layout EdiTor";
-    char *icon_name = "rigel";	/* rick's interactive graphic editor */
+    char *icon_name = "piglet";	
     Pixmap icon_pixmap;
     XSizeHints *size_hints;
     XIconSize *size_list;
@@ -199,13 +200,13 @@ int initX()
 
     load_font(&font_info);
 
-    findfile(PATH, "MENUDATA_V", buf, R_OK);
+    findfile(PIG_PATH, EVget("PIG_MENUDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not file MENUDATA.F\n");
-	printf("PATH=\"%s\"\n", PATH);
+	printf("Could not find MENUDATA file: %s\n", EVget("PIG_MENUDATA_FILE"));
+	printf("PIG_PATH=\"%s\"\n", PIG_PATH);
 	exit(5);
     } else {
-	printf("loading %s from disk\n", buf);
+	printf("loading %s\n", buf);
 	num_menus=loadmenu(menutab, MAX_MENU, buf, &linewidth, &numrows);
     }
 
@@ -460,7 +461,7 @@ void dosplash() {
 
     bb.init=0;
 
-    splashrep=db_lookup("piglogo");
+    splashrep=db_lookup(EVget("PIG_SPLASH_REP"));
     if (splashrep != NULL) {
 	x1 = splashrep->vp_xmin; 
 	y1 = splashrep->vp_ymin;

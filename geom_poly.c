@@ -45,7 +45,7 @@ int add_poly(LEXER *lp, int *layer)
     int done=0;
     int nsegs;
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     static double xold, yold;
 
     if (debug) printf("in add poly layer %d\n", *layer);
@@ -57,7 +57,7 @@ int add_poly(LEXER *lp, int *layer)
     rl_setprompt("ADD_POLY> ");
 
     while (!done) {
-	token = token_look(lp, word);
+	token = token_look(lp, &word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;
@@ -68,7 +68,7 @@ int add_poly(LEXER *lp, int *layer)
 		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
-		    token_get(lp, word); 
+		    token_get(lp, &word); 
 		    if (opt_parse(word, POLY_OPTS, &opts) == -1) {
 		    	state = END;
 		    } else {
@@ -77,7 +77,7 @@ int add_poly(LEXER *lp, int *layer)
 		} else if (token == NUMBER) {
 		    state = NUM1;
 		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just eat it up */
+		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    done++;
@@ -90,7 +90,7 @@ int add_poly(LEXER *lp, int *layer)
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1, nsegs=%d\n", nsegs);
 		if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
+		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC) {
 		    state = END; 
 		} else if (token == CMD) {
@@ -149,7 +149,7 @@ int add_poly(LEXER *lp, int *layer)
 	    case END:
 		if (debug) printf("in end\n");
 		if (token == EOC) {
-		    token_get(lp, word);	/* eat it */
+		    token_get(lp, &word);	/* eat it */
 		    if (debug) printf("stream = %s\n", lp->name);
 		    if (strcmp(lp->name , "STDIN") != 0) {
 			coord_drop(CP);  	/* drop last coord */

@@ -35,7 +35,7 @@ int mode;
 {
     enum {START,NUM1,END} state = START;
 
-    char word[BUFSIZE];
+    char *word;
     int done=0;
     TOKEN token;
     int debug=0;
@@ -46,10 +46,10 @@ int mode;
 
     opt_set_defaults( &opts );
     opts.font_size = db_get_font_size(); 	/* get default from FSIze command */
-    opts.slant = db_get_text_slant(); 	/* get default from TSLant command */
-    opts.font_num = mode;		/* default note font=0, text=1 */
+    opts.slant = db_get_text_slant(); 		/* get default from TSLant command */
+    opts.font_num = mode;			/* default note font=0, text=1 */
 
-    str[0] = 0;
+    str[0] = '\0';
 
     while (!done) {
 
@@ -63,7 +63,7 @@ int mode;
 	    type="NOTE";
 	}
 
-	token = token_look(lp, word);
+	token = token_look(lp, &word);
 
 	if (debug) printf("got %s: %s\n", tok2str(token), word); 
 
@@ -74,7 +74,7 @@ int mode;
 	    case START:		/* get option or first xy pair */
 	        db_checkpoint(lp);
 		if (token == OPT ) {
-		    token_get(lp, word); 
+		    token_get(lp, &word); 
 		    if (nargs > 1) {
 			rubber_clear_callback();
 		    }
@@ -97,11 +97,12 @@ int mode;
 		    if (nargs > 1) {
 		    	rubber_clear_callback();
 		    }
-		    token_get(lp,str); 
+		    token_get(lp,&word); 
+		    strncpy(str,word,BUFSIZE);
 		    rubber_set_callback(draw_text);
 		    state = START;
 		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just eat it up */
+		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
 		    state = END;	/* error */
@@ -135,7 +136,7 @@ int mode;
 			state = START;
 	            }
 		} else if (token == EOL) {
-		    token_get(lp, word); 	/* just ignore it */
+		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD %s\n", type);
 		    state = END; 

@@ -28,7 +28,7 @@ int com_delete(LEXER *lp, char *arg)
     enum {START,NUM1,NUM2,END} state = START;
 
     TOKEN token;
-    char word[BUFSIZE];
+    char *word;
     int valid_comp=0;
     int i;
     DB_DEFLIST *p_best;
@@ -71,7 +71,7 @@ int com_delete(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	/* if (debug) printf("got %s: %s\n", tok2str(token), word); */
 	if (token==CMD) {
 	    state=END;
@@ -80,7 +80,7 @@ int com_delete(LEXER *lp, char *arg)
 	case START:		/* get option or first xy pair */
 	    db_checkpoint(lp);
 	    if (token == OPT ) {
-		token_get(lp,word); /* ignore for now */
+		token_get(lp,&word); /* ignore for now */
                 if (word[0]==':') {
                     switch (toupper(word[1])) {
                         case 'R':
@@ -102,12 +102,12 @@ int com_delete(LEXER *lp, char *arg)
 	    } else if (token == NUMBER) {
 		state = NUM1;
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just eat it up */
+		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
-		token_get(lp,word);
+		token_get(lp,&word);
 	    	state = START;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
@@ -179,7 +179,7 @@ int com_delete(LEXER *lp, char *arg)
                     state = NUM2;
 		}
 	    } else if (token == EOL) {
-		token_get(lp,word); 	/* just ignore it */
+		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DEL: cancelling POINT\n");
 	        state = END;
@@ -206,7 +206,7 @@ int com_delete(LEXER *lp, char *arg)
 		    }
                 }
 	    } else if (token == EOL) {
-                token_get(lp,word);     /* just ignore it */
+                token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("DELETE: cancelling POINT\n");
                 state = END;

@@ -196,8 +196,8 @@ double fuzz;
  * returned as the final pick.
  * 
  * three different scores:
- *    CASE 1: ; pick point is outside of BB, higher score the 
- *      closer to BB
+ *    CASE 1: ; pick point is outside of BoundingBox (BB), 
+ *      higher score the closer to BB
  *	(0<  score < 1)	
  *	score is 1/(1+distance to cell BB)
  *    CASE 2: ; pick inside of BB, doesn't touch any rendered lines
