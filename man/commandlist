@@ -1560,29 +1560,92 @@ S: unimplemented (moderate)
 
 N: SET
 D: Set or read a piglet environment variable
+U: SET [:P] [:E]
 U: SET [<variable> [<value]] 
 D: Set environment variables
 S: partial
 T: {
-Piglet inheirits environment variables from the parent shell.  In
-addition, new variables can be created by using the SET command.  With
-two arguments, SET will set the variable named by the first argument to
-the value of the second argument.  With just one argument, SET will
-print the value of the variable named by the argument.  If called with
-no arguments, SET will print out the list of all currently defined
+Piglet inheirits any environment variables exported by the parent shell.
+In addition, new variables can be created as private variables by using the SET command.  
+If called with no arguments, SET will print out the list of all currently defined
 variables preceeding each one with either [E] for exported variables or
-[P] for private variables.  If a UNIX command is run by typing its name 
-at the command prompt or as an argument to the SHELL command, then it
-enviroment will be initialized to include all of PIGLETs exported variables.
+[P] for private variables.  The :P and :E options limit the listing to only private or
+exported variables respectively.
+With just one argument, SET will
+print the value of the variable named by the argument.  
+With two arguments, SET will set the variable named by the first argument to
+the value of the second argument. 
 
-The $PATH variable is used by the SHELL command to search for UNIX commands.
+If a UNIX command is run by typing its name at the command prompt or as
+an argument to the SHELL command, then its enviroment will be initialized
+to include all of PIGLET's exported variables. 
+
+.SS VARIABLES USED BY PIGLET
+.TP
+.I PATH "dir1<:dir2><:dir3>..."
+The PATH variable is used by the SHELL command to search for UNIX commands.
 It is initialized by the calling shell, but can be queried and modified within 
 PIGLET to customize the search path.  
 When entering a new PATH the argument to SET will need to be quoted to
 protect the ":" delimiters from being interpreted as PIGLET options. 
-
-Currently, this facility is just a stub but it will eventually be used
-to control most of PIGLETs internal defaults.  
+.TP
+.I PIG_PATH "dir1<:dir2><:dir3>..."
+The search path used for loading all of PIGLET's auxiliary files such as
+NOTEDATA, TEXTDATA, MENUDATA, PROCDATA, etc.   
+Defaults to "./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet"
+.TP
+.I PIG_FONT_SIZE "<size>" ; default is "10.0"
+The default font size used for both note and text if not otherwise overridden with :F option.
+.TP
+.I PIG_FONT_SLANT "<degrees>" ; default is "0.0"
+The default italic font slant (from -45.0 to +45.0) used for both note and text if
+not otherwise overridden with :Z option. 
+.TP
+.I PIG_GRID "<dx> [<dy> [<dxs> [<dys> [<xorig> [<yorig>]]]]]" 
+From one to six floats used to set the grid deltax, deltay, xskip, yskip, and x and y origins.
+Any parameters left off will remain set to the default grid specification of "10 10 1 1 0 0".
+.TP
+.I PIG_GRID_COLOR "<num>" ; default is "3"
+Used to set the default grid color when editing new cells.
+.TP
+.I PIG_MENUDATA_FILE "<filename>" ; default is "MENUDATA_V"
+Sets the name used for loading the Menu definition file.
+.TP
+.I PIG_NOTEDATA_FILE "<filename>" ; default is "NOTEDATA.F"
+Sets the name used for loading the stroke definition file for NOTEs.
+.TP
+.I PIG_TEXTDATA_FILE "<filename>" ; default is "TEXTDATA.F"
+Sets the name used for loading the stroke definition file for TEXT.
+.TP
+.I PIG_PROCDATA_FILE "<filename>" ; default is "PROCDATA.P"
+Sets the name used for loading the process layer definition.
+.TP
+.I PIG_SPLASH_REP "<cellname>" ; default is "piglogo"
+Sets the name of the cell used for the initial splash screen during startup.
+The cell should already exist in PIG_PATH.
+.SS EXAMPLES
+.TP
+.B ksh> PIG_SPLASH_REP=mylogo pig
+Change Piglet's splash screen to use mylogo for this run only.
+.TP
+.B ksh> export PIG_SPLASH_REP=mylogo; pig
+Change Piglet's splash screen for all future runs.
+.TP
+.B MAIN> SET PIG_GRID "20 20"
+Inside Piglet, change the default grid for new cells to be 20 units spacing
+in both x and y, leaving skip and offsets unchanged.
+.TP
+.B MAIN> SET PIG_GRID "10 10 1 1 5 5"
+Inside Piglet, change the default grid for new cells to be 10 units spacing
+in both x and y, skip of 1 and origin of the grid at 5,5.
+.TP
+.B MAIN> SET
+List all environment variables
+.TP
+.B MAIN> SET :P
+List only Piglet's private environment variables.  (Note, if any of Piglet's
+normally private variables have been overridden by the parent shell, then they
+will appear as exported variables and must be viewed with the :E option).
 }
 
 N: SHEll

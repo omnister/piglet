@@ -190,6 +190,7 @@ char **argv;
     LEXER *lp;		/* lexer struct for main cmd loop */
     int err=0;
     char buf[128];
+    char buf2[128];
     char *pig_path;
 
     /* set program name for eprintf() error report package */
@@ -262,14 +263,15 @@ char **argv;
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
 
-    /* findfile(pig_path, EVget("PIG_SPLASH_REP"), buf, R_OK); */
-    findfile(pig_path, "piglogo.d", buf, R_OK);
+    strcpy(buf2, EVget("PIG_SPLASH_REP"));
+    strcat(buf2, ".d");
+    findfile(pig_path, buf2, buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not find splash screen: %s\n", EVget("PIG_SPLASH_REP"));
+	printf("Could not find splash screen: %s\n", buf2);
 	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
-        currep = db_install("piglogo");           /* create blank stub */
+        currep = db_install(EVget("PIG_SPLASH_REP"));           /* create blank stub */
 	readin(buf,1,EDI);	
 	currep->modified = 0;
 	show_init(currep);

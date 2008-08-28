@@ -24,7 +24,7 @@
 #define BB 2		/* draw bounding box and don't do xform */
 
 
-char *PIG_PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
+char *PIG_PATH="./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 
 
 /* master symbol table pointers */

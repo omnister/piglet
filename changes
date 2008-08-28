@@ -3,8 +3,9 @@ do
     rcsdiff $file >/tmp/$file.changes 2>&1
     if [ $? != 0 ] 
     then
-    	echo "***********"  $file "***********" 
+    	echo "v**********"  $file "**********v" 
 	cat /tmp/$file.changes
+    	echo "^**********"  $file "**********^" 
     fi
    rm /tmp/$file.changes
 done

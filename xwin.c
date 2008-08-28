@@ -47,7 +47,7 @@ XFORM  unity_transform;
 
 int quit_now; /* when != 0 ,  means the user is done using this program. */
 
-char version[] = "$Id: xwin.c,v 1.48 2008/08/25 16:26:45 walker Exp $";
+char version[] = "$Id: xwin.c,v 1.48 2008/08/25 16:26:45 walker Exp walker $";
 
 unsigned int top_width, top_height;	/* main window pixel size    */
 unsigned int g_width, g_height;		/* graphic window pixel size */
@@ -492,6 +492,8 @@ void dosplash() {
 	xoffset = (((double) g_width)/2.0) -  ((x1+x2)/2.0)*scale;
 	yoffset = (((double) g_height)/2.0) + ((y1+y2)/2.0)*scale;
 	db_render(splashrep,0,&bb,0); 
+    } else {
+    	printf("could not load splash file: %s\n", EVget("PIG_SPLASH_REP"));
     }
 
 }
