@@ -1,0 +1,17 @@
+Using host libthread_db library "/lib/tls/libthread_db.so.1".
+loading /home/walker/.pigrc/MENUDATA_V from disk
+loading /usr/local/lib/piglet/NOTEDATA.F from disk
+loading /usr/local/lib/piglet/TEXTDATA.F from disk
+reading /usr/local/lib/piglet/PROCDATA.P from disk
+
+MAIN> edi x;
+EDIT x> win :f;
+EDIT x> win ;
+EDIT x> exit;
+MAIN> edi piglogo;
+EDIT piglogo> win :f;
+EDIT piglogo>
+EDIT piglogo> win :f;
+EDIT piglogo> quit;
+
+Program exited normally.

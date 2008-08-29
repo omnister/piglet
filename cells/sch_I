@@ -1,0 +1,74 @@
+$FILES
+sch
+sch1
+port
+;
+
+EDIT port;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN 0,-10 20,10;
+ADD P2  0,10  0,-10  20,-10  10,0  20,10;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT sch1;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN -40,-60 40,60;
+ADD R1  -40,60 40,-60;
+ADD port  -40,40;
+ADD port  -40,40;
+ADD port  -40,-40;
+ADD port  -40,-40;
+ADD port :MY  40,40;
+ADD port :MY  40,40;
+ADD port :MY  40,-40;
+ADD port :MY  40,-40;
+ADD N4 :F10 "a"  -30,40;
+ADD N4 :F10 "b"  -30,-40;
+ADD N4 :F10 "c"  30,40;
+ADD N4 :F10 "d"  30,-40;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT sch;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN -140,-150 190,110;
+ADD sch1  -60,50;
+ADD sch1  120,-40;
+ADD sch1  -60,-90;
+ADD L0   -20,90  20,90  20,0  80,0;
+ADD L0   -140,90  -100,90;
+ADD L0   -100,10  -130,10  -130,-50  -100,-50;
+ADD L0   -130,-50  -130,-130  -100,-130;
+ADD L0   -20,10  0,10  0,60  50,60;
+ADD L0   -20,-50  20,-50  20,-80  80,-80;
+ADD L0   -20,-130  190,-130  190,-80  160,-80;
+ADD L0   160,0  190,0;
+ADD N4 :F10 "vin"  -130,90;
+ADD N4 :F10 "vout"  30,60;
+ADD N4 :F10 "vx"  170,0;
+ADD N4 :F10 "vf"  140,-130;
+ADD N4 :F10 "va"  0,-50;
+ADD N4 :F10 "vb"  -130,10;
+ADD N4 :F20 "U1"  -60,40;
+ADD N4 :F20 "U2"  -70,-100;
+ADD N4 :F20 "U3"  110,-40;
+ADD N4 :F10 "vd"  -10,90;
+DISP ON;
+SAVE;
+EXIT;
+

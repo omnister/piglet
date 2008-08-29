@@ -1,0 +1,15 @@
+$FILES
+lt
+;
+
+EDIT lt;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN 0,0 0,0;
+DISP ON;
+SAVE;
+EXIT;
+

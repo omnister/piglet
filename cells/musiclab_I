@@ -1,0 +1,52 @@
+$FILES
+musiclab
+musicpod
+door
+;
+
+EDIT door;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 12 12 1 1 0 0;
+WIN -26.4716,-26.4716 1.5,1.5;
+ADD L2 :W3  -24,0 0,0;
+ADD A2 :W3 -24,0 0,-24 -12,-24;
+ADD L2 :W3  0,0 0,-24;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT musicpod;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 12 12 1 1 0 0;
+WIN -1.5,-26.4716 73.5,49.5;
+ADD R3 :W3 0,0 72,48;
+ADD door 36,0;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT musiclab;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 4 4 3 3 0 0;
+WIN -10,-118 258.472,58;
+ADD musicpod 0,0;
+ADD musicpod 76,0;
+ADD musicpod 152,0;
+ADD musicpod :R180 72,-60;
+ADD musicpod :R180 148,-60;
+ADD musicpod :R180 224,-60;
+ADD L6 :W4  -8,-116 -8,56 232,56 232,-116 -8,-116 -8,-104;
+ADD door :R90 232,-12;
+DISP ON;
+SAVE;
+EXIT;
+

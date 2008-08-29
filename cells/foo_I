@@ -1,0 +1,80 @@
+$FILES
+foo
+demo_flower
+demo_petal
+;
+
+EDIT demo_petal;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 1 1 5 5 0 0;
+WIN -12,0 12,80;
+ADD C7 :R2 :Y0.3  0,40 0,0;
+ADD P3  0,10  -10,30  -10,50  -10,60  0,80  10,60
+      10,30;
+ADD P2  -1,11  -9,60  -5,49  -5,66  -2,60  0,74
+      2,58  5,66  2,48  7,58  2,37  7,43;
+ADD L4   0,11  -3,20  1,22  -2,25  3,29  -3,32
+      4,35  -5,40  3,43  -6,47  2,51  -4,56  1,61
+      -1,64;
+ADD L6   -3,60  1,57  -3,52  0,48  -3,44  1,39
+      -2,36  1,32;
+ADD L5   -1,19  -2,22  1,25  -1,28  2,32  1,35
+      -2,34  -3,37  -2,39  1,40  0,43  -4,42  -4,45
+      -1,48  1,46  0,51  -3,50;
+ADD L6   -6,35  8,34  -7,32  5,30  -6,29  4,27;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT demo_flower;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C3 10 10 1 1 0 0;
+WIN -69.7976,-80 69.7976,80;
+ADD demo_petal  0,0;
+ADD demo_petal :R60  0,0;
+ADD demo_petal :R120  0,0;
+ADD demo_petal :R180  0,0;
+ADD demo_petal :R-60  0,0;
+ADD demo_petal :R-120  0,0;
+DISP ON;
+SAVE;
+EXIT;
+
+EDIT foo;
+SHOW #E;
+DISP OFF;
+LOCK 0;
+LEVEL 1;
+GRID :C2 10 10 5 5 0 0;
+WIN -332.803,-283.52 212.803,153.52;
+ADD C2 :R120  0,0 0,130;
+ADD C3 :R90  0,0 0,130;
+ADD C4 :R72  0,0 0,130;
+ADD C5 :R60  0,0 0,130;
+ADD C6 :R2  0,0 0,130;
+ADD T2 .bar @foo :F20 "add c2 :r120"  -85,-35;
+ADD T3 :F20 "add c3 :r90"  -65,-55;
+ADD T4 :F20 "add c4 :r72"  -100,-15;
+ADD T5 :F20 "add c5 :r60"  -110,30;
+ADD T6 :F20 "add c6 :r2"  -75,95;
+ADD demo_flower  -215,30;
+ADD demo_flower :R20  -55,-195;
+ADD demo_flower  -225,-170;
+ADD demo_flower :R30  -225,-175;
+ADD L6 :W4   55,-175  100,-175  100,-125  75,-125  75,-160  45,-160
+      45,-215  100,-215  100,-200  55,-200;
+ADD L6 :W8   -175,-50  -150,-50  -175,-75  -150,-75  -125,-50  -125,-100
+      -150,-100  -150,-125  -125,-125  -125,-110  -140,-110;
+ADD R6 :W10  -320,-275 205,145;
+ADD demo_flower :R50 :X0.7  -55,-195;
+ADD L4 :W9   -330,-280  210,150;
+DISP ON;
+SAVE;
+EXIT;
+
