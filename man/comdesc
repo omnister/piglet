@@ -1,0 +1,283 @@
+%% ADD  "add a component to the current device"
+
+component command
+--------- -------
+ellipse:  ADD E<l> [:W<w>] [:R<r>] xy1 xy2 xy3 EOC
+oval:     ADD O<l> [:W<w>] [:R<r>] xy1 xy2 xy3 EOC
+circle:   ADD C<l> [:W<w>] [:R<r>] xy1 xy2 EOC
+line:     ADD L<l> [:W<w>] xy1 xy2 [xy3 ...]  EOC
+note:     ADD N<l> [:M<m>] [:R<r>] [:Y<y>] [:Z<z>] [:F<f>] "string" xy EOC
+text:     ADD T<l> [:M<m>] [:R<r>] [:Y<y>] [:Z<z>] [:F<f>] "string"  xy1 EOC
+polygon:  ADD P<l> [:W<w>] xy1 xy2 xy3 [xy4 ...] EOC
+rect:     ADD R<l> [:W<w>] xy1 xy2 EOC
+instance: ADD [I] <device> [:M<m>] [:R<r> [:X<x>] [:Y<y>] [:Z<z>] xy EOC
+
+Options:
+    <l> layer number for component
+    <w> width of line
+    <r> angle (in degrees) polygon resolution or inst/text rotation
+    <y> y-to-x ratio for creating "stretched" instances or text
+    <z> slant angle (degrees) for "shearing" instances or creating italic text
+    <f> fontsize 
+    <m> one of "X" "Y" or "XY", for mirroring around a specified axis
+
+Examples:
+    add c7 :r72 0,0 10,10;
+
+Add a circle on layer 7 with a resolution of 72 degrees.  Since 360/72 = 5
+this command adds a regular pentagon with a center at 0,0 and the apex
+at 10,10;  Giving no resolution results in a 180-sided polygon which looks
+very circular on most displays.
+
+    add n :f20 "hello world" 0,0 "how are you?" 0,-20;
+
+Add a note (using a zero-width stroke font), on the last used layer, with
+a height suitable for vertically spacing lines 20 units apart.  You
+can continue to add multiple notes by simply entering more text/coordinate
+pairs.  
+	
+"EOC" is either the ";" character, a double left-mouseclick, or another
+valid command name.  The double click will complete the existing
+primitive and allow you to enter another without retyping the ADD command
+and options.
+
+In all cases, if <mask> is not specified, the same layer will be used
+as for the last command.
+
+<resolution> always defaults to 8 degrees.
+
+	ADD A<mask> :W<width> :R<resolution> <xy1> <xy2> <xy3>
+
+	    Add an arc.  The coords are starting (1), ending points (2)
+	    plus a point on the circumference (3).  After the first two
+	    coords are drawn, a "rubber-banded" arc will be drawn until
+	    the final coord terminates the command and draws the arc. 
+
+	ADD C<mask> :W<width> :R<resolution> :Y<yxratio> <xy1> <xy2>
+
+	    Add a circle.  Center point (1) and a point on the
+	    circumference (2) must be specfied.  After adding the
+	    centerpoint, a "rubber-banded" circle is shown on the
+	    screen, creating a circle with a radius cooincident with the
+	    current mouse position.  Entering the second point
+	    terminates the command and draws the circle.  <ni> If
+	    <width> is zero, then a filled circle will result.  
+	    Non-zero widths are drawn as a hollow circle with a wall
+	    thickness of the specified width.  </ni>
+
+	    The <yxratio> argument creates an ellipse with a specified
+	    ratio between major and minor axes.  In this case, point 1
+	    places the center of the oval, and point 2 places the
+	    extreme of the major axis.  Since the major axis follows the
+	    second point, the oval can be placed at any arbitrary
+	    rotation or size.  See "ADD O" for a method of creating ovals
+	    based on foci and radius.
+
+	ADD I <devicename> :R<rotation> :M<mirror> :X<scale> :Y<yxratio>
+	               :Z<slant> <xy1> [<xy2> ...] EOC
+
+	    Add a device instance with rotation, scaling, shearing and
+	    mirroring.  <mirror> can take the values "X","Y", or "XY" for
+	    mirroring about the X axis, Y axis, or both.  <rotation> is
+	    the rotation angle in decimal degrees in the range -180.00
+	    to +180.00 with 0.01 degree increment.  Multiple devices can
+	    be placed with multiple <xy> points.  EOC (or double click) is
+	    required to terminate the command. 
+	    
+	ADD L<mask> :W<width> <xy1> [<xy2> ...] EOC
+
+	    Add a line.  <ni> The width parameter is subject to the current
+	    resolution setting.   If 0.1 is the resolution, then a line
+	    of width 0.18 will be rendered as 0.2. </ni>
+
+	ADD N<mask> [:R<rotation>] [:M<mirror>] [:F<fontsize>] 
+		[:Yyxratio] [:Z<slant>] "string" <xy1> [<xy2>...] EOC
+
+	    Add a note.  A note is zero width text.  <Rotation> is in
+	    degrees with counterclockwise rotations being positive. 
+	    <Slant> is in the range -90.00 to +90.00 degrees with 0.01
+	    resolution, and specifies how many degrees the y-axis of the
+	    character is slanted with respect to the x-axis.  The note
+	    is scaled to have adequate clearance when packed into
+	    single-spaced lines which are <fontsize> apart.  The
+	    <yxratio> is used to proportionally stretch or shrink the
+	    text to fill less horizontal space.  (Note: this is a change
+	    from HP Piglet which keeps width constant while changing
+	    height). 
+	    
+	ADD O<mask> [:W<width>] [:R<resolution>] <xy1> <xy2> <xy3>
+
+	    Add an oval (or more precisely, an ellipse).  Three points
+	    are required.  The first two are focal points, and the third
+	    coordinate is a point on the circumference.  Like the circle,
+	    if no width is given, then the figure is drawn solid.  With
+	    a non-zero width, the oval is drawn with a wall thickness
+	    of specified width, and with a hollow interior.  Another way
+	    to create an ellipse is to use "ADD C :Y<xyratio>", which allows
+	    specification of the ratio between major and minor axes.
+
+	ADD P<mask>  [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] EOC
+
+	    Add a polygon.  If the last vertex is not the same as the
+	    first, then an error message will be given, and the polygon
+	    will be completed for you.  Normally, the polygon is solid,
+	    unless a non-zero width is specified, which results in
+	    a hollow figure with a wall thickness of <width>.
+
+	ADD R<mask> [:W<width>] <xy1> <xy2> [[<xy3> <xy4>]...] EOC
+
+	    Add a rectangle.  The rectangle will be solid unless a
+	    non-zero width is specified, in which case it will be hollow
+	    with a wall-thickness of <width>. 
+
+	ADD T<mask> [:F<fontsize>] [:M<mirror>] [:R<rotation>] 
+		[:Yyxratio] [:Z<slant>] "string" <xy1> [<xy2>...] EOC
+
+	    Add a text annotation to the drawing.  Text is a fillable
+	    polygon font with line width.  <Rotation> is in degrees with
+	    counterclockwise rotations being positive.  <Slant> is in
+	    the range -90.00 to +90.00 degrees with 0.01 resolution, and
+	    specifies how many degrees the y-axis of the character is
+	    slanted with respect to the x-axis.  The note is scaled to
+	    have adequate clearance when packed into single-spaced lines
+	    which are <fontsize> apart.  The <yxratio> is used to
+	    proportionally stretch or shrink the text to fill less
+	    horizontal space.  (Note: this is a change from HP Piglet
+	    which keeps width constant while changing height). 
+
+ARChive     
+AREa
+BACkground
+BYE	
+	this command terminates the program.  If there are unsaved devices
+	process files or macro files, then the user is warned of the fact
+	and all unsaved devices are listed.  Entering BYE again will
+	terminate without saving.  
+
+CHAnge
+CMAp
+COPy
+DATe
+DEClare
+DEFine
+DELete
+DISplay
+DIStance
+DUMp
+ECHo
+
+
+EDIt  devicename | <xysel> | EOC
+
+    devicename	=   name of device to be edited
+    <xysel>	=   point inside an instance to be edited
+
+    The device name, if provided, may refer to an old or new device.  If
+    the device is old, it will be read into memory if not already there and
+    will be displayed on the screen.  If no name is given, then a NULL
+    device will be created for editing.  Before saving the device a name
+    will need to be specified for the SAVE command.
+
+    If EDIT is given an <xysel>, then an edit-in-place will be performed.
+    An edit of the instance selected by xysel will be initiated.  Any
+    changes kept with a "SAVE;" will overwrite both the memory and
+    disk version of the instance.
+
+    If an edit-in-place is terminated by a "SAVE <newfilename>", then the
+    original rep is unchanged, however a new rep called <newfilename> will
+    be created in memory and on disk.
+
+    EDITs may be nested arbitrarily deep.  SAVEs of whatever form will
+    pop the edit stack and return to previous contexts.
+
+EQUate -[dsi] -m[s|d|b|l] -c<color> -p<pen> [label] <mask>
+    -[dsi] reserves this mask for Detail Symbolic, or Interconnect, default=d
+    -m[s|d|b|l] display mask Solid, Dotted, Broken or Dashed, default=s
+    -c[rbgyapw] display mask in given color, default=g
+    -p<pen> display mask with given pen number
+
+EXIt
+FILes
+
+GRId	 [on|off] [:C<color>] [gridspacing gridmult [xypnt]] EOC
+    set the grid points to which component coordinates are to be snapped,
+    as well as the grid to be displayed.  GRId; acts as a toggle switch
+    to turn the grid on/off without redrawing the screen.  Default
+    grid is the internal resolution of the editor (no grid).  Default
+    <gridmult> = 10, and <xypnt> (the grid origin) is 0,0.  If the new
+    grid does not differ from the old grid, then the screen is not
+    redrawn.  If the new grid will result in grid points drawn closer
+    together than four pixels, the message "Grid Supressed" is displayed
+    and the grid is not redrawn.  However if the window is changed
+    so that the grid can be drawn it will be.
+
+    Normally *all* points will be snapped to the current grid setting
+    regardless of whether the grid is on or off.  The exception is 
+    points used to select a component on the display, or points used to
+    select and edge or vertex fro STRetch, and points for the DIStance
+    command.  These points will not be snapped to the grid if the grid
+    is off.  (Grid is considered on even if the "Grid Supressed" message
+    is present).  This convention helps with selecting components in
+    a tight layout.  Snapping is done with grid on to make it easier
+    to detect EOC by double clicking the mouse (two clicks on the same
+    xypoint is identical to EOC in most cases).
+
+    The last grid setting used in editing a device is save along with the
+    device so that the same editing environment can be restored the next
+    time the device is edited.
+    
+GROup
+
+HELp	<commandname>
+
+    prints a short usage summary of the command.
+
+IDEntifiy
+INPut
+INTerrupt
+LAYer
+LEVel
+LISt
+LOCk
+MACro
+MEMory
+MENu
+MOVe
+PLOt
+POInt
+PROcess
+
+PURge 	    device1 [, device2, device3 ...] 
+
+RETrieve    archive_filename [EOC]
+
+SAVe	    {[devicename] | newfilename|EOC}
+SEArch
+SHEll
+SHOw
+SMAsh
+STEp
+STRetch
+TIMe
+TRAce
+UNDo
+UNIts	    unittype units
+    unittype  =  one of [UM (micron), MM (millimeter),
+		 CM, (centimeter), ME (meter), UI (microinch),
+		 IN (inch), MI (mils), FE (feet) 
+    and units = number of internal units to be assigned to one user unit. 
+
+VERsion
+    display the current version number of the editor
+
+WINdow :X[<scale>] :N<physical nesting level> :F <xypoint1> <xypoint2> \
+       :L<logical nesting level> EOC
+
+    The last window setting used in editing a device is saved along with the
+    device so that the same editing environment can be restored the next
+    time the device is edited.
+
+WRAp
+XASsign
+YASsign
+ZAP

@@ -1,0 +1,13 @@
+
+/* returns index in string where cursor lies 0=left */
+/* margin,  1=between first,second char*/
+
+    n = cursor_to_index(p_best,x,y);
+    erase_text(p_best_old);
+    insert_char(p_best,&n);
+    delete_char(p_best,&n);
+
+     
+
+
+

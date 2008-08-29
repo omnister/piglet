@@ -1,7 +1,7 @@
-Using host libthread_db library "/lib/libthread_db.so.1".
+?1034hUsing host libthread_db library "/lib/libthread_db.so.1".
 /* --------------------------------------------------------------------
     PD_Piglet: an engineering graphical editor with hierarchy.
-    Copyright (C) 2002-2007  by Richard C. Walker.
+    Copyright (C) 2002-2008  by Richard C. Walker.
 
     Author's email: walker AT omnisterra DOT com
     Homepage: http://www.omnisterra.com/walker/linux/piglet/intro.htm
@@ -17,53 +17,13 @@ Using host libthread_db library "/lib/libthread_db.so.1".
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 -------------------------------------------------------------------- */
 
-loading /home/walker/piglet/piglet/piglet2007-03-01/MENUDATA_V from disk
-loading /home/walker/piglet/piglet/piglet2007-03-01/NOTEDATA.F from disk
-loading /home/walker/piglet/piglet/piglet2007-03-01/TEXTDATA.F from disk
-loading /home/walker/piglet/piglet/piglet2007-03-01/PROCDATA.P from disk
-loading /home/walker/piglet/piglet/piglet2007-03-01/piglogo.d from disk
-
-MAIN> edi KKfooKls cells
-MAIN> ret ALL_I
-COM_RET: could not open ./cells/ALL_I_I
-MAIN> ret ALL_K
-loading ./cells/ALL_I from disk
-saved demo_petal
-saved demo_flower
-saved foo
-saved hatch
-saved ALL
-MAIN> edi ALL
-MAIN> win :f;
-EDIT ALL> IDE  80.000000, 80.000000
-ADD A1	0,0 100,100 30,30;
-152655848:   ARC 1 (layer1) end1=0,0 end2=100,100 pt_on_circumference=30,30
-IDENTIFY> SHO #E; MOV  75.000000, 80.000000
-got NUMBER: 75.000000
-in START
-got NUMBER: 75.000000
-got EOL:
-
-MOVE>  75.000000, 80.000000
-got 75 80
-got EOL:
-
-in NUM4
-MOVE>  -120.000000, 90.000000
-got NUMBER: -120.000000
-in NUM4
-got -120 90
-got EOL:
-
-in NUM4
-MOVE> DEL  -125.000000, 80.000000
-got CMD: DEL
-got comp 87381, layer 0
-152655848:   ARC 1 (layer1) end1=-200,0 end2=-100,100 pt_on_circumference=-170,30
-DELETE> save;
-saved ALL
-EDIT ALL> exit;
-MAIN> quit;
+loading /home/walker/piglet/piglet/date/foo/gitdir/MENUDATA_V
+loading /home/walker/piglet/piglet/date/foo/gitdir/NOTEDATA.F
+loading /home/walker/piglet/piglet/date/foo/gitdir/TEXTDATA.F
+loading /home/walker/piglet/piglet/date/foo/gitdir/PROCDATA.P
+loading /home/walker/piglet/piglet/date/foo/gitdir/piglogo.d
+?1034h
+MAIN> quit
 
 Program exited normally.
 

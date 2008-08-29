@@ -1,0 +1,34 @@
+2008.08.23  changed token_get(lp, char *word) to token_get(lp, char **word)
+            to remove local buffers and return a pointer value to single
+	    large buffer in token.c
+
+2008.08.22  added SET :P :E options to allow printing private and exported vars
+2008.08.22  added environment variables:
+	     PIG_PATH 					/* piglet search path */
+	     PIG_GRID 		"10 10 1 1 0 0"		/* grid spec for new cells */
+	     PIG_GRID_COLOR 	3			/* grid color for new cells */
+	     PIG_NOTEDATA_FILE	"NOTEDATA.F"   		/* note font file */
+	     PIG_MENUDATA_FILE 	"MENUDATA_V"   		/* note font file */
+	     PIG_TEXTDATA_FILE 	"TEXTDATA.F"   		/* text font file */
+	     PIG_PROCDATA_FILE 	"PROCDATA.P"   		/* text font file */
+	     PIG_SPLASH_REP 	"piglogo"      		/* startup logo file */
+	     PIG_FONT_SLANT 	"0.0"          		/* default for TSLANT command */
+	     PIG_FONT_SIZE 	"10.0"         		/* default for FSIZE command */
+
+            
+2006.06.24  IDE and MOV now honor :R for selection by region
+2005.10.12  made SAV command ignore multiple SAV arguments
+2005.10.12  fixed a pernicious bug in postscript centering routine
+2005.10.05  added extra call after db_render in xwin to fix stale
+            bounding boxes left by add_inst()
+2005.10.05  fixed bug in add_inst() that didn't properly scale rubber
+		band box for instances added with transforms...
+2005.10.04  splash screen: piglogo.d is searched for and loaded in MAIN 
+2005.10.02  changed prompt when in quoted strings
+2005.10.02  newlines in text/note strings are honored with multiline text
+2005.09.20  search path in place for NOTEDATA/TEXTDATA/MENUDATA/PROCDATA
+2005.09.26  able to read PROCESS files
+2005.09.26  EQUATE command working, both in read-in and in display control
+2005.09.19  DISP command now prints current state to console 
+2005.09.19  :O option added to WIN command to toggle polygon fill
+2005.09.19  Arcs work correctly when three points are collinear

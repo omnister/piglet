@@ -1,6 +1,0 @@
-LOCK 0;
-LEVEL 1;
-GRID ON;
-WIN 0,0 0,0;
-ADD L67  -12,6 8,-6;
-ADD L67  -12,-6 8,6;

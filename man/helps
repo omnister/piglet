@@ -1,0 +1,50 @@
+
+U: ADD A<layer> [:W<width>] [:R<res>] <xy1> <xy2> [<xy3> ...]  <EOC>
+U: ADD C<layer> [:W<width>] [:R<res>] [:Y<yxratio>] <xy1> <xy2>... <EOC>
+U: ADD <device> [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... <EOC>
+U: ADD L<layer> [:W<width>] <xy1> <xy2> [<xy3> ...]  <EOC>
+U: ADD N<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] "string" <xy> <EOC>
+U: ADD O<layer> [:W<width>] [:R<res>] <xy1> <xy2> <xy3>... <EOC>
+U: ADD P<layer> [:W<width>] <xy1> <xy2> <xy3> [<xy4>...] <EOC>
+U: ADD R<layer> [:W<width>] <xy1> <xy2> <EOC>
+U: ADD T<layer> [:M<mirror>] [:R<angle>] [:Y<ratio>] [:Z<slant>] [:F<size>] "string" <xy> <EOC>
+
+U: ARE [<component>[<layer>]] xysel [xysel ...] <EOC>
+U: BYE <EOC>
+U: CHA [<component>[<layer>]] {xysel [<comp_options>|"string"|:L<newlayer>]}... <EOC>
+U: COP [<component>[<layer>]] xysel xyref xynewref [ xynewref2...] <EOC>
+U: DAT 
+U: DEL [<component>[<layer>]] xy1... <EOC>
+U: DISP [ON|OFF]
+U: DIS {<xy1> <xy2>} ... EOC
+U: DUM <EOC>
+U: EDI <device> 
+U: EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:O] [:B|:D|:S|:I] [<label>] <layer>
+U: EXI <EOC>
+U: $FILES <cellname1> <cellname2> .... <EOC>
+U: FSI [<fontsize>]
+U: GRI [ON|OFF] [:C<color>] <delta> <skip> [<xorig> <yorig>]]
+U: GRI [ON|OFF] [:C<color>] <xdelta> <ydelta> <xskip> <yskip> <xorig> <yorig>
+U: HELP [<commandname>] EOC
+U: IDE [[:P] <xypnt>] | [:R <xy1> <xy2>] ... EOC
+U: INP <filename> <EOC>
+U: LAYER [<layer_number>] <EOC>
+U: LEV <logical_level> <EOC>
+U: LIS <EOC>
+U: LOCK <angle>
+U: MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>
+U: PLO <EOC>
+U: POI <xy1>... <EOC>
+U: PRO <EOC>
+U: PUR <cellname>
+U: QUI <EOC>
+U: RET <archivefile>
+U: SAVE [<newname>]
+U: SHOW {+|-|#}{EACILN0PRT}<layer>
+U: SMASH [<device_name>] {<coord>} <EOC>
+U: STR { <xysel> <xyref> <xynewreft> }
+U: TSL [<slant>]
+U: UND <EOC>
+U: WINdow :X[<scale>] [:N<physical>] [:F] [:O] [<xy1> [<xy2>]] <EOC>
+U: WRAP [<component>[<layer>]] [<devicename>] <xyorig> <xy1> <xy2> <EOC>
+U: TIM

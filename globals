@@ -6,8 +6,32 @@ declared in xwin.h:
 
     extern DB_TAB *currep;   /* defined in db.c */
     extern int quit_now;     /* defined in xwin.c */
-    extern int modified;     /* defined in xwin.c */
     extern int need_redraw;  /* defined in xwin.c */
-    extern char version[];   /* defined in xwin.c */
 
+    extern char version[];   /* defined in xwin.c */
+    extern unsigned int g_width, g_height;	/* display dimensions */
+
+-------------------------------------------------------------
+
+/* global variables that need to eventually be on a stack for nested edits */
+
+struct ed_context {
+    int layer;
+    int drawon;			/* 0 = dont draw, 1 = draw (used in nesting)*/
+    int showon;			/* 0 = layer currently turned off */
+    int nestlevel=9;
+    int boundslevel=3;
+    int X=1;		  	/* 1 = draw to X, 0 = emit autoplot commands */
+    DB_TAB *currep;
+    int show[MAX_LAYER];
+    /* grid variables from xwin */
+} ED_CONTEXT;
+
+FILE *PLOT_FD;		/* file descriptor for plotting */
+
+struct view_port {
+    int need_redraw;
+    unsigned int width, height; 
+    /* put all globals for each separate X11 window here */
+}
 

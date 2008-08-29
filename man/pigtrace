@@ -1,0 +1,30 @@
+Using host libthread_db library "/lib/libthread_db.so.1".
+loading /usr/local/lib/piglet/MENUDATA_V from disk
+loading /usr/local/lib/piglet/NOTEDATA.F from disk
+loading /usr/local/lib/piglet/TEXTDATA.F from disk
+reading /usr/local/lib/piglet/PROCDATA.P from disk
+reading /usr/local/lib/piglet/piglogo.d from disk
+
+MAIN> edi st;
+EDIT st> sho #e;
+EDIT st> add p3 :w2 -20.000000, 40.000000
+ADD_POLY>  40.000000, 40.000000
+ADD_POLY>  40.000000, -10.000000
+ADD_POLY>  -50.000000, -20.000000
+ADD_POLY>  -90.000000, 20.000000
+ADD_POLY>  -90.000000, 20.000000
+ADD_POLY>
+ADD_POLY> exi;
+   cancelling ADD POLY
+    current device is unsaved!	  typing "EXIT" a second time will force exit
+EDIT st> quit;
+    device <st> is modified!
+    you have one or more unsaved instances!
+    typing either "QUIT" or "BYE" twice will force exit
+EDIT st> quit;
+
+Program exited normally.
+
+
+
+

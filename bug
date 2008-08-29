@@ -1,0 +1,145 @@
+
+[x] when you do a readin, the global static from token_get is destroyed
+[x] token_get(lp, char *word)  crashes when word is bigger than buffer supplied by caller.
+
+[x] ENV variables
+[x] SHELL out
+[ ] SMASH :R
+[ ] ADD I should suppress double click (don't add two insts)
+
+[ ] ; doesn't terminate COP
+
+[ ] EQU :O<layer> in edit mode
+[ ] cut/paste operation in text window
+[ ] MACROS, SCRIPTPATH
+[ ] -next, -region -point soft keys
+[ ] fix highlighting - just make it white, no x-box
+
+[ ] make CHA :MX,MY,etc work on polygons - just redraw with transformed pts
+[ ] retrieving slic and tone one after the other results in "unresolvable references to DOT"
+
+[x] make comma optional between coords
+[x] IDE should print out a line that can be cut/pasted
+[x] WIN :Z
+[x] retrieving smorgasboard results in bad ident bounding boxes until saved and re-edited
+[x] Double wrapping deletes an item! (was bad update of dbhead->prev)
+
+[ ] fixed coredump in db_ident2 by eliminating a selpnt_clear() call at the
+    expense of possible memory leak.  partially fixed it by doing selpnt_clear
+    in com_move().  Should get rid of multiple uses of selpnt address in
+    com_move and com_stretch.  all calls to selpnt_clear() should be in one place.
+
+
+[ ] make text stretchable
+
+[ ] do_line using static array for reverse boundary storage
+
+[ ] limit testing on EQU :F (stipple fill argument)
+
+[ ] polygons ignore :W option
+[ ] postscript doesn't carry through line types
+[ ] bailing out of STR with ";" leaves bounding box
+[ ] saving FOO as BAR should purge any BAR in memory, or at least ask 
+[ ] cop, del :r leaves rubber box if terminated with ";"
+[ ] COPY :R should show individual components, not just bounding box
+[ ] need autosave feature - time?  number of commands?
+
+[ ] SMA is funny, requiring a double click, but not EOC.  think about better definition.
+
+[ ] CHA :R for fixing font size, orientation, etc.
+[ ] change :r for changing graph label font sizes en-masse, etc.
+
+[ ] some problem printing portrait mode postscript, doesn't fit boundary properly (UGGH!).
+[ ] need an alternative way to draw an arc: center, first point of circumference, second point
+    on circumference, draw cw.
+
+[x] make window zoom in/out by middle clicking/hold and drag right/left.  Single middle click centers window.
+[x] clipping bug when large lower rectangle cuts bottom half of screen
+[x] win command in .d file can have exponential notation
+[x] db_highlight should always use WHITE xor, not current grid color, otherwise highlighting
+    doesnt work on lines drawn in the same color as grid.
+[x] wrap should complain earlier when show is not set
+[?] smashing a NONAME with a justified label makes a mess (can't replicate yet)
+[x] need to update man page for EQU options
+[x] can add l0, but can't CHAnge a line to layer 0
+[x] mov doesn't work with point mode yet (redo db_ident to return selpnt struct).
+[x] adding a line and then drawing an arrowhead causes coord to be dropped
+[x] dropping a rep with COP leaves highlighting on
+[x] mov should not obey lock angle
+[x] mov :r doesn't move ARCs!
+[x] MOV :R should show individual components, not just bounding box
+[x] don't let ADD note/text double enter on the same coord
+[x] make db_highlight show origin for instance, text, note, circles
+[x] str with a double click sets coord to 0,0 - should abort command
+[x] STR :R highlights cells with no pull points in BB
+[x] STR :R needs dynamic buffer alloc, not just 1024 points
+[x] bounding  box for rotated instances draw as unrotated/mirrored
+[x] I doesn't work for a move descriptor
+[x] a VCC triangle on top of a wire is hard to select, see multibus schematic
+
+[x] need del :r
+[x] stop doing callbacks when in menu area
+[x] using cell name doesn't work for restrictor in com_move (and others)
+[x] wrap won't take an inst name
+[x] str sometimes is stuck in :r mode, :p will fix, maybe static variable?
+[x] double clicking on STR with a polygon causes a sudden jump in coords.
+[x] interaction with MOV and SHO.  Sometimes MOV moves things that have been set "SHO -E".
+[x] can allow arbitrary rotations in SMA and WRA if rectangles are converted to polys
+[x] make CHA command prohibit shearing and aspecting of NONAMEs
+[x] when exiting, don't warn of unsaved NONAMES
+[x] smash, including autosmash should handle rotations and mirrors.
+[x] automatically smash NONAMES (added is_tmp_rep variable in db_tab definition and set to 1 for auto wraps insts)
+
+
+[x] if second point of add line is 0,0 will drop coord
+
+[ ] there is a lag between showing primitives and sub-cells with win :n-1, win:n9
+[ ] postscript output should be hierarchical
+[ ] postscript output should allow filled objects
+[x] postscript has many duplicated lines
+
+[x] make newlines in text/note strings work
+
+[x] search path for font,note,proc,menu
+
+[ ] warning message on exit if proc modified from readin.
+
+[ ] make text filled.
+
+[ ] Retrieving something that shares cells with something already being edited
+    creates lots of error messages.  Maybe fix this by allowing RET to be done
+    only from quiescent state?
+
+[ ] double clicking on the same point makes a bogus entry in the .d file
+    when adding lines
+
+[x] in .d files, WIN command sometimes has scientific notation for points close to zero
+
+[x] com_copy can't do multiple copies with :R because stack is exhausted
+[x] autogenerate NONAMES in WRAP
+[x] save non-NONAME wrapped devices names when created
+[x] MOV doesn't move instances (some problem with db_ident() wildcarding)
+
+[x] working on com_ident to prototype pick by region.
+
+[x] postscript output should be cropped (fixed several subtle bugs...)
+
+[x] let EQU :M take numeric arguments for more line types
+
+[x] bounding box for adding a scaled instance is wrong size
+
+
+[x] ARCS fail to degenerate properly if three points are collinear
+
+[x] DEL is broken.  When editing PLAN, try deleting the front porch. 
+    Lots of other shapes die first.  Ident, on the other hand does the
+    right thing.  {was an uninitialized variable problem}
+
+[x] If you edit PLAN, then edit PLAN2, then edit and click on PLAN
+    sub-cell, boom!  segfault at line 127 in com_edit(). 
+
+[x] Working on show sets.  Pointer to currep is now passed to all show
+    set routines, each rep now has showset structure in DB_TAB.  Just
+    need to properly initialize the structures on creation, and then mod
+    show_set_modify()...  to use the pointer rather than a global. 
+

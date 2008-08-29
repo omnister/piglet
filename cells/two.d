@@ -1,7 +1,0 @@
-PURGE TWO;
-EDIT TWO;
-ADD ONE :X.8 0,0;
-ADD N3 :F2 "2" 2,0;
-SAVE;
-EXIT;
-

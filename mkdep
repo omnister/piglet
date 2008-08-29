@@ -1,0 +1,21 @@
+for file in *c
+do
+    echo $file "*******************"
+    grep "include \"" $file
+done | 
+awk '
+    /^[a-z]/ {
+        srcfile = $1 ":"
+	gsub("\\.c", ".o", srcfile);
+    	printf("\n%-18s",srcfile);
+	next;
+    }
+    /^#/ {
+	gsub("\"","");
+    	printf("%s ",$2);
+    }
+    END {
+    	printf("\n");
+    }
+'
+

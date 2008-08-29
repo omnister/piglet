@@ -1,9 +1,0 @@
-PURGE foobar;
-EDIT foobar;
-WIN -340,-170 20,120
-ADD foo -80,40;
-ADD foo :X0.5 -240,-80;
-ADD N1 :F42 "yuekuh" -240,-80;
-SAVE;
-EXIT;
-

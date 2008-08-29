@@ -1,7 +1,0 @@
-purge DIODE;
-edit DIODE;
-add l6 :w0.5  2,3 6,3 3,2;
-add l6 :w0.5  2,4 6,4 3,5;
-save;
-exit;
-

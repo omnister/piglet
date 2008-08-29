@@ -1,7 +1,0 @@
-PURGE kyx;
-EDIT kyx;
-ADD R1 0,0 10,10;
-ADD R3 0,4 5,5;
-SAVE;
-EXIT;
-
