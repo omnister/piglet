@@ -876,17 +876,38 @@ the entry of another command name.
 N: DUMp
 D: Dump the graphics window to a file
 S: PPM file only
-U: DUM <EOC>
+U: DUM [:F] <EOC>
 T: {
 The DUMP command creates a Portable Pix Map copy of the current graphic
 window in the file "./<device_name>.ppm".  You can view/print/convert
-this with xv(1), or convert it to gif format with ppmtogif(1) from the
-pbmtools package.
+this with a program like xv(1), or convert it to gif format with
+ppmtogif(1) from the pbmtools package.  Generally a gif file is about
+100 times smaller than the raw ppm file. 
+
+.SS IMPLEMENTATION DETAILS
+
+There should be an options (:R?) to do reverse video, to save ink.  There
+should be a way to specify different output formats (:Ftif,:Fgif...) and
+automatically invoking the appropriate netpbm conversion tool.
+
+.SS OPTIONS
+.TP
+.I :F
+Fit the device before dumping the window.  After the dump, the previous window
+settings are restored.
 }
 
 N: ECHo
-D: Echo the argument to screen
-S: unimplemented
+D: Echo all arguments up to the next EOC to screen
+U: ECH [<arg1>[<arg2>]...] <EOC>
+S: basic functionality
+T: {
+Echo will print all of its arguments up to the next <EOC> to the screen. 
+<EOC> can be either a newline or a semicolon.  It is a handy way to get
+output from a piglet script, or to read the value of a shell variable. 
+For example, "ECHO $PATH" will print out the value of the current PATH
+environment variable.  
+}
 
 N: EDIt
 D: Edit a new or old device
@@ -1402,27 +1423,34 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a postscript plot of the current device
 S: letter size only
-U: PLO <EOC>
+U: PLO [:F] <EOC>
 T: {
-The PLOT command creates a postscript dump of the current device
-in the file "./device_name.ps.  The file is suitable for printing
+The PLOT command creates a postscript dump of the current window
+in the file "./<device_name>.ps.  The file is suitable for printing
 on letter sized paper, and will automatically fit the drawing to
 either landscape or portrait depending on the shape of the drawing.
+
+PLOT with no arguments will plots just the currently visible portion of
+the device.  The ":F" option will fit the window to the device prior to
+plotting and restore the existing window settings after the plot.
+
 .SS IMPLEMENTATION DETAILS
 Currently, the postscript file is not hierarchical and so can be quite
 big.  It would be a nice project to define each cell individually and
 then instantiate them hierarchically.  The render time would go up, but
-the size of the plot file would shrink dramatically. 
-
-The current implementation always plots the entire device fitted to the
-paper.  It would be nice to have it draw only the current windowed view
-of the device, leaving fit for an option (:F?). 
+the size of the plot file would shrink dramatically for hierarchical
+designs. 
 
 There should be options (:P<papersize>?) for plotting to standard paper
 sizes and to arbitrary <width>x<height> pages.  The c-code for
 postscript plotting is set up to allow this, so it is just 
 an exercise in option parsing to enable this feature. 
 
+.SS OPTIONS
+.TP
+.I :F
+Fit the device before plotting the window.  After the plot, the previous window
+settings are restored.
 }
 
 N: POInt

@@ -1437,7 +1437,6 @@ int db_plot() {
 
     X=0;				    /* turn X display off */
 
-
     x1 = currep->vp_xmin;
     y1 = currep->vp_ymin;
     x2 = currep->vp_xmax;
@@ -1461,7 +1460,8 @@ int db_plot() {
 
     /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
 
-    ps_preamble(PLOT_FD, currep->name, "piglet version 0.8", 8.5, 11.0, 
+    /* FIXME: make version number a global or at least subroutine */
+    ps_preamble(PLOT_FD, currep->name, "piglet version 0.95", 8.5, 11.0, 
     0.0, 0.0, (double) g_width, (double) g_height);
     /* x1, y2, x2, y1); */
 

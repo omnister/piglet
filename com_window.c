@@ -30,7 +30,6 @@ int com_window(LEXER *lp, char *arg)
     char *word;
     int debug=0;
     double x2, y2;
-    lastwin = 0;
 
     if (debug) printf("com_window\n");
 

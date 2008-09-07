@@ -125,7 +125,7 @@ COMMAND commands[] =
         "unimplemented"},
     {"MOVE", com_move, "move a component from one location to another",
     	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
-    {"PLOT", com_plot, "make a plot of the current device",
+    {"PLOT", com_plot, "make a postscript plot of the current device",
     	"PLO <EOC>"},
     {"POINT", com_point, "display the specified point on the screen",
     	"POI {<xy1>...} <EOC>" },
@@ -802,7 +802,13 @@ char *arg;
     int debug=0;
     char *s = NULL;
     int i;
+    int fit=0;
     extern void do_win();                /* found in com_window */
+
+    // some possible options:
+    // :F to do a fit before plotting, otherwise only plot current window view
+    // :T<dumptype> gif,tif,pnm,jpg...
+    // :R (reverse video - swap black and white pixels)
 
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
@@ -814,12 +820,18 @@ char *arg;
 	    case EOC:		/* end of command */
 		done++;
 
+		if (fit) {			/* fit the device */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":F");
+		   com_window(lp, NULL);
+		}
+
 		xwin_raise_window();
 
 		/* FIXME: horrible kludge, we have to wait until the display is properly */
 		/* updated.  How do you know when everything has been properly sloshed */
 		/* through the server?  This is simply an empirical hack that works */
-		/* on my system */
+		/* on my system.  There has to be a better way. */
 
 		for (i=0; i<=20; i++) {
 		     xwin_doXevent(&s);
@@ -827,6 +839,21 @@ char *arg;
 
 		xwin_dump_graphics();
 		xwin_doXevent(&s);
+
+		if (fit) {			/* revert to old window params */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":Z");
+		   com_window(lp, NULL);
+		}
+
+		break;
+	    case OPT:		/* option */
+		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
+		    fit++;
+		} else {
+	    	    weprintf("bad option to DUMP: %s\n", word);
+		    return(-1);
+		}
 		break;
 	    case EOL:		/* newline or carriage return */
 	    	break;	/* ignore */
@@ -834,7 +861,6 @@ char *arg;
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
-	    case OPT:		/* option */
 	    case END:		/* end of file */
 	    default:
 	        printf("DUMP: expected EOC, got: %s\n", tok2str(token));
@@ -1565,12 +1591,69 @@ char *arg;
 /* now in com_move.c */
 /* com_move(lp, arg) */	/* move a component from one location to another */
 
-int com_plot(lp, arg)		/* make a plot of the current device */
+int com_plot(lp, arg)		/* make a postcript plot of the current device */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_plot\n");
-    db_plot();
+    TOKEN token;
+    int done=0;
+    char *word;
+    int debug=0;
+    int fit=0;
+    extern void do_win();                /* found in com_window */
+
+    if (debug) printf("    com_plot\n");
+
+    // some possible options
+    // :F to do a fit before plotting, otherwise only plot current window view
+    // :P<papersize> A,B,C,L=letter,widthxheight
+
+    while(!done && (token=token_get(lp, &word)) != EOF) {
+	if (debug) printf("COM_PLOT: got %s: %s\n", tok2str(token), word);
+	switch(token) {
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+
+		if (fit) {			/* fit the device */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":F");
+		   com_window(lp, NULL);
+		}
+
+    		db_plot();
+
+		if (fit) {			/* revert to old window params */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":Z");
+		   com_window(lp, NULL);
+		}
+
+		break;
+	    case OPT:		/* option */
+		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
+		    fit++;
+		} else {
+	    	    weprintf("bad option to PLOT: %s\n", word);
+		    return(-1);
+		}
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case NUMBER: 	/* number */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case END:		/* end of file */
+	    default:
+	        printf("PLOT: expected EOC, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    } 
     return (0);
 }
 

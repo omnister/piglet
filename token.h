@@ -53,7 +53,7 @@ typedef struct lexer {
     char *name;			/* name of stream */
     FILE *token_stream;		/* file pointer to stream */
     char word[1024];		/* token string value */
-    SAVETOK tokbuf[BUFSIZE];
+    SAVETOK tokbuf[BUFSIZE];	/* can pushback up to BUFSIZE tokens */
     int bufp;			/* next free position in buf */
     int mode;			/* MAIN, EDI, PRO, ... etc */
     int line;			/* line number */
