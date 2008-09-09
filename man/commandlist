@@ -25,8 +25,8 @@ the design, and then click the next coordinate.   If you prefer not to
 use the scroll wheel, piglet can also zoom by clicking on a point with the
 middle button and dragging either right or left to zoom in and out.
 
-When the editor is idle and not processing any command, a 
-left mouse click will recenter the display on the selected point. 
+When the editor is idle and not processing any command, a middle mouse
+click will recenter the display on the selected point. 
 
 All commands which modify the drawing geometry can be undone with
 the UNDO command.  The UNDO depth is limited only by available memory.
@@ -51,7 +51,8 @@ Piglet requires several configuration files to start up.  They are
 the TEXT and NOTE font definition files, the MENU definition file and
 the PROCESS layer definition file.
 
-Piglet sequentially searches the following directories to find these files.
+Unless overridden with Environment Variables (see below) Piglet sequentially se
+arches the following directories to find the needed startump files.
 
 .nf
     1) current working directory
@@ -62,8 +63,9 @@ Piglet sequentially searches the following directories to find these files.
 .fi
 
 
-The TEXT and FONT files are named "TEXTDATA.F" and "NOTEDATA.F"
-respectively.  The format for both files is plain ASCII.  The file
+The TEXT and FONT files by default are named "TEXTDATA.F" and "NOTEDATA.F"
+respectively.  These names can be overridden with Environment Variables. 
+The format for both files is plain ASCII.  The file
 starts with two integers separated by a comma.  The first gives the
 height of each character definition and the second, the width.  Each
 character is then listed in printed form and the glyph is defined by a
@@ -119,7 +121,6 @@ text directly into the parse stream.  The menu designer should take care
 to leave extra spaces after command names so that any combination of
 mouse picks results in intelligible commands.  
 
-
 The layer definition process file is named "PROCDATA.P".  Its format
 is also plain ASCII.  It consists of one EQUate command line per layer.
 The following PROCDATA.P file defines the characteristics of  9 
@@ -141,6 +142,56 @@ The first line, for example, says that layer 0 is named "boundary",
 drawn with color 1 (white), plotted with pen 1, and uses line type 0
 (solid).  See the EQUate man page for full details. 
 
+.SS ENVIRONMENT VARIABLES
+
+Piglet inheirits any environment variables exported by the parent shell. 
+In addition, new variables can be created as private variables by using
+the SET command. 
+
+.SS VARIABLES USED BY PIGLET
+.TP
+.I PATH "dir1<:dir2><:dir3>..."
+The PATH variable is used by the SHELL command to search for UNIX commands.
+It is initialized by the calling shell, but can be queried and modified within 
+PIGLET to customize the search path.  
+When entering a new PATH the argument to SET will need to be quoted to
+protect the ":" delimiters from being interpreted as PIGLET options. 
+.TP
+.I PIG_PATH "dir1<:dir2><:dir3>..."
+The search path used for loading all of PIGLET's auxiliary files such as
+NOTEDATA, TEXTDATA, MENUDATA, PROCDATA, etc.   
+Defaults to "./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet"
+.TP
+.I PIG_FONT_SIZE "<size>" ; default is "10.0"
+The default font size used for both note and text if not otherwise overridden with :F option.
+.TP
+.I PIG_FONT_SLANT "<degrees>" ; default is "0.0"
+The default italic font slant (from -45.0 to +45.0) used for both note and text if
+not otherwise overridden with :Z option. 
+.TP
+.I PIG_GRID "<dx> [<dy> [<dxs> [<dys> [<xorig> [<yorig>]]]]]" 
+From one to six floats used to set the grid deltax, deltay, xskip, yskip, and x and y origins.
+Any parameters left off will remain set to the default grid specification of "10 10 1 1 0 0".
+.TP
+.I PIG_GRID_COLOR "<num>" ; default is "3"
+Used to set the default grid color when editing new cells.
+.TP
+.I PIG_MENUDATA_FILE "<filename>" ; default is "MENUDATA_V"
+Sets the name used for loading the Menu definition file.
+.TP
+.I PIG_NOTEDATA_FILE "<filename>" ; default is "NOTEDATA.F"
+Sets the name used for loading the stroke definition file for NOTEs.
+.TP
+.I PIG_TEXTDATA_FILE "<filename>" ; default is "TEXTDATA.F"
+Sets the name used for loading the stroke definition file for TEXT.
+.TP
+.I PIG_PROCDATA_FILE "<filename>" ; default is "PROCDATA.P"
+Sets the name used for loading the process layer definition.
+.TP
+.I PIG_SPLASH_REP "<cellname>" ; default is "piglogo"
+Sets the name of the cell used for the initial splash screen during startup.
+The cell should already exist in PIG_PATH.
+
 .SS DEBUGGING
 
 Since Piglet is under active development, it is distributed to run under
@@ -156,7 +207,6 @@ most signals, printing a notification to the terminal: "caught 2:
 Interrupt.  Use QUIT command to end program".  However, the special
 signal SIGQUIT elicits the message: "caught 3: Quit.  do it again and
 I'll die!".  Two SIGQUITs in a row will terminate the program.
-
 }
 
 N: ADD_ARC
@@ -876,25 +926,42 @@ the entry of another command name.
 N: DUMp
 D: Dump the graphics window to a file
 S: PPM file only
-U: DUM [:F] <EOC>
+U: DUM [:F][:R][:T{bmp|gif|jpg|pgm|ppm|xbm}] <EOC>
 T: {
-The DUMP command creates a Portable Pix Map copy of the current graphic
-window in the file "./<device_name>.ppm".  You can view/print/convert
-this with a program like xv(1), or convert it to gif format with
-ppmtogif(1) from the pbmtools package.  Generally a gif file is about
-100 times smaller than the raw ppm file. 
+The DUMP command creates a dump of the current graphic window in the
+file "./<device_name>.<suffix>".  DUMP output defaults to a netpbm
+(http://netpbm.sourceforge.net/) ppm-formatted image file, but is able
+to call external netpbm routines to convert the output to several other
+popular formats.  The format can be changed with the :T option to be one
+of: .bmp, .gif, .jpg, .pgm, .ppm or .xbm.  For most purposes, the gif
+format produces the smallest file size. 
+
+The :R option swaps black and white pixels saving lots of black
+ink when for dumps that will be printed out on paper.
 
 .SS IMPLEMENTATION DETAILS
-
-There should be an options (:R?) to do reverse video, to save ink.  There
-should be a way to specify different output formats (:Ftif,:Fgif...) and
-automatically invoking the appropriate netpbm conversion tool.
+Other image-file types can be easily added to the source code of the
+com_dump() routine if a suitable conversion program exists. 
 
 .SS OPTIONS
 .TP
 .I :F
 Fit the device before dumping the window.  After the dump, the previous window
 settings are restored.
+.I :R
+Reverse video: swap black and white pixels in the dumpfile to save ink.
+.I :T<image_type>
+Select various output image formats using one of 
+.nf
+    :Tbmp       Microsoft Windows or OS/2 Bitmap format
+    :Tgif       Graphics Interchange format
+    :Tjpg       Joint Photographic Experts Group format
+    :Tpgm       Portable Grey Map format
+    :Tppm       Portable Pix Map format
+    :Txbm       X11 windows bitmap format
+.fi
+Remember that Piglet's command-line options do not allow blank space, so 
+":Tgif" works, and ":T gif" is an error.
 }
 
 N: ECHo

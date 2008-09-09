@@ -2,7 +2,8 @@
 
 stty sane
 
-echo "run"    > pig.tmp.$$
+echo "set detach-on-fork on"    > pig.tmp.$$
+echo "run"   >> pig.tmp.$$
 echo "bt"    >> pig.tmp.$$
 echo "echo \\n" >> pig.tmp.$$
 echo "echo \\n" >> pig.tmp.$$

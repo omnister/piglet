@@ -199,10 +199,11 @@ char **argv;
     /* set up to catch all signal */
     /* for (i=1; i<=MAXSIGNAL; i++) { */
 
-    err+=(signal(2, &sighandler) == SIG_ERR);		/* SIGINT */
-    err+=(signal(3, &sighandler) == SIG_ERR);		/* SIGQUIT */
-    err+=(signal(15, &sighandler) == SIG_ERR);		/* SIGTERM */
-    err+=(signal(20, &sighandler) == SIG_ERR);		/* SIGSTP */
+    err+=(signal(SIGINT, &sighandler) == SIG_ERR);
+    err+=(signal(SIGQUIT, &sighandler) == SIG_ERR);
+    err+=(signal(SIGTERM, &sighandler) == SIG_ERR);
+    err+=(signal(SIGTSTP, &sighandler) == SIG_ERR);	
+    err+=(signal(SIGPIPE, &sighandler) == SIG_ERR);
     if (err) {
     	printf("main() had difficulty setting sighandler\n");
 	return(err);
@@ -798,12 +799,21 @@ char *arg;
 {
     TOKEN token;
     int done=0;
+    char cmd[256];
     char *word;
-    int debug=0;
+    int debug=1;
     char *s = NULL;
+    char *suffix="ppm";
+    char *conv="cat";
     int i;
-    int fit=0;
-    extern void do_win();                /* found in com_window */
+    int fit=0;				/* fit the device to the window before plotting */
+    int rev=0;				/* reverse video flag */
+
+    extern void do_win();               /* found in com_window */
+    if (currep == NULL || currep->name == NULL) {
+    	printf("not editing a file, nothing here to dump\n");
+	return(2);
+    }
 
     // some possible options:
     // :F to do a fit before plotting, otherwise only plot current window view
@@ -837,7 +847,17 @@ char *arg;
 		     xwin_doXevent(&s);
 		}
 
-		xwin_dump_graphics();
+
+	        sprintf(cmd, "%s %s > %s%s", 
+			rev?"ppmchange black white white black |":"",
+			conv, currep->name, suffix);
+
+		if (debug) printf("doing %s\n", cmd);
+		if (xwin_dump_graphics(cmd) == -1) {
+		    sprintf(cmd, "rm -f %s%s", currep->name, suffix);
+		    system(cmd);
+		}
+
 		xwin_doXevent(&s);
 
 		if (fit) {			/* revert to old window params */
@@ -850,6 +870,32 @@ char *arg;
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
 		    fit++;
+		} else if (strncasecmp(word, ":R", 2) == 0) { /* reverse video */
+		    rev++;
+		} else if (strncasecmp(word, ":T", 2) == 0) { /* specify dumptype */
+			if (strncasecmp(word+2, "gif", 3) == 0) {
+			    suffix=".gif"; conv="ppmtogif";
+			} else if (strncasecmp(word+2, "bmp", 3) == 0) { 
+			    suffix=".bmp"; conv="ppmtobmp";
+			} else if (strncasecmp(word+2, "xpm", 3) == 0) { 
+			    suffix=".xpm"; conv="ppmtoxpm";
+			} else if (strncasecmp(word+2, "jpg", 3) == 0) { 
+			    suffix=".jpg"; conv="ppmtojpeg";
+			} else if (strncasecmp(word+2, "pgm", 3) == 0) { 
+			    suffix=".pgm"; conv="ppmtopgm";
+			} else if (strncasecmp(word+2, "ppm", 3) == 0) { 
+			    suffix=".ppm"; conv="cat";
+			} else {
+			    printf("unknown graphic type: %s\n", word);
+			    printf("defaulting to PPM\n");
+			    suffix=".ppm"; conv="cat";
+			}
+    			if (findfile(EVget("PATH"), conv, NULL, R_OK)==0) {
+			    printf("couldn't find conversion program in PATH: %s\n", conv);
+			    printf("defaulting to PPM\n");
+			    suffix=".ppm"; conv="cat";
+			}
+			
 		} else {
 	    	    weprintf("bad option to DUMP: %s\n", word);
 		    return(-1);
@@ -1603,6 +1649,11 @@ char *arg;
     extern void do_win();                /* found in com_window */
 
     if (debug) printf("    com_plot\n");
+
+    if (currep == NULL || currep->name == NULL) {
+    	printf("not editing a file, nothing here to plot\n");
+	return(2);
+    }
 
     // some possible options
     // :F to do a fit before plotting, otherwise only plot current window view

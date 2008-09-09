@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
+#include <sys/wait.h>
+
 
 #include <readline/readline.h>
 #include <readline/history.h>     
@@ -1782,20 +1784,25 @@ int shift_from_mask(int mask, int max) {
 // blue mask= 255
 
 
-int dump_window(window, gc, width, height) 
+int dump_window(window, gc, width, height, cmd) 
 Window window;
 GC gc;
 unsigned int width, height;
+char *cmd;
 {
     XImage *xi;
     int x, y;
     unsigned long pixel;
-    char buf[128];
+    char buf[256];
     int R,G,B;
-    int fd;
+    // int fd;
+    FILE *fd;
     int i;
-    int debug=1;
+    int debug=0;
     int rshift, gshift, bshift;
+    int err=0;
+    int status;
+    int rw,rh;
 
     XSync(dpy,0);
 
@@ -1807,9 +1814,8 @@ unsigned int width, height;
     xi = XGetImage(dpy, window, 0,0, width, height, AllPlanes, ZPixmap);
 
     if (debug) {
-
-	printf("width  = %d\n", xi->width );
-	printf("height = %d\n", xi->height);
+	printf("width  = %d\n", rw=xi->width );
+	printf("height = %d\n", rh=xi->height);
 
 	if (xi->byte_order == LSBFirst) {
 	    printf("byte_order = LSBFirst\n");
@@ -1845,18 +1851,19 @@ unsigned int width, height;
     bshift=shift_from_mask(xi->blue_mask, 8*xi->bitmap_unit);
     printf("rs: %d, gs: %d, bs: %d\n",rshift, gshift, bshift);
 
-    sprintf(buf, "%s.ppm", currep->name);
+    if ((fd = popen(cmd, "w")) == 0 ) {
+    	printf("can't open dump pipeline: %s\n", cmd);
+	return(0);
+    }
 
-    printf("dumping to %s", buf);
     fflush(stdout);
 
-    fd = open(buf, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO );
-    sprintf(buf, "P6\n%d\n%d\n%d\n", width, height, 255);
-    write(fd, buf, strlen(buf));
+    sprintf(buf, "P6\n%d\n%d\n%d\n", rw, rh, 255);
+    fwrite(buf, 1, strlen(buf), fd);
 
     i=0;
-    for (y=0; y<=height; y++) {
-	for (x=0; x<width; x++) {
+    for (y=0; y<rh; y++) {
+	for (x=0; x<rw && (waitpid(-1, &status, WNOHANG) != -1); x++) {
 	   if (++i==10000) {
 	       i=0;
 	       printf(".");
@@ -1876,17 +1883,22 @@ unsigned int width, height;
 	   B = B>>bshift;
 	   buf[2] = (unsigned char) B;
 
-	   write(fd, buf, 3);
+	   err=fwrite(buf, 3, 1, fd);
 	}
     }
     printf("\n");
     fflush(stdout);
 
-    close(fd);
+    // if (abs(y-rh)>2) {
+    //   printf("couldn't properly operate pipeline %d %d %d %d %d %d\n", x, y, width, height, rw, rh);
+    //   return(0);
+    // }
+
+    return(pclose(fd));
     XDestroyImage(xi);
     return(1);
 }
 
-void xwin_dump_graphics() {
-    dump_window(win, gca, g_width, g_height);
+int xwin_dump_graphics(char *cmd) {
+    return dump_window(win, gca, g_width, g_height, cmd);
 }

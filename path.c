@@ -25,6 +25,12 @@ int main() {
 }
 */
 
+/* find the first <filename> that exists in <pathlist> checking for either 
+** readonly (R_OK) or executable (X_OK) access() characteristics.  Return
+** full path in (char *retbuf) unless retbuf==NULL.  In which case return
+** code provides a simple check for existence. 1=exists, 0=missing.
+*/
+
 int findfile(const char *pathlist, const char *filename, char *retbuf, int mode) {
     char path[1024];
     char buf[1024];
@@ -59,11 +65,15 @@ int findfile(const char *pathlist, const char *filename, char *retbuf, int mode)
 	strcat(full,filename);
 
 	if (access(full, mode) == 0) { 	    /* success */
-	    strcpy(retbuf, full);
+	    if (retbuf != NULL) {
+		strcpy(retbuf, full);
+	    }
 	    return(1);
 	}
     }
-    retbuf[0] = '\0';
+    if (retbuf != NULL) {
+	retbuf[0] = '\0';
+    }
     return(0);
 }
 
