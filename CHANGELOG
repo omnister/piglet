@@ -1,3 +1,7 @@
+2008.09.09  Added :R (reverse video) to DUMP command
+	    Added :F (fit device) to DUMP and PLOT command
+	    Added :T<type> option to DUMP command to allow .gif, .jpg, .xbm, etc. output
+
 2008.08.23  changed token_get(lp, char *word) to token_get(lp, char **word)
             to remove local buffers and return a pointer value to single
 	    large buffer in token.c

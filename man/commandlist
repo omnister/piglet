@@ -926,15 +926,23 @@ the entry of another command name.
 N: DUMp
 D: Dump the graphics window to a file
 S: PPM file only
-U: DUM [:F][:R][:T{bmp|gif|jpg|pgm|ppm|xbm}] <EOC>
+U: DUM [:F][:R][:T{bmp|gif|jpg|png|pgm|ppm|xbm}] <EOC>
 T: {
 The DUMP command creates a dump of the current graphic window in the
-file "./<device_name>.<suffix>".  DUMP output defaults to a netpbm
+file "./<device_name>.<suffix>".  DUMP internally creates a raw netpbm
 (http://netpbm.sourceforge.net/) ppm-formatted image file, but is able
 to call external netpbm routines to convert the output to several other
 popular formats.  The format can be changed with the :T option to be one
-of: .bmp, .gif, .jpg, .pgm, .ppm or .xbm.  For most purposes, the gif
-format produces the smallest file size. 
+of: .bmp, .gif, .jpg, .pgm, .png, .ppm or .xbm.   The default format
+is .png.
+
+For most purposes, the .png format produces the smallest file size. 
+Dumping the demo file "PLAN" resulted in a 1megabyte .ppm, a 60k .jpg,
+a 10k .gif, and a 5kbyte .png file. PNG provided a 200:1 compression over
+the raw PPM file!
+
+Remember that Piglet's command-line options do not allow blank space, so 
+":Tgif" works, while ":T gif" is an error.
 
 The :R option swaps black and white pixels saving lots of black
 ink when for dumps that will be printed out on paper.
@@ -957,11 +965,11 @@ Select various output image formats using one of
     :Tgif       Graphics Interchange format
     :Tjpg       Joint Photographic Experts Group format
     :Tpgm       Portable Grey Map format
+    :Tpng       Portable Net Graphics format
     :Tppm       Portable Pix Map format
     :Txbm       X11 windows bitmap format
 .fi
-Remember that Piglet's command-line options do not allow blank space, so 
-":Tgif" works, and ":T gif" is an error.
+
 }
 
 N: ECHo

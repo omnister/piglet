@@ -803,8 +803,8 @@ char *arg;
     char *word;
     int debug=1;
     char *s = NULL;
-    char *suffix="ppm";
-    char *conv="cat";
+    char *suffix=".png";
+    char *conv="pnmtopng";
     int i;
     int fit=0;				/* fit the device to the window before plotting */
     int rev=0;				/* reverse video flag */
@@ -883,11 +883,13 @@ char *arg;
 			    suffix=".jpg"; conv="ppmtojpeg";
 			} else if (strncasecmp(word+2, "pgm", 3) == 0) { 
 			    suffix=".pgm"; conv="ppmtopgm";
+			} else if (strncasecmp(word+2, "png", 3) == 0) { 
+			    suffix=".png"; conv="pnmtopng";
 			} else if (strncasecmp(word+2, "ppm", 3) == 0) { 
 			    suffix=".ppm"; conv="cat";
 			} else {
-			    printf("unknown graphic type: %s\n", word);
-			    printf("defaulting to PPM\n");
+			    printf("unrecognized graphic type: %s\n", word);
+			    printf("defaulting to native PPM\n");
 			    suffix=".ppm"; conv="cat";
 			}
     			if (findfile(EVget("PATH"), conv, NULL, R_OK)==0) {

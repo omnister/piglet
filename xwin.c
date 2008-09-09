@@ -1802,7 +1802,6 @@ char *cmd;
     int rshift, gshift, bshift;
     int err=0;
     int status;
-    int rw,rh;
 
     XSync(dpy,0);
 
@@ -1814,8 +1813,8 @@ char *cmd;
     xi = XGetImage(dpy, window, 0,0, width, height, AllPlanes, ZPixmap);
 
     if (debug) {
-	printf("width  = %d\n", rw=xi->width );
-	printf("height = %d\n", rh=xi->height);
+	printf("width  = %d\n", xi->width );
+	printf("height = %d\n", xi->height);
 
 	if (xi->byte_order == LSBFirst) {
 	    printf("byte_order = LSBFirst\n");
@@ -1858,12 +1857,12 @@ char *cmd;
 
     fflush(stdout);
 
-    sprintf(buf, "P6\n%d\n%d\n%d\n", rw, rh, 255);
+    sprintf(buf, "P6\n%d\n%d\n%d\n", xi->width, xi->height, 255);
     fwrite(buf, 1, strlen(buf), fd);
 
     i=0;
-    for (y=0; y<rh; y++) {
-	for (x=0; x<rw && (waitpid(-1, &status, WNOHANG) != -1); x++) {
+    for (y=0; y<xi->height; y++) {
+	for (x=0; x<xi->width && (waitpid(-1, &status, WNOHANG) != -1); x++) {
 	   if (++i==10000) {
 	       i=0;
 	       printf(".");
@@ -1890,7 +1889,7 @@ char *cmd;
     fflush(stdout);
 
     // if (abs(y-rh)>2) {
-    //   printf("couldn't properly operate pipeline %d %d %d %d %d %d\n", x, y, width, height, rw, rh);
+    //   printf("couldn't properly operate pipeline %d %d %d %d\n", x, y, width, height);
     //   return(0);
     // }
 
