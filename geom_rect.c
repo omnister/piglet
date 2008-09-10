@@ -84,7 +84,8 @@ int add_rect(LEXER *lp, int *layer)
             if (getnum(lp, "RECT", &x2, &y2)) {
 		state = START;
 		if (x1 == x2 || y1 == y2) {
-		    printf("    Can't add a rectangle of zero width or height\n");
+		    printf("    Can't add a rectangle of zero width or height: %g %g %g %g\n", 
+		    	x1, y1, x2, y2);
 		} else {
 		    db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		}

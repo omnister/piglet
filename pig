@@ -2,18 +2,17 @@
 
 stty sane
 
-echo "set detach-on-fork on"    > pig.tmp.$$
-echo "run"   >> pig.tmp.$$
-echo "bt"    >> pig.tmp.$$
-echo "echo \\n" >> pig.tmp.$$
-echo "echo \\n" >> pig.tmp.$$
-
-echo "echo \\n" >> pig.tmp.$$
-echo "echo \\n" >> pig.tmp.$$
-echo "quit"  >> pig.tmp.$$
-echo "yes"   >> pig.tmp.$$
-echo "quit"  >> pig.tmp.$$
-echo "yes"   >> pig.tmp.$$
+(
+cat <<!
+    set detach-on-fork on
+    run
+    bt
+    quit
+    yes
+    quit
+    yes
+!
+) > pig.tmp.$$
 
 gdb --batch  -q -command pig.tmp.$$ pig.bin | tee pigtrace
 
