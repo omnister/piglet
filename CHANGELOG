@@ -1,6 +1,11 @@
-2008.09.09  Added :R (reverse video) to DUMP command
+2008.09.09  Fixed cut/paste using right/middle mouse buttons using 
+            setvbuf(stdin,...) call first thing in main() to make stdin unbuffered
+
+2008.09.08  Added :R (reverse video) to DUMP command
 	    Added :F (fit device) to DUMP and PLOT command
 	    Added :T<type> option to DUMP command to allow .gif, .jpg, .xbm, etc. output
+	    Made .png default output type
+	    Updated man pages
 
 2008.08.23  changed token_get(lp, char *word) to token_get(lp, char **word)
             to remove local buffers and return a pointer value to single
@@ -19,6 +24,11 @@
 	     PIG_FONT_SLANT 	"0.0"          		/* default for TSLANT command */
 	     PIG_FONT_SIZE 	"10.0"         		/* default for FSIZE command */
 
+    commas are now optional between coords
+    IDE prints a line that can be cut/pasted
+    WIN :Z redraws last window
+    Fixed bug where double wrapping deletes an item! (was bad update of dbhead->prev)
+    Pulled out common code from commands into token.c:getnum()  (reduced code size by 1100 lines)
             
 2006.06.24  IDE and MOV now honor :R for selection by region
 2005.10.12  made SAV command ignore multiple SAV arguments
@@ -36,3 +46,6 @@
 2005.09.19  DISP command now prints current state to console 
 2005.09.19  :O option added to WIN command to toggle polygon fill
 2005.09.19  Arcs work correctly when three points are collinear
+
+
+

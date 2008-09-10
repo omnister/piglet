@@ -1,7 +1,0 @@
-commas are now optional between coords
-IDE prints a line that can be cut/pasted
-WIN :Z redraws last window
-Fixed bug where double wrapping deletes an item! (was bad update of dbhead->prev)
-Pulled out common code from commands into token.c:getnum()  (reduced code size by 1100 lines)
-
-

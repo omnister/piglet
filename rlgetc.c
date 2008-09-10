@@ -184,7 +184,6 @@ void initialize_readline()
     rl_getc_function = procXevent;
 }
 
-
 int rlgetc(fd)
 FILE *fd;
 {

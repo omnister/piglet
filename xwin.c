@@ -194,6 +194,10 @@ int initX()
     x=y=2*border_width;
 
     /* Size window */
+    // FIXME: should be settable by $PIGLET_GEOMETRY and --geometry flag
+    // 0.75x0.75 sets size as a fraction of dpy size
+    // 500x600 sets size in pixels
+
     top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
 
     /* figure out menu sizes */
@@ -505,7 +509,12 @@ int procXevent()
 {
     /* readline select stuff */
     int nf, nfds, cn, in; 
-    struct timeval *timer = (struct timeval *) 0;
+
+    struct timeval *timer = (struct timeval *) 0;	/* select blocks indefinitely */
+    //struct timeval timer;
+    //timer.tv_sec = 0;              /* wait times */
+    //timer.tv_usec = 0;
+
     fd_set rset, tset;
     static char *s = NULL;
     BOUNDS bb;
@@ -521,7 +530,6 @@ int procXevent()
     nfds = (cn > in) ? cn + 1 : in + 1;
 
     while (1) {
-
 	if (need_redraw) {
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
@@ -542,16 +550,14 @@ int procXevent()
 	    }
 	}
 
-	/* some event resulted in text in buffer 's' */
-	/* so feed it back to readline routine */
+	/* if some event resulted in text in buffer 's' */
+	/* feed it back to readline routine */
 
-	if (s != NULL) {
-	    if (*s!='\0') {
-		return((int) *(s++));
-	    } else {
-		s = NULL;
-	    }
-	}
+        if (s!=NULL && *s!='\0') {
+ 	    return((int) *(s++));
+        } else {
+	    s = NULL;
+        }
 
 	tset = rset;
 	nf = select(nfds, &tset, (fd_set *) 0, (fd_set *) 0, timer);
@@ -571,7 +577,7 @@ int procXevent()
 
 	if (FD_ISSET(in, &tset)) {	/* pending stdin */
 	    return(getc(stdin));
-	}
+        }
     }
 }
 
@@ -1887,11 +1893,6 @@ char *cmd;
     }
     printf("\n");
     fflush(stdout);
-
-    // if (abs(y-rh)>2) {
-    //   printf("couldn't properly operate pipeline %d %d %d %d\n", x, y, width, height);
-    //   return(0);
-    // }
 
     return(pclose(fd));
     XDestroyImage(xi);

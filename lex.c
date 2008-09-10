@@ -193,6 +193,9 @@ char **argv;
     char buf2[128];
     char *pig_path;
 
+    /* make stdin unbuffered - without this cut/paste fails */
+    setvbuf(stdin, NULL, _IONBF, 0);	
+
     /* set program name for eprintf() error report package */
     setprogname(argv[0]);
 
