@@ -10,7 +10,7 @@ extern char *getwd();
 extern char *xmalloc();
 char * stripwhite();
 static char *lineread = (char *) NULL;
-static int pushback = (char) NULL;
+static int pushback = (int) NULL;
 double getdouble();
 
 int	lineno = 1;
@@ -193,9 +193,9 @@ FILE *fd;
     if (fd != stdin) {
 	c=getc(fd);
     } else {
-	if (pushback != (char) NULL) {
+	if (pushback != (int) NULL) {
 	    c=pushback;
-	    pushback=(char) NULL;
+	    pushback=(int) NULL;
 	} else if(lp != NULL && *lp != '\0') {
 	    c=*(lp++);
 	} else {

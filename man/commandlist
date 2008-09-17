@@ -956,8 +956,10 @@ com_dump() routine if a suitable conversion program exists.
 .I :F
 Fit the device before dumping the window.  After the dump, the previous window
 settings are restored.
+.TP
 .I :R
 Reverse video: swap black and white pixels in the dumpfile to save ink.
+.TP
 .I :T<image_type>
 Select various output image formats using one of 
 .nf
