@@ -5,12 +5,12 @@
 #include "eprintf.h"
 #include "db.h"
 #include "xwin.h"
+#include "token.h"
 
 extern char *getwd();
 extern char *xmalloc();
 char * stripwhite();
 static char *lineread = (char *) NULL;
-static int pushback = (int) NULL;
 double getdouble();
 
 int	lineno = 1;
@@ -35,7 +35,6 @@ main() {
     exit(0);
 }
 */
-
 
 /* *************************************************** */
 /* some routines to implement command line history ... */
@@ -109,20 +108,33 @@ char * expdupstr(char *s, int n)
     return (r);
 }
 
-int rl_ungetc(c,fd) 
-int c;
-FILE *fd;
-{
-    /* printf("ungetting %2.2x %c\n",c,c); */
 
-    if (fd != stdin) {
-	return(ungetc(c,fd));
-    } else {
-	pushback=c;
-	return(1);
-    }
+int rl_ungetc(lp,c) 
+LEXER *lp;
+int c;
+{
+    int debug=0;
+
+    if (debug) printf("ungetting %2.2x %c at location %d\n",c,c,lp->pbufp); 
+
+    (lp->pushback)[lp->pbufp] = c;
+    lp->pbufp++; 
+    return(1);
+
 }
 
+/* stuff a string back onto stdin in reverse order */
+
+int rl_ungets(lp,s) 
+char *s;
+LEXER *lp;
+{
+    int i;
+    for (i=strlen(s); i>=0; i--) {
+    	rl_ungetc(lp,s[i]);
+    }
+    return(1);
+}
 
 /* Read a string, and return a pointer to it.  Returns NULL on EOF. */
 char * rl_gets (prompt)
@@ -184,32 +196,30 @@ void initialize_readline()
     rl_getc_function = procXevent;
 }
 
-int rlgetc(fd)
-FILE *fd;
+int rlgetc(lp)
+LEXER *lp;
 {
     int c;
-    static char *lp = NULL;
+    static char *linep = NULL;
 
-    if (fd != stdin) {
-	c=getc(fd);
+    if (lp->pbufp != 0) {
+	lp->pbufp--;
+	c = lp->pushback[lp->pbufp];
+    } else if (lp->token_stream != stdin) {
+	c=getc(lp->token_stream);
+    } else if(linep != NULL && *linep != '\0') {
+	c=*(linep++);
     } else {
-	if (pushback != (int) NULL) {
-	    c=pushback;
-	    pushback=(int) NULL;
-	} else if(lp != NULL && *lp != '\0') {
-	    c=*(lp++);
+	if (prompt != NULL) {
+	    lineread=rl_gets(prompt);
 	} else {
-	    if (prompt != NULL) {
-		lineread=rl_gets(prompt);
-	    } else {
-		lineread=rl_gets(":");
-	    }
-	    if (lineread == NULL) {
-		c=EOF;
-	    } else {
-		lp = lineread;
-		c=*(lp++);
-	    }
+	    lineread=rl_gets(":");
+	}
+	if (lineread == NULL) {
+	    c=EOF;
+	} else {
+	    linep = lineread;
+	    c=*(linep++);
 	}
     }
 

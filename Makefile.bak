@@ -289,17 +289,6 @@ lex.o: db.h
 lex.o: eprintf.h
 lex.o: equate.h
 lex.o: ev.h
-lexold.o: db.h
-lexold.o: eprintf.h
-lexold.o: equate.h
-lexold.o: ev.h
-lexold.o: lex.h
-lexold.o: path.h
-lexold.o: readfont.h
-lexold.o: rlgetc.h
-lexold.o: rubber.h
-lexold.o: token.h
-lexold.o: xwin.h
 lex.o: lex.h
 lex.o: path.h
 lex.o: readfont.h

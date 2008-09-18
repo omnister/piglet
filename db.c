@@ -9,6 +9,7 @@
 #include "db.h"		/* hierarchical database routines */
 #include "eprintf.h"	/* error reporting functions */
 #include "rlgetc.h"
+#include "lex.h"
 #include "token.h"
 #include "xwin.h"       /* for snapxy() */
 #include "readfont.h"	/* for writestring() */

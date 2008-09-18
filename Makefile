@@ -221,6 +221,7 @@ coords.o: db.h
 db.o: db.h
 db.o: eprintf.h
 db.o: ev.h
+db.o: lex.h
 db.o: readfont.h
 db.o: rlgetc.h
 db.o: rubber.h
@@ -310,6 +311,7 @@ readmenu.o: db.h
 readmenu.o: readmenu.h
 rlgetc.o: db.h
 rlgetc.o: eprintf.h
+rlgetc.o: token.h
 rlgetc.o: xwin.h
 rubber.o: rubber.h
 selpnt.o: db.h

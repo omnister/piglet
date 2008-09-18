@@ -19,10 +19,10 @@
 
 #include "db.h"
 #include "xwin.h"
+#include "lex.h"
 #include "token.h"
 #include "eprintf.h"
 #include "rubber.h"
-#include "lex.h"
 #include "readmenu.h"
 #include "path.h"
 #include "ev.h"

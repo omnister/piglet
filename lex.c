@@ -372,22 +372,24 @@ LEXER *lp;
 			state=1;
 			break;
 		    case IDENT:
-
 			path=EVget("PATH");
 			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
 			    token_unget(lp, token, word);
-
 			    rl_saveprompt();
 			    command = find_command("SHELL");
 			    sprintf(buf, "%s> ", command->name);
 			    rl_setprompt(buf);
 			    retcode = ((*(command->func)) (lp, "")); /* call command */
 			    rl_restoreprompt();
-
 			} else {
-			    printf("MAIN: expected COMMAND, got %s: %s\n",
-				    tok2str(token), word);
-			    token_flush_EOL(lp);
+			    // test to try out MACRO expansion concept:
+			    if (strncasecmp("WINFIT", lp->word, 6) == 0) {
+				rl_ungets(lp, "WIN :F;");
+			    } else {
+				printf("MAIN: expected COMMAND, got %s: %s\n",
+					tok2str(token), word);
+				token_flush_EOL(lp);
+			    }
 			    break;
 			}
 			break;

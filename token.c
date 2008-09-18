@@ -21,8 +21,9 @@ LEXER *token_stream_open(FILE *fp, char *name)  {
     lp = (LEXER *) emalloc(sizeof(struct lexer));
     lp->name = strsave(name);
     lp->word[0] = '\0';
-    lp->bufp = 0;  /* no characters in pushback buf */
+    lp->bufp = 0;  	/* no tokens in token pushback buf */
     lp->token_stream = fp;
+    lp->pbufp = 0;	/* no characters in pushback buffer */
     lp->mode = MAIN;
     lp->line = 1;	/* keep track of line number for stream */
     lp->parse = 0;	/* parsing mode: 0=normal, 1=raw */
@@ -107,7 +108,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
     }
 
     w=lp->word;
-    while((c=rlgetc(lp->token_stream)) != EOF) {
+    while((c=rlgetc(lp)) != EOF) {
 	switch(state) {
 	    case NEUTRAL:
 		switch(c) {
@@ -164,8 +165,8 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    case '-':
 		    case '#':
 			*w++ = c;
-			c = rlgetc(lp->token_stream);
-			rl_ungetc(c,lp->token_stream);
+			c = rlgetc(lp);
+			rl_ungetc(lp,c);
 			if (isdigit(c) || c=='.') {
 			    state = INNUM;
 			} else {
@@ -182,12 +183,12 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			continue;
 		    case '.':
 			*w++ = c;
-			c = rlgetc(lp->token_stream);
+			c = rlgetc(lp);
 			if (isdigit(c)) {
-			    rl_ungetc(c,lp->token_stream);
+			    rl_ungetc(lp,c);
 			    state = INNUM;
 			} else {
-			    rl_ungetc(c,lp->token_stream);
+			    rl_ungetc(lp,c);
 			    state = INOPT;
 			}
 			continue;	
@@ -211,7 +212,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    continue; */
 
 		} else {
-		    rl_ungetc(c,lp->token_stream);
+		    rl_ungetc(lp,c);
 		    *w = '\0';
 		    if (debug) printf("returning NUMBER: %s \n", lp->word);
 		    return(NUMBER);
@@ -224,7 +225,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,lp->token_stream);
+		    rl_ungetc(lp,c);
 		    *w = '\0';
         	    if ((str=EVget(lp->word)) == NULL) {
 		       lp->word[0]='\0';
@@ -242,7 +243,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    *w++ = c;
 		    continue;
 		} else {
-		    rl_ungetc(c,lp->token_stream);
+		    rl_ungetc(lp,c);
 		    *w = '\0';
 		    if (debug) printf("returning OPT: %s \n", lp->word);
 		    return(OPT);
@@ -251,7 +252,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		switch(c) {
 		    case '\\':
 			/* escape quotes, but pass everything else along */
-			if ((d = rlgetc(lp->token_stream)) == '"') {
+			if ((d = rlgetc(lp)) == '"') {
 			    *w++ = d;
 			} else {
 			    *w++ = c;
@@ -269,7 +270,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		}
 	    case INWORD:
 		if (!isalnum(c) && (c!='_') && (c!='.') && (c!='/') ) {
-		    rl_ungetc(c,lp->token_stream);
+		    rl_ungetc(lp,c);
 		    *w = '\0';
 		    if (lookup_command(lp->word)) {
 		        if (debug) printf("lookup returns CMD: %s\n", lp->word);
