@@ -9,6 +9,7 @@
 #include "rlgetc.h"
 #include "lex.h" 	/* for lookup_command() */
 #include "ev.h"
+#include "expr.h"	/* for evaluating expression */
 
 static char promptbuf[128];
 
@@ -85,11 +86,12 @@ int token_flush_EOL(LEXER *lp)
 
 TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 {
-    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM,INVAR} state = NEUTRAL;
-    int c,d;
+    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM,INVAR,INEXPR} state = NEUTRAL;
+    int c,d,retval;
     char *w;
     int debug=0;
     char *str;
+    double val;
 
     *word = lp->word;		/* set up token text return value */
 
@@ -177,6 +179,12 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			*w++ = c;
 			state = INOPT;
 			continue;
+		    case '(':
+			state = INEXPR;
+			strcpy(promptbuf, rl_saveprompt());
+			strcat(promptbuf, "(in a parenthesized expression)> ");
+			rl_setprompt(promptbuf);
+			continue;
 		    case '$':
 			// *w++ = c; 	/* don't save the dollar */
 			state = INVAR;
@@ -248,6 +256,24 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    if (debug) printf("returning OPT: %s \n", lp->word);
 		    return(OPT);
 		}
+	    case INEXPR:
+		switch(c) {
+		    case ')':
+			*w = '\0';
+			// if (debug) printf("got EXPR: %s \n", lp->word);
+			rl_restoreprompt();
+			retval = parse_exp(&val, lp->word);
+			// printf("got EXPR: \"%s\" %f (%d)\n", lp->word, val, retval);
+			if (retval) { 
+			    strcpy(lp->word, "BAD-EXPRESSION");
+			    return(UNKNOWN);
+			} 
+			sprintf(lp->word, "%.4f", val);
+			return(NUMBER);
+		    default:
+			*w++ = c;
+			continue;
+		}
 	    case INQUOTE:
 		switch(c) {
 		    case '\\':
@@ -284,7 +310,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		continue;
 	    default:
 		fprintf(stderr,"pig: error in lex loop\n");
-		exit(1);
+		return(UNKNOWN);
 		break;
 	} /* switch state */
     } /* while loop */

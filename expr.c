@@ -1,3 +1,12 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include "expr.h"
+
+#define EXPR_TEST 0				// set to zero to include test main()
+						// can use expr.test for vectors
+
 /* 
 * Simple recursive descent parser for numerical expressions
 *
@@ -10,7 +19,6 @@
 *  mulexp :	unary
 *  		| mulexp + unary
 *		| mulexp / unary
-*		| mulexp ^ unary
 *
 *  unary :	primary
 *  		| + unary
@@ -18,54 +26,63 @@
 *
 *  primary :	NUMBER
 *  		( expr )
+*
+*  tolerates leading/trailing blank spaces, returns 0 on success
+*  non-zero on any errors.  It is an error to have any trailing
+*  non-converted non-space characters in the expression.
+*
 */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 
 double expr(void);
 double mulexp(void);
 double unary(void);
 double primary(void);
 double getval();
-int parse_exp();
-int getnext();
+int getnext(int eatblanks);
 void ungetnext();
-void eatblanks();
 
-char buf[1024];
-int offset=0;
-int errflag=0;
-char *pc;
-int debug=0;
+static char buf[1024];
+static int offset=0;
+static int errflag=0;
+static char *pc;
 
-
+#if EXPR_TEST
 int main()
 {                               // testing stub
     double val;
 	int retval;
     for (;;) {
-        printf("> ");
-	    fgets(buf, 1024, stdin);
+        // printf("> ");
+	    if (fgets(buf, 1024, stdin) == NULL) {
+			exit(1);
+		}
+
 		if (buf[strlen(buf)-1] == '\n') {
 			buf[strlen(buf)-1] = '\0';
 		}
 	    retval=parse_exp(&val, buf);
-		printf("    %g	(%d) %d\n", val, retval, strlen(buf)-offset);
+		if (retval) {
+			printf("%-20s:    ERROR\n",buf);
+		} else {
+			printf("%-20s:    %g\n",buf, val);
+		}
     }
-    exit(1);
+    exit(0);
 }
+#endif 
 
-int getnext() {
-   int c;
-   if ((c = pc[offset++])!='\0') {
-       return(c);
-   } else {
-       offset--;
-       return(EOF);
-   }
+int getnext(int eatblanks) {
+    int c;
+
+	while ((((c = pc[offset++]) == ' ') && eatblanks ) && c!= '\0') {
+		;
+	}
+
+    if (c !='\0') {
+        return(c);
+    } else {
+        return(EOF);
+    }
 }
 
 void ungetnext() {
@@ -77,10 +94,16 @@ void ungetnext() {
 }
 
 int parse_exp(double *val, char * expression) {
+        pc = expression;	// save calling string
 	errflag=0;
-    pc = expression;	// save calling string
 	offset=0;
-	*val = expr();
+
+	*val = expr(); 
+
+	// printf("called with %s, %g %d %d\n", expression, *val, errflag, strlen(pc)-offset);
+
+	if (strlen(pc)-offset) errflag++;
+
 	if (errflag) {
 		*val = 0.0;
 	}
@@ -93,15 +116,12 @@ double expr(void)
     int c;
     val = mulexp();
     for (;;) {
-        switch (c = getnext()) {
+        switch (c = getnext(1)) {
         case '+':
             val += mulexp();
             break;
         case '-':
             val -= mulexp();
-            break;
-        case '^':
-            val = pow(val, mulexp());
             break;
         default:
             ungetnext();
@@ -117,7 +137,7 @@ double mulexp(void)
     int c;
     val = unary();
     for (;;) {
-        switch (c = getnext()) {
+        switch (c = getnext(1)) {
         case '*':
             val *= unary();
             break;
@@ -136,7 +156,7 @@ double unary(void)
 {
     double val;
     int c;
-    switch (c = getnext()) {
+    switch (c = getnext(1)) {
     case '+':
         val = unary();
         break;
@@ -155,20 +175,23 @@ double primary(void)
 {
     double val;
     int c;
-    c = getnext();
+	int debug=0;
+
+    c = getnext(1);
     if ((c >= '0' && c <= '9') || c == '.') {
         ungetnext();
         val = getval();
-        goto out;
-    }
-    if (c == '(') {
+    } else if (c == '(') {
         val = expr();
-        getnext();              /* eat closing ')' */
-        goto out;
-    }
-	errflag++;
-    if (debug) printf("error: primary read <%c> = %d\n", c, c);
-  out:
+        if ((c=getnext(1)) != ')') {		// eat closing ')'
+			errflag++;
+		}              
+    } else {
+		ungetnext();
+    	if (debug) printf("error: primary read <%c> = %d\n", c, c);
+		errflag++;
+	}
+
     return (val);
 }
 
@@ -184,8 +207,8 @@ double getval()
     int c;
     int sawpoint = 0;
 
-    c = getnext();
-    for (val = 0; (c >= '0' && c <= '9') || c == '.'; c = getnext()) {
+    c = getnext(0);
+    for (val = 0; (c >= '0' && c <= '9') || c == '.'; c = getnext(0)) {
         if (sawpoint) {
             power *= 10.0;
         }
@@ -197,14 +220,7 @@ double getval()
         }
     }
 
-    if (c != '\0')
-        ungetnext();
-    return (val / power);
-}
+    if (c != '\0') { ungetnext(); }
 
-void eatblanks(void)
-{
-    while (getnext() != '\n') {
-        ;
-    }
+    return (val / power);
 }

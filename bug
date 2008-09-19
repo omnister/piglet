@@ -1,4 +1,7 @@
 
+[ ] should all commands do snapxy on coordinates?  Currently handtyped coordinates
+    are not snapped.
+
 [x] when you do a readin, the global static from token_get is destroyed
 [x] token_get(lp, char *word)  crashes when word is bigger than buffer supplied by caller.
 
