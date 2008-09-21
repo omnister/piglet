@@ -41,12 +41,13 @@ double getval();
 int getnext(int eatblanks);
 void ungetnext();
 
-static char buf[1024];
 static int offset=0;
 static int errflag=0;
 static char *pc;
 
 #if EXPR_TEST
+
+static char buf[1024];
 int main()
 {                               // testing stub
     double val;

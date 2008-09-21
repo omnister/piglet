@@ -5,11 +5,15 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
+#include <ctype.h>
 #include "ev.h"
 
 #define HASHSIZE 101
 
-// Environment variable handling for SET and SHELL commands.
+// This started out as Environment variable handling 
+// for SET and SHELL commands, and is extended as a general
+// symbol table for MACRO DEFinitions also.
 //
 // This code follows the basic outline given in
 // "Advanced UNIX Programming", by Marc J. Rochkind, 
@@ -26,7 +30,8 @@ BOOLEAN assign(char **p, char *s);
 static struct varslot {
     char *name;		/* variable name */
     char *defn;		/* variable value */
-    BOOLEAN exported;	/* is it to be exported */
+    BOOLEAN macro;	/* 1=macro, 0=envvar */
+    BOOLEAN exported;	/* is it to be exported? */
     struct varslot *next;
 } *hashtab[HASHSIZE];	/* pointer table */
 
@@ -34,7 +39,7 @@ unsigned int hash(char *s)
 {
     unsigned int hashval;
     for (hashval = 0; *s != '\0'; s++) 
-    	hashval = *s+31*hashval;
+    	hashval = toupper(*s)+31*hashval;
     return (hashval%HASHSIZE);
 }
 
@@ -42,7 +47,7 @@ static struct varslot *lookup(char *s) 	/* find symbol table entry */
 {
     struct varslot *vp;
     for (vp=hashtab[hash(s)]; vp!=NULL; vp=vp->next) {
-        if (strcmp(s,vp->name) == 0) {
+	if (strcmp(s,vp->name) == 0) {	
 	   return(vp); 	/* found */
 	} 
     }
@@ -73,6 +78,7 @@ struct varslot *EVset(char *name, char *defn)
     if((vp=lookup(name)) == NULL) {	/* not found */
         vp = (struct varslot *) malloc(sizeof(*vp));
 	vp->exported = FALSE;
+	vp->macro=FALSE;
 	vp->defn = NULL;
 	if ((vp == NULL) || (vp->name = strdup(name)) == NULL) {
 	    return(NULL);
@@ -85,6 +91,40 @@ struct varslot *EVset(char *name, char *defn)
     assign(&(vp->defn), defn);
     
     return(vp);
+}
+
+void strtoupper(char *name) {
+    char *p;
+    for (p=name; *p!='\0'; p++) {
+       *p = toupper(*p);
+    }
+}
+
+struct varslot *Macroset(char *name, char *defn) /* set variable to be a macro */
+{
+    struct varslot *vp;
+
+    strtoupper(name);
+    vp=EVset(name, defn);
+    
+    if (vp == NULL) {
+        return(NULL);
+    }
+    vp->macro = TRUE;
+    vp->exported = FALSE;
+    return(vp);
+}
+
+char *Macroget(name) /* get value of variable */
+char *name;
+{
+    struct varslot *vp;
+
+    strtoupper(name);
+    if (((vp=lookup(name)) == NULL) || !(vp->macro)) {
+        return(NULL);
+    }
+    return(vp->defn);
 }
 
 BOOLEAN EVexport(name) /* set variable to be exported */
@@ -104,7 +144,7 @@ char *name;
 {
     struct varslot *vp;
 
-    if ((vp=lookup(name)) == NULL) {
+    if (((vp=lookup(name)) == NULL) || vp->macro) {
         return(NULL);
     }
     return(vp->defn);
@@ -173,15 +213,29 @@ BOOLEAN EVupdate() /* build environment from symbol table */
    return(TRUE);
 }
 
+// mode&1  prints exported vars
+// mode&2  prints local vars
+// mode&4  prints macros
+
 void EVprint(int mode) /* print the environment */
 {
     struct varslot *vp;
     int i;
+    char *flag;
 
     for (i=0; i<HASHSIZE; i++) {
 	for (vp = hashtab[i]; vp != NULL; vp = vp->next) {
-	    if (((mode & 1) && vp->exported) || ((mode & 2) && !vp->exported)) {
-	        printf("%3s %s=%s\n", vp->exported ? "[E]":"[P]", vp->name, vp->defn);
+	    if (((mode & 1) && vp->exported)  || 
+                ((mode & 2) && !vp->exported) || 
+                ((mode & 4) && vp->macro)) {
+		    if (vp->macro) {
+			flag="M";
+		    } else if (vp->exported) {
+			flag="E";
+		    } else {
+			flag="P";
+		    } 
+	        printf("[%s] %s=\"%s\"\n", flag, vp->name, vp->defn);
 	    }
 	}
     }

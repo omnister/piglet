@@ -296,6 +296,7 @@ LEXER *lp;
     int debug=0;
     TOKEN token;
     char *word;
+    char *s;
     char buf[128];
     char *path;
     int retcode;
@@ -374,17 +375,19 @@ LEXER *lp;
 		    case IDENT:
 			path=EVget("PATH");
 			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
+			    // external unix command
 			    token_unget(lp, token, word);
 			    rl_saveprompt();
+			    // give it to the SHELL builtin for execution
 			    command = find_command("SHELL");
 			    sprintf(buf, "%s> ", command->name);
 			    rl_setprompt(buf);
 			    retcode = ((*(command->func)) (lp, "")); /* call command */
 			    rl_restoreprompt();
 			} else {
-			    // test to try out MACRO expansion concept:
-			    if (strncasecmp("WINFIT", lp->word, 6) == 0) {
-				rl_ungets(lp, "WIN :F;");
+			    // MACRO expansion:
+			    if ((s=Macroget(lp->word)) != NULL) {
+				rl_ungets(lp, s);
 			    } else {
 				printf("MAIN: expected COMMAND, got %s: %s\n",
 					tok2str(token), word);
@@ -707,13 +710,8 @@ char *arg;
 /* now in com_copy.c */
 /* com_copy(LEXER *lp, char *arg) */	/* copy component  */
 
-int com_define(lp, arg)		/* define a macro */
-LEXER *lp;
-char *arg;
-{
-    printf("    com_define (unimplemented)\n");
-    return (0);
-}
+/* now in com_shell.c */
+/* int com_define(lp, arg) */		/* define a macro */
 
 int com_date(lp, arg)		/* print date and time to console */
 LEXER *lp;

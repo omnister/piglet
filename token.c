@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>             /* for strchr() */
 #include <ctype.h>
+#include <math.h>
 
 #include "token.h"
 #include "eprintf.h"
@@ -21,7 +22,7 @@ LEXER *token_stream_open(FILE *fp, char *name)  {
     LEXER *lp;
     lp = (LEXER *) emalloc(sizeof(struct lexer));
     lp->name = strsave(name);
-    lp->word[0] = '\0';
+    lp->word[0] = '\0';	/* place to store token return value */
     lp->bufp = 0;  	/* no tokens in token pushback buf */
     lp->token_stream = fp;
     lp->pbufp = 0;	/* no characters in pushback buffer */
@@ -268,7 +269,8 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			    strcpy(lp->word, "BAD-EXPRESSION");
 			    return(UNKNOWN);
 			} 
-			sprintf(lp->word, "%.4f", val);
+
+			sprintf(lp->word, "%g", val-fmod(val,1.0/pow(10.0,RES)));
 			return(NUMBER);
 		    default:
 			*w++ = c;

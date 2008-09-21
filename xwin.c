@@ -1190,7 +1190,7 @@ char *s;
     XFlush(dpy);
 }
 
-#define RES 6
+// #define RES 6  (in db.c)
 
 void xwin_draw_point(x,y) 
 double x, y;

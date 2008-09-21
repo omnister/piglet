@@ -102,7 +102,7 @@ int com_distance(LEXER *lp, char *arg)
     return(1);
 }
 
-#define RES 6
+// #define RES 6 /* defined in db.h */
 
 /* return nearest exact multiple of 1/(10^RES)) */
 double grid(double num) {

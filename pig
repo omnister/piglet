@@ -18,6 +18,7 @@ gdb --batch  -q -command pig.tmp.$$ pig.bin | tee pigtrace
 
 cat pigtrace  | col -b > pig.trace.$$
 mv pig.trace.$$ pigtrace
+chmod 666 pigtrace
 
 # check for abnormal exit, ask user for bug report
 

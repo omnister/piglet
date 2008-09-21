@@ -75,6 +75,43 @@ char *arg;
     return (0);
 }
 
+int com_define(lp, arg)	/* set macro definition */
+LEXER *lp;
+char *arg;
+{
+    int debug = 0;
+    char *word;
+    char var[128];
+    char val[128];
+    char *str;
+    TOKEN token;
+    int i;
+
+    if (debug) printf("    com_def\n");
+
+    i=0;
+    while((token=token_get(lp, &word)) == IDENT || token == QUOTE) {
+        if (i==0) strncpy(var,word, 128);
+        if (i==1) strncpy(val,word, 128);
+	i++;
+    }
+
+    if ((token != EOF && token != EOL && token != EOC) || i>2) {
+       printf("DEF: bad number of arguments\n");
+    } else if (i==0) { 
+	EVprint(4);
+    } else if (i==1) { 
+	if ((str=Macroget(var)) == NULL) {
+	   str="";
+	}
+        printf("\"%s\"\n", str);
+    } else if (i==2) {
+        Macroset(var,val);
+    }
+
+    return (0);
+}
+
 int com_set(lp, arg)	/* set environment variables */
 LEXER *lp;
 char *arg;
@@ -99,6 +136,9 @@ char *arg;
 	    case 'P':
 		mode += 2;	/* limit to private vars */
 		break;
+	    case 'M':
+		mode += 4;	/* limit to macro definitions */
+		break;
 	    default:
 		printf("SET: bad option: %s\n", word);
 		return(1);
@@ -118,7 +158,7 @@ char *arg;
 	i++;
     }
 
-    if ((token != EOF && token != EOL) || i>2) {
+    if ((token != EOF && token != EOL && token != EOC) || i>2) {
        printf("SET: bad number of arguments\n");
     } else if (i==0) { 
 	EVprint(mode);
@@ -129,7 +169,9 @@ char *arg;
         printf("%s\n", str);
     } else if (i==2) {
         EVset(var,val);
-	EVexport(var);
+	if (mode & 1) {
+	    EVexport(var);
+	}
     }
 
     return (0);

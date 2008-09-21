@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "stack.h"
 
-#define RES 6
+#define RES 6		/* number of decimals to allow */
 
 /* these definitions map bit fields in an int skipping every other */
 /* bit allowing circle visibility to be set with x|CIRC, and circle */
