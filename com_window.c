@@ -12,7 +12,7 @@ static double x1, y1;
 int fit=0;		/* don't fit */
 int nest=9;		/* default nesting level */
 int lastwin=0;		/* go back to last window */
-int bounds=0;		/* default pick boundary display level */
+//int bounds=0;		/* default pick boundary display level */
 
 OPTS opts;
 void draw_bounds();
@@ -23,7 +23,9 @@ int com_window(LEXER *lp, char *arg)
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     double scale=1.0;	/* default scale */
-    extern int fit, nest;
+    fit=0;
+    nest=9;
+    lastwin=0;
     
     TOKEN token;
     int done=0;
@@ -82,10 +84,10 @@ int com_window(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == EOC || token == CMD) {
 		 token_get(lp, &word); 
-		 if (debug) printf("calling do_win 1 inside com window\n");
+		 if (debug) printf("com_win: calling do_win 1 fit=%d, scale=%g\n", fit, scale);
 		 do_win(lp, 0, 0.0, 0.0, 0.0, 0.0, scale);
 		 fit = 0;
-		 scale = 1;
+		 scale = 1.0;
 		 state = END;
 	    } else {
 		printf("WIN: expected OPT or COORD, got: %s\n",
@@ -109,21 +111,21 @@ int com_window(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM3:		/* get pair of xy coordinates */
-            if (getnum(lp, "WIN", &x2, &y2)) {
+            if ((token == NUMBER) && getnum(lp, "WIN", &x2, &y2)) {
 		state = START;
-		token_get(lp, &word);
-		sscanf(word, "%lf", &y2);	/* scan it in */
+		// token_get(lp, &word);
+		// sscanf(word, "%lf", &y2);	/* scan it in */
 		rubber_clear_callback();
 		if (x1==x2 && y1==y2) {
-		     if (debug) printf("calling do_win 3 inside com window\n");
+		    if (debug) printf("calling do_win 3 inside com window\n");
 		    do_win(lp, 2, x1, y1, 0.0, 0.0, scale);  /* pan */
 		    fit = 0;
-		    scale = 1;
+		    scale = 1.0;
 		} else {
 		    if (debug) printf("calling do_win 4 inside com window\n");
 		    do_win(lp, 4, x1, y1, x2, y2, scale);    /* zoom */
 		    fit = 0;
-		    scale = 1;
+		    scale = 1.0;
 		}
 	    } else if (token == EOL) {
 		token_get(lp, &word); 	/* just ignore it */
@@ -132,7 +134,7 @@ int com_window(LEXER *lp, char *arg)
 		if (debug) printf("calling do_win 2 inside com window\n");
 		do_win(lp, 2, x1, y1, 0.0, 0.0, scale);
 		fit = 0;
-		scale = 1;
+		scale = 1.0;
 	        state = END;
 	    } else {
 		printf("WIN: expected COORD, got: %s\n",

@@ -30,7 +30,7 @@ int readin();
 int com_add(), com_archive(), com_area(), com_background();
 int com_bye(), com_change(), com_copy(), com_date(), com_define();
 int com_delete(), com_display(), com_distance(), com_dump(); 
-int com_echo(), com_edit(), com_equate(), com_exit(), com_files();
+int com_echo(), com_edit(), com_equate(), com_eval(), com_exit(), com_files();
 int com_fsize(), com_grid(), com_group(), com_help();
 int com_identify(), com_input(), com_interrupt(), com_layer();
 int com_level(), com_list(), com_lock(), com_macro(), com_menu();
@@ -374,27 +374,17 @@ LEXER *lp;
 			break;
 		    case IDENT:
 			path=EVget("PATH");
-			// printf("in ident word=%s %d\n", word, findfile(path, word, buf, X_OK));
-			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
-			    // external unix command
+			if (word[0] == '/' || 
+			    findfile(path, word, buf, X_OK)) { 		// Unix command
 			    token_unget(lp, token, word);
-			    rl_saveprompt();
-			    // give it to the SHELL builtin for execution
-			    command = find_command("SHELL");
-			    sprintf(buf, "%s> ", command->name);
-			    rl_setprompt(buf);
-			    retcode = ((*(command->func)) (lp, "")); /* call command */
-			    rl_restoreprompt();
+			    com_shell(lp, NULL); 			// give to SHELL builtin
+			} else if ((s=Macroget(lp->word)) != NULL) { 	// MACRO expansion:
+			    token_unget(lp, token, word);
+			    com_eval(lp, NULL); 			// give to EVAL builtin
 			} else {
-			    // MACRO expansion:
-			    if ((s=Macroget(lp->word)) != NULL) {
-				rl_ungets(lp, s);
-			    } else {
-				printf("MAIN: expected COMMAND, got %s: %s\n",
-					tok2str(token), word);
-				token_flush_EOL(lp);
-			    }
-			    break;
+			    printf("MAIN: expected COMMAND, got %s: %s\n",
+				tok2str(token), word);
+			    token_flush_EOL(lp);
 			}
 			break;
 		    default:
@@ -1616,6 +1606,37 @@ char *arg;
     } else {
        ; /* FIXME: a syntax error */
     }
+    return (0);
+}
+
+int com_eval(lp, arg)		/* evaluate a MACRO */
+LEXER *lp;
+char *arg;
+{
+    TOKEN token;
+    char *word;
+    char buf[6];
+    char *s;
+    int i;
+    int debug=0;
+
+    if (debug) printf("    com_eval\n");
+
+    token=token_get(lp, &word);		// get MACRO name
+    if ((s=Macroget(word)) == NULL) {   // look up macro body 
+        printf("macro evaluation error: %s\n", word);
+    }
+
+    i=1;
+    while((token=token_get(lp, &word)) != EOF && token != EOL) {
+	sprintf(buf,"ARG%d",i);
+	EVset(buf, word);	// save arguments as $ARG1, $ARG2...
+	i++;
+    }
+    sprintf(buf,"%d",--i);
+    EVset("ARGN", buf);		// argument count as $ARGN
+
+    rl_ungets(lp, s); 		// push macro body back onto input
     return (0);
 }
 
