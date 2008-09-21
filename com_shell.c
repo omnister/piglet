@@ -90,22 +90,26 @@ char *arg;
     if (debug) printf("    com_def\n");
 
     i=0;
-    while((token=token_get(lp, &word)) == IDENT || token == QUOTE) {
-        if (i==0) strncpy(var,word, 128);
-        if (i==1) strncpy(val,word, 128);
+    val[0]='\0';
+    while((token=token_get(lp, &word)) != EOF &&  token != EOL && token != EOC) {
+        if (i==0) {
+	    if (debug) printf("setting var %s\n", word);
+	    strncpy(var,word, 128);
+	} else {
+	    if (debug) printf("concatenating val %s\n", word);
+            strncat(val,word, 128);
+	}
 	i++;
     }
 
-    if ((token != EOF && token != EOL && token != EOC) || i>2) {
-       printf("DEF: bad number of arguments\n");
-    } else if (i==0) { 
+    if (i==0) { 
 	EVprint(4);
     } else if (i==1) { 
 	if ((str=Macroget(var)) == NULL) {
 	   str="";
 	}
         printf("\"%s\"\n", str);
-    } else if (i==2) {
+    } else if (i>1) {
         Macroset(var,val);
     }
 

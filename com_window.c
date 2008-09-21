@@ -31,8 +31,6 @@ int com_window(LEXER *lp, char *arg)
     int debug=0;
     double x2, y2;
 
-    if (debug) printf("com_window\n");
-
     opt_set_defaults(&opts);
 
     while (!done) {

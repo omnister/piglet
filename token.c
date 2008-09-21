@@ -202,6 +202,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			}
 			continue;	
 		    default:
+			// printf("in default with c=%d\n", c);
 			state = INWORD;
 			*w++ = c;
 			continue;
@@ -239,9 +240,13 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
         	    if ((str=EVget(lp->word)) == NULL) {
 		       lp->word[0]='\0';
 		    } else {
+		       if (debug) printf("pushedback: <%s>\n", str);
+		       // rl_ungets(lp, str);
 		       strcpy(lp->word, str);
 		    }
-		    if (debug) printf("returning QUOTE: %s \n", lp->word);
+    		    // w=lp->word;
+		    // *w='\0';
+		    // state = NEUTRAL;
 		    return(QUOTE);
 		}
 	    case INOPT:
@@ -300,6 +305,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		if (!isalnum(c) && (c!='_') && (c!='.') && (c!='/') ) {
 		    rl_ungetc(lp,c);
 		    *w = '\0';
+		    // printf("looking up <%s>\n", lp->word);
 		    if (lookup_command(lp->word)) {
 		        if (debug) printf("lookup returns CMD: %s\n", lp->word);
 			return(CMD);

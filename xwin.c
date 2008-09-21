@@ -509,6 +509,7 @@ int procXevent()
 {
     /* readline select stuff */
     int nf, nfds, cn, in; 
+    int i;
 
     struct timeval *timer = (struct timeval *) 0;	/* select blocks indefinitely */
     //struct timeval timer;
@@ -544,6 +545,9 @@ int procXevent()
 		}
 		XFlush(dpy);
 	    } else {
+	    	for (i=1; i<=num_menus; i++) {
+		  paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	    	}
 		dosplash();
 		draw_grid(win, gcg, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);

@@ -130,7 +130,7 @@ char *s;
 LEXER *lp;
 {
     int i;
-    for (i=strlen(s); i>=0; i--) {
+    for (i=strlen(s)-1; i>=0; i--) {
     	rl_ungetc(lp,s[i]);
     }
     return(1);

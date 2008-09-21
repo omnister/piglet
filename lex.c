@@ -374,6 +374,7 @@ LEXER *lp;
 			break;
 		    case IDENT:
 			path=EVget("PATH");
+			// printf("in ident word=%s %d\n", word, findfile(path, word, buf, X_OK));
 			if (word[0] == '/' || findfile(path, word, buf, X_OK)) {
 			    // external unix command
 			    token_unget(lp, token, word);
@@ -482,10 +483,10 @@ char *name;
     size = size > 2 ? size : 3;
  
     for (i = 0; commands[i].name; i++)
-        if (strncasecmp(name, commands[i].name, size) == 0)
-            return (1);
+	if (strncasecmp(name, commands[i].name, size) == 0)
+	    return (1);
  
-    return ((TOKEN) NULL);
+    return (0);
 }                            
 
 
@@ -1106,7 +1107,7 @@ char *arg;
 		    grid_state=G_OFF;
 		    xwin_grid_state(grid_state);
 		} else {
-	    	     printf("bad argument to GRID: %s\n", word);
+	    	     printf("bad argument to GRID: <%s>\n", word);
 		}
 		break;
 	    case QUOTE: 	/* quoted string */

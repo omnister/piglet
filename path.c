@@ -39,36 +39,38 @@ int findfile(const char *pathlist, const char *filename, char *retbuf, int mode)
     char full[1024];
     char *p, *q;
 
-    strcpy(path,pathlist);
-    for (p=strtok(path, ":"); p!=NULL; p=strtok(NULL, ":")) {
-	strcpy(buf, p);
-	if (strlen(buf) > 0) {
-	   strcat(buf,"/");
-	}
-
-	if (buf[0] == '~') {	/* do tilde expansion */
-	    strcpy(head,buf);
-	    if ((q = strchr(head,'/')) != NULL) {
-		*q = '\0';
-		strcpy(tail,q+1);
+    if (filename[0] != '\0') {
+	strcpy(path,pathlist);
+	for (p=strtok(path, ":"); p!=NULL; p=strtok(NULL, ":")) {
+	    strcpy(buf, p);
+	    if (strlen(buf) > 0) {
+	       strcat(buf,"/");
 	    }
-	    strcpy(full,home(head+1));
-	    strcat(full,"/");
-	    strcat(full,tail);
-	} else if (buf[0] == '.' && buf[1] == '/') { /* do dot expansion */
-	    getcwd(full, 128);
-	    strcat(full,buf+1);
-	} else {
-	    strcpy(full,buf);
-	}
 
-	strcat(full,filename);
-
-	if (access(full, mode) == 0) { 	    /* success */
-	    if (retbuf != NULL) {
-		strcpy(retbuf, full);
+	    if (buf[0] == '~') {	/* do tilde expansion */
+		strcpy(head,buf);
+		if ((q = strchr(head,'/')) != NULL) {
+		    *q = '\0';
+		    strcpy(tail,q+1);
+		}
+		strcpy(full,home(head+1));
+		strcat(full,"/");
+		strcat(full,tail);
+	    } else if (buf[0] == '.' && buf[1] == '/') { /* do dot expansion */
+		getcwd(full, 128);
+		strcat(full,buf+1);
+	    } else {
+		strcpy(full,buf);
 	    }
-	    return(1);
+
+	    strcat(full,filename);
+
+	    if (access(full, mode) == 0) { 	    /* success */
+		if (retbuf != NULL) {
+		    strcpy(retbuf, full);
+		}
+		return(1);
+	    }
 	}
     }
     if (retbuf != NULL) {
