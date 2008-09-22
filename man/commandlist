@@ -1131,7 +1131,7 @@ types can also be designated by numbers.  0-2 are synonymous with S,D,B.
 3 gives "dot-dash", 4 gives "long-short", 5 gives "large-broken", 6
 gives "small-broken". 
 .TP
-.I <fill>
+.I :F<fill>
 Specify the fill pattern for polygons, rectangles, circles and lines, arcs with
 width.  0 gives an unfilled outline drawing. 1 gives a solid fill.  Since
 piglet draws by overwriting on the display, two overlapping solid fill patterns
@@ -1158,10 +1158,6 @@ device geometries, schematics, or block diagrams.  Interconnect layers
 are used for circuit wiring.  In a detailed display, lines are shown in
 their true width, but in a symbolic display they are shown with zero
 width (not yet implemented). 
-.TP
-.I :0
-If the ":O" option is provided, the layer will be plotted filled instead of
-outlined.
 .TP
 .I <label>
 The <label> associates a short mnemonic name with the mask which will be printed
@@ -2088,7 +2084,7 @@ S: complete
 
 N: WINdow
 D: Change the current window parameters
-U: WINdow :X[<scale>] [:N<physical>] [:F] [:Z] [:O] [<xy1> [<xy2>]] <EOC>
+U: WINdow :X[<scale>] [:N<physical>] [:F] [:Z] [:O<layer>] [<xy1> [<xy2>]] <EOC>
 S: good
 T: {
 Window with no arguments simply refreshes the display.  Give only one
@@ -2101,16 +2097,26 @@ The last window setting used in editing a device is saved along with the
 device so that the same editing environment can be restored the next
 time the device is edited.
 
-If you have a very complex drawing with lots of hierarchy, you can
-simplify things by using the ":N<nest_level>" of the WIN command.  "WIN
-:N0" will show all sub-cells as bounding boxes.  "WIN :N1" will show all
-sub-cells of sub-cells as bounding boxes, and so on. 
+If you have a drawing complex hierarchy, you can simplify the view by
+using the ":N<nest_level>" of the WIN command.  "WIN :N0" will show all
+sub-cells as bounding boxes.  "WIN :N1" will show all sub-cells of
+sub-cells as bounding boxes, and so on. 
 
-Piglet defaults to drawing unfilled polygons.  "WIN :O" will toggle filling.
+Piglet normally will draw polygons as specified in the PROCESS file.  If a layer
+is difficult to see, it can be toggled into solid fill mode by using "WIN :O<layer>";
+The filled state is sticky and will remain throughout the edit session, but will
+not be saved when Piglet is exited.  Repeating the command will toggle the layer fill
+back to the original state.  "WIN :O;" with no argument will toggle all layers
+from solid fill to their normal PROCESS fill definitions.
 
 .SS OPTIONS
 .TP
-.I <scale>
+.I :O<layer>
+Toggle between solid fill and PROCESS-defined fill on one or more layers.  
+If the <layer> argument is provided, only the specified layer fill will be toggled.
+If <layer> is omitted, then all layers will be toggled.
+.TP
+.I :X<scale>
 Factor by which to scale the current window.  Limited to range 
 of 0.01 ... 100.0.
 .TP
@@ -2119,9 +2125,6 @@ Specify fitting the window to the bounding box of the current device
 .TP
 .I :N<physical>
 Only display nesting down to <physical> number of hierarchy levels (default=3)
-.TP
-.I :O 
-Toggle filled polygon display  (default=unfilled)
 .TP
 .I :Z 
 Toggles window to previous settings.

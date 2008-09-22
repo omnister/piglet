@@ -7,6 +7,7 @@
 #include "lex.h"
 #include "rlgetc.h"
 #include "eprintf.h"
+#include "equate.h"
 
 static double x1, y1;
 int fit=0;		/* don't fit */
@@ -32,6 +33,7 @@ int com_window(LEXER *lp, char *arg)
     char *word;
     int debug=0;
     double x2, y2;
+    int layer;
 
     opt_set_defaults(&opts);
 
@@ -69,7 +71,11 @@ int com_window(LEXER *lp, char *arg)
 			db_set_nest(nest);
 		    }
 		} else if (strncasecmp(word, ":O", 2) == 0) {
+		    if(sscanf(word+2, "%d", &layer) == 1) {
+		    	equate_toggle_override(layer);
+		    } else {
 			db_set_fill(FILL_TOGGLE);
+		    }
 		} else if (strncasecmp(word, ":Z", 2) == 0) {
 			lastwin++;
 		} else {

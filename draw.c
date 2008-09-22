@@ -2328,6 +2328,11 @@ int comp;	/* component type */
 
     layer_fill = (equate_get_fill(lnum) > 0);	
 
+    // if win:o<layer> has overridden the fill, then make it solid
+    if (equate_get_override(lnum)) {
+    	layer_fill = 1;
+    }
+
     if (X) {
 	xwin_set_pen_line_fill(  
 		equate_get_color(lnum), 
