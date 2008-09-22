@@ -70,9 +70,13 @@ int *layer;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
-                if (getnum(lp, "ARC", &x1, &yy1)) {
-		    state = NUM2;
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		if (token == NUMBER) {
+		    if (getnum(lp, "ARC", &x1, &yy1)) {
+			state = NUM2;
+		    } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -83,10 +87,14 @@ int *layer;
 		break;
 	    case NUM2:		/* get pair of xy coordinates */
 		if (debug) printf("in num2\n");
-                if (getnum(lp, "ARC", &x2, &y2)) {
-		    rubber_set_callback(draw_arc);
-		    state = NUM3;
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		if (token == NUMBER) {
+		    if (getnum(lp, "ARC", &x2, &y2)) {
+			rubber_set_callback(draw_arc);
+			state = NUM3;
+		    } else {
+		        state = END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -97,12 +105,16 @@ int *layer;
 		break;
 	    case NUM3:		/* get pair of xy coordinates */
 		if (debug) printf("in num3\n");
-                if (getnum(lp, "ARC", &x3, &y3)) {
-		    db_add_arc(currep, *layer, opt_copy(&opts), x1, yy1, x2, y2, x3, y3);
-		    need_redraw++;
-		    rubber_clear_callback();
-		    state=START;
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		if (token == NUMBER) {
+		    if (getnum(lp, "ARC", &x3, &y3)) {
+			db_add_arc(currep, *layer, opt_copy(&opts), x1, yy1, x2, y2, x3, y3);
+			need_redraw++;
+			rubber_clear_callback();
+			state=START;
+	            } else {
+			state=END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 

@@ -21,7 +21,7 @@ int com_area(LEXER *lp, char *arg)
 
     TOKEN token;
     char *word;
-    int debug=1;
+    int debug=0;
     int done=0;
     int valid_comp=0;
     int i;
@@ -142,29 +142,33 @@ int com_area(LEXER *lp, char *arg)
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
 	    if (debug) printf("in NUM1\n");
-            if (getnum(lp, "AREA", &x1, &y1)) {
-		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
+	    if (token==NUMBER) {
+		if (getnum(lp, "AREA", &x1, &y1)) {
+		    if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
 
-		if (p_prev != NULL) {
-		    db_highlight(p_prev);	/* unhighlight it */
-		    p_prev = NULL;
-		}
-
-		if ((p_best=db_ident(currep, x1,y1,0,my_layer, comp, pinst)) != NULL) {
-		    db_notate(p_best);	    /* print out id information */
-		    db_highlight(p_best);
-		    area = db_area(p_best);
-		    cum_area += area;
-		    if (area >= 0) {
-			printf("   area = %g, total = %g\n", area, cum_area );
+		    if (p_prev != NULL) {
+			db_highlight(p_prev);	/* unhighlight it */
+			p_prev = NULL;
 		    }
-		    p_prev=p_best;
-		    state = NUM1;
+
+		    if ((p_best=db_ident(currep, x1,y1,0,my_layer, comp, pinst)) != NULL) {
+			db_notate(p_best);	    /* print out id information */
+			db_highlight(p_best);
+			area = db_area(p_best);
+			cum_area += area;
+			if (area >= 0) {
+			    printf("   area = %g, total = %g\n", area, cum_area );
+			}
+			p_prev=p_best;
+			state = NUM1;
+		    } else {
+			printf("nothing here to measure... try SHO command?\n");
+			state = START;
+		    }
 		} else {
-		    printf("nothing here to measure... try SHO command?\n");
-		    state = START;
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("AREA: cancelling POINT\n");

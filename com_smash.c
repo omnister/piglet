@@ -159,30 +159,34 @@ int com_smash(LEXER *lp, char *arg)
 	       lastx1=x1;
 	       lasty1=yy1;
 	    }
-            if (getnum(lp, "SMASH", &x1, &yy1)) {
-		if (mode == POINT) {
-		    if (p_prev != NULL) {
-			db_highlight(p_prev);	/* unhighlight it */
-			p_prev = NULL;
-		    }
-		    if (ncoords && lastx1 == x1 && lasty1 == yy1) {	/* double click */
-			smashrep(p_best);
-			p_best=NULL;
-			ncoords=0;
-		    } else {
-			if ((p_best=db_ident(currep, x1,yy1, 1, 0, INST, pinst)) != NULL) {
-			    db_highlight(p_best);	
-			    db_notate(p_best);	/* print information */
-			    p_prev=p_best;
+	    if (token == NUMBER) {
+		if (getnum(lp, "SMASH", &x1, &yy1)) {
+		    if (mode == POINT) {
+			if (p_prev != NULL) {
+			    db_highlight(p_prev);	/* unhighlight it */
+			    p_prev = NULL;
 			}
+			if (ncoords && lastx1 == x1 && lasty1 == yy1) {	/* double click */
+			    smashrep(p_best);
+			    p_best=NULL;
+			    ncoords=0;
+			} else {
+			    if ((p_best=db_ident(currep, x1,yy1, 1, 0, INST, pinst)) != NULL) {
+				db_highlight(p_best);	
+				db_notate(p_best);	/* print information */
+				p_prev=p_best;
+			    }
+			}
+			ncoords++;
+			state = START;
+		    } else {			/* mode == REGION */
+			rubber_set_callback(smash_draw_box);
+			state = NUM2;
 		    }
-		    ncoords++;
-		    state = START;
-		} else {			/* mode == REGION */
-		    rubber_set_callback(smash_draw_box);
-		    state = NUM2;
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("SMASH: cancelling POINT\n");
@@ -194,19 +198,23 @@ int com_smash(LEXER *lp, char *arg)
 	    break;
 
 	case NUM2:		/* get pair of xy coordinates */
-	    if (getnum(lp, "SMASH", &x2, &y2)) {
-		state = START;
-		rubber_clear_callback();
+	    if (token == NUMBER) {
+		if (getnum(lp, "SMASH", &x2, &y2)) {
+		    state = START;
+		    rubber_clear_callback();
 
-		printf("SMASH: got %g,%g %g,%g\n", x1, yy1, x2, y2);
-		stack=db_ident_region(currep, x1,yy1, x2, y2, 1, 0, INST, pinst);
-		while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-		    printdef(stdout, p_best, NULL);
-		    db_notate(p_best);          /* print information */
-		    smashrep(p_best);
+		    printf("SMASH: got %g,%g %g,%g\n", x1, yy1, x2, y2);
+		    stack=db_ident_region(currep, x1,yy1, x2, y2, 1, 0, INST, pinst);
+		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
+			printdef(stdout, p_best, NULL);
+			db_notate(p_best);          /* print information */
+			smashrep(p_best);
+		    }
+		    need_redraw++;
+	    	} else {
+		    state = END;
 		}
-		need_redraw++;
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word);     /* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("SMASH: cancelling POINT\n");

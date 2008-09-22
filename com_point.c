@@ -47,10 +47,14 @@ int com_point(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:
-            if (getnum(lp, "POINT", &x1, &y1)) {	// getnum may destroy lookahead
-		xwin_draw_point(x1, y1);
-		state = NUM1;
-	    } else if ((token=token_look(lp, &word)) == EOL) {	// so call token_look again
+	    if (token == NUMBER) {
+		if (getnum(lp, "POINT", &x1, &y1)) {
+		    xwin_draw_point(x1, y1);
+		    state = NUM1;
+		} else {
+		    state = END;
+		}
+	    } else if (token == EOL) {	
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("POINT: cancelling POINT\n");

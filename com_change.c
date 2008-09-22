@@ -153,34 +153,38 @@ int com_change(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (getnum(lp, "CHA", &x1, &y1)) {		// getnum may destroy lookahead
-		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		if (p_best != NULL) {
-		    db_highlight(p_best); 	/* unhighlight it */
-		    p_best = NULL; 
-		}
-
-		if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
-		    db_notate(p_best);	    /* print out id information */
-		    db_highlight(p_best);
-		    switch (p_best->type) {	/* put text in command buffer */
-		        case NOTE:
-			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.n->text);
-			    add_history(buf);
-		            /* token_set_mode(lp, 1);	set raw for testing */
-			    break;
-			case TEXT:
-			    snprintf(buf, MAXBUF, "\"%s\"", p_best->u.t->text);
-			    add_history(buf);
-			    break;
-			default:
-			    break;
+	    if (token==NUMBER) {
+		if (getnum(lp, "CHA", &x1, &y1)) {	
+		    if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
+		    if (p_best != NULL) {
+			db_highlight(p_best); 	/* unhighlight it */
+			p_best = NULL; 
 		    }
+
+		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			db_notate(p_best);	    /* print out id information */
+			db_highlight(p_best);
+			switch (p_best->type) {	/* put text in command buffer */
+			    case NOTE:
+				snprintf(buf, MAXBUF, "\"%s\"", p_best->u.n->text);
+				add_history(buf);
+				/* token_set_mode(lp, 1);	set raw for testing */
+				break;
+			    case TEXT:
+				snprintf(buf, MAXBUF, "\"%s\"", p_best->u.t->text);
+				add_history(buf);
+				break;
+			    default:
+				break;
+			}
+		    } else {
+			printf("nothing here to change...try SHO command?\n");
+		    }
+		    state = OPT;
 		} else {
-		    printf("nothing here to change...try SHO command?\n");
+		    state = END;
 		}
-		state = OPT;
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	

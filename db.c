@@ -930,7 +930,7 @@ int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
     return(1);
 }
 
-/* write out archive file for sp, smash it is smash !=0 */
+/* write out archive file for sp, smash it if smash !=0 */
 /* FIXME: include process file if process !=0 */
 
 int db_def_archive(DB_TAB *sp, int smash, int process) 
@@ -950,8 +950,8 @@ int db_def_archive(DB_TAB *sp, int smash, int process)
     for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
 	dp->flag=0;  /* clear recursion flag */
     }
-    fprintf(fp,"$FILES\n%s\n",sp->name);
 
+    fprintf(fp,"$FILES\n%s\n",sp->name);	// create $FILES preamble
     stack=NULL;
     db_def_files_recurse(fp,sp);
     while ((s=stack_pop(&stack))!=NULL) {
@@ -966,8 +966,8 @@ int db_def_archive(DB_TAB *sp, int smash, int process)
 
     /* now print out definitions of every cell from bottom to top */
 
-    db_def_arch_recurse(fp,sp,smash);
-    db_def_print(fp, sp, ARCHIVE);
+    db_def_arch_recurse(fp,sp,smash);	// subcells
+    db_def_print(fp, sp, ARCHIVE);	// current cell
 
     err+=(fclose(fp) != 0);
 
@@ -997,12 +997,16 @@ FILE *fp;
 DB_TAB *sp;
 {
     DB_DEFLIST *p; 
+    DB_TAB *dp;
 
     for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	if (p->type == INST && !(db_lookup(p->u.i->name)->flag)) {
-	    db_def_files_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
-	    ((db_lookup(p->u.i->name))->flag)++;
-	    stack_push(&stack, p->u.i->name);
+	if (p->type == INST) {
+	    dp = db_lookup(p->u.i->name);
+	    if (!(dp->flag) && !(dp->is_tmp_rep)) {	// do not archive tmp reps
+		db_def_files_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
+		((db_lookup(p->u.i->name))->flag)++;	// prevent duplicates
+		stack_push(&stack, p->u.i->name);	// save for $FILES
+	    }
 	}
     }
     return(0); 	
@@ -1014,12 +1018,16 @@ DB_TAB *sp;
 int smash;
 {
     DB_DEFLIST *p; 
+    DB_TAB *dp;
 
     for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
-	if (p->type == INST && !(db_lookup(p->u.i->name)->flag)) {
-	    db_def_arch_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
-	    ((db_lookup(p->u.i->name))->flag)++;
-	    db_def_print(fp, db_lookup(p->u.i->name), ARCHIVE);
+	if (p->type == INST) {
+	    dp = db_lookup(p->u.i->name);
+	    if (!(dp->flag) && !(dp->is_tmp_rep)) {	// do not archive tmp reps
+		db_def_arch_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
+		((db_lookup(p->u.i->name))->flag)++;	// prevent duplicates
+		db_def_print(fp, db_lookup(p->u.i->name), ARCHIVE);  // print def
+	    }
 	}
     }
     return(0); 	

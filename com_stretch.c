@@ -59,7 +59,7 @@ int com_stretch(LEXER *lp, char *arg)
     int done=0;
     TOKEN token;
     char *word;
-    int debug=0;
+    int debug=1;
     DB_DEFLIST *p_prev = NULL;
     double *xmin, *xmax, *ymin, *ymax;
     double d, distance, dbest;
@@ -111,6 +111,7 @@ int com_stretch(LEXER *lp, char *arg)
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 1\n");
 		 state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,&word);
@@ -167,26 +168,31 @@ int com_stretch(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-            if (getnum(lp, "STRETCH", &x1, &yy1)) {
-		if (p_prev != NULL) {
-		    /* db_highlight(p_prev); */ /* unhighlight it */
-		    p_prev = NULL;
-		}
-		if (mode == POINT) {
-		    if ((p_best=db_ident(currep, x1,yy1,1, my_layer, comp, pinst)) != NULL) {
-			db_highlight(p_best); 
-			state = NUM3;
-		    } else {
-			printf("    nothing here to STRETCH, try SHO #E?\n");
-			state = START;
+	    if (token == NUMBER) {
+		if (getnum(lp, "STRETCH", &x1, &yy1)) {
+		    if (p_prev != NULL) {
+			/* db_highlight(p_prev); */ /* unhighlight it */
+			p_prev = NULL;
 		    }
-		} else {			/* mode == REGION */
-		    rubber_set_callback(stretch_draw_box);
-		    state = NUM2;
+		    if (mode == POINT) {
+			if ((p_best=db_ident(currep, x1,yy1,1, my_layer, comp, pinst)) != NULL) {
+			    db_highlight(p_best); 
+			    state = NUM3;
+			} else {
+			    printf("    nothing here to STRETCH, try SHO #E?\n");
+			    state = START;
+			}
+		    } else {			/* mode == REGION */
+			rubber_set_callback(stretch_draw_box);
+			state = NUM2;
+		    }
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 2\n");
 		printf("STR: cancelling POINT\n");
 	        state = END;
 	    } else {
@@ -196,26 +202,31 @@ int com_stretch(LEXER *lp, char *arg)
 	    break;
 
 	case NUM2:		/* get pair of xy coordinates */
-            if (getnum(lp, "STRETCH", &x2, &y2)) {
-		rubber_clear_callback();
-		state = NUM3;
-		selpnt=db_ident_region2(currep, x1,yy1, x2, y2, 2, my_layer, comp, pinst);
+	    if (token == NUMBER) {
+		if (getnum(lp, "STRETCH", &x2, &y2)) {
+		    rubber_clear_callback();
+		    state = NUM3;
+		    selpnt=db_ident_region2(currep, x1,yy1, x2, y2, 2, my_layer, comp, pinst);
 
-		if (selpnt == NULL) {
-		    printf("Nothing here to wrap.  Try \"SHO #E\"?\n");
+		    if (selpnt == NULL) {
+			printf("Nothing here to wrap.  Try \"SHO #E\"?\n");
+			state = END;
+		    } else { 
+			 tmp=selpnt;
+			 while (tmp!=NULL) {
+			    if (tmp->p != NULL) {
+				db_highlight(tmp->p);
+			    }
+			    tmp = tmp->next;
+			 }
+		    }
+	        } else {
 		    state = END;
-		} else { 
-		     tmp=selpnt;
-		     while (tmp!=NULL) {
-			if (tmp->p != NULL) {
-			    db_highlight(tmp->p);
-			}
-			tmp = tmp->next;
-		     }
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 3\n");
 		printf("STR: cancelling POINT\n");
 	        state = END;
 	    } else {
@@ -224,244 +235,250 @@ int com_stretch(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM3:		/* get pair of xy coordinates */
-            if (getnum(lp, "STRETCH", &x3, &y3)) {
-		state = NUM4;
+	    if (token == NUMBER) {
+		if (getnum(lp, "STRETCH", &x3, &y3)) {
+		    state = NUM4;
 
-		if (mode == POINT) {
-		    db_highlight(p_best);		/* unhighlight it */
+		    if (mode == POINT) {
+			db_highlight(p_best);		/* unhighlight it */
 
-		    switch (p_best->type) {
+			switch (p_best->type) {
 
-		    case ARC:
+			case ARC:
 
-		        /* we are running through every point in 
-			   the component looking for the one closest
-			   to the pick point ... */
+			    /* we are running through every point in 
+			       the component looking for the one closest
+			       to the pick point ... */
 
-			xsel = xmin = &(p_best->u.a->x1);
-			ysel = ymin = &(p_best->u.a->y1);
-			dbest = d = dist(*xmin-x3, *ymin-y3);
+			    xsel = xmin = &(p_best->u.a->x1);
+			    ysel = ymin = &(p_best->u.a->y1);
+			    dbest = d = dist(*xmin-x3, *ymin-y3);
 
-			xmin = &(p_best->u.a->x2);
-			ymin = &(p_best->u.a->y2);
-			d = dist(*xmin-x3, *ymin-y3);
-			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
+			    xmin = &(p_best->u.a->x2);
+			    ymin = &(p_best->u.a->y2);
+			    d = dist(*xmin-x3, *ymin-y3);
+			    if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
-			xmin = &(p_best->u.a->x3);
-			ymin = &(p_best->u.a->y3);
-			d = dist(*xmin-x3, *ymin-y3);
-			if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
+			    xmin = &(p_best->u.a->x3);
+			    ymin = &(p_best->u.a->y3);
+			    d = dist(*xmin-x3, *ymin-y3);
+			    if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case CIRC:
-
-			xsel = &(p_best->u.c->x2);
-			ysel = &(p_best->u.c->y2);
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case INST:
-
-			xsel = &(p_best->u.i->x);
-			ysel = &(p_best->u.i->y);
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case LINE:
-			coords = p_best->u.l->coords;
-
-			xsel = &(coords->coord.x);
-			ysel = &(coords->coord.y);
-			distance = dist((*xsel)-x3, (*ysel)-y3);
-			dbest = distance;
-			coords = coords->next;
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-
-			while(coords != NULL) {
-			    xselold = xsel;
-			    yselold = ysel;
-			    xsel = &(coords->coord.x);
-			    ysel = &(coords->coord.y);
-
-			    /* test midpoint */
-			    distance = dist( ((*xsel+*xselold)/2.0)-x3,
-					     ((*ysel+*yselold)/2.0)-y3 );
-			    if (distance < dbest) {
-				dbest = distance;
-				selpnt_clear(&selpnt);
-			        selpnt_save(&selpnt, xsel, ysel, NULL);
-			        selpnt_save(&selpnt, xselold, yselold, NULL);
-			    }
-
-			    distance = dist(*xsel-x3, *ysel-y3);
-			    if (distance < dbest) {
-				dbest = distance;
-				selpnt_clear(&selpnt);
-			        selpnt_save(&selpnt, xsel, ysel, NULL);
-			    }
-			    coords = coords->next;
-			}
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case NOTE:
-
-			xsel = &(p_best->u.n->x);
-			ysel = &(p_best->u.n->y);
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case POLY:
-			coords = p_best->u.p->coords;
-
-			xselfirst = xsel = &(coords->coord.x);		/* first point */
-			yselfirst = ysel = &(coords->coord.y);
-
-			distance = dist((*xsel)-x3, (*ysel)-y3);
-			dbest = distance;
-			coords = coords->next;
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-
-			while(coords != NULL) {
-			    xselold = xsel;
-			    yselold = ysel;
-			    xsel = &(coords->coord.x);
-			    ysel = &(coords->coord.y);
-
-			    /* test midpoint */
-			    distance = dist( ((*xsel+*xselold)/2.0)-x3,	/* mid points */
-					     ((*ysel+*yselold)/2.0)-y3 );
-			    if (distance < dbest) {
-				dbest = distance;
-				selpnt_clear(&selpnt);
-				selpnt_save(&selpnt, xsel, ysel, NULL);
-				selpnt_save(&selpnt, xselold, yselold, NULL);
-			    }
-
-			    distance = dist(*xsel-x3, *ysel-y3);		/* next points */
-			    if (distance < dbest) {
-				dbest = distance;
-				selpnt_clear(&selpnt);
-				selpnt_save(&selpnt, xsel, ysel, NULL);
-			    }
-			    coords = coords->next;
-			}
-
-			distance = dist( ((*xsel+*xselfirst)/2.0)-x3,	/* between first/last */
-					 ((*ysel+*yselfirst)/2.0)-y3 );
-			if (distance < dbest) {
-			    dbest = distance;
 			    selpnt_clear(&selpnt);
 			    selpnt_save(&selpnt, xsel, ysel, NULL);
-			    selpnt_save(&selpnt, xselfirst, yselfirst, NULL);
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case CIRC:
+
+			    xsel = &(p_best->u.c->x2);
+			    ysel = &(p_best->u.c->y2);
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case INST:
+
+			    xsel = &(p_best->u.i->x);
+			    ysel = &(p_best->u.i->y);
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case LINE:
+			    coords = p_best->u.l->coords;
+
+			    xsel = &(coords->coord.x);
+			    ysel = &(coords->coord.y);
+			    distance = dist((*xsel)-x3, (*ysel)-y3);
+			    dbest = distance;
+			    coords = coords->next;
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+
+			    while(coords != NULL) {
+				xselold = xsel;
+				yselold = ysel;
+				xsel = &(coords->coord.x);
+				ysel = &(coords->coord.y);
+
+				/* test midpoint */
+				distance = dist( ((*xsel+*xselold)/2.0)-x3,
+						 ((*ysel+*yselold)/2.0)-y3 );
+				if (distance < dbest) {
+				    dbest = distance;
+				    selpnt_clear(&selpnt);
+				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				    selpnt_save(&selpnt, xselold, yselold, NULL);
+				}
+
+				distance = dist(*xsel-x3, *ysel-y3);
+				if (distance < dbest) {
+				    dbest = distance;
+				    selpnt_clear(&selpnt);
+				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				}
+				coords = coords->next;
+			    }
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case NOTE:
+
+			    xsel = &(p_best->u.n->x);
+			    ysel = &(p_best->u.n->y);
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case POLY:
+			    coords = p_best->u.p->coords;
+
+			    xselfirst = xsel = &(coords->coord.x);		/* first point */
+			    yselfirst = ysel = &(coords->coord.y);
+
+			    distance = dist((*xsel)-x3, (*ysel)-y3);
+			    dbest = distance;
+			    coords = coords->next;
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+
+			    while(coords != NULL) {
+				xselold = xsel;
+				yselold = ysel;
+				xsel = &(coords->coord.x);
+				ysel = &(coords->coord.y);
+
+				/* test midpoint */
+				distance = dist( ((*xsel+*xselold)/2.0)-x3,	/* mid points */
+						 ((*ysel+*yselold)/2.0)-y3 );
+				if (distance < dbest) {
+				    dbest = distance;
+				    selpnt_clear(&selpnt);
+				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				    selpnt_save(&selpnt, xselold, yselold, NULL);
+				}
+
+				distance = dist(*xsel-x3, *ysel-y3);		/* next points */
+				if (distance < dbest) {
+				    dbest = distance;
+				    selpnt_clear(&selpnt);
+				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				}
+				coords = coords->next;
+			    }
+
+			    distance = dist( ((*xsel+*xselfirst)/2.0)-x3,	/* between first/last */
+					     ((*ysel+*yselfirst)/2.0)-y3 );
+			    if (distance < dbest) {
+				dbest = distance;
+				selpnt_clear(&selpnt);
+				selpnt_save(&selpnt, xsel, ysel, NULL);
+				selpnt_save(&selpnt, xselfirst, yselfirst, NULL);
+			    }
+
+
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			case RECT:
+			    xmin = &(p_best->u.r->x1);
+			    xmax = &(p_best->u.r->x2);
+			    ymin = &(p_best->u.r->y1);
+			    ymax = &(p_best->u.r->y2);
+
+			    /* check the eight sides + vertices */
+
+			    xsel = xmin, ysel = ymin;
+			    dbest = d = dist(*xmin-x3, *ymin-y3);
+
+			    d = dist(*xmin-x3, *ymax-y3);
+			    if (d < dbest) { xsel = xmin, ysel = ymax; dbest = d; }
+
+			    d = dist(*xmax-x3, *ymax-y3);
+			    if (d < dbest) { xsel = xmax, ysel = ymax; dbest = d; }
+
+			    d = dist(*xmax-x3, *ymin-y3);
+			    if (d < dbest) { xsel = xmax, ysel = ymin; dbest = d; }
+
+			    d = dist(*xmin-x3, ((*ymin+*ymax)/2.0)-y3);
+			    if (d < dbest) { xsel = xmin, ysel = NULL; dbest = d; }
+
+			    d = dist(*xmax-x3, ((*ymin+*ymax)/2.0)-y3);
+			    if (d < dbest) { xsel = xmax, ysel = NULL; dbest = d; }
+
+			    d = dist(((*xmin+*xmax)/2.0)-x3, *ymin-y3);
+			    if (d < dbest) { xsel = NULL, ysel = ymin; dbest = d; }
+
+			    d = dist(((*xmin+*xmax)/2.0)-x3, *ymax-y3);
+			    if (d < dbest) { xsel = NULL, ysel = ymax; dbest = d; }
+			    
+			    selpnt_clear(&selpnt);
+			    /* selpnt_save(xsel, ysel); */
+
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+
+			    rubber_set_callback(stretch_draw_point);
+
+			    /* xwin_draw_circle(*xsel, *ysel); */
+
+			    state = NUM4;
+			    break;
+
+			case TEXT:
+
+			    xsel = &(p_best->u.t->x);
+			    ysel = &(p_best->u.t->y);
+			    selpnt_clear(&selpnt);
+			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    rubber_set_callback(stretch_draw_point);
+
+			    state = NUM4;
+			    break;
+
+			default:
+			    printf("    not a stretchable object\n");
+			    db_notate(p_best);	/* print information */
+			    state = START;
+			    break;
 			}
-
-
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    case RECT:
-			xmin = &(p_best->u.r->x1);
-			xmax = &(p_best->u.r->x2);
-			ymin = &(p_best->u.r->y1);
-			ymax = &(p_best->u.r->y2);
-
-			/* check the eight sides + vertices */
-
-			xsel = xmin, ysel = ymin;
-			dbest = d = dist(*xmin-x3, *ymin-y3);
-
-			d = dist(*xmin-x3, *ymax-y3);
-			if (d < dbest) { xsel = xmin, ysel = ymax; dbest = d; }
-
-			d = dist(*xmax-x3, *ymax-y3);
-			if (d < dbest) { xsel = xmax, ysel = ymax; dbest = d; }
-
-			d = dist(*xmax-x3, *ymin-y3);
-			if (d < dbest) { xsel = xmax, ysel = ymin; dbest = d; }
-
-			d = dist(*xmin-x3, ((*ymin+*ymax)/2.0)-y3);
-			if (d < dbest) { xsel = xmin, ysel = NULL; dbest = d; }
-
-			d = dist(*xmax-x3, ((*ymin+*ymax)/2.0)-y3);
-			if (d < dbest) { xsel = xmax, ysel = NULL; dbest = d; }
-
-			d = dist(((*xmin+*xmax)/2.0)-x3, *ymin-y3);
-			if (d < dbest) { xsel = NULL, ysel = ymin; dbest = d; }
-
-			d = dist(((*xmin+*xmax)/2.0)-x3, *ymax-y3);
-			if (d < dbest) { xsel = NULL, ysel = ymax; dbest = d; }
-			
-			selpnt_clear(&selpnt);
-			/* selpnt_save(xsel, ysel); */
-
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-
-			rubber_set_callback(stretch_draw_point);
-
-			/* xwin_draw_circle(*xsel, *ysel); */
-
-			state = NUM4;
-			break;
-
-		    case TEXT:
-
-			xsel = &(p_best->u.t->x);
-			ysel = &(p_best->u.t->y);
-			selpnt_clear(&selpnt);
-			selpnt_save(&selpnt, xsel, ysel, NULL);
-			rubber_set_callback(stretch_draw_point);
-
-			state = NUM4;
-			break;
-
-		    default:
-			printf("    not a stretchable object\n");
-			db_notate(p_best);	/* print information */
-			state = START;
-			break;
+			/* p_prev=p_best; */
+			selpnt_save(&selpnt, NULL, NULL, p_best);
+		    } else { 			/* mode == REGION */
+			 db_highlight(p_best);  // RCW unhighlight
+			 if (selpnt) {
+			    if (debug) {
+			       printf("setting rubber callback\n");
+			    }
+			    rubber_set_callback(stretch_draw_point);
+			 } else {
+			    if (debug) {
+			       printf("NOT setting rubber callback\n");
+			    }
+			 }
 		    }
-		    /* p_prev=p_best; */
-		    selpnt_save(&selpnt, NULL, NULL, p_best);
-		} else { 			/* mode == REGION */
-		     if (selpnt) {
-			if (debug) {
-			   printf("setting rubber callback\n");
-			}
-		        rubber_set_callback(stretch_draw_point);
-		     } else {
-			if (debug) {
-			   printf("NOT setting rubber callback\n");
-			}
-		     }
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 4\n");
 		printf("STR: cancelling POINT\n");
 	        state = END;
 	    } else {
@@ -470,17 +487,22 @@ int com_stretch(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM4:		/* get pair of xy coordinates */
-            if (getnum(lp, "STRETCH", &x4, &y4)) {
-		if (x3 == x4 && y3 == y4) {
-		    stretch_draw_point(x3, y3, 0);
+	    if (token == NUMBER) {
+		if (getnum(lp, "STRETCH", &x4, &y4)) {
+		    if (x3 == x4 && y3 == y4) {
+			stretch_draw_point(x3, y3, 0);
+		    }
+		    state = START;
+		    rubber_clear_callback();
+		    currep->modified++;
+		    need_redraw++;
+	        } else {
+		    state = END;
 		}
-		state = START;
-		rubber_clear_callback();
-		currep->modified++;
-		need_redraw++;
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 5\n");
 		printf("aborting STR\n");
 		rubber_clear_callback();
 		stretch_draw_point(x3, y3, 0);
@@ -496,12 +518,13 @@ int com_stretch(LEXER *lp, char *arg)
 	case END:
 	default:
 	    if (token == EOC || token == CMD) {
+		if (debug) printf("recognized EOC 6\n");
 		;
 	    } else {
 		token_flush_EOL(lp);
 	    }
 	    done++;
-	    /* rubber_clear_callback(); */
+	    rubber_clear_callback(); 
 	    break;
 	}
     }

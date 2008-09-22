@@ -104,6 +104,7 @@ depend: ${OBJ}
 #-----------------------------------------------------------------
 # DO NOT PUT ANY DEPENDENCIES AFTER THE NEXT LINE -- they will go away
 # DO NOT DELETE OR MODIFY THIS LINE -- make depend uses it
+1expr.o: expr.h
 com_add.o: db.h
 com_add.o: lex.h
 com_add.o: rlgetc.h
@@ -206,6 +207,7 @@ com_undo.o: token.h
 com_undo.o: xwin.h
 com_window.o: db.h
 com_window.o: eprintf.h
+com_window.o: equate.h
 com_window.o: lex.h
 com_window.o: rlgetc.h
 com_window.o: rubber.h
@@ -237,6 +239,7 @@ eprintf.o: eprintf.h
 equate.o: db.h
 equate.o: equate.h
 ev.o: ev.h
+expr.o: expr.h
 geom_arc.o: db.h
 geom_arc.o: lex.h
 geom_arc.o: opt_parse.h
@@ -318,9 +321,18 @@ selpnt.o: db.h
 stack.o: stack.h
 stipple.o: db.h
 stipple.o: xwin.h
+token2.o: db.h
+token2.o: eprintf.h
+token2.o: ev.h
+token2.o: expr.h
+token2.o: lex.h
+token2.o: rlgetc.h
+token2.o: token.h
+token2.o: xwin.h
 token.o: db.h
 token.o: eprintf.h
 token.o: ev.h
+token.o: expr.h
 token.o: lex.h
 token.o: rlgetc.h
 token.o: token.h

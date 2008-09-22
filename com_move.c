@@ -165,53 +165,57 @@ int com_move(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (!getnum(lp, "MOVE", &x1, &y1)) {
-	        state = END;
-	    } else {
-		if (mode == POINT) {
-		    /* printf("calling db_ident, 
-		        %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp); */
-		    if ((selpnt=db_ident2(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
-			for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
-			    if (tmp->p != NULL) {
-				db_highlight(tmp->p);
+	    if (token == NUMBER) {
+		if (getnum(lp, "MOVE", &x1, &y1)) {
+		    if (mode == POINT) {
+			/* printf("calling db_ident, 
+			    %g %g 1 layer:%d comp:%d\n", x1, y1, my_layer, comp); */
+			if ((selpnt=db_ident2(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+				if (tmp->p != NULL) {
+				    db_highlight(tmp->p);
+				}
 			    }
+			    state = NUM3;
+			} else {
+			    printf("nothing here to move... try SHO command?\n");
+			    state = START;
 			}
-			state = NUM3;
-		    } else {
-			printf("nothing here to move... try SHO command?\n");
-			state = START;
-		    }
-                 } else {		           /* mode == REGION */
-                    rubber_set_callback(move_draw_box);
-                    state = NUM2; 
-		 }
+		     } else {		           /* mode == REGION */
+			rubber_set_callback(move_draw_box);
+			state = NUM2; 
+		     }
+		} else {
+		    state = END;
+		}
 	    }
 	    break;
         case NUM2:              /* get pair of xy coordinates */
-	    if (!getnum(lp, "MOVE", &x2, &y2)) {
-	        state = END;
-	    } else {
-		rubber_clear_callback();
-                selpnt=db_ident_region2(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
-		if (selpnt == NULL) {
-		    printf("nothing here to move... try SHO command?\n");
-		    state = END;
+	    if (token == NUMBER) {
+		if (getnum(lp, "MOVE", &x2, &y2)) {
+		    rubber_clear_callback();
+		    selpnt=db_ident_region2(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
+		    if (selpnt == NULL) {
+			printf("nothing here to move... try SHO command?\n");
+			state = END;
+		    } else {
+			tmp=selpnt;
+			while (tmp!=NULL) {
+			    if (tmp->p != NULL) {
+				db_highlight(tmp->p);
+			    }
+			    tmp = tmp->next;
+			 }
+			state = NUM3;
+		    }
 		} else {
-		    tmp=selpnt;
-                    while (tmp!=NULL) {
-                        if (tmp->p != NULL) {
-                            db_highlight(tmp->p);
-                        }
-                        tmp = tmp->next;
-                     }
-		    state = NUM3;
+		    state = END;
 		}
 	    }
             break;
 	case NUM3:
 	    if (!getnum(lp, "MOVE", &x3, &y3)) {
-	        if ((token = token_look(lp,&word)) == EOC) {
+		if (token == EOC) {
 		    token_get(lp,&word); 
 		    rubber_clear_callback();
 		    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
@@ -264,7 +268,7 @@ int com_move(LEXER *lp, char *arg)
 		    }
 		    x4old=x4; y4old=y4;
 	        } 
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		token_get(lp,&word); 

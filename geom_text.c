@@ -112,30 +112,34 @@ int mode;
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (getnum(lp, "TEXT", &x1, &y1)) {
-		    if (strlen(str) == 0) {
-		    	printf("ADD %s: no string given\n", type);
-			state = START;
-		    } else {
-			if (numadd && xold == x1 && yold == y1) {
-			    printf("   suppressing double click\n");
+		if (token == NUMBER) {
+		    if (getnum(lp, "TEXT", &x1, &y1)) {
+			if (strlen(str) == 0) {
+			    printf("ADD %s: no string given\n", type);
+			    state = START;
 			} else {
-			    rubber_clear_callback();
-			    if (mode) {
-				db_add_text(currep, *layer, opt_copy(&opts),
-				    strsave(str), x1, y1);
+			    if (numadd && xold == x1 && yold == y1) {
+				printf("   suppressing double click\n");
 			    } else {
-				db_add_note(currep, *layer, opt_copy(&opts),
-				    strsave(str), x1, y1);
+				rubber_clear_callback();
+				if (mode) {
+				    db_add_text(currep, *layer, opt_copy(&opts),
+					strsave(str), x1, y1);
+				} else {
+				    db_add_note(currep, *layer, opt_copy(&opts),
+					strsave(str), x1, y1);
+				}
+				rubber_set_callback(draw_text);
+				need_redraw++;
 			    }
-			    rubber_set_callback(draw_text);
-			    need_redraw++;
+			    xold=x1; yold=y1;
+			    numadd++;
+			    state = START;
 			}
-			xold=x1; yold=y1;
-			numadd++;
-			state = START;
-	            }
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		    } else {
+		  	state = END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD %s\n", type);

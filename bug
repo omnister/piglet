@@ -1,14 +1,20 @@
+#
+# this file is a reminder to myself for things that I've noticed that need
+# to be implemented, fixed or thought about.  Things with [x] checks at the
+# end have been completed.  Goal is to clean up all outstanding issues 
+# before version 1.0
+#
 
+[ ] problem in com_wrap()? 
 [ ] should all commands do snapxy on coordinates?  Currently handtyped coordinates
     are not snapped.
 
-[ ] ADD I should suppress double click (don't add two insts)
-
-[ ] MACROS, SCRIPTPATH
+[+] MACROS, SCRIPTPATH (partially done)
 [ ] -next, -region -point soft keys
-[ ] fix highlighting - just make it white, no x-box
+[ ] fix highlighting - just make it white, no xor-box
 
-[ ] make CHA :MX,MY,etc work on polygons - just redefine with transformed pts - will need pivot point
+[ ] make CHA :MX,MY,etc work on polygons - just redefine with transformed pts - will
+    need pivot point  (not so important since we can WRAP them and then CHA them).
 
 [ ] Retrieving something that shares cells with something already being edited
     creates lots of error messages (eg: retrieve slic followed by tone).  
@@ -21,14 +27,9 @@
 [ ] make text stretchable
 
 [ ] do_line using static array for reverse boundary storage
-
-[ ] limit testing on EQU :F (stipple fill argument)
-
-[ ] polygons ignore :W option
-[ ] postscript doesn't carry through line types
+[ ] polygons ignore :W option (can implement as a line type?)
 [ ] bailing out of STR with ";" leaves bounding box
 [ ] saving FOO as BAR should purge any BAR in memory, or at least ask 
-[ ] cop, del :r leaves rubber box if terminated with ";"
 [ ] COPY :R should show individual components, not just bounding box
 [ ] need autosave feature - time?  number of commands?
 
@@ -36,31 +37,33 @@
 
 [ ] CHA :R for fixing font size, orientation, changing graph label font sizes en-masse, etc.
 
-[ ] some problem printing portrait mode postscript, doesn't fit boundary properly (UGGH!).
-[ ] need an alternative way to draw an arc: center, first point of circumference, second point
-    on circumference, draw cw.
+[ ] need an alternative way to draw an arc: center, first point of circumference, second point on circumference, draw cw.
 
 [ ] there is a lag between showing primitives and sub-cells with win :n-1, win:n9
-[ ] postscript output should be hierarchical
-[ ] postscript output should allow filled objects
-
+[ ] postscript doesn't carry through line types
+[ ] postscript output should optionally be hierarchical
+[ ] postscript output should allow filled objects 
 [ ] warning message on exit if proc modified from readin.
-[ ] make text filled.
 
-[ ] double clicking on the same point makes a bogus entry in the .d file
-    when adding lines
-
+[x] ADD I should suppress double click (don't add two insts)
+[x] some problem printing portrait mode postscript, doesn't fit boundary properly
+[x] make text filled.
+[x] ADD L: double clicking on same point makes single line in the .d file
+[x] cop :r leaves rubber box if terminated with ";"
+[x] del :r leaves rubber box if terminated with ";"
+[x] limit testing on EQU :F (stipple fill argument)
+[x] archiving something with a wrap NONAME instance saves the noname.
 [x] SMASH :R
 [x] make comma optional between coords
 [x] IDE should print out a line that can be cut/pasted
 [x] WIN :Z
-[x] retrieving smorgasboard results in bad ident bounding boxes until saved and re-edited
+[x] retrieving smorgasboard bad ident bounding boxes until saved and re-edited
 [x] Double wrapping deletes an item! (was bad update of dbhead->prev)
 [x] ; doesn't terminate COP
 [x] EQU :O<layer> in edit mode  (superceded by WIN :O<layer>);
 [x] cut/paste operation in text window
 [x] when you do a readin, the global static from token_get is destroyed
-[x] token_get(lp, char *word)  crashes when word is bigger than buffer supplied by caller.
+[x] token_get(lp, char *word)  crashes when word is bigger than caller's buffer 
 
 [x] ENV variables
 [x] SHELL out

@@ -163,22 +163,26 @@ int com_delete(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:
-            if (getnum(lp, "DELETE", &x1, &y1)) {
-		if (mode == POINT) {
-		    if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
-		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
-			db_notate(p_best);	    /* print out id information */
-			db_unlink_component(currep, p_best); 
-			need_redraw++;
+	    if (token==NUMBER) {
+		if (getnum(lp, "DELETE", &x1, &y1)) {
+		    if (mode == POINT) {
+			if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
+			if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			    db_notate(p_best);	    /* print out id information */
+			    db_unlink_component(currep, p_best); 
+			    need_redraw++;
+			} else {
+			    printf("nothing here to delete...try SHO command?\n");
+			}
+			state = START;
 		    } else {
-			printf("nothing here to delete...try SHO command?\n");
+			rubber_set_callback(delete_draw_box);
+			state = NUM2;
 		    }
-		    state = START;
-		} else {
-                    rubber_set_callback(delete_draw_box);
-                    state = NUM2;
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token== EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DEL: cancelling POINT\n");
@@ -189,23 +193,27 @@ int com_delete(LEXER *lp, char *arg)
 	    }
 	    break;
         case NUM2:
-            if (getnum(lp, "DELETE", &x2, &y2)) {	// getnum may destoy lookahead
-                state = START;
-                rubber_clear_callback();
-                need_redraw++;
+	    if (token == NUMBER ) {
+		if (getnum(lp, "DELETE", &x2, &y2)) {	
+		    state = START;
+		    rubber_clear_callback();
+		    need_redraw++;
 
-                printf("DELETE: got %g,%g %g,%g\n", x1, y1, x2, y2);
-                stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
-		if (stack == NULL) {
-                    printf("nothing to delete, try SHO #E?\n");
-                } else {
-		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-			db_notate(p_best);	    /* print out id information */
-			db_unlink_component(currep, p_best); 
-			need_redraw++;
+		    printf("DELETE: got %g,%g %g,%g\n", x1, y1, x2, y2);
+		    stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
+		    if (stack == NULL) {
+			printf("nothing to delete, try SHO #E?\n");
+		    } else {
+			while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
+			    db_notate(p_best);	    /* print out id information */
+			    db_unlink_component(currep, p_best); 
+			    need_redraw++;
+			}
 		    }
-                }
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+		} else {
+		    state = END;
+		}
+	    } else if (token == EOL) {
                 token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("DELETE: cancelling POINT\n");
@@ -223,6 +231,7 @@ int com_delete(LEXER *lp, char *arg)
 		token_flush_EOL(lp);
 	    }
 	    done++;
+	    rubber_clear_callback();
 	    break;
 	}
     }

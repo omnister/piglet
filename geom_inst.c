@@ -63,7 +63,9 @@ int add_inst(LEXER *lp, char *inst_name)
 {
     enum {START,NUM1,END} state = START;
 
-    double x1, y1;
+    double x1, y1;	// pick value
+    double xold, yold;	// previous pick value to suppress double pics
+    int numpicks=0;	// number of picks
     int done=0;
     TOKEN token;
     OPTS opts;
@@ -187,13 +189,21 @@ int add_inst(LEXER *lp, char *inst_name)
 		}
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
-		if (getnum(lp, "INST", &x1, &y1)) {
-		    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
-		    rubber_clear_callback();
-		    need_redraw++;
-		    rubber_set_callback(draw_inst_bb);
-		    state = START;
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		if (token == NUMBER) {
+		    if (getnum(lp, "INST", &x1, &y1)) {
+			// supress double clicks
+			if (numpicks==0 || ((xold != x1) && (yold != y1))) {  
+			    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
+			    rubber_clear_callback();
+			    need_redraw++;
+			    rubber_set_callback(draw_inst_bb);
+			}
+		        numpicks++; xold=x1; yold=y1;
+			state = START;
+	            } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 

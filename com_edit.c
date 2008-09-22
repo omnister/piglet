@@ -80,22 +80,26 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	    break;
 	case NUM1:
 	    if (debug) printf("in NUM2\n");
-            if (getnum(lp, "EDIT", &x1, &y1)) {
-		if ((p_best=db_ident(currep, x1,y1,1, 0, INST, 0)) != NULL) {
-		    db_notate(p_best);	    /* print out id information */
-		    db_highlight(p_best);
-		    xmin=p_best->xmin;
-		    xmax=p_best->xmax;
-		    ymin=p_best->ymin;
-		    ymax=p_best->ymax;
-		    printf("%s\n", p_best->u.i->name);
-		    strncpy(name, p_best->u.i->name, 128);
-		    state = DOIT; 
-		} else {
-		    printf("nothing here to EDIT... try SHO command?\n");
-		    state = START;
+	    if (token == NUMBER ) {
+		if (getnum(lp, "EDIT", &x1, &y1)) {
+		    if ((p_best=db_ident(currep, x1,y1,1, 0, INST, 0)) != NULL) {
+			db_notate(p_best);	    /* print out id information */
+			db_highlight(p_best);
+			xmin=p_best->xmin;
+			xmax=p_best->xmax;
+			ymin=p_best->ymin;
+			ymax=p_best->ymax;
+			printf("%s\n", p_best->u.i->name);
+			strncpy(name, p_best->u.i->name, 128);
+			state = DOIT; 
+		    } else {
+			printf("nothing here to EDIT... try SHO command?\n");
+			state = START;
+		    }
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: cancelling EDIT\n");

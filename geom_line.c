@@ -90,20 +90,24 @@ int add_line(LEXER *lp, int *layer)
 	    case NUM1:		/* get pair of xy coordinates */
 		xold=x1;
 		yold=yy1;
-		if (getnum(lp, "LINE", &x1, &yy1)) {
-		    nsegs++;
+		if (token == NUMBER) {
+		    if (getnum(lp, "LINE", &x1, &yy1)) {
+			nsegs++;
+			
+			CP = coord_new(x1,yy1);
 		    
-		    CP = coord_new(x1,yy1);
-		
-		    coord_append(CP, x1,yy1);
-		    setlockpoint(x1,yy1);
+			coord_append(CP, x1,yy1);
+			setlockpoint(x1,yy1);
 
-		    if (debug) coord_print(CP);
+			if (debug) coord_print(CP);
 
-		    rubber_set_callback(draw_line);
-		    x2 = x1; y2 = yy1;
-		    state = NUM2;
-		} else if ((token=token_look(lp, &word)) == EOL) {
+			rubber_set_callback(draw_line);
+			x2 = x1; y2 = yy1;
+			state = NUM2;
+		    } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -116,44 +120,51 @@ int add_line(LEXER *lp, int *layer)
 		if (debug) printf("in num2\n");
 		xold=x2;
 		yold=y2;
-		if (getnum(lp, "LINE", &x2, &y2)) {
-		    nsegs++;
+		if (token == NUMBER) {
+		    if (getnum(lp, "LINE", &x2, &y2)) {
+			nsegs++;
 
-		    /* two identical clicks terminates this line */
-		    /* but keeps the ADD L command in effect */
+			/* two identical clicks terminates this line */
+			/* but keeps the ADD L command in effect */
 
-		    if (nsegs==1 && x1==x2 && yy1==y2) {
-	    		rubber_clear_callback();
-			printf("error: a line must have finite length\n");
-			state = START;
-		    } else if (x2==xold && y2==yold && nsegs) {
-		    	if (debug) coord_print(CP);
-			printf("dropping coord\n");
-			coord_drop(CP);  /* drop last coord */
-		    	if (debug) coord_print(CP);
-			db_add_line(currep, *layer, opt_copy(&opts), CP);
-			need_redraw++;
-			rubber_clear_callback();
-			state = START;
-		    } else {
-			rubber_clear_callback();
-			if (debug) printf("doing append\n");
+			if (nsegs==1 && x1==x2 && yy1==y2) {
+			    rubber_clear_callback();
+			    printf("error: a line must have finite length\n");
+			    state = START;
+			} else if (x2==xold && y2==yold && nsegs) {
+			    if (debug) coord_print(CP);
+			    printf("dropping coord\n");
+			    coord_drop(CP);  /* drop last coord */
+			    if (debug) coord_print(CP);
+			    if (debug) printf("got %d coords\n", coord_count(CP));
+			    if (coord_count(CP) > 1) {
+				db_add_line(currep, *layer, opt_copy(&opts), CP);
+			    }
+			    need_redraw++;
+			    rubber_clear_callback();
+			    state = START;
+			} else {
+			    rubber_clear_callback();
+			    if (debug) printf("doing append\n");
 
-			/* only apply lock if this is an interactive edit */
-			/* and not if reading from a file */
+			    /* only apply lock if this is an interactive edit */
+			    /* and not if reading from a file */
 
-			if (strcmp(lp->name, "STDIN") == 0) {
-			    lockpoint(&x2, &y2, currep->lock_angle); 
+			    if (strcmp(lp->name, "STDIN") == 0) {
+				lockpoint(&x2, &y2, currep->lock_angle); 
+			    }
+
+			    coord_swap_last(CP, x2, y2);
+			    coord_append(CP, x2,y2);
+			    setlockpoint(x2,y2);
+			    rubber_set_callback(draw_line);
+			    rubber_draw(x2,y2, 0);
+			    state = NUM2;	/* loop till EOC */
 			}
-
-			coord_swap_last(CP, x2, y2);
-			coord_append(CP, x2,y2);
-			setlockpoint(x2,y2);
-			rubber_set_callback(draw_line);
-			rubber_draw(x2,y2, 0);
-			state = NUM2;	/* loop till EOC */
+		    } else {
+		        state = END;
 		    }
-		} else if ((token=token_look(lp, &word)) == EOL) {
+		} else if (token == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == BACK) {
 		    token_get(lp,&word); 	/* eat it */

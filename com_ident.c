@@ -142,28 +142,32 @@ int com_identify(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:
-            if (getnum(lp, "IDENT", &x1, &y1)) {
-		if (mode==POINT) {
-		    if (p_prev != NULL) {
-			db_highlight(p_prev);	/* unhighlight it */
-			p_prev = NULL;
-		    }
-		    if ((p_best=db_ident(currep, x1,y1,0, my_layer, comp , pinst)) != NULL) {
-			db_highlight(p_best);	
-			printdef(stdout, p_best, NULL);
-			db_notate(p_best);	/* print information */
-			area = db_area(p_best);
-			if (area >= 0) {
-			    printf("   area = %g\n", area);
+	    if (token == NUMBER) {
+		if (getnum(lp, "IDENT", &x1, &y1)) {
+		    if (mode==POINT) {
+			if (p_prev != NULL) {
+			    db_highlight(p_prev);	/* unhighlight it */
+			    p_prev = NULL;
 			}
-			p_prev=p_best;
+			if ((p_best=db_ident(currep, x1,y1,0, my_layer, comp , pinst)) != NULL) {
+			    db_highlight(p_best);	
+			    printdef(stdout, p_best, NULL);
+			    db_notate(p_best);	/* print information */
+			    area = db_area(p_best);
+			    if (area >= 0) {
+				printf("   area = %g\n", area);
+			    }
+			    p_prev=p_best;
+			}
+			state = START;
+		    } else {			/* mode == REGION */
+			rubber_set_callback(ident_draw_box);
+			state = NUM2;
 		    }
-		    state = START;
-		} else {			/* mode == REGION */
-		    rubber_set_callback(ident_draw_box);
-		    state = NUM2;
+	        } else {
+		    state = END;
 		}
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");
@@ -174,23 +178,27 @@ int com_identify(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM2:
-            if (getnum(lp, "IDENT", &x2, &y2)) {
-		state = START;
-		rubber_clear_callback();
+	    if (token == NUMBER) {
+		if (getnum(lp, "IDENT", &x2, &y2)) {
+		    state = START;
+		    rubber_clear_callback();
 
-		printf("IDENT: got %g,%g %g,%g\n", x1, y1, x2, y2);
-		stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
-		while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
-		    db_highlight(p_best);	
-		    printdef(stdout, p_best, NULL);
-		    db_notate(p_best);		/* print information */
-		    area = db_area(p_best);
-		    if (area >= 0) {
-			printf("   area = %g\n", area);
+		    printf("IDENT: got %g,%g %g,%g\n", x1, y1, x2, y2);
+		    stack=db_ident_region(currep, x1,y1, x2, y2, 0, my_layer, comp, pinst);
+		    while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
+			db_highlight(p_best);	
+			printdef(stdout, p_best, NULL);
+			db_notate(p_best);		/* print information */
+			area = db_area(p_best);
+			if (area >= 0) {
+			    printf("   area = %g\n", area);
+			}
 		    }
+		    need_redraw++;
+	        } else {
+		    state = END;
 		}
-		need_redraw++;
-	    } else if ((token=token_look(lp, &word)) == EOL) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");

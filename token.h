@@ -59,7 +59,7 @@ extern int lookup_command(char *name);
 #define EDI 4
 
 extern TOKEN  token_get(LEXER *lp, char ** word);
-extern TOKEN  token_look();
+extern TOKEN  token_look(LEXER *lp, char **word);
 extern int    token_unget(LEXER *lp, TOKEN token, char *word); 
 extern LEXER *token_stream_open( FILE *fp, char *name );
 extern int    token_stream_close( LEXER *lp );

@@ -16,7 +16,7 @@ OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
    com_point.o com_show.o com_area.o com_wrap.o com_smash.o \
    readmenu.o com_edit.o com_stretch.o com_undo.o postscript.o \
    lock.o path.o stack.o selpnt.o license.o stipple.o com_purge.o \
-   ev.o com_shell.o
+   ev.o com_shell.o expr.o
    
 
 TARS=QUICKSTART AAA_README COPYING \
@@ -31,7 +31,7 @@ rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c ev.h com_shell.c
+ev.c ev.h com_shell.c expr.c
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
@@ -221,6 +221,7 @@ coords.o: db.h
 db.o: db.h
 db.o: eprintf.h
 db.o: ev.h
+db.o: lex.h
 db.o: readfont.h
 db.o: rlgetc.h
 db.o: rubber.h
@@ -310,6 +311,7 @@ readmenu.o: db.h
 readmenu.o: readmenu.h
 rlgetc.o: db.h
 rlgetc.o: eprintf.h
+rlgetc.o: token.h
 rlgetc.o: xwin.h
 rubber.o: rubber.h
 selpnt.o: db.h
