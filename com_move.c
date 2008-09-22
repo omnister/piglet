@@ -34,7 +34,7 @@ int com_move(LEXER *lp, char *arg)
     char *word;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
-    int debug=0;
+    int debug=1;
     int valid_comp=0;
     int i;
     int mode=POINT;
@@ -264,7 +264,7 @@ int com_move(LEXER *lp, char *arg)
 		    }
 		    x4old=x4; y4old=y4;
 	        } 
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		token_get(lp,&word); 

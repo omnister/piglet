@@ -95,7 +95,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    printf("nothing here to EDIT... try SHO command?\n");
 		    state = START;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: cancelling EDIT\n");

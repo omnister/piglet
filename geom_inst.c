@@ -193,7 +193,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		    need_redraw++;
 		    rubber_set_callback(draw_inst_bb);
 		    state = START;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 

@@ -103,7 +103,7 @@ int add_line(LEXER *lp, int *layer)
 		    rubber_set_callback(draw_line);
 		    x2 = x1; y2 = yy1;
 		    state = NUM2;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -153,7 +153,7 @@ int add_line(LEXER *lp, int *layer)
 			rubber_draw(x2,y2, 0);
 			state = NUM2;	/* loop till EOC */
 		    }
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == BACK) {
 		    token_get(lp,&word); 	/* eat it */

@@ -163,7 +163,7 @@ int com_identify(LEXER *lp, char *arg)
 		    rubber_set_callback(ident_draw_box);
 		    state = NUM2;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");
@@ -190,7 +190,7 @@ int com_identify(LEXER *lp, char *arg)
 		    }
 		}
 		need_redraw++;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");

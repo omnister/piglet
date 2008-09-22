@@ -34,7 +34,7 @@ int com_delete(LEXER *lp, char *arg)
     DB_DEFLIST *p_best;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
-    int debug=1;
+    int debug=0;
     int done=0;
     int mode=POINT;
 
@@ -178,7 +178,7 @@ int com_delete(LEXER *lp, char *arg)
                     rubber_set_callback(delete_draw_box);
                     state = NUM2;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DEL: cancelling POINT\n");
@@ -189,7 +189,7 @@ int com_delete(LEXER *lp, char *arg)
 	    }
 	    break;
         case NUM2:
-            if (getnum(lp, "DELETE", &x2, &y2)) {
+            if (getnum(lp, "DELETE", &x2, &y2)) {	// getnum may destoy lookahead
                 state = START;
                 rubber_clear_callback();
                 need_redraw++;
@@ -205,7 +205,7 @@ int com_delete(LEXER *lp, char *arg)
 			need_redraw++;
 		    }
                 }
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
                 token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("DELETE: cancelling POINT\n");

@@ -184,7 +184,7 @@ int com_stretch(LEXER *lp, char *arg)
 		    rubber_set_callback(stretch_draw_box);
 		    state = NUM2;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("STR: cancelling POINT\n");
@@ -213,8 +213,7 @@ int com_stretch(LEXER *lp, char *arg)
 			tmp = tmp->next;
 		     }
 		}
-
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("STR: cancelling POINT\n");
@@ -460,7 +459,7 @@ int com_stretch(LEXER *lp, char *arg)
 			}
 		     }
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("STR: cancelling POINT\n");
@@ -479,7 +478,7 @@ int com_stretch(LEXER *lp, char *arg)
 		rubber_clear_callback();
 		currep->modified++;
 		need_redraw++;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("aborting STR\n");

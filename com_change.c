@@ -153,7 +153,7 @@ int com_change(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:		/* get pair of xy coordinates */
-	    if (getnum(lp, "CHA", &x1, &y1)) {
+	    if (getnum(lp, "CHA", &x1, &y1)) {		// getnum may destroy lookahead
 		if (debug) printf("got comp %d, layer %d\n", comp, my_layer);
 		if (p_best != NULL) {
 		    db_highlight(p_best); 	/* unhighlight it */
@@ -180,7 +180,7 @@ int com_change(LEXER *lp, char *arg)
 		    printf("nothing here to change...try SHO command?\n");
 		}
 		state = OPT;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = END;	

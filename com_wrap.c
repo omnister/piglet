@@ -165,7 +165,7 @@ int com_wrap(LEXER *lp, char *arg)
 	    if (debug) printf("in NUM1\n");
             if (getnum(lp, "WRAP", &x1, &y1)) {
 		state = NUM2; 
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WRAP: cancelling POINT\n");
@@ -181,7 +181,7 @@ int com_wrap(LEXER *lp, char *arg)
             if (getnum(lp, "WRAP", &x2, &y2)) {
 		rubber_set_callback(wrap_draw_box);
                 state = NUM3;
-            } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
                 token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("IDENT: cancelling POINT\n");
@@ -265,7 +265,7 @@ int com_wrap(LEXER *lp, char *arg)
 		    need_redraw++;
 		}
 		state = END;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WRAP: cancelling POINT\n");

@@ -105,7 +105,7 @@ int com_window(LEXER *lp, char *arg)
             if (getnum(lp, "WIN", &x1, &y1)) {
 		rubber_set_callback(draw_bounds);
 		state = NUM3;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WIN: cancelling WIN\n");
@@ -117,7 +117,7 @@ int com_window(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM3:		/* get pair of xy coordinates */
-            if ((token == NUMBER) && getnum(lp, "WIN", &x2, &y2)) {
+            if (getnum(lp, "WIN", &x2, &y2)) {
 		state = START;
 		// token_get(lp, &word);
 		// sscanf(word, "%lf", &y2);	/* scan it in */
@@ -133,7 +133,7 @@ int com_window(LEXER *lp, char *arg)
 		    fit = 0;
 		    scale = 1.0;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("WIN: doing pan\n");

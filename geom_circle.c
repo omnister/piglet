@@ -67,7 +67,7 @@ int add_circ(LEXER *lp, int *layer)
 		if (getnum(lp, "CIRCLE", &x1, &y1)) {
 		    rubber_set_callback(draw_circle);
 		    state = NUM2;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
@@ -82,7 +82,7 @@ int add_circ(LEXER *lp, int *layer)
 		    db_add_circ(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
 		    rubber_clear_callback();
 		    need_redraw++;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp, &word); /* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 

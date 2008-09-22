@@ -72,7 +72,7 @@ int *layer;
 		if (debug) printf("in num1\n");
                 if (getnum(lp, "ARC", &x1, &yy1)) {
 		    state = NUM2;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -86,7 +86,7 @@ int *layer;
                 if (getnum(lp, "ARC", &x2, &y2)) {
 		    rubber_set_callback(draw_arc);
 		    state = NUM3;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -102,7 +102,7 @@ int *layer;
 		    need_redraw++;
 		    rubber_clear_callback();
 		    state=START;
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 

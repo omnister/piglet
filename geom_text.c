@@ -135,7 +135,7 @@ int mode;
 			numadd++;
 			state = START;
 	            }
-		} else if (token == EOL) {
+		} else if ((token=token_look(lp, &word)) == EOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD %s\n", type);

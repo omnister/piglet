@@ -1203,7 +1203,7 @@ DB_DEFLIST *p;			/* return the area of component p */
 void db_notate(p)
 DB_DEFLIST *p;			/* print out identifying information */
 {
-    int debug=1;
+    int debug=0;
 
     if (p == NULL) {
     	printf("db_notate: no component!\n");

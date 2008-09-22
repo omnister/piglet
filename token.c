@@ -349,25 +349,25 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
     int done=0;
     TOKEN token;
     char *word;
-    int state = 1;
+    int state = 0;
     int debug = 0;
 
     if (debug) printf("in getnum\n");
 	
-    token = token_look(lp,&word);
-    if (token!=NUMBER) {
-       return(0);
-    }
-
-
     while(!done) {
 	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
-	if (token==CMD) {
-	    state=4;
-	} 
 
 	switch(state) {	
+	case 0:
+	    if (token == NUMBER) {
+		state = 1;
+	    } else if (token == EOL) {
+		token_get(lp,&word); 	/* just ignore it */
+	    } else {
+	    	return(0);
+	    }
+	    break;
 	case 1:		/* get pair of xy coordinates */
 	    if (debug) printf("in NUM1\n");
 	    if (token == NUMBER) {

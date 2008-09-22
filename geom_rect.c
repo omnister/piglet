@@ -70,7 +70,7 @@ int add_rect(LEXER *lp, int *layer)
             if (getnum(lp, "RECT", &x1, &y1)) {
 		rubber_set_callback(draw_box);
                 state = NUM2;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("   cancelling ADD RECT\n");
@@ -91,7 +91,7 @@ int add_rect(LEXER *lp, int *layer)
 		}
 		rubber_clear_callback();
 		need_redraw++; 
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("ADD RECT: cancelling ADD RECT\n");

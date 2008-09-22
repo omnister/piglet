@@ -182,7 +182,7 @@ int com_smash(LEXER *lp, char *arg)
 		    rubber_set_callback(smash_draw_box);
 		    state = NUM2;
 		}
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("SMASH: cancelling POINT\n");
@@ -206,7 +206,7 @@ int com_smash(LEXER *lp, char *arg)
 		    smashrep(p_best);
 		}
 		need_redraw++;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {
 		token_get(lp,&word);     /* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("SMASH: cancelling POINT\n");

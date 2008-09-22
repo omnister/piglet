@@ -56,10 +56,10 @@ int com_distance(LEXER *lp, char *arg)
 	    }
 	    break;
 	case NUM1:
-            if (getnum(lp, "DISTANCE", &x1, &yy1)) {
+            if (getnum(lp, "DISTANCE", &x1, &yy1)) {		// getnum may destroy lookahead
 		rubber_set_callback(draw_dist);
 		state = NUM2;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {	// so call token_look again 
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");
@@ -77,7 +77,7 @@ int com_distance(LEXER *lp, char *arg)
 		360.0*atan2(y2-yy1, x2-x1)/(2.0*M_PI));
 		rubber_clear_callback();
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if ((token=token_look(lp, &word)) == EOL) {	// so call token_look again
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");

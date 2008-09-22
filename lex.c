@@ -795,7 +795,7 @@ char *arg;
     int done=0;
     char cmd[256];
     char *word;
-    int debug=1;
+    int debug=0;
     char *s = NULL;
     char *suffix=".png";
     char *conv="pnmtopng";
