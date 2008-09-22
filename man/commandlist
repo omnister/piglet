@@ -1116,8 +1116,8 @@ and uses line type 0 (solid).
 .SS OPTIONS
 .TP
 .I <color>
-an integer from 1-7 or one of the characters "WRGBCMY" signifying 
-white, red, green, blue, cyan, magenta or yellow
+an integer from 1-9 or one of the characters "WRGBCMYLD" signifying 
+white, red, green, blue, cyan, magenta, yellow, light grey and dark grey.
 .TP
 .I <pen>
 an integer from 1-7 to specify a plot pen, or 0 to suppress plotting.
@@ -1495,7 +1495,10 @@ without re-entering the option.
 When selecting by point, an <xysel> selects and highlights the component
 to be moved.  A bounding box is displayed after the <xyref> reference
 point is given.  The box tracks the mouse until the final location of
-the reference point is given by <xynewref>. 
+the reference point is given by <xynewref>.  Either a double click on
+<xynewwref> or an EOC will finalize the move.  Until finalized, multiple
+<xynewref> points can be given to fine tune the placement.  EOC does not
+terminate the command, but will still allow for further MOVes to be made.
 
 The :R options allows selection by region.  A bounding box is selected
 with <xy1> and <xy2>.  A rubberband rectangle will be displayed once

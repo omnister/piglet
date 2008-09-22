@@ -76,7 +76,7 @@ int com_copy(LEXER *lp, char *arg)
 */
 
     while(!done) {
-	token = token_look(lp,word);
+	token = token_look(lp,&word);
 	if (debug) printf("got %s: %s\n", tok2str(token), word);
 	if (token==CMD) {
 	    state=END;

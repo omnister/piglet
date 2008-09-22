@@ -92,7 +92,7 @@ COMMAND commands[] =
     	"EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:O] [:B|:D|:S|:I] [<label>] <layer>"},
     {"EXIT", com_exit, "leave an EDIT, PROCESS, or SEARCH subsystem",
     	"EXI <EOC>"},
-    {"$FILES", com_files, "purge named files",
+    {"FILES", com_files, "purge named files",
 	"$FILES <cellname1> <cellname2> .... <EOC>"},
     {"FSIZE", com_fsize, "Set the default font size for text and notes",
     	"FSI [<fontsize>]"},

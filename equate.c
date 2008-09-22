@@ -50,12 +50,13 @@ int initialize_equates() {
 
     return(0);
 }
-static char *COLORTAB =  "WWRGBCMY";
+
+static char *COLORTAB =  "WWRGBCMYLD";
 static char *LINETYPE =  "SDB34567";
 static char *MASKTYPE =  "BDSI";
 
 int equate2color(int c) {
-    if (c <= 7) {
+    if (c <= 9) {
         return(COLORTAB[c]);
     } else {
     	return(c+'0');

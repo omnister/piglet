@@ -2,36 +2,21 @@
 [ ] should all commands do snapxy on coordinates?  Currently handtyped coordinates
     are not snapped.
 
-[x] when you do a readin, the global static from token_get is destroyed
-[x] token_get(lp, char *word)  crashes when word is bigger than buffer supplied by caller.
-
-[x] ENV variables
-[x] SHELL out
-[ ] SMASH :R
 [ ] ADD I should suppress double click (don't add two insts)
 
-[ ] ; doesn't terminate COP
-
-[ ] EQU :O<layer> in edit mode
-[ ] cut/paste operation in text window
 [ ] MACROS, SCRIPTPATH
 [ ] -next, -region -point soft keys
 [ ] fix highlighting - just make it white, no x-box
 
-[ ] make CHA :MX,MY,etc work on polygons - just redraw with transformed pts
-[ ] retrieving slic and tone one after the other results in "unresolvable references to DOT"
+[ ] make CHA :MX,MY,etc work on polygons - just redefine with transformed pts - will need pivot point
 
-[x] make comma optional between coords
-[x] IDE should print out a line that can be cut/pasted
-[x] WIN :Z
-[x] retrieving smorgasboard results in bad ident bounding boxes until saved and re-edited
-[x] Double wrapping deletes an item! (was bad update of dbhead->prev)
+[ ] Retrieving something that shares cells with something already being edited
+    creates lots of error messages (eg: retrieve slic followed by tone).  
 
 [ ] fixed coredump in db_ident2 by eliminating a selpnt_clear() call at the
     expense of possible memory leak.  partially fixed it by doing selpnt_clear
     in com_move().  Should get rid of multiple uses of selpnt address in
     com_move and com_stretch.  all calls to selpnt_clear() should be in one place.
-
 
 [ ] make text stretchable
 
@@ -49,12 +34,40 @@
 
 [ ] SMA is funny, requiring a double click, but not EOC.  think about better definition.
 
-[ ] CHA :R for fixing font size, orientation, etc.
-[ ] change :r for changing graph label font sizes en-masse, etc.
+[ ] CHA :R for fixing font size, orientation, changing graph label font sizes en-masse, etc.
 
 [ ] some problem printing portrait mode postscript, doesn't fit boundary properly (UGGH!).
 [ ] need an alternative way to draw an arc: center, first point of circumference, second point
     on circumference, draw cw.
+
+[ ] there is a lag between showing primitives and sub-cells with win :n-1, win:n9
+[ ] postscript output should be hierarchical
+[ ] postscript output should allow filled objects
+
+[ ] warning message on exit if proc modified from readin.
+[ ] make text filled.
+
+[ ] double clicking on the same point makes a bogus entry in the .d file
+    when adding lines
+
+[x] SMASH :R
+[x] make comma optional between coords
+[x] IDE should print out a line that can be cut/pasted
+[x] WIN :Z
+[x] retrieving smorgasboard results in bad ident bounding boxes until saved and re-edited
+[x] Double wrapping deletes an item! (was bad update of dbhead->prev)
+[x] ; doesn't terminate COP
+[x] EQU :O<layer> in edit mode  (superceded by WIN :O<layer>);
+[x] cut/paste operation in text window
+[x] when you do a readin, the global static from token_get is destroyed
+[x] token_get(lp, char *word)  crashes when word is bigger than buffer supplied by caller.
+
+[x] ENV variables
+[x] SHELL out
+
+[x] make newlines in text/note strings work
+
+[x] postscript has many duplicated lines
 
 [x] make window zoom in/out by middle clicking/hold and drag right/left.  Single middle click centers window.
 [x] clipping bug when large lower rectangle cuts bottom half of screen
@@ -93,28 +106,8 @@
 [x] smash, including autosmash should handle rotations and mirrors.
 [x] automatically smash NONAMES (added is_tmp_rep variable in db_tab definition and set to 1 for auto wraps insts)
 
-
 [x] if second point of add line is 0,0 will drop coord
-
-[ ] there is a lag between showing primitives and sub-cells with win :n-1, win:n9
-[ ] postscript output should be hierarchical
-[ ] postscript output should allow filled objects
-[x] postscript has many duplicated lines
-
-[x] make newlines in text/note strings work
-
 [x] search path for font,note,proc,menu
-
-[ ] warning message on exit if proc modified from readin.
-
-[ ] make text filled.
-
-[ ] Retrieving something that shares cells with something already being edited
-    creates lots of error messages.  Maybe fix this by allowing RET to be done
-    only from quiescent state?
-
-[ ] double clicking on the same point makes a bogus entry in the .d file
-    when adding lines
 
 [x] in .d files, WIN command sometimes has scientific notation for points close to zero
 

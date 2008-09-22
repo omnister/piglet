@@ -21,7 +21,7 @@ int com_area(LEXER *lp, char *arg)
 
     TOKEN token;
     char *word;
-    int debug=0;
+    int debug=1;
     int done=0;
     int valid_comp=0;
     int i;

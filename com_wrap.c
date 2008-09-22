@@ -28,7 +28,7 @@ int com_wrap(LEXER *lp, char *arg)
     int done=0;
     TOKEN token;
     char *word;
-    int debug=1;
+    int debug=0;
     int valid_comp=0;
     int i;
     DB_DEFLIST *p_best;

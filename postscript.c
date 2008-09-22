@@ -141,7 +141,8 @@ setting landscape
     fprintf(fp,"/c5 {0.900 0.000 0.900 srgb} bind def\n");
     fprintf(fp,"/c6 {0.900 0.900 0.000 srgb} bind def\n");
     fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c8 {0.000 0.000 0.960 srgb} bind def\n");
+    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
+    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
     fprintf(fp,"end\n");
     fprintf(fp,"save\n");
     fprintf(fp,"newpath\n");

@@ -237,12 +237,13 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		} else {
 		    rl_ungetc(lp,c);
 		    *w = '\0';
-        	    if ((str=EVget(lp->word)) == NULL) {
+        	    if (strncasecmp(lp->word,"FILES",5) == 0) {
+		    	return(CMD);
+        	    } else if ((str=EVget(lp->word)) == NULL) {
 		       lp->word[0]='\0';
 		    } else {
-		       if (debug) printf("pushedback: <%s>\n", str);
 		       // rl_ungets(lp, str);
-		       strcpy(lp->word, str);
+		       strcpy(lp->word, str);	// substitute definition
 		    }
     		    // w=lp->word;
 		    // *w='\0';
@@ -352,6 +353,12 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
     int debug = 0;
 
     if (debug) printf("in getnum\n");
+	
+    token = token_look(lp,&word);
+    if (token!=NUMBER) {
+       return(0);
+    }
+
 
     while(!done) {
 	token = token_look(lp,&word);

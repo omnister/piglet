@@ -34,7 +34,7 @@ int com_move(LEXER *lp, char *arg)
     char *word;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
-    int debug=1;
+    int debug=0;
     int valid_comp=0;
     int i;
     int mode=POINT;
