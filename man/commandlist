@@ -26,6 +26,22 @@ Piglet's interactive command environment is also a simple shell.  If you
 type the name of any executable that can be found in the $PATH variable,
 Piglet will run the program, displaying any output in the Piglet text window.
 
+.SS RCFILE
+
+At startup time, Piglet searches the $PIG_PATH for a file named "pigrc". 
+If found, Piglet will read the file for command input.  Any Piglet
+command can be placed in this file.  The contents will be executed just
+as if the user typed them.  The following example pigrc file sets the
+SHOW default to "#E", defines a two macros, and starts an EDI of the
+cell named "PLAN".  
+
+.nf
+    SET PIG_SHOW_DEFAULT "#E"
+    DEF wi "WIN :X.5;"
+    DEF wo "WIN :X2;"
+    EDI PLAN;
+.fi
+
 .SS EDITING
 Piglet initially displays a splash screen and sits at the MAIN> prompt
 waiting for commands.  Typing "EDI <device>" will either load the named 

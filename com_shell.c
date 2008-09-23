@@ -135,13 +135,13 @@ char *arg;
     while((token=token_get(lp, &word)) == OPT) {
 	switch (toupper(word[1])) {
 	    case 'E':
-		mode += 1;	/* limit to exported vars */
+		mode |= 1;	/* limit to exported vars */
 		break;
 	    case 'P':
-		mode += 2;	/* limit to private vars */
+		mode |= 2;	/* limit to private vars */
 		break;
 	    case 'M':
-		mode += 4;	/* limit to macro definitions */
+		mode |= 4;	/* limit to macro definitions */
 		break;
 	    default:
 		printf("SET: bad option: %s\n", word);
@@ -151,9 +151,6 @@ char *arg;
     }
     token_unget(lp, token, word);	
 
-    if (n==0) {		/* default is to print all env variables */
-       mode = 3;
-    }
 
     i=0;
     while((token=token_get(lp, &word)) == IDENT || token == QUOTE) {
@@ -162,9 +159,14 @@ char *arg;
 	i++;
     }
 
+    if (debug) printf("got var=%s, val=%s\n", var, val);
+
     if ((token != EOF && token != EOL && token != EOC) || i>2) {
        printf("SET: bad number of arguments\n");
     } else if (i==0) { 
+	if (n==0) {		/* default is to print all env variables */
+	   mode = 3;
+	}
 	EVprint(mode);
     } else if (i==1) { 
 	if ((str=EVget(var)) == NULL) {
@@ -177,7 +179,6 @@ char *arg;
 	    EVexport(var);
 	}
     }
-
     return (0);
 }
 

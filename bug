@@ -1,14 +1,18 @@
 #
-# this file is a reminder to myself for things that I've noticed that need
-# to be implemented, fixed or thought about.  Things with [x] checks at the
-# end have been completed.  Goal is to clean up all outstanding issues 
-# before version 1.0
+# This file is a reminder to myself for things that I've noticed that need
+# to be implemented, fixed or thought about.  Items checked [x] have been 
+# completed.  My goal is to clean up all outstanding issues before releasing
+# version 1.0.
 #
 
-[ ] plot and dump should take an output filename as a final option.
-[ ] should find and readin pigrc/.pigrc files
+[ ] implement $$ comments character (ignore to EOL)
 
-[ ] should save disk mod time and readin-time in db_tab for all cells. 
+[x] plot and dump should take an output filename as a final option.
+
+[x] find and readin pigrc/.pigrc files
+[ ] fix readin's reverse order.  Think about buffer capacity
+
+[ ] should store disk mod time and readin-time in db_tab for all cells. 
     Use to check if version on disk was changed since readin and before writing out. 
     If so, then give user a chance to write to an different name. 
     Re-editing a cell in memory should also invoke the check and ask:
@@ -22,7 +26,7 @@
 [ ] -next, -region -point soft keys
 [ ] fix highlighting - just make it white, no xor-box
 
-[ ] make CHA :MX,MY,etc work on polygons - just redefine with transformed pts - will
+[-] make CHA :MX,MY,etc work on polygons - just redefine with transformed pts - will
     need pivot point  (not so important since we can WRAP them and then CHA them).
 
 [ ] Retrieving something that shares cells with something already being edited

@@ -224,6 +224,7 @@ char **argv;
     EVset("PIG_SPLASH_REP", "piglogo");		/* startup logo file */
     EVset("PIG_FONT_SLANT", "0.0");		/* default for TSLANT command */
     EVset("PIG_FONT_SIZE", "10.0");		/* default for FSIZE command */
+    EVset("PIG_RC", "pigrc");			/* default piglet startup file */
 
     if (!EVinit()) {
     	 printf("can't initialize environment\n");
@@ -286,6 +287,15 @@ char **argv;
     rl_setprompt("");
 
     lp = token_stream_open(stdin,"STDIN");
+
+    // findfile(pig_path, EVget("PIG_RC"), buf, R_OK);
+    // if (buf[0] == '\0') {
+    // 	printf("Could not find any pigrc file\n");
+    // } else {
+    // 	fp=fopen(buf, "r");		// FIXME: check for ret code and print error
+    // 	rl_readin_file(fp);			
+    // }
+
     parse(lp);
     return(1);
 }

@@ -39,7 +39,7 @@ int findfile(const char *pathlist, const char *filename, char *retbuf, int mode)
     char full[1024];
     char *p, *q;
 
-    if (filename[0] != '\0') {
+    if (filename != NULL && filename[0] != '\0') {
 	strcpy(path,pathlist);
 	for (p=strtok(path, ":"); p!=NULL; p=strtok(NULL, ":")) {
 	    strcpy(buf, p);

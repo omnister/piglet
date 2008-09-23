@@ -79,7 +79,7 @@ int token_flush_EOL(LEXER *lp)
 {
     char *word;
     TOKEN token;
-    while ((token=token_get(lp, &word) != EOL)) {
+    while ((token=token_get(lp, &word) != EOL) && (token != EOF)) {
 	;
     }
     return(0);
@@ -98,7 +98,9 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 
     if (lp->bufp > 0) {		/* characters in pushback buffer */
 	strcpy(*word, lp->tokbuf[--(lp->bufp)].word);
-	free(lp->tokbuf[lp->bufp].word);
+	if ((lp->tokbuf[lp->bufp].word) != NULL) {
+	    free(lp->tokbuf[lp->bufp].word);
+	}
 	lp->tokbuf[lp->bufp].word = (char *) NULL;
 	return(lp->tokbuf[lp->bufp].tok);
     }

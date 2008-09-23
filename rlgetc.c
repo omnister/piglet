@@ -202,14 +202,14 @@ LEXER *lp;
     int c;
     static char *linep = NULL;
 
-    if (lp->pbufp != 0) {
+    if (lp->pbufp != 0) {				// pushback ?
 	lp->pbufp--;
 	c = lp->pushback[lp->pbufp];
-    } else if (lp->token_stream != stdin) {
+    } else if (lp->token_stream != stdin) {		// non-interactive readin
 	c=getc(lp->token_stream);
-    } else if(linep != NULL && *linep != '\0') {
+    } else if(linep != NULL && *linep != '\0') {	// eating current line?
 	c=*(linep++);
-    } else {
+    } else {						// get a new line
 	if (prompt != NULL) {
 	    lineread=rl_gets(prompt);
 	} else {
