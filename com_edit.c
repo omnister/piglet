@@ -11,15 +11,19 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "lex.h"
+#include "ev.h"
 
 extern void do_win();		/* found in com_window */
 extern int readin();
+extern int com_show();
+extern int com_echo();
 
 int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 {
     TOKEN token;
     int done=0;
     char *word;
+    char *p;
     char name[128];
     char buf[128];
     int debug=0;
@@ -222,6 +226,11 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		;
 	    } else {
 		token_flush_EOL(lp);
+	    }
+	    if ((p=EVget("PIG_SHOW_DEFAULT")) != NULL) {
+		sprintf(buf, "SHOW %s;", p);
+		printf("Evaluating $PIG_SHOW_DEFAULT: \"SHOW %s\"\n", p);
+		rl_ungets(lp, buf);
 	    }
 	    done++;
 	    break;

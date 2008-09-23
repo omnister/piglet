@@ -1,12 +1,12 @@
 N: PIGLET
 U: pig
-D: execute the piglet graphical editor under X11
+D: execute the Piglet graphical editor under X11
 T: {
 .SS STARTUP
 Piglet is started by typing "pig" in a terminal window.  Piglet then
 creates an associated graphical window under X11.  The editor scans
 both the graphic window and the original shell window that you used to
-start piglet.  You can either type coordinates, or click them with the
+start Piglet.  You can either type coordinates, or click them with the
 mouse.  The shell window should have a prompt "MAIN>" at which commands
 may be typed.  Anywhere that Piglet expects a number, you can enter
 a mathematical expression instead.  Expressions may use the operators
@@ -18,7 +18,7 @@ example, you can add a rectangle to the current device with the command:
 When entering points with the mouse, the clicks ALWAYS snap to the grid,
 giving a powerful way to enter precise coordinates.
 
-All the piglet built-in commands are case-insensitive and can be
+All the Piglet built-in commands are case-insensitive and can be
 abbreviated to just three letters with one exception.  DISPLAY must be
 entered as "DISP" or "disp" to distinguish it from "DIStance". 
 
@@ -51,7 +51,7 @@ location while zooming it is possible to quickly zoom into any portion
 of a drawing.  Zooming can be used in the middle of an ADD command.  For
 example, one can mouse the starting coordinate of a line, zoom across
 the design, and then click the next coordinate.   If you prefer not to
-use the scroll wheel, piglet can also zoom by clicking on a point with the
+use the scroll wheel, Piglet can also zoom by clicking on a point with the
 middle button and dragging either right or left to zoom in and out.
 
 The WINDOW command can be used to adjust the current view.  "WIN :F;"
@@ -197,12 +197,12 @@ the SET command.
 .I PATH "dir1<:dir2><:dir3>..."
 The PATH variable is used by the SHELL command to search for UNIX commands.
 It is initialized by the calling shell, but can be queried and modified within 
-PIGLET to customize the search path.  
+Piglet to customize the search path.  
 When entering a new PATH the argument to SET will need to be quoted to
-protect the ":" delimiters from being interpreted as PIGLET options. 
+protect the ":" delimiters from being interpreted as Piglet options. 
 .TP
 .I PIG_PATH "dir1<:dir2><:dir3>..."
-The search path used for loading all of PIGLET's auxiliary files such as
+The search path used for loading all of Piglet's auxiliary files such as
 NOTEDATA, TEXTDATA, MENUDATA, PROCDATA, etc.   
 Defaults to "./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet"
 .TP
@@ -219,6 +219,12 @@ Any parameters left off will remain set to the default grid specification of "10
 .TP
 .I PIG_GRID_COLOR "<num>" ; default is "3"
 Used to set the default grid color when editing new cells.
+.TP
+.I PIG_SHOW_DEFAULT "<SHO_CMD_OPTIONS>" ; default is not defined
+If defined, then the SHOW command will be run with <SHO_CMD_OPTIONS>
+as an argument immediately after opening any new drawing.
+A casual user may wish to set PIG_SHOW_DEFAULT to "#E" so that
+all layers are visible and editable by default.
 .TP
 .I PIG_MENUDATA_FILE "<filename>" ; default is "MENUDATA_V"
 Sets the name used for loading the Menu definition file.
@@ -240,13 +246,13 @@ The cell should already exist in PIG_PATH.
 
 Since Piglet is under active development, it is distributed to run under
 the gdb() debugger.  The script "pig" runs pig.bin under gdb() When
-running under gdb() most run-time errors and signals will kill piglet
+running under gdb() most run-time errors and signals will kill Piglet
 and print out a backtrace of the stack.  If you would like help fixing a
 bug, please send the last few lines of the printout to Rick Walker
 <walker AT omnisterra DOT com> along with some description of what
 caused the bug. 
 
-When running pig.bin() without the debugger, piglet traps and ignores
+When running pig.bin() without the debugger, Piglet traps and ignores
 most signals, printing a notification to the terminal: "caught 2:
 Interrupt.  Use QUIT command to end program".  However, the special
 signal SIGQUIT elicits the message: "caught 3: Quit.  do it again and
@@ -1025,7 +1031,7 @@ S: basic functionality
 T: {
 Echo will print all of its arguments up to the next <EOC> to the screen. 
 <EOC> can be either a newline or a semicolon.  It is a handy way to get
-output from a piglet script, or to read the value of a shell variable. 
+output from a Piglet script, or to read the value of a shell variable. 
 For example, "ECHO $PATH" will print out the value of the current PATH
 environment variable.  
 }
@@ -1134,7 +1140,7 @@ gives "small-broken".
 .I :F<fill>
 Specify the fill pattern for polygons, rectangles, circles and lines, arcs with
 width.  0 gives an unfilled outline drawing. 1 gives a solid fill.  Since
-piglet draws by overwriting on the display, two overlapping solid fill patterns
+Piglet draws by overwriting on the display, two overlapping solid fill patterns
 will cause the lower pattern to be obscured.  Fill patterns 2-7 are stipple
 patterns designed to have minimal pixel overlap and will allow overlapped
 geometries to be visible.  ":F2" gives a 45 degree rising crosshatch.  ":F3"
@@ -1676,7 +1682,7 @@ drawing.
 The SAVE file is a human readable transcript of the exact commands that
 you typed and moused to create the cell in the first place.  You can
 edit this file (carefully) and the textual changes will take effect next
-time you start a new piglet and read in the definition.  The
+time you start a new Piglet and read in the definition.  The
 "<cellname>.d" file contains the definition of the cell <cellname>. 
 If <cellname> includes other cells, they will only be called by name in
 <cellname>.d and will not be defined unless the program can find the
@@ -1707,7 +1713,7 @@ D: Modify the search path
 S: unimplemented (moderate)
 
 N: SET
-D: Set or read a piglet environment variable
+D: Set or read a Piglet environment variable
 U: SET [:P] [:E]
 U: SET [<variable> [<value]] 
 D: Set environment variables
@@ -1726,19 +1732,19 @@ the value of the second argument.
 
 If a UNIX command is run by typing its name at the command prompt or as
 an argument to the SHELL command, then its enviroment will be initialized
-to include all of PIGLET's exported variables. 
+to include all of Piglet's exported variables. 
 
 .SS VARIABLES USED BY PIGLET
 .TP
 .I PATH "dir1<:dir2><:dir3>..."
 The PATH variable is used by the SHELL command to search for UNIX commands.
 It is initialized by the calling shell, but can be queried and modified within 
-PIGLET to customize the search path.  
+Piglet to customize the search path.  
 When entering a new PATH the argument to SET will need to be quoted to
-protect the ":" delimiters from being interpreted as PIGLET options. 
+protect the ":" delimiters from being interpreted as Piglet options. 
 .TP
 .I PIG_PATH "dir1<:dir2><:dir3>..."
-The search path used for loading all of PIGLET's auxiliary files such as
+The search path used for loading all of Piglet's auxiliary files such as
 NOTEDATA, TEXTDATA, MENUDATA, PROCDATA, etc.   
 Defaults to "./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet"
 .TP
@@ -1802,7 +1808,7 @@ U: SHELL [command string] <EOL>
 S: partial
 T: {
 Under most conditions, the user will not need to explicitly type the SHELL
-command. When you type a command at the text prompt, PIGLET searches for 
+command. When you type a command at the text prompt, Piglet searches for 
 an internal command of that name.  If it doesn't find one to execute, 
 then it looks through the $PATH variable to see if there is a UNIX command
 that can be executed.  If so, it spawns a subshell and runs the UNIX command
@@ -1810,13 +1816,13 @@ sending stdout to the terminal.  This is a handy facility for running the UNIX
 ls(1) command.
 
 If SHELL is typed with no command string is given, an interactive shell is created.
-When the shell is killed, control will return to the PIGLET command interpreter.
+When the shell is killed, control will return to the Piglet command interpreter.
 
 SHELL uses the $PATH variable to search for UNIX executables.  This
-variable is inheirited from the PIGLETs parent process, but may be
+variable is inheirited from the Piglet parent process, but may be
 queried and modified using the SET command.  When entering a new PATH
 the argument to SET will need to be quoted to protect the ":" delimiters
-from being interpreted as PIGLET options. 
+from being interpreted as Piglet options. 
 }
 
 N: SHOw
@@ -1834,6 +1840,16 @@ to browse critical files with Piglet.  No layers are modifiable unless
 explicitly unlocked with the SHOW command.  Changes to the SHOW settings
 only affect the component currently being edited.  SHOW settings remain
 with each component as long as the component is in memory. 
+
+Casual users may grow tired of typing "SHOW #E;" after every "EDIT".  The 
+default show setting may be overridden by setting the "PIGLET_SHOW_DEFAULT" 
+environment variable.  It can either be set and exported in the UNIX shell, or
+set from within Piglet using the SET command.  For example, invoking Piglet from
+the UNIX shell with
+.nf
+	sh> PIGLET_SHOW_DEFAULT="#E" pig
+.fi
+will cause all cells to be opened modifiable and visible by default.
 
 .SS EXAMPLES
 .TP
