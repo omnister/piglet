@@ -1414,7 +1414,7 @@ DB_TAB *cell;
     return(1);
 }
 
-int db_plot() {
+int db_plot(char *name) {
     BOUNDS bb;
     char buf[MAXFILENAME];
     double x1, y1, x2, y2;
@@ -1426,7 +1426,7 @@ int db_plot() {
 	return(0);
     }
 
-    snprintf(buf, MAXFILENAME, "%s.ps", currep->name);
+    snprintf(buf, MAXFILENAME, "%s.ps", name);
     printf("plotting postcript to %s\n", buf);
     fflush(stdout);
 

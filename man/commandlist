@@ -594,7 +594,7 @@ width of line
 
 N: ADD_TEXT
 D: Add text to the current device
-U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:J<justification] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
 
@@ -976,30 +976,31 @@ the entry of another command name.
 N: DUMp
 D: Dump the graphics window to a file
 S: PPM file only
-U: DUM [:F][:R][:T{bmp|gif|jpg|png|pgm|ppm|xbm}] <EOC>
+U: DUM [:F][:R][:T{bmp|gif|jpg|png|pgm|ppm|xbm}] <plotname> <EOC>
 T: {
 The DUMP command creates a dump of the current graphic window in the
-file "./<device_name>.<suffix>".  DUMP internally creates a raw netpbm
-(http://netpbm.sourceforge.net/) ppm-formatted image file, but is able
-to call external netpbm routines to convert the output to several other
-popular formats.  The format can be changed with the :T option to be one
-of: .bmp, .gif, .jpg, .pgm, .png, .ppm or .xbm.   The default format
-is .png.
+file "./<plotname>.<suffix>".  If <plotname> is not specified, the name
+of the current cell will be used instead.  DUMP internally creates a raw
+netpbm (http://netpbm.sourceforge.net/) ppm-formatted image file, but is
+able to call external netpbm routines to convert the output to several
+other popular formats.  The format can be changed with the :T option to
+be one of: .bmp, .gif, .jpg, .pgm, .png, .ppm or .xbm.  The default
+format is .png. 
 
 For most purposes, the .png format produces the smallest file size. 
-Dumping the demo file "PLAN" resulted in a 1megabyte .ppm, a 60k .jpg,
-a 10k .gif, and a 5kbyte .png file. PNG provided a 200:1 compression over
-the raw PPM file!
+Dumping the demo file "PLAN" resulted in a 1-megabyte .ppm, a 60k .jpg, a
+10k .gif, and a 5kbyte .png file.  PNG provided a 200:1 compression over
+the raw PPM file! 
 
 Remember that Piglet's command-line options do not allow blank space, so 
 ":Tgif" works, while ":T gif" is an error.
 
-The :R option swaps black and white pixels saving lots of black
-ink when for dumps that will be printed out on paper.
+The :R option swaps black and white pixels saving lots of black ink for
+dumps that will be printed out on paper. 
 
 .SS IMPLEMENTATION DETAILS
 Other image-file types can be easily added to the source code of the
-com_dump() routine if a suitable conversion program exists. 
+com_dump() routine if a suitable conversion program can be found.
 
 .SS OPTIONS
 .TP
@@ -1021,7 +1022,6 @@ Select various output image formats using one of
     :Tppm       Portable Pix Map format
     :Txbm       X11 windows bitmap format
 .fi
-
 }
 
 N: ECHo
@@ -1549,12 +1549,13 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a postscript plot of the current device
 S: letter size only
-U: PLO [:F] <EOC>
+U: PLO [:F] <plotname> <EOC>
 T: {
-The PLOT command creates a postscript dump of the current window
-in the file "./<device_name>.ps.  The file is suitable for printing
-on letter sized paper, and will automatically fit the drawing to
-either landscape or portrait depending on the shape of the drawing.
+The PLOT command creates a postscript dump of the current window in the
+file "./<plotname>.ps.  If the <plotname> is not specified, the name of
+the cell will be used instead.  The file is suitable for printing on
+letter sized paper, and will automatically fit the drawing to either
+landscape or portrait depending on the shape of the drawing. 
 
 PLOT with no arguments will plots just the currently visible portion of
 the device.  The ":F" option will fit the window to the device prior to

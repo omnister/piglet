@@ -794,6 +794,7 @@ char *arg;
     TOKEN token;
     int done=0;
     char cmd[256];
+    char name[256]="";
     char *word;
     int debug=0;
     char *s = NULL;
@@ -814,52 +815,14 @@ char *arg;
     // :T<dumptype> gif,tif,pnm,jpg...
     // :R (reverse video - swap black and white pixels)
 
+    strcpy(name,currep->name);
+
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_DUMP: got %s: %s\n", tok2str(token), word);
 	switch(token) {
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
 		done++;
-		break;
-	    case EOC:		/* end of command */
-		done++;
-
-		if (fit) {			/* fit the device */
-		   token_unget(lp, EOC, ";");
-		   token_unget(lp, OPT, ":F");
-		   com_window(lp, NULL);
-		}
-
-		xwin_raise_window();
-
-		/* FIXME: horrible kludge, we have to wait until the display is properly */
-		/* updated.  How do you know when everything has been properly sloshed */
-		/* through the server?  This is simply an empirical hack that works */
-		/* on my system.  There has to be a better way. */
-
-		for (i=0; i<=20; i++) {
-		     xwin_doXevent(&s);
-		}
-
-
-	        sprintf(cmd, "%s %s > %s%s", 
-			rev?"ppmchange black white white black |":"",
-			conv, currep->name, suffix);
-
-		if (debug) printf("doing %s\n", cmd);
-		if (xwin_dump_graphics(cmd) == -1) {
-		    sprintf(cmd, "rm -f %s%s", currep->name, suffix);
-		    system(cmd);
-		}
-
-		xwin_doXevent(&s);
-
-		if (fit) {			/* revert to old window params */
-		   token_unget(lp, EOC, ";");
-		   token_unget(lp, OPT, ":Z");
-		   com_window(lp, NULL);
-		}
-
 		break;
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
@@ -899,8 +862,49 @@ char *arg;
 		break;
 	    case EOL:		/* newline or carriage return */
 	    	break;	/* ignore */
-	    case NUMBER: 	/* number */
 	    case IDENT: 	/* identifier */
+	    	strcpy(name,word);
+		break;
+	    case EOC:		/* end of command */
+		done++;
+
+		if (fit) {			/* fit the device */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":F");
+		   com_window(lp, NULL);
+		}
+
+		xwin_raise_window();
+
+		/* FIXME: horrible kludge, we have to wait until the display is properly */
+		/* updated.  How do you know when everything has been properly sloshed */
+		/* through the server?  This is simply an empirical hack that works */
+		/* on my system.  There has to be a better way. */
+
+		for (i=0; i<=20; i++) {
+		     xwin_doXevent(&s);
+		}
+
+	        sprintf(cmd, "%s %s > %s%s", 
+			rev?"ppmchange black white white black |":"",
+			conv, name, suffix);
+
+		if (debug) printf("doing %s\n", cmd);
+		if (xwin_dump_graphics(cmd) == -1) {
+		    sprintf(cmd, "rm -f %s%s", currep->name, suffix);
+		    system(cmd);
+		}
+
+		xwin_doXevent(&s);
+
+		if (fit) {			/* revert to old window params */
+		   token_unget(lp, EOC, ";");
+		   token_unget(lp, OPT, ":Z");
+		   com_window(lp, NULL);
+		}
+
+		break;
+	    case NUMBER: 	/* number */
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
 	    case END:		/* end of file */
@@ -1671,6 +1675,7 @@ char *arg;
     TOKEN token;
     int done=0;
     char *word;
+    char name[128];
     int debug=0;
     int fit=0;
     extern void do_win();                /* found in com_window */
@@ -1681,6 +1686,8 @@ char *arg;
     	printf("not editing a file, nothing here to plot\n");
 	return(2);
     }
+
+    strcpy(name,currep->name);		// default is to name plot after current cell
 
     // some possible options
     // :F to do a fit before plotting, otherwise only plot current window view
@@ -1693,6 +1700,19 @@ char *arg;
 		token_unget(lp, token, word);
 		done++;
 		break;
+	    case OPT:		/* option */
+		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
+		    fit++;
+		} else {
+	    	    weprintf("bad option to PLOT: %s\n", word);
+		    return(-1);
+		}
+		break;
+	    case IDENT: 	/* identifier */
+		strcpy(name,word);
+	    	break;	
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
 	    case EOC:		/* end of command */
 		done++;
 
@@ -1702,7 +1722,7 @@ char *arg;
 		   com_window(lp, NULL);
 		}
 
-    		db_plot();
+    		db_plot(name);
 
 		if (fit) {			/* revert to old window params */
 		   token_unget(lp, EOC, ";");
@@ -1711,18 +1731,7 @@ char *arg;
 		}
 
 		break;
-	    case OPT:		/* option */
-		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
-		    fit++;
-		} else {
-	    	    weprintf("bad option to PLOT: %s\n", word);
-		    return(-1);
-		}
-		break;
-	    case EOL:		/* newline or carriage return */
-	    	break;	/* ignore */
 	    case NUMBER: 	/* number */
-	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
 	    case END:		/* end of file */

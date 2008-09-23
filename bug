@@ -5,6 +5,15 @@
 # before version 1.0
 #
 
+[ ] plot and dump should take an output filename as a final option.
+[ ] should find and readin pigrc/.pigrc files
+
+[ ] should save disk mod time and readin-time in db_tab for all cells. 
+    Use to check if version on disk was changed since readin and before writing out. 
+    If so, then give user a chance to write to an different name. 
+    Re-editing a cell in memory should also invoke the check and ask:
+    "Definition on disk has changed, discard memory copy and reread?  (y/n)"
+
 [ ] problem in com_wrap()? 
 [ ] should all commands do snapxy on coordinates?  Currently handtyped coordinates
     are not snapped.
