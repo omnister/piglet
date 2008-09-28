@@ -192,6 +192,7 @@ char **argv;
     char buf[128];
     char buf2[128];
     char *pig_path;
+    FILE *fp;
 
     /* make stdin unbuffered - without this cut/paste fails */
     setvbuf(stdin, NULL, _IONBF, 0);	
@@ -288,13 +289,14 @@ char **argv;
 
     lp = token_stream_open(stdin,"STDIN");
 
-    // findfile(pig_path, EVget("PIG_RC"), buf, R_OK);
-    // if (buf[0] == '\0') {
-    // 	printf("Could not find any pigrc file\n");
-    // } else {
-    // 	fp=fopen(buf, "r");		// FIXME: check for ret code and print error
-    // 	rl_readin_file(fp);			
-    // }
+    findfile(pig_path, EVget("PIG_RC"), buf, R_OK);
+    if (buf[0] == '\0') {
+    	printf("Could not find any pigrc file\n");
+    } else {
+    	fp=fopen(buf, "r");		// FIXME: check for ret code and print error
+    	printf("reading %s\n",buf);
+    	rl_readin_file(fp);			
+    }
 
     parse(lp);
     return(1);

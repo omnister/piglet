@@ -546,11 +546,12 @@ int procXevent()
 		XFlush(dpy);
 	    } else {
 	    	for (i=1; i<=num_menus; i++) {
-		  paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+		   paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
 	    	}
 		dosplash();
 		draw_grid(win, gcg, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
+		XFlush(dpy);
 	    }
 	}
 
@@ -590,7 +591,7 @@ char **s;
 {
     static int button_down=0;
     XEvent xe;
-    int j;
+    int i,j;
     int debug=0;
 
     static char buf[BUF_SIZE];
@@ -620,9 +621,13 @@ char **s;
 	    }
 	    XFlush(dpy);
 	} else {
+	    for (i=1; i<=num_menus; i++) {
+	       paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	    }
 	    dosplash();
 	    draw_grid(win, gcg, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
+	    XFlush(dpy);
 	}
     }
 
@@ -658,20 +663,20 @@ char **s;
 	    break;
 	case Expose:
 	    if (debug) printf("EVENT LOOP: got Expose\n");
-
-	    if (currep != NULL) {
-		xwin_window_set(
-		currep->vp_xmin, 
-		currep->vp_ymin,
-		currep->vp_xmax,
-		currep->vp_ymax );
-	    } else {
-		xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
-	    }
-
 	    if (xe.xexpose.count != 0)
-		break;
+ 		break;
+
 	    if (xe.xexpose.window == win) {
+		if (currep != NULL) {
+		    xwin_window_set(
+		    currep->vp_xmin, 
+		    currep->vp_ymin,
+		    currep->vp_xmax,
+		    currep->vp_ymax );
+		} else {
+		    xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
+		}
+
 		if (currep != NULL ) {
 		    draw_grid(win, gcg, currep->grid_xd, currep->grid_yd,
 			currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
@@ -680,7 +685,7 @@ char **s;
 			grid_xs, grid_ys, grid_xo, grid_yo);
 		}
 	    }  
-	
+
 	    for (j=1; j<=num_menus; j++) {
 		 if (menutab[j].pane == xe.xexpose.window) {
 		     paint_pane(xe.xexpose.window, menutab, gca, gcb, BLACK);

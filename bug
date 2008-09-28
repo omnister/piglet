@@ -5,12 +5,17 @@
 # version 1.0.
 #
 
+[ ] should periodically save cells/DEV.bak, when starting ask "crash rep found readin instead?"  
+[ ] moving notes doesn't keep outline visible
 [ ] implement $$ comments character (ignore to EOL)
+[ ] all CMDs should stay in CMD after EOC - only change state on another CMD
 
+[x] MOV :R shouldn't show all individual devices, just bounding box, too slow
+[x] MOV :R hangs up in "got EOL" loop;
 [x] plot and dump should take an output filename as a final option.
 
 [x] find and readin pigrc/.pigrc files
-[ ] fix readin's reverse order.  Think about buffer capacity
+[ ] all commands need to treat IDENT as a potential CMD
 
 [ ] should store disk mod time and readin-time in db_tab for all cells. 
     Use to check if version on disk was changed since readin and before writing out. 
@@ -99,7 +104,7 @@
 [x] dropping a rep with COP leaves highlighting on
 [x] mov should not obey lock angle
 [x] mov :r doesn't move ARCs!
-[x] MOV :R should show individual components, not just bounding box
+[x] MOV :R should show individual components, not just bounding box - bad idea!
 [x] don't let ADD note/text double enter on the same coord
 [x] make db_highlight show origin for instance, text, note, circles
 [x] str with a double click sets coord to 0,0 - should abort command

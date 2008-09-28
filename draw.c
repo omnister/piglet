@@ -1285,6 +1285,7 @@ DB_DEFLIST *p;			/* component to display */
 
     if (p == NULL) {
     	printf("db_highlight: no component!\n");
+	return;
     }
 
     switch (p->type) {

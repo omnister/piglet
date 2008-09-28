@@ -29,11 +29,11 @@ STACK *tmp;
 int com_copy(LEXER *lp, char *arg)		
 {
 
-    enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,NUM5,COM3,NUM6,NUM7,COM4,NUM8,END} state = START;
+    enum {START,NUM1,NUM2,NUM3,NUM4,END} state = START;
 
     TOKEN token;
     char *word;
-    int debug=0;
+    int debug=1;
     int done=0;
     int valid_comp=0;
     int i;
@@ -167,56 +167,30 @@ int com_copy(LEXER *lp, char *arg)
 		state = END;	/* error */
 	    }
 	    break;
-	case NUM1:		/* get pair of xy coordinates */
+	case NUM1:
 	    if (debug) printf("in NUM1\n");
 	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &x1);	/* scan it in */
-		state = COM1;
-	    } else if (token == EOL) {
-		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		state = END; 
-	    }
-	    break;
-	case COM1:		
-	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
-		token_get(lp,&word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,&word);
-		state = NUM2;
-	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM2:
-	    if (debug) printf("in NUM2\n");
-	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &y1);	/* scan it in */
-
-		if (mode == POINT) {
-		    if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
-			db_notate(p_best);	    /* print out id information */
-			db_highlight(p_best);
-			xmin=p_best->xmin;
-			xmax=p_best->xmax;
-			ymin=p_best->ymin;
-			ymax=p_best->ymax;
-			state = NUM5;
+		if (getnum(lp, "COPY", &x1, &y1)) {
+		    if (mode == POINT) {
+			if ((p_best=db_ident(currep, x1,y1,1,my_layer, comp, pinst)) != NULL) {
+			    db_notate(p_best);	    /* print out id information */
+			    db_highlight(p_best);
+			    xmin=p_best->xmin;
+			    xmax=p_best->xmax;
+			    ymin=p_best->ymin;
+			    ymax=p_best->ymax;
+			    state = NUM3;
+			} else {
+			    printf("nothing here that is copyable... try SHO command?\n");
+			    state = START;
+			}
 		    } else {
-			printf("nothing here that is copyable... try SHO command?\n");
-			state = START;
+			rubber_set_callback(copy_draw_box);
+			state = NUM2;
 		    }
 		} else {
-		    rubber_set_callback(copy_draw_box);
-                    state = NUM3;
-		}
+		    state = END;
+		} 
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
@@ -227,96 +201,43 @@ int com_copy(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-        case NUM3:              /* get pair of xy coordinates */
+        case NUM2:
             if (token == NUMBER) {
-                token_get(lp,&word);
-                sscanf(word, "%lf", &x2);       /* scan it in */
-                state = COM2;
-            } else if (token == EOL) {
-                token_get(lp,&word);     /* just ignore it */
-            } else if (token == EOC || token == CMD) {
-                rubber_clear_callback();
-                state = END;
-            } else {
-                token_err("IDENT", lp, "expected NUMBER", token);
-                rubber_clear_callback();
-                state = END;
-            }
-            break;
-        case COM2:
-            if (token == EOL) {
-                token_get(lp,&word); /* just ignore it */
-            } else if (token == COMMA) {
-                token_get(lp,&word);
-                state = NUM4;
-            } else {
-                token_err("IDENT", lp, "expected COMMA", token);
-                rubber_clear_callback();
-                state = END;
-            }
-            break;
-        case NUM4:
-            if (token == NUMBER) {
-                token_get(lp,&word);
-                sscanf(word, "%lf", &y2);       /* scan it in */
-                rubber_clear_callback();
-                xmin=x1;
-                xmax=x2;
-                ymin=y1;
-                ymax=y2;
-                stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
-                state = NUM5;
-            } else if (token == EOL) {
-                token_get(lp,&word);     /* just ignore it */
-            } else if (token == EOC || token == CMD) {
-                rubber_clear_callback();
-                printf("IDENT: cancelling POINT\n");
-                state = END;
-            } else {
-                rubber_clear_callback();
-                token_err("IDENT", lp, "expected NUMBER", token);
-                state = END;
-            }
-            break;
-	case NUM5:
-	    if (debug) printf("in NUM5\n");
-	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &x3);	/* scan it in */
-		state = COM3;
+		if (getnum(lp, "COPY", &x2, &y2)) {
+		    rubber_clear_callback();
+		    xmin=x1;
+		    xmax=x2;
+		    ymin=y1;
+		    ymax=y2;
+		    stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
+		    state = NUM3;
+		} else {
+		    state = END;
+		} 
 	    } else if (token == EOL) {
-		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
-		state = END;	
+		token_get(lp,&word);     /* just ignore it */
+	    } else if (token == EOC) {
+		rubber_clear_callback();
+		printf("COPY: cancelling POINT\n");
+		state = START;
 	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
-		state = END; 
+		rubber_clear_callback();
+		token_err("IDENT", lp, "expected NUMBER", token);
+		state = END;
 	    }
-	    break;
-	case COM3:		
-	    if (debug) printf("in COM3\n");
-	    if (token == EOL) {
-		token_get(lp,&word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,&word);
-		state = NUM6;
-	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM6:
-	    if (debug) printf("in NUM6\n");
+            break;
+	case NUM3:
+	    if (debug) printf("in NUM3\n");
 	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &y3);	/* scan it in */
-		if (mode == POINT) {
-		    db_highlight(p_best);
+		if (getnum(lp, "COPY", &x3, &y3)) {
+		    if (mode == POINT) {
+			db_highlight(p_best);
+		    }
+		    rubber_set_callback(draw_cbox);
+		    state = NUM4;
+		} else {
+		    state = END;
 		}
-		rubber_set_callback(draw_cbox);
-		state = NUM7;
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
@@ -329,12 +250,53 @@ int com_copy(LEXER *lp, char *arg)
 		state = END; 
 	    }
 	    break;
-	case NUM7:
-	    if (debug) printf("in NUM7\n");
+	case NUM4:
+	    if (debug) printf("in NUM4\n");
 	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &x4);	/* scan it in */
-		state = COM4;
+		if (getnum(lp, "COPY", &x4, &y4)) {
+		    if (mode == POINT) {
+			db_highlight(p_best);
+		    }
+		    rubber_set_callback(draw_cbox);
+		    state = NUM4;
+		    printf("got %g %g, last: %g %g\n", x4, y4, lastx, lasty);
+		    /* if double click then go to state 1 */
+
+		    if (num_copies && lastx == x4 && lasty == y4) {
+			num_copies = 0;
+			rubber_clear_callback();
+			need_redraw++;
+			state = START;
+		    } else {
+			rubber_clear_callback();
+			if (mode == POINT) {
+			    p_new=db_copy_component(p_best, NULL);
+			    db_move_component(p_new, x4-x3, y4-y3);
+			    db_insert_component(currep, p_new);
+			} else {
+			    tmp = stack;
+			    while (tmp!=NULL) {
+				p_best = (DB_DEFLIST *) stack_walk(&tmp);
+				p_new=db_copy_component(p_best, NULL);
+				db_move_component(p_new, x4-x3, y4-y3);
+				db_insert_component(currep, p_new);
+			    }
+			}
+			rubber_set_callback(draw_cbox);
+			need_redraw++;
+			num_copies++;
+			lastx = x4;
+			lasty = y4;
+			state = NUM4;
+		    } 
+		} else {
+		    state = END;
+		}
+	    } else if (token == EOL) {
+		token_get(lp,&word); 	/* just ignore it */
+	    } else if (token == EOC || token == CMD) {
+		printf("COPY: cancelling POINT\n");
+	        state = END;
 	    } else if (token == BACK) {
 		token_get(lp,&word); 
 		if (p_new == NULL) {
@@ -344,69 +306,6 @@ int com_copy(LEXER *lp, char *arg)
 		    p_new=NULL;
 		    need_redraw++;
 		}
-	    } else if (token == EOL) {
-		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		state = END;	
-	    } else {
-		token_err("COPY", lp, "expected NUMBER", token);
-		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
-		state = END; 
-	    }
-	    break;
-	case COM4:		
-	    if (debug) printf("in COM4\n");
-	    if (token == EOL) {
-		token_get(lp,&word); /* just ignore it */
-	    } else if (token == COMMA) {
-		token_get(lp,&word);
-		state = NUM8;
-	    } else {
-		token_err("COPY", lp, "expected COMMA", token);
-	        state = END;
-	    }
-	    break;
-	case NUM8:
-	    if (debug) printf("in NUM8\n");
-	    if (token == NUMBER) {
-		token_get(lp,&word);
-		sscanf(word, "%lf", &y4);	/* scan it in */
-		printf("got %g %g, last: %g %g\n", x4, y4, lastx, lasty);
-
-		/* if double click then go to state 1 */
-
-		if (num_copies && lastx == x4 && lasty == y4) {
-		    num_copies = 0;
-		    rubber_clear_callback();
-		    need_redraw++;
-		    state = START;
-		} else {
-		    rubber_clear_callback();
-		    if (mode == POINT) {
-			p_new=db_copy_component(p_best, NULL);
-			db_move_component(p_new, x4-x3, y4-y3);
-			db_insert_component(currep, p_new);
-                    } else {
-			tmp = stack;
-                        while (tmp!=NULL) {
-                            p_best = (DB_DEFLIST *) stack_walk(&tmp);
-                            p_new=db_copy_component(p_best, NULL);
-                            db_move_component(p_new, x4-x3, y4-y3);
-                            db_insert_component(currep, p_new);
-                        }
-                    }
-		    rubber_set_callback(draw_cbox);
-		    need_redraw++;
-		    num_copies++;
-		    lastx = x4;
-		    lasty = y4;
-		    state = NUM7;
-		} 
-	    } else if (token == EOL) {
-		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
-		printf("COPY: cancelling POINT\n");
-	        state = END;
 	    } else {
 		token_err("COPY", lp, "expected NUMBER", token);
 		state = END; 
@@ -426,34 +325,6 @@ int com_copy(LEXER *lp, char *arg)
     }
     return(1);
 }
-
-
-/*
-
-    if (!done) {
-	if (valid_comp) {
-	} else { 
-	    if ((strlen(word) == 1) && toupper(word[0]) == 'I') {
-		if((token=token_get(lp,&word)) != IDENT) {
-		    printf("DEL INST: bad inst name: %s\n", word);
-		    done++;
-		}
-	    }
-	    if (debug) printf("calling del_inst with %s\n", word);
-	    if (!show_check_modifiable(currep, INST, my_layer)) {
-		    printf("INST component is not modifiable!\n");
-	    } else {
-		;
-	    }
-	}
-    }
-} else if (token == QUOTE) {
-    if (!show_check_modifiable(currep, INST, my_layer)) {
-	    printf("INST component is not modifiable!\n");
-    } else {
-	;
-*/
-
 
 
 void draw_cbox(x, y, count)
@@ -512,5 +383,3 @@ int count; /* number of times called */
         y2old=y2;
         jump(&bb, D_RUBBER);
 }
-
-

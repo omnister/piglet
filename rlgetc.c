@@ -136,12 +136,20 @@ LEXER *lp;
     return(1);
 }
 
+static FILE *pigrcfp = NULL;
+
+int rl_readin_file(FILE *fp) {
+    pigrcfp = fp;
+    return(0);
+}
+
 /* Read a string, and return a pointer to it.  Returns NULL on EOF. */
 char * rl_gets (prompt)
 char *prompt;
 {
 
     char *s;
+    char buf[1024];
 
     /* If the buffer has already been allocated, return the memory
        to the free pool. */
@@ -151,26 +159,35 @@ char *prompt;
         lineread = (char *) NULL;
     }
 
-    /* Get a line from the user. */
-    /* printf("entering readline\n"); */
-    lineread = readline (prompt);
-    if (lineread == NULL) {
-	/* printf("got a NULL\n"); */
-	return(NULL);
-    }
-    fflush(stdout);
+    if (pigrcfp == NULL) { 			/* Get a line from the user. */
+	/* printf("entering readline\n"); */
+	lineread = readline (prompt);
+	if (lineread == NULL) {
+	    /* printf("got a NULL\n"); */
+	    return(NULL);
+	}
+	fflush(stdout);
 
-    /* If the line has any text in it, save it on the history. */
-    if (lineread && *lineread) {
-	add_history (lineread);
-    }
-    
-    /* add a newline to return string */
+	/* If the line has any text in it, save it on the history. */
+	if (lineread && *lineread) {
+	    add_history (lineread);
+	}
+	
+	/* add a newline to return string */
 
-    s = expdupstr(lineread,2);
-    strcat(s,"\n");
-    free (lineread);
-    lineread = s;
+	s = expdupstr(lineread,2);
+	strcat(s,"\n");
+	free (lineread);
+	lineread = s;
+    } else {
+	if (fgets(buf, 1023, pigrcfp) == NULL)  {
+	    pigrcfp=NULL;
+	    s = expdupstr(";\n",0);
+	} else {
+	    s = expdupstr(buf,0);
+	}
+	lineread = s;
+    }
 
     return (lineread);
 }

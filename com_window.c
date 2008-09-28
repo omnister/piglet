@@ -88,8 +88,8 @@ int com_window(LEXER *lp, char *arg)
 	    } else if (token == EOL) {
 		token_get(lp, &word); 	/* just eat it up */
 		state = START;
-	    } else if (token == EOC || token == CMD) {
-		 token_get(lp, &word); 
+	    } else if (token == EOC || token == CMD || token == IDENT) {
+		 if (token == EOC) token_get(lp, &word); 
 		 if (debug) printf("com_win: calling do_win 1 fit=%d, scale=%g\n", fit, scale);
 		 do_win(lp, 0, 0.0, 0.0, 0.0, 0.0, scale);
 		 fit = 0;
@@ -111,7 +111,7 @@ int com_window(LEXER *lp, char *arg)
 		}
 	    } else if (token == EOL) {
 		token_get(lp, &word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC || token == CMD || token == IDENT) {
 		printf("WIN: cancelling WIN\n");
 	        state = END;
 	    } else {
@@ -143,7 +143,7 @@ int com_window(LEXER *lp, char *arg)
 		}
 	    } else if (token == EOL) {
 		token_get(lp, &word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC || token == CMD || token == IDENT) {
 		if (debug) printf("WIN: doing pan\n");
 		if (debug) printf("calling do_win 2 inside com window\n");
 		do_win(lp, 2, x1, y1, 0.0, 0.0, scale);
@@ -160,7 +160,7 @@ int com_window(LEXER *lp, char *arg)
 	default:
 	    if (token == EOC) {
 		token_flush_EOL(lp);	/* don't leave a dangling EOL */
-	    } else if (token == CMD) {
+	    } else if (token == CMD || token == IDENT) {
 		;
 	    } else {
 		token_flush_EOL(lp);
