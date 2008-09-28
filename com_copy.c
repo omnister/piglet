@@ -33,7 +33,7 @@ int com_copy(LEXER *lp, char *arg)
 
     TOKEN token;
     char *word;
-    int debug=1;
+    int debug=0;
     int done=0;
     int valid_comp=0;
     int i;
@@ -83,6 +83,7 @@ int com_copy(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    num_copies=0;
 	    db_checkpoint(lp);
 	    if (debug) printf("in START\n");
 	    if (token == OPT ) {
@@ -107,10 +108,10 @@ int com_copy(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == EOL || token == EOC) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == CMD) {
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,&word);
@@ -193,7 +194,11 @@ int com_copy(LEXER *lp, char *arg)
 		} 
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
+		printf("COPY: cancelling POINT\n");
+		rubber_clear_callback();
+	        state = START;
+	    } else if (token == CMD) {
 		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else {
@@ -209,8 +214,14 @@ int com_copy(LEXER *lp, char *arg)
 		    xmax=x2;
 		    ymin=y1;
 		    ymax=y2;
-		    stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
-		    state = NUM3;
+		    if ((stack=db_ident_region(currep, 
+		    	x1,y1, x2, y2, 1, my_layer, comp, pinst)) != NULL) {
+		    	state = NUM3;
+		    } else {
+			rubber_clear_callback();
+		        printf("COPY: nothing inside selected region\n");
+			state = START;
+		    }
 		} else {
 		    state = END;
 		} 
@@ -240,7 +251,12 @@ int com_copy(LEXER *lp, char *arg)
 		}
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
+		printf("COPY: cancelling POINT\n");
+		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
+		rubber_clear_callback();
+	        state = START;
+	    } else if (token == CMD) {
 		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
 		printf("COPY: cancelling POINT\n");
 	        state = END;
@@ -294,7 +310,11 @@ int com_copy(LEXER *lp, char *arg)
 		}
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
+		printf("COPY: cancelling POINT\n");
+		rubber_clear_callback();
+	        state = START;
+	    } else if (token == CMD) {
 		printf("COPY: cancelling POINT\n");
 	        state = END;
 	    } else if (token == BACK) {

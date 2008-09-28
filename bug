@@ -5,17 +5,39 @@
 # version 1.0.
 #
 
-[ ] should periodically save cells/DEV.bak, when starting ask "crash rep found readin instead?"  
-[ ] moving notes doesn't keep outline visible
+[ ] should periodically save cells/DEV.bak, when starting ask "crash rep found, readin instead?"  
 [ ] implement $$ comments character (ignore to EOL)
 [ ] all CMDs should stay in CMD after EOC - only change state on another CMD
+    [ ] com_add.c
+	[ ] geom_arc.c
+	[ ] geom_circle.c
+	[ ] geom_inst.c
+	[x] geom_line.c
+	[ ] geom_poly.c
+	[ ] geom_rect.c
+	[ ] geom_text.c
+    [ ] com_area.c
+    [ ] com_change.c
+    [x] com_copy.c
+    [ ] com_delete.c
+    [ ] com_distance.c
+    [ ] com_equate.c
+    [ ] com_ident.c
+    [x] com_move.c
+    [ ] com_point.c
+    [ ] com_smash.c
+    [ ] com_stretch.c
+    [ ] com_undo.c
+    [ ] com_window.c
+    [ ] com_wrap.c
+[ ] all commands need to treat IDENT (eg: macro) as a potential CMD
 
+[x] moving notes doesn't keep outline visible
 [x] MOV :R shouldn't show all individual devices, just bounding box, too slow
 [x] MOV :R hangs up in "got EOL" loop;
 [x] plot and dump should take an output filename as a final option.
 
 [x] find and readin pigrc/.pigrc files
-[ ] all commands need to treat IDENT as a potential CMD
 
 [ ] should store disk mod time and readin-time in db_tab for all cells. 
     Use to check if version on disk was changed since readin and before writing out. 
