@@ -93,6 +93,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
     int debug=0;
     char *str;
     double val;
+    int parencount=0;
 
     *word = lp->word;		/* set up token text return value */
 
@@ -184,6 +185,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			continue;
 		    case '(':
 			state = INEXPR;
+			parencount=1;
 			strcpy(promptbuf, rl_saveprompt());
 			strcat(promptbuf, "(in a parenthesized expression)> ");
 			rl_setprompt(promptbuf);
@@ -268,18 +270,25 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 	    case INEXPR:
 		switch(c) {
 		    case ')':
-			*w = '\0';
-			// if (debug) printf("got EXPR: %s \n", lp->word);
-			rl_restoreprompt();
-			retval = parse_exp(&val, lp->word);
-			// printf("got EXPR: \"%s\" %f (%d)\n", lp->word, val, retval);
-			if (retval) { 
-			    strcpy(lp->word, "BAD-EXPRESSION");
-			    return(UNKNOWN);
-			} 
-
-			sprintf(lp->word, "%g", val-fmod(val,1.0/pow(10.0,RES)));
-			return(NUMBER);
+			if (--parencount == 0) {
+			    *w = '\0';
+			    // if (debug) printf("got EXPR: %s \n", lp->word);
+			    rl_restoreprompt();
+			    retval = parse_exp(&val, lp->word);
+			    // printf("got EXPR:\"%s\" %f (%d)\n",lp->word,val,retval);
+			    if (retval) { 
+				strcpy(lp->word, "BAD-EXPRESSION");
+				return(UNKNOWN);
+			    } 
+			    sprintf(lp->word, "%g", val-fmod(val,1.0/pow(10.0,RES)));
+			    return(NUMBER);
+			} else {
+			    *w++ = c;
+			    continue;
+			}
+		    case '(':
+		    	parencount++;
+			// fall through
 		    default:
 			*w++ = c;
 			continue;

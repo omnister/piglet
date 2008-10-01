@@ -191,22 +191,19 @@ int add_line(LEXER *lp, int *layer)
 		break;
 	    case END:
 		if (debug) printf("in end\n");
-		if (token == EOC) {
-		    token_get(lp,&word); 	/* just ignore it */
-		    if ( nsegs >= 2) {
+		if (token == EOC && nsegs >= 2) {
 			coord_drop(CP);  /* drop last coord */
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
 			need_redraw++;
-		    }
-		    state=START;
+		    	; /* add geom */
 		} else if (token == CMD) {
 			/* should a CMD terminate a line? */
-			done++;
+			;
 		} else {
 		    token_flush_EOL(lp);
-		    done++;
 		}
 	    	rubber_clear_callback();
+		done++;
 		break;
 	    default:
 	    	break;

@@ -5,6 +5,7 @@
 # version 1.0.
 #
 
+[ ] (2.5+(1.6/2)) gives "BAD-EXPRESSION"
 [ ] should periodically save cells/DEV.bak, when starting ask "crash rep found, readin instead?"  
 [ ] implement $$ comments character (ignore to EOL)
 [ ] all CMDs should stay in CMD after EOC - only change state on another CMD
