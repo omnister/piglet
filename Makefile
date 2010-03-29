@@ -52,7 +52,7 @@ pig.bin: $(OBJS) man/piglet.1p
 
 clean: 
 	rm -f *.o pig.bin
-	rm -r man/*1p man/*html
+	rm -rf man/*1p man/*html
 
 tar: $(TARS)
 	(  d=`date +%F`;\
@@ -104,7 +104,7 @@ depend: ${OBJ}
 #-----------------------------------------------------------------
 # DO NOT PUT ANY DEPENDENCIES AFTER THE NEXT LINE -- they will go away
 # DO NOT DELETE OR MODIFY THIS LINE -- make depend uses it
-1expr.o: expr.h
+expr.o: expr.h
 com_add.o: db.h
 com_add.o: lex.h
 com_add.o: rlgetc.h

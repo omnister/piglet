@@ -5,7 +5,10 @@
 # version 1.0.
 #
 
-[ ] (2.5+(1.6/2)) gives "BAD-EXPRESSION"
+xwin_window_set sets needs_redraw++;  This is normally needed, but if I want
+to prevent a redraw when resizing a big drawing, then it is a problem.
+
+[x] (2.5+(1.6/2)) gives "BAD-EXPRESSION"
 [ ] should periodically save cells/DEV.bak, when starting ask "crash rep found, readin instead?"  
 [ ] implement $$ comments character (ignore to EOL)
 [ ] all CMDs should stay in CMD after EOC - only change state on another CMD

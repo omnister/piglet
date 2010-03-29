@@ -182,7 +182,7 @@ setting landscape
     fprintf(fp,"$Pig2psBegin\n");
     fprintf(fp,"10 setmiterlimit\n");
     fprintf(fp,"1 slj 1 slc\n");
-    fprintf(fp,"0.1 slw\n");
+    fprintf(fp,"1.0 slw\n");
     fprintf(fp,"%%BeginPageSetup\n");
     fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
     if (landscape) {

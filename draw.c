@@ -110,6 +110,10 @@ double dx,dy;
     } else {
 	return(dy + 0.3333*dx);
     }
+
+    // if you want more accuracy 
+    // at the cost of another multiply use
+    // 0.9615dx + 0.39*dy
 }
 
 
@@ -1208,7 +1212,7 @@ DB_DEFLIST *p;			/* print out identifying information */
     if (p == NULL) {
     	printf("db_notate: no component!\n");
     } else {
-	if (debug) printf("%d:", (int) p);
+	if (debug) printf("%ld:", (long int) p);
 	switch (p->type) {
 	case ARC:  /* arc definition */
 	    printf("   ARC %d (%s) end1=%.5g,%.5g end2=%.5g,%.5g pt_on_circumference=%.5g,%.5g ", 
@@ -1406,6 +1410,7 @@ DB_TAB *cell;
 
     printf("   logical level = %d\n", currep->logical_level);
     printf("   lock angle    = %g\n", currep->lock_angle);
+    printf("   num prims     = %d\n", currep->prims);
     if (currep->modified) {
 	printf("   cell is modified\n");
     } else {
@@ -1564,6 +1569,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     XFORM *save_transform;
     extern int nestlevel;
     int debug=0;
+    int prims = 0;	// keep track of complexity of drawing
 
     BOUNDS childbb;
     BOUNDS backbb;
@@ -1611,6 +1617,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	mybb.init++;
     }
 
+    // implement BACK command
     if (nest == 0 && currep != NULL &&  currep->background != NULL) {
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
@@ -1618,6 +1625,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
 	childbb.init=0;
+	prims++;
 
 	switch (p->type) {
         case ARC:  /* arc definition */
@@ -1693,7 +1701,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    } 
 
 	    if (db_lookup(p->u.i->name) != NULL) {
-		db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
+		prims += db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
 	    } else {
 	        printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
 	    }
@@ -1756,7 +1764,8 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	cell->miny =  bb->ymin;
 	cell->maxy =  bb->ymax;
     } 
-    return(1);
+    cell->prims = prims;
+    return(prims);
 }
 
 void startpoly(bb,mode)

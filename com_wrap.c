@@ -226,7 +226,8 @@ int com_wrap(LEXER *lp, char *arg)
 			    wrap_inst_name = buf;
 			}
 			newrep = (DB_TAB *) db_install(wrap_inst_name);
-			if (debug) printf("doing db_install for rep %s, ptr = %d\n", buf, (int) newrep);
+			if (debug) printf("doing db_install for rep %s, ptr = %ld\n",
+			    buf, (long int) newrep);
 
 			// for each selected item in the stack,
 			// copy the item and put it in wrap_inst_name
@@ -236,8 +237,8 @@ int com_wrap(LEXER *lp, char *arg)
 
 			while ((p_best = (DB_DEFLIST *) stack_pop(&stack))!=NULL) {
 			    p_new = db_copy_component(p_best, NULL);
-			    if (debug) printf("copying %d, p_new = %d\n", 
-				(int) p_best, (int) p_new);
+			    if (debug) printf("copying %ld, p_new = %ld\n", 
+				(long int) p_best, (long int) p_new);
 			    db_unlink_component(currep, p_best);
 			    db_move_component(p_new, -x1, -y1);
 			    db_insert_component(newrep, p_new);

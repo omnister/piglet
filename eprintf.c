@@ -48,7 +48,7 @@ void weprintf(char *fmt, ...)
 }
 
 /* estrdup: duplicate a string, report if error */
-char *estrdup(char *s)
+char *estrdup(const char *s)
 {
     char *t;
 
@@ -81,7 +81,7 @@ void *erealloc(void *p, size_t n)
 }
 
 /* setprogname: set stored name of program */
-void setprogname(char *str)
+void setprogname(const char *str)
 {
     name = estrdup(str);
 }

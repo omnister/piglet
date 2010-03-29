@@ -2,7 +2,7 @@
 Compiling and Installing
 -------------------------
 
-OK.  Just type "make" and you should have a working piglet.
+Just type "make" and you should have a working piglet.
 
 You can play with it in the src directory until you decide
 you like it.  Then you can run "make install" with sufficient

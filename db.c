@@ -141,6 +141,7 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     sp->undo = (STACK *) 0; 
     sp->redo = (STACK *) 0; 
     sp->background = (char *) 0;
+    sp->prims = 0;
 
     sp->vp_xmin = -100.0; 
     sp->vp_ymin = -100.0; 
@@ -300,11 +301,11 @@ void db_fsck(DB_DEFLIST *dp) {		/* do a logical scan of a deflist */
 	}
 
 	if (next == NULL && p != final) {
-	    printf("bad tail pointer\n");
+	    printf("db_fsck: bad tail pointer\n");
 	}
 
-        printf("D:%d T:%d, P: %d, N:%d\n",
-	(int) p, (int) p->type, (int) p->prev, (int) p->next);
+        printf("D:%ld T:%ld, P: %ld, N:%ld\n",
+	(long int) p, (long int) p->type, (long int) p->prev, (long int) p->next);
 
 	count++;
 	pold=p;
@@ -860,7 +861,7 @@ DB_TAB *cell;
 XFORM *xform;
 int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
 {
-    extern XFORM unity_transform;
+    // extern XFORM unity_transform;
 
     DB_DEFLIST *p;
     XFORM *xp;
@@ -1519,7 +1520,7 @@ DB_DEFLIST *dp;
 	digestinit();
 	for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
 	    cksum(p);
-	    if (debug) printf("# %d %d\n", (int) p, digestval());
+	    if (debug) printf("# %ld %d\n", (long int) p, digestval());
 	}
 	return(digestval());
     }

@@ -28,6 +28,7 @@
 #include "ev.h"
 
 extern void do_win();
+void xwin_window_parms_only();
 
 #define MAX_MENU 256
 
@@ -295,7 +296,7 @@ int initX()
     class_hints->res_class = class_hints->res_name;
 
     XSetWMProperties(dpy, topwin, &windowName, &iconName,
-        (char **) NULL, (int) NULL, size_hints, wm_hints, class_hints);
+        (char **) NULL, (long int) NULL, size_hints, wm_hints, class_hints);
 
     XFree(windowName.value);
     XFree(iconName.value);
@@ -604,7 +605,7 @@ char **s;
     static char keybuf[10];
     static int keybufsize=10;
     KeySym keysym;
-    XComposeStatus *compose;
+    XComposeStatus *compose = NULL;
     BOUNDS bb;
 
     if (need_redraw) {
@@ -673,14 +674,10 @@ char **s;
 		    currep->vp_ymin,
 		    currep->vp_xmax,
 		    currep->vp_ymax );
-		} else {
-		    xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
-		}
-
-		if (currep != NULL ) {
 		    draw_grid(win, gcg, currep->grid_xd, currep->grid_yd,
 			currep->grid_xs, currep->grid_ys, currep->grid_xo, currep->grid_yo);
 		} else {
+		    xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
 		    draw_grid(win, gcg, grid_xd, grid_yd,
 			grid_xs, grid_ys, grid_xo, grid_yo);
 		}
@@ -691,6 +688,8 @@ char **s;
 		     paint_pane(xe.xexpose.window, menutab, gca, gcb, BLACK);
 		 }
 	    }
+	    need_redraw++;
+	    XFlush(dpy);
 
 	    break;
 
@@ -702,14 +701,22 @@ char **s;
 	    XMoveWindow(dpy, menuwin, top_width-menu_width, 0);
 	    XResizeWindow(dpy, menuwin, menu_width, g_height);
 	    XResizeWindow(dpy, win, top_width-menu_width, g_height);
+
 	    if (currep != NULL) {
-		xwin_window_set( currep->vp_xmin, 
-				 currep->vp_ymin,
-				 currep->vp_xmax, 
-				 currep->vp_ymax );
+		xwin_window_parms_only( currep->vp_xmin, 
+			 currep->vp_ymin,
+			 currep->vp_xmax, 
+			 currep->vp_ymax );
+		if (currep->prims < 1000) {
+		    // only do continuous redraw on resize
+		    // for small drawings...
+		    need_redraw++;
+		}
+
 	    } else {
 		xwin_window_set( vp_xmin, vp_ymin, vp_xmax, vp_ymax );
 	    }
+
 	    break;
 	case ButtonRelease:
 	    button_down=0;
@@ -817,7 +824,9 @@ char **s;
 		if (compose == NULL) {
 		    tmp[0]=(char) ((char)keysym - 64);
 		    tmp[1]='\0';
-		    *s = tmp;
+		    // FIXME: F11 started printing garbage (-94 decimal) when shift
+		    // key was pressed.  Traced it to this next statement...
+		    // *s = tmp;
 	        }
 	    }
 	    
@@ -1514,7 +1523,7 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
     xy1,xy2 zooms in on selected region
 */
 
-void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
+void xwin_window_parms_only(x1,y1,x2,y2) /* change the current window parameters */
 double x1,y1,x2,y2;
 {
     extern double scale,xoffset,yoffset;
@@ -1575,8 +1584,13 @@ double x1,y1,x2,y2;
     if (debug) printf("screen width = %d, height=%d\n",g_width, g_height);
     if (debug)  printf("scale = %f, xoffset=%f, yoffset=%f\n",
     	scale, xoffset, yoffset);
+}
 
-    need_redraw++; 
+void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
+double x1,y1,x2,y2;
+{
+    xwin_window_parms_only(x1,y1,x2,y2);
+    need_redraw++;
 }
 
 /* convert viewport coordinates to real-world coords */
@@ -1797,7 +1811,6 @@ int shift_from_mask(int mask, int max) {
 // red mask= 16711680
 // green mask= 65280
 // blue mask= 255
-
 
 int dump_window(window, gc, width, height, cmd) 
 Window window;

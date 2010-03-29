@@ -195,6 +195,8 @@ typedef struct db_tab {
     STACK  *redo;               /* place for keeping newer versions */
 
     char *background;		/* cell to display as background */
+    int prims;			/* number of prims in the recursive expansion */
+    				/* will be valid after first db_render() */
 
     struct db_tab *next;    	/* to link to next */
     struct db_tab *prev;    	/* link to previous */
