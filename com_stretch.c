@@ -59,7 +59,7 @@ int com_stretch(LEXER *lp, char *arg)
     int done=0;
     TOKEN token;
     char *word;
-    int debug=0;
+    int debug=1;
     DB_DEFLIST *p_prev = NULL;
     double *xmin, *xmax, *ymin, *ymax;
     double d, distance, dbest;

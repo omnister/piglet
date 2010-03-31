@@ -338,11 +338,13 @@ the nesting or the transformations applied.
 WRAP
 ----
 
-You can wrap up any number of primitives by drawing a box around them with the WRAP command.
-These components are then "pushed" down one level of the drawing and named something like
-"NO_NAMExxx".  This new block can be moved, copied, scaled, mirrored and rotated.  You can also
-give the block a new name and save it as a cell.  If you don't give the WRAPped block a new
-name it will be automatically dismember (SMAshed) when you finally exit the edi.
+You can wrap up any number of primitives by drawing a box around them
+with the WRAP command.  These components are then "pushed" down one
+level of the drawing and named something like "NO_NAMExxx".  This new
+block can be moved, copied, scaled, mirrored and rotated.  You can also
+give the block a new name and save it as a cell.  If you don't give the
+WRAPped block a new name it will be automatically dismember (SMAshed)
+when you finally exit the edi. 
 
 SMASH
 ----
@@ -356,9 +358,10 @@ components.
 STRETCH
 -------
 
-An invaluable editing tool.  You can click on any vertex of a component and pull it to a new position.
-You can also use the :R option to draw a box around any number of vertices and pull them all together
-to an new position.  Lines and polygons will simply stretch to accomodate.
+An invaluable editing tool.  You can click on any vertex of a component
+and pull it to a new position.  You can also use the :R option to draw a
+box around any number of vertices and pull them all together to an new
+position.  Lines and polygons will simply stretch to accomodate. 
 
 CHANGE
 ------
@@ -503,8 +506,8 @@ frozen at particular rev number.
 LEARN MORE
 ---------
 
-Make sure and read the man pages for each command to discover more options.  Please
-write if you have any questions or suggestions.
+Make sure and read the man pages for each command to discover more
+options.  Please write if you have any questions or suggestions. 
 
 kind regards,
 --

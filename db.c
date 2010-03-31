@@ -1997,10 +1997,21 @@ static double font_size = 10.0;
 static double font_slant = 0.0;
 
 void db_set_font_size(double size) { /* set default from FSIze command */
+    char buf[16];
+    sprintf(buf, "%4.4f", size);
+    EVset("PIG_FONT_SIZE", buf);               /* grid color */
     font_size = size;
 }
 
 double db_get_font_size() { 	 /* get default from FSIze command */
+    char *p;
+    int d;
+
+    if ((p=EVget("PIG_FONT_SIZE")) != NULL) {
+        if ((d=sscanf(p,"%lg", &font_size) <= 0)) {
+                printf("bad PIG_FONT_SIZE=\"%s\"\n",p);
+        }
+    }
     return font_size;
 }
 
