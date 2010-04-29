@@ -89,6 +89,7 @@ install: man/piglet.1p pig.bin
 	cp PROCDATA.P $(LIBDIR)
 	cp MENUDATA_V $(LIBDIR)
 	cp piglogo.d $(LIBDIR)
+	cp pigrc $(LIBDIR)
 
 depend: ${OBJ}
 	cp Makefile Makefile.bak
