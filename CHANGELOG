@@ -1,3 +1,7 @@
+2010.04.29  Fixed problem in com_add that supressed adding any multiple instances
+	    when successive instances have either x or y coords identical (was
+	    code that tried to supress double clicks)
+	    
 2010.11.02  Made changes to fix compilation errors on 64 bit linux platforms
             plus added changes suggested by Carl Wuebker <HPAlumni@Webker.org>
             to get piglet to compile under Cygwin on AMD winXP platform

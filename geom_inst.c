@@ -114,7 +114,7 @@ int add_inst(LEXER *lp, char *inst_name)
 
     while (!done) {
 	token = token_look(lp, &word);
-	/* printf("got %s: %s\n", tok2str(token), &word); */
+	if (debug) printf("got %s: %s state: %d\n", tok2str(token), word, state);
 	if (token==CMD) {
 	    state=END;
 	} 
@@ -192,7 +192,8 @@ int add_inst(LEXER *lp, char *inst_name)
 		if (token == NUMBER) {
 		    if (getnum(lp, "INST", &x1, &y1)) {
 			// supress double clicks
-			if (numpicks==0 || ((xold != x1) && (yold != y1))) {  
+			if (debug) printf("%d %g %g %g %g\n", numpicks, x1, y1, xold, yold);
+			if (numpicks==0 || ((xold != x1) || (yold != y1))) {  
 			    db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
 			    rubber_clear_callback();
 			    need_redraw++;

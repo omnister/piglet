@@ -5,6 +5,10 @@
 # version 1.0.
 #
 
+[ ] implement save to cell.autosave and optional readin if it is newer than cell.d
+
+[ ] com_grid should allow a single argument and default second to "1"
+
 [ ] using FSIZE should change the PIG_FONT_SIZE env variable.  It should be 
     equivalent using the command or using the env var.
 
