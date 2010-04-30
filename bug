@@ -18,6 +18,7 @@
     If so, then give user a chance to write to an different name. 
     Re-editing a cell in memory should also invoke the check and ask:
     "Definition on disk has changed, discard memory copy and reread?  (y/n)"
+    Geom_inst now reads and prints mod times as it reads in cells.
 
 [x] com_grid should allow a single argument and default second to "1"
 

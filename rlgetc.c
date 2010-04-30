@@ -84,7 +84,7 @@ FILE *fd;
 {
     int c;
     c=getc(fd);
-    /* printf("->%2.2x %c\n",c,c); */
+    // printf("->%2.2x %c\n",c,c);
     return (c);
 }
 

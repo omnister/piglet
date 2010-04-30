@@ -87,7 +87,7 @@ int token_flush_EOL(LEXER *lp)
 
 TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 {
-    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM,INVAR,INEXPR} state = NEUTRAL;
+    enum {NEUTRAL,INQUOTE,INWORD,INOPT,INNUM,INVAR,INEXPR,COMMENT} state = NEUTRAL;
     int c,d,retval;
     char *w;
     int debug=0;
@@ -192,7 +192,13 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 			continue;
 		    case '$':
 			// *w++ = c; 	/* don't save the dollar */
-			state = INVAR;
+			c = rlgetc(lp);
+			if (c=='$') {
+			    state = COMMENT;
+			} else {
+			    rl_ungetc(lp,c);
+			    state = INVAR;
+			}
 			continue;
 		    case '.':
 			*w++ = c;
@@ -328,6 +334,18 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		}
 		*w++ = c;
 		continue;
+	    case COMMENT:
+		switch(c) {
+		    case '\n':
+		    case '\r':
+			*w++ = c;
+			*w = '\0';
+			if (debug) printf("returning EOL: %s \n", lp->word);
+			lp->line++;
+			return(EOL);
+		    default:
+			continue;
+		}
 	    default:
 		fprintf(stderr,"pig: error in lex loop\n");
 		return(UNKNOWN);
@@ -340,17 +358,18 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 char *tok2str(TOKEN token)
 {
     switch (token) {
-	case IDENT: return("IDENT"); 	break;
-	case CMD: return("CMD"); 	break;
-	case QUOTE: return("QUOTE"); 	break;
-	case NUMBER: return("NUMBER"); 	break;
-	case OPT: return("OPT"); 	break;
-	case EOL: return("EOL"); 	break;
-	case EOC: return("EOC"); 	break;
-	case COMMA: return("COMMA"); 	break;
-	case BACK:  return("BACK");	break;
-	case END: return("END"); 	break;
-	default: return("UNKNOWN"); 	break;
+	case IDENT: return("IDENT"); 	 break;
+	case CMD: return("CMD"); 	 break;
+	case QUOTE: return("QUOTE"); 	 break;
+	case NUMBER: return("NUMBER"); 	 break;
+	case OPT: return("OPT"); 	 break;
+	case EOL: return("EOL"); 	 break;
+	case EOC: return("EOC"); 	 break;
+	case COMMA: return("COMMA"); 	 break;
+	case BACK:  return("BACK");	 break;
+	case END: return("END"); 	 break;
+	case COMMENT: return("COMMENT"); break;
+	default: return("UNKNOWN"); 	 break;
     }
 }
 

@@ -1,4 +1,7 @@
+$$
+$$ piglet initialization file
+$$ 
 
-DEF wi "WIN :X.5;"
-DEF wo "WIN :X2;"
-SET PIG_SHOW_DEFAULT "#E";
+DEF wi "WIN :X.5;"		$$ window-in macro
+DEF wo "WIN :X2;"		$$ window-out macro
+SET PIG_SHOW_DEFAULT "#E";	$$ make cells editable by default

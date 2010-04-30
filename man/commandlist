@@ -33,12 +33,18 @@ If found, Piglet will read the file for command input.  Any Piglet
 command can be placed in this file.  The contents will be executed just
 as if the user typed them.  The following example pigrc file sets the
 SHOW default to "#E", defines a two macros, and starts an EDI of the
-cell named "PLAN".  
+cell named "PLAN".  Piglet uses the double dollar sign "$$" as a comment
+character.  Anything after a comment is eaten up by the parser and
+treated as a single end-of-line character. 
 
 .nf
-    SET PIG_SHOW_DEFAULT "#E"
-    DEF wi "WIN :X.5;"
-    DEF wo "WIN :X2;"
+    $$ 
+    $$ piglet initialization file
+    $$
+
+    SET PIG_SHOW_DEFAULT "#E"	$$ make cells editable by default
+    DEF wi "WIN :X.5;"		$$ window in macro
+    DEF wo "WIN :X2;"		$$ window out macro
     EDI PLAN;
 .fi
 

@@ -12,6 +12,7 @@ typedef enum {
     COMMA,	/* comma */
     END,	/* end of file */
     RAW,	/* individual character mode */
+    COMMENT,	/* $$ comment */
     UNKNOWN	/* unknown token */
 } TOKEN;
 
