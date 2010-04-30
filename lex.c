@@ -1094,7 +1094,7 @@ char *arg;
     char *word;
     int gridcolor=0;
     GRIDSTATE grid_state = G_TOGGLE;	
-    double pts[6] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
+    double pts[6] = {0.0, 1.0, 1.0, 1.0, 0.0, 0.0};
     int npts=0;
     int nopts=0;
     int debug=0;
@@ -1187,7 +1187,11 @@ char *arg;
 	}
     }
 
-    if (npts == 2) {
+    if (npts == 1) {
+	if (debug) printf("setting grid ON\n");
+	xwin_grid_state(G_ON);
+	xwin_grid_pts(pts[0], pts[0], pts[1], pts[1], pts[4], pts[5]);
+    } else if (npts == 2) {
 	if (debug) printf("setting grid ON\n");
 	xwin_grid_state(G_ON);
 	xwin_grid_pts(pts[0], pts[0], pts[1], pts[1], pts[4], pts[5]);

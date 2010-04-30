@@ -5,18 +5,29 @@
 # version 1.0.
 #
 
-[ ] implement save to cell.autosave and optional readin if it is newer than cell.d
+[ ] should periodically save cells/DEV.autosave, when starting ask "crash rep found, readin instead?"  
+      While editing
+	  if modified and idle for more than XX seconds, or if time since last save is greater than YY
+	  save current modified DEV to cells/DEV.autosave, clear modification flag
+      While reading in
+      	  if cells/DEV.autosave is newer than cells/DEV.d then ask:
+	  crash rep found, readin instead?  If yes, then readin crash rep as the .d
 
-[ ] com_grid should allow a single argument and default second to "1"
+[ ] should store disk mod time and readin-time in db_tab for all cells. 
+    Use to check if version on disk was changed since readin and before writing out. 
+    If so, then give user a chance to write to an different name. 
+    Re-editing a cell in memory should also invoke the check and ask:
+    "Definition on disk has changed, discard memory copy and reread?  (y/n)"
 
-[ ] using FSIZE should change the PIG_FONT_SIZE env variable.  It should be 
+[x] com_grid should allow a single argument and default second to "1"
+
+[x] using FSIZE should change the PIG_FONT_SIZE env variable.  It should be 
     equivalent using the command or using the env var.
 
-xwin_window_set sets needs_redraw++;  This is normally needed, but if I want
+[ ] xwin_window_set sets needs_redraw++;  This is normally needed, but if I want
 to prevent a redraw when resizing a big drawing, then it is a problem.
 
 [x] (2.5+(1.6/2)) gives "BAD-EXPRESSION"
-[ ] should periodically save cells/DEV.bak, when starting ask "crash rep found, readin instead?"  
 [ ] implement $$ comments character (ignore to EOL)
 [ ] all CMDs should stay in CMD after EOC - only change state on another CMD
     [ ] com_add.c
@@ -50,11 +61,6 @@ to prevent a redraw when resizing a big drawing, then it is a problem.
 
 [x] find and readin pigrc/.pigrc files
 
-[ ] should store disk mod time and readin-time in db_tab for all cells. 
-    Use to check if version on disk was changed since readin and before writing out. 
-    If so, then give user a chance to write to an different name. 
-    Re-editing a cell in memory should also invoke the check and ask:
-    "Definition on disk has changed, discard memory copy and reread?  (y/n)"
 
 [ ] problem in com_wrap()? 
 [ ] should all commands do snapxy on coordinates?  Currently handtyped coordinates
