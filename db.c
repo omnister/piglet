@@ -2005,10 +2005,9 @@ void db_set_font_size(double size) { /* set default from FSIze command */
 
 double db_get_font_size() { 	 /* get default from FSIze command */
     char *p;
-    int d;
 
     if ((p=EVget("PIG_FONT_SIZE")) != NULL) {
-        if ((d=sscanf(p,"%lg", &font_size) <= 0)) {
+        if (sscanf(p,"%lg", &font_size) <= 0) {
                 printf("bad PIG_FONT_SIZE=\"%s\"\n",p);
         }
     }
@@ -2016,10 +2015,20 @@ double db_get_font_size() { 	 /* get default from FSIze command */
 }
 
 void db_set_text_slant(double slant) {  /* get default from TSLant command */
+    char buf[16];
+    sprintf(buf, "%4.4f", slant);
+    EVset("PIG_FONT_SLANT", buf);               /* font slant */
     font_slant = slant;
 }
 
 double db_get_text_slant() { 	 /* get default from TSLant command */
+    char *p;
+
+    if ((p=EVget("PIG_FONT_SLANT")) != NULL) {
+        if (sscanf(p,"%lg", &font_slant) <= 0) {
+                printf("bad PIG_FONT_SLANT=\"%s\"\n",p);
+        }
+    }
     return font_slant;
 }
 
