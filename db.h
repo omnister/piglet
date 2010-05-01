@@ -193,6 +193,7 @@ typedef struct db_tab {
     struct db_deflist *dbhead;  /* pointer to first cell definition */
     STACK  *undo;		/* place for keeping older versions */
     STACK  *redo;               /* place for keeping newer versions */
+    int chksum;			/* checksum of last autosaved copy */
 
     char *background;		/* cell to display as background */
     int prims;			/* number of prims in the recursive expansion */

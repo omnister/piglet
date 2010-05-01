@@ -140,6 +140,7 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     sp->dbhead = (struct db_deflist *) 0; 
     sp->undo = (STACK *) 0; 
     sp->redo = (STACK *) 0; 
+    sp->chksum = 0;
     sp->background = (char *) 0;
     sp->prims = 0;
 
@@ -640,6 +641,7 @@ int db_checkpoint(LEXER *lp) {
     int ckold;
     DB_DEFLIST *copy;
     int debug = 0;
+    char buf[128];
 
     if (currep == NULL || strcmp(lp->name, "STDIN") != 0) {
        return(0);
@@ -649,6 +651,7 @@ int db_checkpoint(LEXER *lp) {
     ckold = db_cksum((DB_DEFLIST *) stack_top(&(currep->undo)));
 
     if (cknew != ckold) {
+	if (debug) printf("inside db_checkpoint cknew = %d, ckold = %d\n", cknew, ckold);
         copy = db_copy_deflist(currep->dbhead); /* copy db_deflist chain */
 
 	if (debug) printf("pushing save copy onto undo stack new:%x old:%x\n", cknew, ckold);
@@ -656,6 +659,18 @@ int db_checkpoint(LEXER *lp) {
 
         while ((copy = (DB_DEFLIST *) stack_pop(&(currep->redo)))!=NULL) { 
 	    db_free(copy); 			/* clear out redo stack */
+	}
+	
+	// simple autosave function 
+	// after every change, write a copy to "cells/#<cellname>.d"
+
+	if (debug) printf("inside db_checkpoint currepcksum = %d, cknew = %d\n", currep->chksum, cknew);
+	if (currep->chksum != cknew && currep->modified) {
+	    strcpy(buf,"#");		    
+	    strncat(buf,currep->name, 128);		    
+	    db_save(lp, currep, buf);
+	    currep->chksum = cknew;
+	    if (debug) printf("saved\n");
 	}
 
 	return(1);
@@ -828,14 +843,17 @@ char *name;
     /* check to see if would overwrite ask permission before doing so */
     /* but don't ask if device name matches save name */
 
+    /* autosave names start with "#", so don't ask for those either */
+
     if (debug) {
 	printf("in db_save, lp=%s\n", lp->name); 
 	printf("device name=%s, save name=%s\n", sp->name, name);
 	printf("access =%d\n", access(buf, F_OK));
     }
 
-    if ((strcmp(sp->name, name) != 0) &&
+    if (  (strcmp(sp->name, name) != 0) &&
        		(strcmp(lp->name, "STDIN") == 0) &&
+		(name[0] != '#') &&
        		(access(buf, F_OK) == 0)) {
         snprintf(buf2, MAXFILENAME, "overwrite %s on disk", name);
         if (ask(lp, buf2) == 0) {
@@ -851,6 +869,14 @@ char *name;
     } else {
         printf("couldn't open %s for saving!\n", buf);
     }
+   
+    // if save was successful, remove autosave file
+    if (!err && name[0] != '#') {
+    	snprintf(buf, MAXFILENAME, "./cells/#%s.d", name);
+	printf("unlinking %s\n", buf);
+	unlink(buf);
+    }
+
     return(err);
 }
 

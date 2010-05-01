@@ -29,7 +29,7 @@
 to prevent a redraw when resizing a big drawing, then it is a problem.
 
 [x] (2.5+(1.6/2)) gives "BAD-EXPRESSION"
-[ ] implement $$ comments character (ignore to EOL)
+[x] implement $$ comments character (ignore to EOL)
 [ ] all CMDs should stay in CMD after EOC - only change state on another CMD
     [ ] com_add.c
 	[ ] geom_arc.c
