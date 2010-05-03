@@ -5,11 +5,11 @@
 #include <string.h>	/* for strnlen... */
 #include <ctype.h> 	/* for toupper() */
 #include <unistd.h>     /* for access() */
+#include <time.h>
 
 #include "db.h"		/* hierarchical database routines */
 #include "eprintf.h"	/* error reporting functions */
 #include "rlgetc.h"
-#include "lex.h"
 #include "token.h"
 #include "xwin.h"       /* for snapxy() */
 #include "readfont.h"	/* for writestring() */
@@ -1002,7 +1002,7 @@ int db_def_archive(DB_TAB *sp, int smash, int process)
 }
 
 /* When we retrieve an archive, it is important to first purge
-   all the files that will be redefined by the archived.  If we've done
+   all the files that will be redefined by the archive.  If we've done
    something like: "EDIT FOO; ARC FOO; RET FOO;", then the ARCHIVE
    process will need to purge all the subcells of FOO in hierarchical
    order from top to bottom to avoid creating unreferenced stubs in the
@@ -1356,7 +1356,15 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 		}
 	    }
 	} else {
-	    fprintf(fp, "ADD %s ", p->u.i->name);
+
+	    // we need to quote the instance name, otherwise something like
+	    // add p3 0,0; will fail because "p3" is a polygon on layer 3
+	    // instead of an inst name.  With quotes, the parser will retrieve
+	    // the cell correctly.  The user, however will still have to use
+	    // quotes while editing if they want to add a copy of "p3" to a 
+	    // new device...
+
+	    fprintf(fp, "ADD \"%s\" ", p->u.i->name);
 	    if (pinstdef != NULL) {
 		opts = opt_copy(p->u.i->opts);
 		opts->rotation += pinstdef->u.i->opts->rotation;
@@ -1559,6 +1567,7 @@ DB_TAB *dp;
 int mode;
 {
     DB_DEFLIST *p; 
+    time_t now;
 
     if (mode == ARCHIVE) {
 	/* fprintf(fp, "PURGE %s;\n", dp->name);  */
@@ -1567,6 +1576,8 @@ int mode;
 	fprintf(fp, "DISP OFF;\n"); 
     }
 
+    now = time(NULL);
+    fprintf(fp, "$$ Saved: %s", ctime(&now));
     fprintf(fp, "LOCK %g;\n", dp->lock_angle);
     fprintf(fp, "LEVEL %d;\n", dp->logical_level);
     fprintf(fp, "GRID :C%d %g %g %g %g %g %g;\n", 

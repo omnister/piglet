@@ -4,7 +4,6 @@
 
 #include "db.h"
 #include "token.h"
-#include "lex.h"
 #include "xwin.h"
 #include "rubber.h"
 #include <math.h>

@@ -4,7 +4,6 @@
 #include "rubber.h"
 #include "opt_parse.h"
 #include "rlgetc.h"
-#include "lex.h"
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>

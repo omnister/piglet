@@ -10,7 +10,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 #include "eprintf.h"
 #include "opt_parse.h"
 

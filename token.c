@@ -8,7 +8,6 @@
 #include "db.h"
 #include "xwin.h"
 #include "rlgetc.h"
-#include "lex.h" 	/* for lookup_command() */
 #include "ev.h"
 #include "expr.h"	/* for evaluating expression */
 

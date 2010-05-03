@@ -2,6 +2,9 @@
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
 #include <math.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <readline/readline.h> 	/* for command line editing */
 #include <readline/history.h>  
@@ -10,7 +13,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 #include "ev.h"
 
 extern void do_win();		/* found in com_window */
@@ -26,6 +28,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     char *p;
     char name[128];
     char buf[128];
+    char buf2[128];
     int debug=0;
     int nfiles=0;
     DB_TAB *new_rep;  
@@ -33,6 +36,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     double x1, y1;
     DB_DEFLIST *p_best;
     double xmin, ymin, xmax, ymax;
+    int code;
 
     enum {START,NUM1,DOIT,END} state = START;
 
@@ -156,12 +160,48 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    need_redraw++;
 
 		    /* 
+		       FIXME:
 		       should decompose this into routines
 		       FILE *search(char *cellname);
 		       readin(FILE *fp); 
 		    */
 
 		    snprintf(buf, MAXFILENAME, "./cells/%s.d", name);
+		    snprintf(buf2, MAXFILENAME, "./cells/#%s.d", name);
+
+		    code = 0;
+		    if (access(buf, R_OK) == 0) code=1;
+		    if (access(buf2, R_OK) == 0) code+=2;
+
+		    struct stat sb1;
+		    struct stat sb2;
+
+		    switch (code) {
+		        case 0:	// no files exist
+			    break;
+			case 1:	// only the proper .d file exists
+			    break;
+			case 2:	// only the crash file exists
+			    printf("couldn't find %s, reading %s instead\n", buf, buf2);
+			    strcpy(buf, buf2);
+			    break;
+			case 3: // both files exist
+			    stat(buf,  &sb1);
+			    stat(buf2, &sb2);
+			    if (sb2.st_mtime > sb1.st_mtime) {
+				printf("\tAn autosave file was found that is newer than the device file.\n");
+				printf("\tdevice file:    %s, %d bytes, %s", buf, 
+					(int) sb1.st_size, ctime(&sb1.st_mtime));
+				printf("\tautosave file: %s, %d bytes, %s", buf2, 
+					(int) sb2.st_size, ctime(&sb2.st_mtime));
+			    }
+		            if (ask(lp, "read autosave file instead of .d file?")) {
+				strcpy(buf, buf2);
+		            }
+			    break;
+			default:
+			    break;
+		    }
 
 		    if (readin(buf,1,EDI) == 0) {   /* cannot find copy on disk */
 			if (debug) printf("calling dowin 1\n");

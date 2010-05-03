@@ -2,7 +2,6 @@
 #include "xwin.h"
 #include "token.h"
 #include "rubber.h"
-#include "lex.h"
 #include "rlgetc.h"
 #include "opt_parse.h"
 static double x1, y1;

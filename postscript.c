@@ -11,10 +11,18 @@
 
 int linetype=0;
 int pennum=0;
+int filltype=0;
 int in_line=0;		/* set to 1 when working on a line */
+int in_poly=0;
 
 int this_pen=0;;
 int this_line=0;
+
+void ps_set_fill(fill)
+int fill;
+{
+    filltype=fill;
+}
 
 void ps_set_line(line)
 int line;
@@ -37,8 +45,8 @@ ANSI-C  0 0  17i 22i
 ANSI-D  0 0  22i 34i
 */
 
-/* evidently pays attention to pagesize labels...  can't say Letter */
-/* and give Ansi-A page sizes... */
+/* the ps interpreter evidently pays attention to pagesize labels... */
+/* can't say Letter and give Ansi-A page sizes... */
 
 void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) 
 FILE *fp;
@@ -71,8 +79,6 @@ gwidth/height: 894, 787
 bounds to ps: 142.932, -1.42109e-14, 751.068, 787
 setting landscape
 */
-
-
     xmid = (llx+urx)/2.0;
     ymid = (lly+ury)/2.0;
     xdel = 1.05*fabs(urx-llx);
@@ -158,6 +164,7 @@ setting landscape
     fprintf(fp,"/gs {gsave} bind def\n");
     fprintf(fp,"/sa {save} bind def\n");
     fprintf(fp,"/rs {restore} bind def\n");
+    fprintf(fp,"/kc { currentrgbcolor [/Pattern /DeviceRGB] setcolorspace } bind def\n");
     fprintf(fp,"/l {lineto} bind def\n");
     fprintf(fp,"/m {moveto} bind def\n");
     fprintf(fp,"/rm {rmoveto} bind def\n");
@@ -183,6 +190,19 @@ setting landscape
     fprintf(fp,"10 setmiterlimit\n");
     fprintf(fp,"1 slj 1 slc\n");
     fprintf(fp,"1.0 slw\n");
+    fprintf(fp,"%% start stipple patterns\n");
+    fprintf(fp,"/p1 {\n");
+    fprintf(fp,"8 8 true  matrix {<8040201008040201>} imagemask\n");
+    fprintf(fp,"} bind def\n");
+    fprintf(fp,"<< /PatternType 1\n");
+    fprintf(fp,"   /PaintType 2\n");
+    fprintf(fp,"   /TilingType 1\n");
+    fprintf(fp,"   /XStep 8 /YStep 8\n");
+    fprintf(fp,"   /BBox [0 0 8 8]\n");
+    fprintf(fp,"   /PaintProc { p1 }\n");
+    fprintf(fp,">>\n");
+    fprintf(fp,"matrix makepattern /f1 exch def\n");
+    fprintf(fp,"%% end stipple patterns\n");
     fprintf(fp,"%%BeginPageSetup\n");
     fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
     if (landscape) {
@@ -205,10 +225,12 @@ FILE *fp;
     extern int this_pen;
     extern int in_line;
 
-    fprintf(fp, "gs\n");
     fprintf(fp, "c%d\n", this_pen);
+    if (in_poly) {
+	fprintf(fp, "gs kc f1 setpattern fill gr\n");
+	in_poly=0;
+    }
     fprintf(fp, "s\n");
-    fprintf(fp, "gr\n");
     in_line=0;
 }
 
@@ -241,7 +263,10 @@ double x1, y1;
     fprintf(fp, "%g %g m\n",x1, y1);
 }
 
-void ps_draw_poly() {
+void ps_draw_poly(fp) 
+FILE *fp;
+{
+    in_poly++;
 }
 
 

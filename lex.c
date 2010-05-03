@@ -15,7 +15,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 #include "eprintf.h"
 #include "readfont.h"
 #include "equate.h"

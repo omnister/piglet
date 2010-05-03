@@ -6,7 +6,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 
 /* 
     Add a component to the current device.

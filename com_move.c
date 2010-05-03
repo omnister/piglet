@@ -6,7 +6,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 #include "rubber.h"
 
 #define POINT 0

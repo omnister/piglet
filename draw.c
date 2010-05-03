@@ -1789,6 +1789,7 @@ int mode;
 	    /* FIXME: if !X, then output postscript polygon instead */
 	    /* bummer: Poly saves ints, and we need floats.... */
 	    /* ps_draw_poly(&Poly, n_poly_points); */
+	    ps_draw_poly(PLOT_FD);
 	}
     }
 }
@@ -2352,6 +2353,7 @@ int comp;	/* component type */
     } else {
         ps_set_pen(equate_get_color(lnum));	
 	ps_set_line(equate_get_linetype(lnum));
+	ps_set_fill(equate_get_fill(lnum));
     }
 }
 

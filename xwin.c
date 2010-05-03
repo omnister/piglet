@@ -19,7 +19,6 @@
 
 #include "db.h"
 #include "xwin.h"
-#include "lex.h"
 #include "token.h"
 #include "eprintf.h"
 #include "rubber.h"

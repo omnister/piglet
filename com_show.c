@@ -5,7 +5,6 @@
 #include "db.h"
 #include "xwin.h"
 #include "token.h"
-#include "lex.h"
 #include "rlgetc.h"
 
 /*

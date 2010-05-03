@@ -1,17 +1,28 @@
-Using host libthread_db library "/lib/tls/libthread_db.so.1".
-loading /home/walker/.pigrc/MENUDATA_V from disk
-loading /usr/local/lib/piglet/NOTEDATA.F from disk
-loading /usr/local/lib/piglet/TEXTDATA.F from disk
-reading /usr/local/lib/piglet/PROCDATA.P from disk
+?1034h/* --------------------------------------------------------------------
+    PD_Piglet: an engineering graphical editor with hierarchy.
+    Copyright (C) 2002-2008  by Richard C. Walker.
 
-MAIN> edi x;
-EDIT x> win :f;
-EDIT x> win ;
-EDIT x> exit;
-MAIN> edi piglogo;
-EDIT piglogo> win :f;
-EDIT piglogo>
-EDIT piglogo> win :f;
-EDIT piglogo> quit;
+    Author's email: walker AT omnisterra DOT com
+    Homepage: http://www.omnisterra.com/walker/linux/piglet/intro.htm
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License,
+    version 2, which you should have received in the file "COPYING"
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+-------------------------------------------------------------------- */
+
+loading /usr/local/lib/piglet/MENUDATA_V
+loading /usr/local/lib/piglet/NOTEDATA.F
+loading /usr/local/lib/piglet/TEXTDATA.F
+loading /usr/local/lib/piglet/PROCDATA.P
+loading /home/walker/piglet/piglet/cells/piglogo.d
+Could not find any pigrc file
+?1034h
+MAIN> edi PLAKquit
 
 Program exited normally.

@@ -6,7 +6,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 #include "rubber.h"
 
 static double x1, y1, x2, y2, x3, y3;

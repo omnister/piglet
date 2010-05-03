@@ -6,7 +6,6 @@
 #include "db.h"
 #include "token.h"
 #include "xwin.h" 	
-#include "lex.h"
 
 //
 // This is piglet's undo/redo facility.

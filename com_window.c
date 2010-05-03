@@ -4,7 +4,6 @@
 #include "xwin.h"
 #include "token.h"
 #include "rubber.h"
-#include "lex.h"
 #include "rlgetc.h"
 #include "eprintf.h"
 #include "equate.h"

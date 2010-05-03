@@ -5,6 +5,8 @@
 # version 1.0.
 #
 
+[ ] fill4.ps shows how to fill with a stipple.  Make ps plots properly stipple
+
 [ ] should periodically save cells/DEV.autosave, when starting ask "crash rep found, readin instead?"  
       While editing
 	  if modified and idle for more than XX seconds, or if time since last save is greater than YY
