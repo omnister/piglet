@@ -31,7 +31,7 @@ rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c ev.h com_shell.c expr.c pigrc
+ev.c ev.h com_shell.c expr.c expr.h pigrc .git
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I

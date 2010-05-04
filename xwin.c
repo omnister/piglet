@@ -988,8 +988,9 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
 	   eprintf("line type %d out of range.", line);
     }        
     
+    // any changes to this block need to be harmonized with xwin_ps_dashes() below
     switch (line) {
-       case 0:				
+       case 0:
        case 1:     dash_list[0]=2; dash_list[1]=2; dash_n=2; break;
 
        case 2:     dash_list[0]=7; dash_list[1]=5; dash_n=2; break;
@@ -1021,6 +1022,37 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
 	XSetStipple(dpy, gcb, stipple[get_stipple_index(fill,pen)]);	
     }
 }
+
+
+// any changes to this routine need to be harmonized with xwin_set_pen_line_fill() above
+const char * xwin_ps_dashes(int line)
+{
+    switch (line % 7) {
+    case 0:
+	return ("[] 0 setdash");
+	break;
+    case 1:
+	return ("[2] 0 setdash");
+	break;
+    case 2:
+	return ("[7 5] 0 setdash");
+	break;
+    case 3:
+	return ("[7 2 1 2] 0 setdash");
+	break;
+    case 4:
+	return ("[7 2 3 2] 0 setdash");
+	break;
+    case 5:
+	return ("[9 5] 0 setdash");
+	break;
+    case 6:
+	return ("[4 4] 0 setdash");
+	break;
+    }
+    return NULL;
+}
+
 
 int draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
 Window win;

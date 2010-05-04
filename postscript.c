@@ -239,9 +239,11 @@ FILE *fp;
 {
     extern int this_pen;
     extern int this_fill;
+    extern int this_line;
     extern int in_line;
 
     fprintf(fp, "c%d\n", this_pen);
+    fprintf(fp, "%s\n", xwin_ps_dashes(this_line));
     if (in_poly) {
 	fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
 	fprintf(fp, "gs kc f%d setpattern fill gr\n",
