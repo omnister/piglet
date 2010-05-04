@@ -45,6 +45,7 @@ treated as a single end-of-line character.
     SET PIG_SHOW_DEFAULT "#E"	$$ make cells editable by default
     DEF wi "WIN :X.5;"		$$ window in macro
     DEF wo "WIN :X2;"		$$ window out macro
+    DEF wf "WIN :F;"		$$ window fit macro
     EDI PLAN;
 .fi
 
@@ -90,6 +91,29 @@ the UNDO command.  The UNDO depth is limited only by available memory.
 Any undone operations can be redone with the REDO command. 
 Once the user is satisfied with the state of the drawing, and proceeds 
 to modify the geometry further, the REDO buffer is cleared.
+
+.SS AUTOSAVE
+As part of the UNDO/REDO machinery, Piglet keeps an autosave file in
+./cells named "#<cellname>.d".  The autosave file is updated everytime
+the current cell is changed.  When a cell is finally saved the autosave
+file is deleted so that the normal "<cellname>.d" file is the only one
+remaining.  If Piglet crashes, or a quit is forced, then the autosave
+file will be found next time the cell is edited.  Piglet then gives the
+user the opportunity to recover the unsaved changes at the next
+edit:
+
+.nf
+    MAIN> edi testcell;
+    An autosave file was found that is newer than the device file.
+       device file:    ./cells/testcell.d, 2803 bytes, Tue May  4 00:00:47 2010
+       autosave file: ./cells/#testcellt.d, 2827 bytes, Tue May  4 00:31:58 2010
+    read autosave file instead of .d file?: (y/n)? 
+.fi
+
+It also possible to examine the cells directory at any time and to
+compare the contents of any autosave files with the associated .d files,
+and to either delete the autosave file or copy it onto the .d file as
+appropriate. 
 
 .SS COMMAND LINE EDITING
 Anything typed at the command line goes into a readline buffer.  
@@ -154,24 +178,29 @@ Piglet's menu is also defined by a customizable file "MENUDATA_V".  The default
 menu is defined as:
 
 .nf
-ayyyyy|ADD |R|P|L|N|T|
-ayyygg|SHO |C|A|I|+|-|
-ayyggg|GRI |#|^|1|2|3|
-ayyggg|WIN |;|!|4|5|6|
-yyyggg|:F|:V|:Z|7|8|9|
-yyyggg|:D|:S|:V|,|0|.|
-yyyyyy|:W|:M|:N|:O|:R|
-yyaaaw|:X|:Y|X|Y|@|XY|
-ww    |      |       |
-aaa   |WRA |SMA |GRO |
-aaa   |MOV |COP |STR |
-ypy   |IDE |POI |LIS |
-ygg   |DIST |DISP |  |
-ggg   |DUM |PLO |LOC |
-ggy   |ARC |RET |INP |
-gw    |CHA |         |
-rrr   |UND |BYE |DEL |
-yyr   |SAV |EDI |EXI |
+ayyyyy |ADD |R|P|L|N|T|
+ayyyyb |SHO |C|E|I|A|O|
+ayyggg |GRI |#|^|1|2|3|
+aggggg |WIN |+|-|4|5|6|
+yyyggg |:F|:V|:Z|7|8|9|
+yyyggg |:D|:S|:L|,|0|.|
+yyyyy  |:W|:C|:N|:O|:R|
+yyaaaa |:X|:Y|:M|X|Y|@|
+ggg    |LAY |LEV |LOC |
+ggg    |FSI |TSL |    |
+gyyy   |SHO #E; |;|!| |
+wrgbapy|0|1|2|3|4|5|6 |
+ww     |       |      |
+aap    |MOV |COP |CHA |
+ypy    |IDE |POI |LIS |
+ygg    |DISP |DIST |  |
+ggg    |DUM |PLO |ARC |
+gby    |RET |SPL |INP |
+ggb    |ARE |WRA |GRO |
+ggr    |STR |SMA |PUR |
+rrr    |DEL |EXI |BYE |
+ygg    |SAV |    |    |
+ygg    |EDI |UND |RED |
 .fi
 
 The file consists of fields separated by "|" characters.  The first
@@ -193,20 +222,21 @@ The following PROCDATA.P file defines the characteristics of  9
 layers.
 
 .nf
-EQU :C1 :P1 :M0 :B boundary 0
-EQU :C2 :P2 :M1 :D layer1 1
-EQU :C3 :P3 :M2 :D layer2 2
-EQU :C4 :P4 :M3 :D layer3 3
-EQU :C5 :P5 :M4 :S layer4 4
-EQU :C6 :P6 :M5 :S layer5 5
-EQU :C7 :P7 :M6 :I layer6 6
-EQU :C1 :P1 :M0 :I layer7 7
-EQU :C2 :P2 :M1 :I layer8 8
+EQU :C1 :P1 :M0 :B :F0 boundary 0
+EQU :C2 :P2 :M1 :D :F2 layer1 1
+EQU :C3 :P3 :M2 :D :F2 layer2 2
+EQU :C4 :P4 :M3 :D :F2 layer3 3
+EQU :C5 :P5 :M4 :S :F0 layer4 4
+EQU :C6 :P6 :M5 :S :F0 layer5 5
+EQU :C7 :P7 :M6 :I :F0 layer6 6
+EQU :C1 :P1 :M0 :I :F0 layer7 7
+EQU :C2 :P2 :M1 :I :F0 layer8 8
 .fi
 
 The first line, for example, says that layer 0 is named "boundary",
 drawn with color 1 (white), plotted with pen 1, and uses line type 0
-(solid).  See the EQUate man page for full details. 
+(solid).  The detail layers (2,3,4) are filled with fill pattern 2 and
+the other layers are unfilled.  See the EQUate man page for full details. 
 
 .SS ENVIRONMENT VARIABLES
 
@@ -1109,9 +1139,9 @@ U: EQU [:C<color>] [:P<pen>] [:M{S|D|B|[0-6]}] [:F<fill>] [:B|:D|:S|:I] [<label>
 S: complete
 T: {
 
-Associate a mask layer with a color, fill pattern, plotting pen, and a mnemonic
-description of its use.  All layers are initally set to detail, solid
-green, unfilled, and not plotted. 
+Associate a mask layer with a color, fill pattern, plotting pen, and a
+mnemonic description of its use.  All layers are initally set to detail,
+solid green, unfilled, and not plotted. 
 
 The EQU command allows these settings to be customized for a particular
 application or IC process.   Normally, EQUate commands are stored in the
@@ -1138,8 +1168,8 @@ EQU :C9 :P2 :M4 :D :F2 layer9  9
 .fi
 
 The first line, for example, says that layer 0 is named "boundary",
-drawn with color 7 (white), plotted with pen 7, filled with pattern 0 (unfilled)
-and uses line type 0 (solid). 
+drawn with color 7 (white), plotted with pen 7, filled with pattern 0
+(unfilled) and uses line type 0 (solid). 
 
 .SS OPTIONS
 .TP
@@ -1577,7 +1607,10 @@ The PLOT command creates a postscript dump of the current window in the
 file "./<plotname>.ps.  If the <plotname> is not specified, the name of
 the cell will be used instead.  The file is suitable for printing on
 letter sized paper, and will automatically fit the drawing to either
-landscape or portrait depending on the shape of the drawing. 
+landscape or portrait depending on the shape of the drawing.  Piglet
+fits the entire displayed window to the postscript output.  If the size
+of the printed image is too small, it may be advantagious to resize the
+X11 display window to fit the cell more closely. 
 
 PLOT with no arguments will plots just the currently visible portion of
 the device.  The ":F" option will fit the window to the device prior to
@@ -1592,8 +1625,8 @@ designs.
 
 There should be options (:P<papersize>?) for plotting to standard paper
 sizes and to arbitrary <width>x<height> pages.  The c-code for
-postscript plotting is set up to allow this, so it is just 
-an exercise in option parsing to enable this feature. 
+postscript plotting is set up to allow this, so it is just an exercise
+in option parsing to enable this feature. 
 
 .SS OPTIONS
 .TP
@@ -2144,12 +2177,13 @@ using the ":N<nest_level>" of the WIN command.  "WIN :N0" will show all
 sub-cells as bounding boxes.  "WIN :N1" will show all sub-cells of
 sub-cells as bounding boxes, and so on. 
 
-Piglet normally will draw polygons as specified in the PROCESS file.  If a layer
-is difficult to see, it can be toggled into solid fill mode by using "WIN :O<layer>";
-The filled state is sticky and will remain throughout the edit session, but will
-not be saved when Piglet is exited.  Repeating the command will toggle the layer fill
-back to the original state.  "WIN :O;" with no argument will toggle all layers
-from solid fill to their normal PROCESS fill definitions.
+Piglet normally will draw polygons as specified in the PROCESS file.  If
+a layer is difficult to see, it can be toggled into solid fill mode by
+using "WIN :O<layer>"; The filled state is sticky and will remain
+throughout the edit session, but will not be saved when Piglet is
+exited.  Repeating the command will toggle the layer fill back to the
+original state.  "WIN :O;" with no argument will toggle all layers from
+solid fill to their normal PROCESS fill definitions. 
 
 .SS OPTIONS
 .TP
