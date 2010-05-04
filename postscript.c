@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <math.h>
 
+#include "db.h"
+#include "xwin.h"
 #include "postscript.h"
 
 #define MAXBUF 256
@@ -15,8 +17,11 @@ int filltype=0;
 int in_line=0;		/* set to 1 when working on a line */
 int in_poly=0;
 
-int this_pen=0;;
-int this_line=0;
+int this_pen=0;		// we need to save state at start of line
+int this_line=0;	// because lines are implicitly terminate
+int this_fill=0;	// by starting a new line which overwrites
+			// pen, line and fill
+
 
 void ps_set_fill(fill)
 int fill;
@@ -89,6 +94,7 @@ setting landscape
 
     xmax=pdx*72.0;
     ymax=pdy*72.0;
+    printf("aspect is xdel: %g, ydel: %g\n", xdel, ydel);
     if (xdel > ydel) { /* flip aspect */
 	landscape=1;
     	printf("setting landscape\n");
@@ -140,12 +146,12 @@ setting landscape
     fprintf(fp,"$Pig2psDict /mtrx matrix put\n");
     fprintf(fp,"/c-1 {0 setgray} bind def\n");
     fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c1 {0.900 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c2 {0.000 0.900 0.000 srgb} bind def\n");
-    fprintf(fp,"/c3 {0.200 0.200 0.900 srgb} bind def\n");
-    fprintf(fp,"/c4 {0.000 0.900 0.900 srgb} bind def\n");
-    fprintf(fp,"/c5 {0.900 0.000 0.900 srgb} bind def\n");
-    fprintf(fp,"/c6 {0.900 0.900 0.000 srgb} bind def\n");
+    fprintf(fp,"/c1 {1.000 0.000 0.000 srgb} bind def\n");
+    fprintf(fp,"/c2 {0.000 1.000 0.000 srgb} bind def\n");
+    fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
+    fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
+    fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
+    fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
     fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
     fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
     fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
@@ -190,19 +196,28 @@ setting landscape
     fprintf(fp,"10 setmiterlimit\n");
     fprintf(fp,"1 slj 1 slc\n");
     fprintf(fp,"1.0 slw\n");
+
     fprintf(fp,"%% start stipple patterns\n");
-    fprintf(fp,"/p1 {\n");
-    fprintf(fp,"8 8 true  matrix {<8040201008040201>} imagemask\n");
-    fprintf(fp,"} bind def\n");
-    fprintf(fp,"<< /PatternType 1\n");
-    fprintf(fp,"   /PaintType 2\n");
-    fprintf(fp,"   /TilingType 1\n");
-    fprintf(fp,"   /XStep 8 /YStep 8\n");
-    fprintf(fp,"   /BBox [0 0 8 8]\n");
-    fprintf(fp,"   /PaintProc { p1 }\n");
-    fprintf(fp,">>\n");
-    fprintf(fp,"matrix makepattern /f1 exch def\n");
+    int i,j; char *ps;
+    for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
+        fprintf(fp,"/p%d {\n",i);
+        fprintf(fp,"8 8 true  matrix {<");
+	for (j=0; j<=7; j++) {
+    	    fprintf(fp,"%02x",ps[j]&255);
+	}
+        fprintf(fp,">} imagemask\n");
+    	fprintf(fp,"} bind def\n");
+	fprintf(fp,"<< /PatternType 1\n");
+        fprintf(fp,"   /PaintType 2\n");
+	fprintf(fp,"   /TilingType 1\n");
+	fprintf(fp,"   /XStep 8 /YStep 8\n");
+	fprintf(fp,"   /BBox [0 0 8 8]\n");
+	fprintf(fp,"   /PaintProc { p%d }\n",i);
+	fprintf(fp,">>\n");
+	fprintf(fp,"matrix makepattern /f%d exch def\n",i);
+    }
     fprintf(fp,"%% end stipple patterns\n");
+
     fprintf(fp,"%%BeginPageSetup\n");
     fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
     if (landscape) {
@@ -223,11 +238,14 @@ void ps_end_line(fp)
 FILE *fp;
 {
     extern int this_pen;
+    extern int this_fill;
     extern int in_line;
 
     fprintf(fp, "c%d\n", this_pen);
     if (in_poly) {
-	fprintf(fp, "gs kc f1 setpattern fill gr\n");
+	fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
+	fprintf(fp, "gs kc f%d setpattern fill gr\n",
+	    get_stipple_index(this_fill,this_pen));
 	in_poly=0;
     }
     fprintf(fp, "s\n");
@@ -251,6 +269,7 @@ double x1, y1;
     extern int in_line;
     extern int this_pen;
     extern int this_line;
+    extern int this_fill;
 
     if (in_line) {
     	ps_end_line(fp);
@@ -259,6 +278,7 @@ double x1, y1;
 
     this_pen=pennum;		/* save characteristics at start of line */
     this_line=linetype;
+    this_fill=filltype;
     fprintf(fp, "n\n");
     fprintf(fp, "%g %g m\n",x1, y1);
 }

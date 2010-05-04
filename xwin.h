@@ -54,4 +54,8 @@ void xwin_clear_rubber_callback();
 
 extern char version[];
 extern void init_stipples();
+extern int get_stipple_index(int fill, int pen);
+extern char *get_stipple_bits(int i);
+
+
 

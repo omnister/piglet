@@ -1016,8 +1016,9 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
     if (fill <= 1) {
         XSetFillStyle(dpy, gcb, FillSolid);
     } else {
+	/* use gcb for polygon filling */
         XSetFillStyle(dpy, gcb, FillStippled);
-	XSetStipple(dpy, gcb, stipple[(fill-2)*10+pen]);	/* use gcb for polygon filling */
+	XSetStipple(dpy, gcb, stipple[get_stipple_index(fill,pen)]);	
     }
 }
 
