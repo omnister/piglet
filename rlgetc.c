@@ -233,7 +233,13 @@ LEXER *lp;
 	    lineread=rl_gets(":");
 	}
 	if (lineread == NULL) {
-	    c=EOF;
+	    linep = NULL;
+	    if (lp->token_stream == stdin) {
+		printf("trapped EOF on input: use QUIT to exit...\n");
+		c='\n';
+	    } else {
+	    	c=EOF;
+	    }
 	} else {
 	    linep = lineread;
 	    c=*(linep++);

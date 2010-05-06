@@ -2,8 +2,14 @@
 
 stty sane
 
+echo "pig is a script that runs pig.bin under the"
+echo "gdb gnu debugger... don't worry about next two lines:"
+
 (
 cat <<!
+    handle SIGINT noprint pass 
+    handle SIGTSTP noprint pass 
+    handle all 
     set detach-on-fork on
     run
     bt
@@ -12,7 +18,7 @@ cat <<!
     quit
     yes
 !
-) > pig.tmp.$$
+) > pig.tmp.$$ 
 
 gdb --batch  -q -command pig.tmp.$$ pig.bin | tee pigtrace
 
@@ -27,7 +33,9 @@ then
     echo "Piglet has crashed.  Please send a description of what you were doing"
     echo "plus the last 100 lines of the file named \"pigtrace\" to"
     echo "<walker@omnisterra.com>.  Thanks! - Rick Walker"
+else
+    rm pigtrace
 fi
 
-
 rm pig.tmp.*
+

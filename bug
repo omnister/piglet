@@ -5,6 +5,8 @@
 # version 1.0.
 #
 
+add primitives down one level with affine transformations?
+
 [ ] fill4.ps shows how to fill with a stipple.  Make ps plots properly stipple
 
 [ ] should periodically save cells/DEV.autosave, when starting ask "crash rep found, readin instead?"  
