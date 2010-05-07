@@ -137,7 +137,7 @@ unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 
 int initX()
 {
-    double x,y;
+    int x,y;
     unsigned int border_width = 4;
     extern unsigned int dpy_width, dpy_height;
     char *window_name = "PD_Piglet: Personal Interactive Graphic Layout EdiTor";
@@ -165,6 +165,8 @@ int initX()
     int linewidth;
     int numrows;
     char buf[128];
+    char *geometry;
+    int flags;
 
     if (!(size_hints = XAllocSizeHints())) {
 	eprintf("failure allocating SizeHints memory");
@@ -187,18 +189,18 @@ int initX()
     dpy_width = DisplayWidth(dpy, scr);
     dpy_height = DisplayHeight(dpy, scr);
 
-    /* eventually we want to set x,y from command line or
-       resource database */
+    // set x,y and size by $PIGLET_GEOMETRY and --geometry flag
 
     /* suggest that window be placed in upper left corner */
-    x=y=2*border_width;
-
-    /* Size window */
-    // FIXME: should be settable by $PIGLET_GEOMETRY and --geometry flag
+    x=y= 2 * (int) border_width;
     // 0.75x0.75 sets size as a fraction of dpy size
-    // 500x600 sets size in pixels
-
     top_width = 3*dpy_width/4, top_height = 3*dpy_height/4;
+
+    geometry = EVget("PIG_GEOMETRY");
+    if (debug) printf("geometry is %s\n", geometry);
+
+    flags=XParseGeometry(geometry, &x, &y,  &top_width, &top_height);	
+    if (debug) printf("geom: %s x,y,xw,yw = %d %d %d %d\n", geometry, x, y, top_width, top_height);
 
     /* figure out menu sizes */
     string = "X";
@@ -224,19 +226,35 @@ int initX()
     pane_height = overall.ascent + overall.descent + 6;
     menu_height = pane_height * numrows;
 
+    if (top_width < menu_width*2) {
+       top_width = menu_width*2;
+    }
+    if (top_height < menu_height) {
+       top_height = menu_height;
+    }
+
+    if (flags & XNegative) {
+    	// origin w.r.t right hand side
+	x = dpy_width-top_width+x;
+    } 
+    if (flags & YNegative) {
+    	// origin w.r.t bottom of display
+	y = dpy_height-top_height+y;
+    } 
+
     /* create top level window for packing graphic and menu windows */
     topwin = XCreateSimpleWindow(dpy, RootWindow(dpy,scr),
-        (int) x,(int) y, top_width, top_height, border_width,
+        x, y, top_width, top_height, border_width,
 	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
 
-    x=y=0.0;
+    x=y=0;
     border_width=1;
     g_width=top_width-menu_width;
     g_height=top_height;
 
     /* Create opaque window for graphics */
     win = XCreateSimpleWindow(dpy, topwin,
-        (int) x,(int) y, g_width, g_height, border_width, 
+        x, y, g_width, g_height, border_width, 
 	WhitePixel(dpy,scr), BlackPixel(dpy,scr));
 
     /* Create opaque window for menu */

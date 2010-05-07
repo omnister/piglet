@@ -5,17 +5,20 @@
 # version 1.0.
 #
 
-add primitives down one level with affine transformations?
+[ ] add primitives down one level with affine transformations?
 
-[ ] fill4.ps shows how to fill with a stipple.  Make ps plots properly stipple
+[x] fill4.ps shows how to fill with a stipple.  Make ps plots properly stipple
 
-[ ] should periodically save cells/DEV.autosave, when starting ask "crash rep found, readin instead?"  
+[ ] forcing exit by typing "bye bye" should clear autosave file for all unsaved cells
+[x] should periodically save cells/DEV.autosave, when starting ask "crash rep found, readin instead?"  
       While editing
-	  if modified and idle for more than XX seconds, or if time since last save is greater than YY
-	  save current modified DEV to cells/DEV.autosave, clear modification flag
+	  if modified and idle for more than XX seconds, or if time
+	  since last save is greater than YY save current modified DEV
+	  to cells/DEV.autosave, clear modification flag
       While reading in
       	  if cells/DEV.autosave is newer than cells/DEV.d then ask:
-	  crash rep found, readin instead?  If yes, then readin crash rep as the .d
+	  crash rep found, readin instead?  If yes, then readin crash
+	  rep as the .d
 
 [ ] should store disk mod time and readin-time in db_tab for all cells. 
     Use to check if version on disk was changed since readin and before writing out. 
@@ -97,14 +100,16 @@ to prevent a redraw when resizing a big drawing, then it is a problem.
 
 [ ] SMA is funny, requiring a double click, but not EOC.  think about better definition.
 
-[ ] CHA :R for fixing font size, orientation, changing graph label font sizes en-masse, etc.
+[ ] CHA :R for fixing font size, orientation, changing graph label font
+    sizes en-masse, etc. 
 
-[ ] need an alternative way to draw an arc: center, first point of circumference, second point on circumference, draw cw.
+[ ] need an alternative way to draw an arc: center, first point of
+    circumference, second point on circumference, draw cw. 
 
 [ ] there is a lag between showing primitives and sub-cells with win :n-1, win:n9
-[ ] postscript doesn't carry through line types
+[x] postscript doesn't carry through line types
 [ ] postscript output should optionally be hierarchical
-[ ] postscript output should allow filled objects 
+[x] postscript output should allow filled objects 
 [ ] warning message on exit if proc modified from readin.
 
 [x] ADD I should suppress double click (don't add two insts)

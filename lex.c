@@ -690,14 +690,16 @@ LEXER *lp;
 char *arg;
 {
     /* The user wishes to quit using this program */
+    /* two consecutive BYE requests will force an exit */
     /* Just set quit_now non-zero. */
 
     static int linenumber;	/* remember last request */
 
     if ( (lp->line != linenumber+1) && db_list_unsaved() ) {
 	printf("    you have one or more unsaved instances!\n");
-	printf("    typing either \"QUIT\" or \"BYE\" twice will force exit\n");
+	printf("    typing either \"QUIT\" or \"BYE\" twice will force exit, discarding all unsaved changes\n");
     } else {
+	db_remove_autosavefiles();
 	quit_now++;
 	exit(0); 	/* for now just bail */
     }
@@ -950,7 +952,7 @@ char *arg;
     if (lp->mode == EDI) {
 	if (lp->line != linenumber+1 && currep != NULL && currep->modified) {
 	    printf("    current device is unsaved!");
-	    printf("    typing \"EXIT\" a second time will force exit\n");
+	    printf("    typing \"EXIT\" a second time will force exit, leaving device in memory\n");
 	} else {
 	    if (currep != NULL) {
 		editlevel=currep->being_edited;

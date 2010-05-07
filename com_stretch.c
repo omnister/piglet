@@ -518,6 +518,7 @@ int com_stretch(LEXER *lp, char *arg)
 	default:
 	    if (token == EOC || token == CMD) {
 		if (debug) printf("recognized EOC 6\n");
+		db_highlight(p_best);		/* unhighlight it */
 		;
 	    } else {
 		token_flush_EOL(lp);

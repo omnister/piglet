@@ -115,7 +115,7 @@ did a "make install", these should be in your /usr/local/man/man1 directory.
 If this is in your MANPATH environment variable, you can type "man piglet"
 and get an overview of the editor.  There will be a list of commands at the
 end of the page that can also be viewed.  Each command has a separate
-man page so you can look at "man add_rect", "man move", "man copy", and so on.
+man page so you can look at "man add_rectangle", "man move", "man copy", and so on.
 
 
 EDIT

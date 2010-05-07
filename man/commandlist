@@ -7,16 +7,16 @@ Piglet is started by typing "pig" in a terminal window.  Piglet then
 creates an associated graphical window under X11.  The editor scans
 both the graphic window and the original shell window that you used to
 start Piglet.  You can either type coordinates, or click them with the
-mouse.  The shell window should have a prompt "MAIN>" at which commands
-may be typed.  Anywhere that Piglet expects a number, you can enter
-a mathematical expression instead.  Expressions may use the operators
+mouse.  Commands may be typed at the shell window prompt: "MAIN>".
+Anywhere that Piglet expects a number, you can enter a mathematical
+expression instead.  Expressions may use the operators
 +,-,*,/,(,), and must be enclosed in surrounding parentheses.  For
 example, you can add a rectangle to the current device with the command:
 .nf
 	ADD R1 (5.3/(4-2)),10 (3*5.3/4),20;
-.fi
-When entering points with the mouse, the clicks ALWAYS snap to the grid,
-giving a powerful way to enter precise coordinates.
+.fi 
+When entering points with the mouse, the clicks ALWAYS snap to the
+grid, giving a powerful way to enter precise coordinates. 
 
 All the Piglet built-in commands are case-insensitive and can be
 abbreviated to just three letters with one exception.  DISPLAY must be
@@ -39,7 +39,7 @@ treated as a single end-of-line character.
 
 .nf
     $$ 
-    $$ piglet initialization file
+    $$ example piglet initialization file
     $$
 
     SET PIG_SHOW_DEFAULT "#E"	$$ make cells editable by default
@@ -62,9 +62,9 @@ to disk with "SAVE;".
 
 Piglet can nest edit commands.  If you are editing <device1> and you
 decide that you need to create a new module, you can type "EDI
-<newdevice>;" with leaving your current edit session.  After you SAVE
+<newdevice>;" without leaving your current edit session.  After you SAVE
 and EXIT the nested edit, you will be returned to your original edit in
-progress.  You can nest commands without limit subject to the constraint
+progress.  You can nest edit commands without limit subject to the constraint
 that you cannot simultaneously edit any device more than once. 
 
 .SS NAVIGATION
@@ -79,11 +79,11 @@ middle button and dragging either right or left to zoom in and out.
 
 The WINDOW command can be used to adjust the current view.  "WIN :F;"
 will fit the device in the window.  "WIN 0,0 10,10;" will set the
-viewport so that a rectangle with lower left of 0,0 and upper right of
-10,10 fits as tightly as possible.  Using the WINDOW command with mouse
-picks is a good way to zoom into a specific detail of the current
-device.  After inspection, "WIN :Z;" is handy to return to the previous
-window setting. 
+viewport so that a rectangle with a lower left coordinate of 0,0 and
+upper right of 10,10 fits as tightly as possible.  Using the WINDOW
+command with mouse picks is a good way to zoom into a specific detail of
+the current device.  After zooming in to check some detail, "WIN :Z;" 
+is handy to return to the previous window setting. 
 
 .SS UNDO/REDO
 All commands which modify the drawing geometry can be undone with
@@ -93,14 +93,14 @@ Once the user is satisfied with the state of the drawing, and proceeds
 to modify the geometry further, the REDO buffer is cleared.
 
 .SS AUTOSAVE
-As part of the UNDO/REDO machinery, Piglet keeps an autosave file in
-./cells named "#<cellname>.d".  The autosave file is updated everytime
-the current cell is changed.  When a cell is finally saved the autosave
-file is deleted so that the normal "<cellname>.d" file is the only one
-remaining.  If Piglet crashes, or a quit is forced, then the autosave
-file will be found next time the cell is edited.  Piglet then gives the
-user the opportunity to recover the unsaved changes at the next
-edit:
+As part of the UNDO/REDO machinery, Piglet keeps an autosave file named
+"#<cellname>.d" in the directory "./cells".  The autosave file is
+updated everytime the current cell is changed.  When a cell is finally
+SAVed the autosave file is deleted so that the normal "<cellname>.d"
+file is the only one remaining.  If Piglet crashes, or a QUIT without
+saving, then the autosave file will be found next time the cell is edited. 
+Piglet then gives the user the opportunity to recover the unsaved
+changes at the next edit:
 
 .nf
     MAIN> edi testcell;
@@ -110,7 +110,7 @@ edit:
     read autosave file instead of .d file?: (y/n)? 
 .fi
 
-It also possible to examine the cells directory at any time and to
+It is possible to examine the cells directory at any time and to
 compare the contents of any autosave files with the associated .d files,
 and to either delete the autosave file or copy it onto the .d file as
 appropriate. 
@@ -129,15 +129,15 @@ details about commandline editing.
 
 .SS OUTPUT
 
-When a drawing is SAVed, Piglet creates human readable cell definition
-files which consist of the same commands used to create the device
+When a drawing is SAVed, Piglet creates a human readable cell definition
+file which consist of the same commands which were used to create the device
 originally.  Piglet can also create postscript drawings with the PLOT
 command.  Screendumps can be created in numerous formats with the DUMP
-command.   By default, the compact png format is used.
+command.   By default, the compact png format is used for dumps.
 
 .SS FILES
 
-Piglet requires several configuration files to start up.  They are
+Piglet requires several configuration files to start up.  These include
 the TEXT and NOTE font definition files, the MENU definition file and
 the PROCESS layer definition file.
 
@@ -265,6 +265,25 @@ The default font size used for both note and text if not otherwise overridden wi
 The default italic font slant (from -45.0 to +45.0) used for both note and text if
 not otherwise overridden with :Z option. 
 .TP
+.I PIG_GEOMETRY "[=]<width>x<height>{+-}xoffset{+-}yoffset" 
+The argument is a standard X11 geometry.  The first two numbers specify the
+width and height of the piglet window in pixels. The second two numbers must
+come as a pair and give the offset of the window from one edge of the display.
+Positive xoffsets are measured from the left edge and negative from the right.
+Positive yoffsets are measured from the top of the screen and negative from the bottom.
+If a width or height is too small to be usable with the current menu, the size will
+be increased to a reasonable minimum value.  The geometry specification is useful
+for placing the graphics window above the command window so that interactive commands
+can be easily seen and edited.
+.nf
+    Some example geometries:
+
+      PIG_GEOMETRY=500x500+0+0 pig	; a small window in upper left corner
+      PIG_GEOMETRY=900x700-0+0 pig	; a wide window in upper right corner
+      PIG_GEOMETRY=500x700-0-0 pig	; a tall window in lower right corner
+      PIG_GEOMETRY=600x600+0-0 pig	; a medium window in lower left corner
+.fi
+.TP
 .I PIG_GRID "<dx> [<dy> [<dxs> [<dys> [<xorig> [<yorig>]]]]]" 
 From one to six floats used to set the grid deltax, deltay, xskip, yskip, and x and y origins.
 Any parameters left off will remain set to the default grid specification of "10 10 1 1 0 0".
@@ -297,14 +316,13 @@ The cell should already exist in PIG_PATH.
 .SS DEBUGGING
 
 Since Piglet is under active development, it is distributed to run under
-the gdb() debugger.  The script "pig" runs pig.bin under gdb() When
-running under gdb() most run-time errors and signals will kill Piglet
-and print out a backtrace of the stack.  If you would like help fixing a
-bug, please send the last few lines of the printout to Rick Walker
-<walker AT omnisterra DOT com> along with some description of what
-caused the bug. 
+the gdb() debugger.  The script "pig" runs pig.bin under gdb().  When
+running under gdb() most run-time errors will print out a backtrace of
+the stack.  If you would like help fixing a bug, please send a copy of
+the dump file (named "pigtrace.<process_id>") to Rick Walker <walker AT
+omnisterra DOT com> along with some description of what caused the bug. 
 
-When running pig.bin() without the debugger, Piglet traps and ignores
+When running pig.bin without the debugger, Piglet traps and ignores
 most signals, printing a notification to the terminal: "caught 2:
 Interrupt.  Use QUIT command to end program".  However, the special
 signal SIGQUIT elicits the message: "caught 3: Quit.  do it again and
@@ -734,7 +752,7 @@ D: Create archive file of specified device
 U: ARC <eoc>
 S: good
 T: {
-Creates an human readable ASCII file containing all the commands
+Creates an human-readable ASCII file containing all the commands
 needed to reconstruct the current device and any sub-cells.  
 The archive file contains definitions of all the sub-cells 
 used in the drawing, thereby preserving the hierarchy.
@@ -941,7 +959,33 @@ Prints the current date and time to the console in the format:
 
 N: DEFine
 D: Define a macro
-S: unimplemented (moderate)
+S: implemented (with no arguments)
+U: DEF [<macro_name> ["<macro definition string>"]];
+T: {
+Defines or prints out a macro definition.  If no arguments
+are given DEFine acts like "SET :M" and prints out all the 
+current macros definitions, one per line, each preceeded
+by the string "[M]".  If given only one argument, DEFine
+will print out the definition of that one macro.  If given
+two arguments, DEFine will create a macro named by the first
+argument and give it the value of the second argument.
+
+When the parser encounters a white-space delimited
+macro name in the input stream, it will replace it with
+the definition text.  Most users will want to put their
+favorite definitions in the pigrc file.  
+
+.SS EXAMPLE
+
+Here are some example macro definitions from the default
+pigrc file:
+
+.nf
+    DEF wi "WIN :X.5;"		$$ window in macro
+    DEF wo "WIN :X2;"		$$ window out macro
+    DEF wf "WIN :F;"		$$ window fit macro
+.fi
+}
 
 N: DELete
 D: Delete a component
@@ -1612,7 +1656,7 @@ fits the entire displayed window to the postscript output.  If the size
 of the printed image is too small, it may be advantagious to resize the
 X11 display window to fit the cell more closely. 
 
-PLOT with no arguments will plots just the currently visible portion of
+PLOT with no arguments will plot just the currently visible portion of
 the device.  The ":F" option will fit the window to the device prior to
 plotting and restore the existing window settings after the plot.
 
@@ -1623,7 +1667,7 @@ then instantiate them hierarchically.  The render time would go up, but
 the size of the plot file would shrink dramatically for hierarchical
 designs. 
 
-There should be options (:P<papersize>?) for plotting to standard paper
+There should be options (:P<papersize>) for plotting to standard paper
 sizes and to arbitrary <width>x<height> pages.  The c-code for
 postscript plotting is set up to allow this, so it is just an exercise
 in option parsing to enable this feature. 
@@ -1713,12 +1757,14 @@ D: read commands from an ARCHIVE file
 S: complete
 U: RET <archivefile>
 T: {
-Looks for a file at "./cells/<archivefile>_I" and reads those commands into the editor.  A properly formed
-archive will PURGE all files before redefining them and will have all hierarchical cell definitions
-ordered with no forward references.  This is the case for all Piglet-generated archives.
+Looks for a file at "./cells/<archivefile>_I" and reads those commands
+into the editor.  A properly formed archive will PURGE all files before
+redefining them and will have all hierarchical cell definitions ordered
+with no forward references.  This is the case for all Piglet-generated
+archives. 
 
-During the retrieve, the display is turned off and all cellnames are echoed to the display as they are read
-in.
+During the retrieve, the display is turned off and all cellnames are
+echoed to the display as they are read in. 
 }
 
 N: SAVe
@@ -1770,7 +1816,7 @@ S: unimplemented (moderate)
 
 N: SET
 D: Set or read a Piglet environment variable
-U: SET [:P] [:E]
+U: SET [:P] [:E] [:M]
 U: SET [<variable> [<value]] 
 D: Set environment variables
 S: partial
@@ -1778,12 +1824,12 @@ T: {
 Piglet inheirits any environment variables exported by the parent shell.
 In addition, new variables can be created as private variables by using the SET command.  
 If called with no arguments, SET will print out the list of all currently defined
-variables preceeding each one with either [E] for exported variables or
-[P] for private variables.  The :P and :E options limit the listing to only private or
-exported variables respectively.
-With just one argument, SET will
-print the value of the variable named by the argument.  
-With two arguments, SET will set the variable named by the first argument to
+variables preceeding each one with either [E] for exported variables,
+[P] for private variables, or [M] for macro definitions.  The :P, :E and
+:M options limit the listing to only private variables, exported
+variables, or macro definitions, respectively.  With just one argument,
+SET will print the value of the variable named by the argument.  With
+two arguments, SET will set the variable named by the first argument to
 the value of the second argument. 
 
 If a UNIX command is run by typing its name at the command prompt or as
@@ -1839,7 +1885,7 @@ The cell should already exist in PIG_PATH.
 Change Piglet's splash screen to use mylogo for this run only.
 .TP
 .B ksh> export PIG_SPLASH_REP=mylogo; pig
-Change Piglet's splash screen for all future runs.
+Change Piglet's splash screen for all future runs from this shell.
 .TP
 .B MAIN> SET PIG_GRID "20 20"
 Inside Piglet, change the default grid for new cells to be 20 units spacing

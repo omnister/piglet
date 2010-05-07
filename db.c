@@ -1061,6 +1061,10 @@ int smash;
 }
 
 
+// list any unsaved files at BYE.  If user says "BYE; BYE;"
+// then db_remove_autosaved() files will be called to remove
+// all edits in progress...
+
 int db_list_unsaved()
 {
     DB_TAB *dp;
@@ -1076,6 +1080,33 @@ int db_list_unsaved()
     }
     return(numunsaved);
 }
+
+// FIXME: there are numerous instances of creating the autosave file
+// with sprintf as below.  These should all be changed to call
+// a single subroutine:
+// const char * make_autosavefilename( char *repname );
+//
+
+int db_remove_autosavefiles()
+{
+    DB_TAB *dp;
+    int numremoved=0;
+    char buf[MAXFILENAME];
+
+    for (dp=HEAD; dp!=(DB_TAB *)0; dp=dp->next) {
+
+	/* do not remove NONAME reps */
+    	if (dp->modified && !dp->is_tmp_rep) {
+    	    snprintf(buf, MAXFILENAME, "./cells/#%s.d", dp->name);
+	    printf("unlinking autosave file: %s\n", buf);
+	    unlink(buf);
+	    numremoved++;
+	}
+
+    }
+    return(numremoved);
+}
+
 
 int db_contains(name1, name2) /* return 0 if sp contains no reference to "name" */
 char *name1;
@@ -1164,6 +1195,7 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
     int i;
     XFORM *xp;
     OPTS *opts;
+    double xold, yold;
 
     if (pinstdef != NULL) {
         xp = matrix_from_opts(pinstdef->u.i->opts);
@@ -1278,9 +1310,16 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 
 	i=1;
 	coords = p->u.p->coords;
+	xold = coords->coord.x-1.0;	// make it different
+	yold = coords->coord.y-1.0;
 	while(coords != NULL) {
 	    fprintf(fp, " ");
-	    printcoords(fp, xp,  coords->coord.x, coords->coord.y);
+	    if (coords->coord.x != xold && coords->coord.y != yold) {
+		// supress cooincident points created by stretching
+		printcoords(fp, xp,  coords->coord.x, coords->coord.y);
+	    }
+	    xold = coords->coord.x;
+	    yold = coords->coord.y;
 	    if ((coords = coords->next) != NULL && (++i)%7 == 0) {
 		fprintf(fp,"\n    ");
 	    }

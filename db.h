@@ -505,6 +505,7 @@ DB_DEFLIST *db_copy_component();
 extern void db_move_component();
 extern void db_set_layer();
 extern int  db_list_unsaved();
+extern int  db_remove_autosavefiles();
 extern void db_drawbounds();
 extern int  db_contains();
 extern void db_notate();
