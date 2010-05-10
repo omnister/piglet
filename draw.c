@@ -1555,6 +1555,32 @@ OPTS *opts;
     return(xp);
 } 
 
+char * prim_name(int type) {
+    switch (type) {
+    case ARC:  /* arc definition */
+	return("arc");
+    case CIRC:  /* circle definition */
+	return("circle");
+    case LINE:  /* line definition */
+	return("line");
+    case NOTE:  /* note definition */
+	return("note");
+    case OVAL:  /* oval definition */
+	return("oval");
+    case POLY:  /* polygon definition */
+	return("poly");
+    case RECT:  /* rectangle definition */
+	return("rectangle");
+    case TEXT:  /* text definition */
+	return("text");
+    case INST:  /* recursive instance call */
+    	return("instance");
+    default:
+	return("unknown");
+    }
+}
+
+
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
 int nest;	/* nesting level */
@@ -1601,14 +1627,6 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	drawon = 1; 
     }
 
-    if (!X && (nest == 0)) {	/* autoplot output */
-	/*
-	fprintf(PLOT_FD, "nogrid\n");
-	fprintf(PLOT_FD, "isotropic\n");
-	fprintf(PLOT_FD, "back\n");
-	*/
-    }
-
     if (nest == 0) {
 	mybb.xmax=0.0;		/* initialize globals to 0,0 location*/
 	mybb.xmin=0.0;		/* draw() routine will modify these */
@@ -1627,43 +1645,36 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	childbb.init=0;
 	prims++;
 
+	if (debug) printf("in do_%\n");
+
 	switch (p->type) {
         case ARC:  /* arc definition */
-	    if (debug) printf("in do_arc\n");
 	    do_arc(p, &childbb, mode);
 	    break;
         case CIRC:  /* circle definition */
-	    if (debug) printf("in do_circ\n");
 	    do_circ(p, &childbb, mode);
 	    break;
         case LINE:  /* line definition */
-	    if (debug) printf("in do_line\n");
 	    do_line(p, &childbb, mode);
 	    break;
         case NOTE:  /* note definition */
-	    if (debug) printf("in do_note\n");
 	    do_note(p, &childbb, mode);
 	    break;
         case OVAL:  /* oval definition */
-	    if (debug) printf("in do_oval\n");
 	    do_oval(p, &childbb, mode);
 	    break;
         case POLY:  /* polygon definition */
-	    if (debug) printf("in do_poly\n");
 	    do_poly(p, &childbb, mode);
 	    if (debug) printf("poly bounds = %.5g,%.5g %.5g,%.5g\n",
 		childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
 	    break;
 	case RECT:  /* rectangle definition */
-	    if (debug) printf("in do_rect\n");
 	    do_rect(p, &childbb, mode);
 	    break;
         case TEXT:  /* text definition */
-	    if (debug) printf("in do_text\n");
 	    do_text(p, &childbb, mode);
 	    break;
         case INST:  /* recursive instance call */
-	    if (debug) printf("in do_inst\n");
 
 	    if( !show_check_visible(currep, INST,0)) {
 	    	;
@@ -1684,17 +1695,15 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 		drawon = 1;
 	    }
 
-	    /* instances are called by name, not by pointer */
-	    /* otherwise, it is possible to PURGE a cell in */
-	    /* memory and then reference a bad pointer, causing */
-	    /* a crash... so instances are always accessed */
-	    /* with a db_lookup() call */
+	    // instances are called by name, not by pointer, otherwise
+	    // it is possible to PURGE a cell in memory and then
+	    // reference a bad pointer, causing a crash...  so instances
+	    // are always accessed with a db_lookup() call
 
 	    childbb.init=0;
 
-	    /* try to reread the definition from disk */
-	    /* this can only happen when a memory copy has */
-	    /* been purged */
+	    // try to reread the definition from disk this can only
+	    // happen when a memory copy has been purged
 
 	    if (db_lookup(p->u.i->name) == NULL) {
 		loadrep(p->u.i->name);
@@ -1786,9 +1795,6 @@ int mode;
 	if (X) {
 	    xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon w/saved pts */
 	} else {
-	    /* FIXME: if !X, then output postscript polygon instead */
-	    /* bummer: Poly saves ints, and we need floats.... */
-	    /* ps_draw_poly(&Poly, n_poly_points); */
 	    ps_draw_poly(PLOT_FD);
 	}
     }
