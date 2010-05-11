@@ -26,7 +26,6 @@ int loadrep(char *inst_name)
     char *save_rep;
 
     BOUNDS bb;
-    struct stat statbuf;
 
     if ((ed_rep = db_lookup(inst_name)) == NULL) {	/* not in memory */
 
@@ -34,11 +33,6 @@ int loadrep(char *inst_name)
 	if((fp = fopen(buf, "r")) == 0) { 		/* cannot find copy on disk */	
 	    retval=0;
 	} else { 					/* found it on disk, read it in */	
-	    printf("reading %s from disk", buf);
-	    if (stat(buf, &statbuf) != -1) {
-	    	printf(": last modified %s", ctime(&statbuf.st_mtime));
-	    }
-	    printf("\n");
 
 	    if (currep != NULL) {
 		save_rep=strsave(currep->name);

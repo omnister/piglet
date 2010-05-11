@@ -1555,8 +1555,8 @@ OPTS *opts;
     return(xp);
 } 
 
-char * prim_name(int type) {
-    switch (type) {
+char * prim_name(DB_DEFLIST *p) {
+    switch (p->type) {
     case ARC:  /* arc definition */
 	return("arc");
     case CIRC:  /* circle definition */
@@ -1580,6 +1580,33 @@ char * prim_name(int type) {
     }
 }
 
+void trace(DB_DEFLIST *p, int level) {
+    switch (p->type) {
+    case ARC:  /* arc definition */
+	break;
+    case CIRC:  /* circle definition */
+	break;
+    case LINE:  /* line definition */
+	printf("%d: line\n", level);
+	break;
+    case NOTE:  /* note definition */
+	break;
+    case OVAL:  /* oval definition */
+	break;
+    case POLY:  /* polygon definition */
+	break;
+    case RECT:  /* rectangle definition */
+	break;
+    case TEXT:  /* text definition */
+	break;
+    case INST:  /* recursive instance call */
+	printf("%d: inst %s %g %g\n", level, p->u.i->name, p->u.i->x, p->u.i->y);
+	break;
+    default:
+	break;
+    }
+}
+
 
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
@@ -1594,7 +1621,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     XFORM *xp;
     XFORM *save_transform;
     extern int nestlevel;
-    int debug=0;
+    int debug=1;
     int prims = 0;	// keep track of complexity of drawing
 
     BOUNDS childbb;
@@ -1645,7 +1672,8 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	childbb.init=0;
 	prims++;
 
-	if (debug) printf("in do_%\n");
+	// if (debug) printf("in do_%s\n", prim_name(p) );
+	// if (debug) trace(p, nest);
 
 	switch (p->type) {
         case ARC:  /* arc definition */
@@ -1665,8 +1693,6 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    break;
         case POLY:  /* polygon definition */
 	    do_poly(p, &childbb, mode);
-	    if (debug) printf("poly bounds = %.5g,%.5g %.5g,%.5g\n",
-		childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
 	    break;
 	case RECT:  /* rectangle definition */
 	    do_rect(p, &childbb, mode);

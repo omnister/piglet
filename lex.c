@@ -233,9 +233,28 @@ char **argv;
 
     license();			/* print GPL notice */
 
-    initX();			/* create window, load MENUDATA */
+    pig_path=EVget("PIG_PATH");		// use default pig path
 
-    pig_path=EVget("PIG_PATH");
+    // NOTE: must read pigrc before xinit() is called
+    // to allow PIG_GEOMETRY to be set before window is created...
+    // However, if we do readin() at this point, we will get a crash if
+    // there is an edit command in the file since xwin is not initialized..
+    // We handle this by doing readin in PROCESS mode and making
+    // com_edit ignore edit commands in PROCESS mode.
+    //
+    // after xinit, we will read pigrc again to handle possible edit
+    // commands. 
+    
+    findfile(pig_path, EVget("PIG_RC"), buf, R_OK);
+    if (buf[0] == '\0') {
+    	printf("Could not find any pigrc file\n");
+    } else {
+    	fp=fopen(buf, "r");		// FIXME: check for ret code and print error
+    	printf("reading %s\n",buf);
+	readin(buf,0,PRO);	
+    }
+
+    pig_path=EVget("PIG_PATH");		// read path again in case pigrc reset it
 
     findfile(pig_path, EVget("PIG_NOTEDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
@@ -255,6 +274,12 @@ char **argv;
 	loadfont(buf,1);	/* load NOTE, TEXT definitions */
     }
 
+    // initialize_readline();
+
+    rl_pending_input='\n';
+    rl_setprompt("");
+
+    lp = token_stream_open(stdin,"STDIN");
     initialize_readline();
 
     initialize_equates();
@@ -267,6 +292,8 @@ char **argv;
     } else {
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
+
+    initX();			/* create window, load MENUDATA */
 
     strcpy(buf2, EVget("PIG_SPLASH_REP"));
     strcat(buf2, ".d");
@@ -287,6 +314,8 @@ char **argv;
     rl_setprompt("");
 
     lp = token_stream_open(stdin,"STDIN");
+
+    // now read pig_rc again to handle any edi commands
 
     findfile(pig_path, EVget("PIG_RC"), buf, R_OK);
     if (buf[0] == '\0') {
@@ -971,6 +1000,8 @@ char *arg;
 	    need_redraw++;
 	}
 	linenumber=lp->line;
+    } else if (lp->mode == MAC) {
+	lp->mode = MAIN;
     } else if (lp->mode == SEA) {
 	lp->mode = MAIN;
     } else if (lp->mode == PRO) {

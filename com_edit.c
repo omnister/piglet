@@ -49,6 +49,23 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 
     if (debug) printf("    com_edit <%s>\n", arg); 
 
+    switch (lp->mode) {
+        case PRO:
+	    printf("PRO: can't EDIT in PROCESS mode\n");
+            token_flush_EOL(lp);
+	    return(1);
+	case SEA:
+	    printf("SEA: can't EDIT in SEARCH mode\n");
+            token_flush_EOL(lp);
+	    return(1);
+	case MAC:
+	    printf("MAC: can't EDIT in MACRO mode\n");
+            token_flush_EOL(lp);
+	    return(1);
+	default:
+	    break;
+    }
+
     name[0]=0;
 
     while(!done) {

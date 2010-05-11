@@ -189,7 +189,7 @@ int initX()
     dpy_width = DisplayWidth(dpy, scr);
     dpy_height = DisplayHeight(dpy, scr);
 
-    // set x,y and size by $PIGLET_GEOMETRY and --geometry flag
+    // set x,y and size by $PIG_GEOMETRY and --geometry flag
 
     /* suggest that window be placed in upper left corner */
     x=y= 2 * (int) border_width;
