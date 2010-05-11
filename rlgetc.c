@@ -102,7 +102,6 @@ FILE *fd;
 char * expdupstr(char *s, int n)
 {
     char *r;
-
     r = (char *) malloc(strlen( (char *) s) + n);
     strcpy(r, (char *) s);
     return (r);
@@ -160,13 +159,10 @@ char *prompt;
     }
 
     if (pigrcfp == NULL) { 			/* Get a line from the user. */
-	/* printf("entering readline\n"); */
 	lineread = readline (prompt);
 	if (lineread == NULL) {
-	    /* printf("got a NULL\n"); */
 	    return(NULL);
 	}
-	fflush(stdout);
 
 	/* If the line has any text in it, save it on the history. */
 	if (lineread && *lineread) {
@@ -184,7 +180,8 @@ char *prompt;
 	    pigrcfp=NULL;
 	    s = expdupstr(";\n",0);
 	} else {
-	    s = expdupstr(buf,0);
+	    s = expdupstr(buf,2);
+	    strcat(s,";\n");
 	}
 	lineread = s;
     }
@@ -194,11 +191,13 @@ char *prompt;
 
 void initialize_readline()
 {
-    /* Allow conditional parsing of an inputrc file. */
+    
+    // unbind tab key or else we get interactive chaos when pigrc is read
+    rl_bind_key('\t', rl_insert);
 
+    /* Allow conditional parsing of an inputrc file. */
     /* commented out to force readline to use the default */
     /* .inputrc name */
-
     /* rl_readline_name = (char *) estrdup(progname()); */
 
     /* Now tell readline where to get characters 

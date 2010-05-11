@@ -26,16 +26,34 @@ Piglet's interactive command environment is also a simple shell.  If you
 type the name of any executable that can be found in the $PATH variable,
 Piglet will run the program, displaying any output in the Piglet text window.
 
-.SS RCFILE
+.SS STARTUP
+At startup, Piglet sets several internal environment variables including
+$PIG_PATH to reasonable defaults.  Then it overwrites the defaults with
+any environment variables inherited from the parent shell.  After that,
+Piglet searches the $PIG_PATH for a file named $PIG_RC.  (Unless
+overridden, $PIG_RC will be set by default to "pigrc").  If this file is
+found in the path, Piglet will read the file for command input. 
 
-At startup time, Piglet searches the $PIG_PATH for a file named "pigrc". 
-If found, Piglet will read the file for command input.  Any Piglet
-command can be placed in this file.  The contents will be executed just
-as if the user typed them.  The following example pigrc file sets the
-SHOW default to "#E", defines a two macros, and starts an EDI of the
-cell named "PLAN".  Piglet uses the double dollar sign "$$" as a comment
-character.  Anything after a comment is eaten up by the parser and
-treated as a single end-of-line character. 
+Any Piglet command can be placed in the $PIG_RC file.  Macro definitions
+and SET commands will be read and added to the environment.  This allows
+the $PIG_RC file to have the last say in setting the $PIG_PATH and
+$PIG_GEOMETRY variables.  However, at this phase of startup, any EDIt
+commands are ignored. 
+
+After reading the $PIG_RC file, all the necessary support files are read
+using the $PIG_PATH.  These include the menu and font definition files
+and process definition files.  After all support files are read, the X11
+graphical window is created using the $PIG_GEOMETRY specification. 
+
+Finally, the $PIG_RC file is read a second time.  The contents are now
+executed just as if the user typed them.  Now that the X11 system is
+initialized, EDIt commands will be honored.
+
+The following example pigrc file sets the SHOW default to "#E", defines
+a three macros, sets the starting window geometry and begins an EDI of
+the cell named "PLAN".  Piglet uses the double dollar sign "$$" as a
+comment character.  Anything after a comment up to an end-of-line is
+discarded by the parser and treated as a single end-of-line character. 
 
 .nf
     $$ 
@@ -46,6 +64,7 @@ treated as a single end-of-line character.
     DEF wi "WIN :X.5;"		$$ window in macro
     DEF wo "WIN :X2;"		$$ window out macro
     DEF wf "WIN :F;"		$$ window fit macro
+    SET PIG_GEOMETRY "700x440+10+30";
     EDI PLAN;
 .fi
 
@@ -97,7 +116,7 @@ As part of the UNDO/REDO machinery, Piglet keeps an autosave file named
 "#<cellname>.d" in the directory "./cells".  The autosave file is
 updated everytime the current cell is changed.  When a cell is finally
 SAVed the autosave file is deleted so that the normal "<cellname>.d"
-file is the only one remaining.  If Piglet crashes, or a QUIT without
+file is the only one remaining.  If Piglet crashes, or is QUIT without
 saving, then the autosave file will be found next time the cell is edited. 
 Piglet then gives the user the opportunity to recover the unsaved
 changes at the next edit:

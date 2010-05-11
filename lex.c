@@ -226,12 +226,12 @@ char **argv;
     EVset("PIG_FONT_SIZE", "10.0");		/* default for FSIZE command */
     EVset("PIG_RC", "pigrc");			/* default piglet startup file */
 
+    license();			/* print GPL notice */
+
     if (!EVinit()) {
     	 printf("can't initialize environment\n");
      	 exit(6);
     }
-
-    license();			/* print GPL notice */
 
     pig_path=EVget("PIG_PATH");		// use default pig path
 
@@ -254,6 +254,8 @@ char **argv;
 	readin(buf,0,PRO);	
     }
 
+    initX();			/* create window, load MENUDATA */
+
     pig_path=EVget("PIG_PATH");		// read path again in case pigrc reset it
 
     findfile(pig_path, EVget("PIG_NOTEDATA_FILE"), buf, R_OK);
@@ -274,14 +276,6 @@ char **argv;
 	loadfont(buf,1);	/* load NOTE, TEXT definitions */
     }
 
-    // initialize_readline();
-
-    rl_pending_input='\n';
-    rl_setprompt("");
-
-    lp = token_stream_open(stdin,"STDIN");
-    initialize_readline();
-
     initialize_equates();
 
     findfile(pig_path, EVget("PIG_PROCDATA_FILE"), buf, R_OK);
@@ -292,8 +286,6 @@ char **argv;
     } else {
 	readin(buf,0,PRO);	/* load PROCESS FILE definitions */
     }
-
-    initX();			/* create window, load MENUDATA */
 
     strcpy(buf2, EVget("PIG_SPLASH_REP"));
     strcat(buf2, ".d");
@@ -310,6 +302,9 @@ char **argv;
 	currep = NULL;
     }
 
+    // initialize_readline();
+
+    initialize_readline();
     rl_pending_input='\n';
     rl_setprompt("");
 
