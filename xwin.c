@@ -901,11 +901,22 @@ XFontStruct **font_info;
 {
     /* char *fontname = "9x15"; */
     /* char *fontname = "12x24"; */
-    char *fontname = "10x20"; 
 
+    char *fontname = "10x20"; 
     /* Load font and get font information structure */
-    if ((*font_info = XLoadQueryFont(dpy, fontname)) == NULL) {
-        eprintf("can't open %s font.", fontname);
+    *font_info = NULL;
+
+    if (*font_info == NULL) 
+	*font_info = XLoadQueryFont(dpy, EVget("PIG_X11MENU_FONT"));
+    if (*font_info == NULL) 
+	*font_info = XLoadQueryFont(dpy, fontname);
+    if (*font_info == NULL) 
+	*font_info = XLoadQueryFont(dpy, "fixed");
+    if (*font_info == NULL) {
+	printf("can't find any useable X11 font.  You might\n");
+	printf("try running \"xlsfonts to see what is available\"\n");
+	printf("and then setting the PIG_X11MENU_FONT environment\n");
+	eprintf("variable to something on your system...\n");
     }
 }
 
