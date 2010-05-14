@@ -225,6 +225,7 @@ char **argv;
     EVset("PIG_FONT_SLANT", "0.0");		/* default for TSLANT command */
     EVset("PIG_FONT_SIZE", "10.0");		/* default for FSIZE command */
     EVset("PIG_RC", "pigrc");			/* default piglet startup file */
+    EVset("PIG_X11MENU_FONT", "10x20");		/* default X11 menu font */
 
     license();			/* print GPL notice */
 

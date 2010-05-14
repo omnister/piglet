@@ -1621,7 +1621,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     XFORM *xp;
     XFORM *save_transform;
     extern int nestlevel;
-    int debug=1;
+    // int debug=1;
     int prims = 0;	// keep track of complexity of drawing
 
     BOUNDS childbb;

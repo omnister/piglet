@@ -285,7 +285,7 @@ The default italic font slant (from -45.0 to +45.0) used for both note and text 
 not otherwise overridden with :Z option. 
 .TP
 .I PIG_GEOMETRY "[=]<width>x<height>{+-}xoffset{+-}yoffset" 
-The argument is a standard X11 geometry.  The first two numbers specify the
+The argument is a standard X11 geometry specification.  The first two numbers specify the
 width and height of the piglet window in pixels. The second two numbers must
 come as a pair and give the offset of the window from one edge of the display.
 Positive xoffsets are measured from the left edge and negative from the right.
@@ -1898,6 +1898,14 @@ Sets the name used for loading the process layer definition.
 .I PIG_SPLASH_REP "<cellname>" ; default is "piglogo"
 Sets the name of the cell used for the initial splash screen during startup.
 The cell should already exist in PIG_PATH.
+.TP
+.I PIG_X11MENU_FONT "<X11fontname>" ; default is "10x20"
+Sets the name of the X11 font to be used for the menu and on-screen coordinate
+annotation.  Piglet will try to load the font named by this environment
+variable (if set).  If the name font is not available, Piglet will then
+attempt to fallback to "10x20", "9x15" and then "fixed".  The X11
+"xlsfonts" command can be used to give you a list of fonts available on
+your system. 
 .SS EXAMPLES
 .TP
 .B ksh> PIG_SPLASH_REP=mylogo pig

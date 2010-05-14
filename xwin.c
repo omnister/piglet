@@ -901,15 +901,17 @@ XFontStruct **font_info;
 {
     /* char *fontname = "9x15"; */
     /* char *fontname = "12x24"; */
+    /* char *fontname = "10x20"; */
 
-    char *fontname = "10x20"; 
     /* Load font and get font information structure */
     *font_info = NULL;
 
     if (*font_info == NULL) 
 	*font_info = XLoadQueryFont(dpy, EVget("PIG_X11MENU_FONT"));
     if (*font_info == NULL) 
-	*font_info = XLoadQueryFont(dpy, fontname);
+	*font_info = XLoadQueryFont(dpy, "10x20");
+    if (*font_info == NULL) 
+	*font_info = XLoadQueryFont(dpy, "9x15");
     if (*font_info == NULL) 
 	*font_info = XLoadQueryFont(dpy, "fixed");
     if (*font_info == NULL) {

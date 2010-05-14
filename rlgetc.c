@@ -142,6 +142,15 @@ int rl_readin_file(FILE *fp) {
     return(0);
 }
 
+void rmctrls(char *s) {
+   while (*s != '\0') {
+       if (!isprint(*s)) {
+          *s = ' ';
+       }
+       s++;
+   }
+}
+
 /* Read a string, and return a pointer to it.  Returns NULL on EOF. */
 char * rl_gets (prompt)
 char *prompt;
@@ -183,6 +192,7 @@ char *prompt;
 	    s = expdupstr(buf,2);
 	    strcat(s,";\n");
 	}
+	rmctrls(s);
 	lineread = s;
     }
 
@@ -192,9 +202,6 @@ char *prompt;
 void initialize_readline()
 {
     
-    // unbind tab key or else we get interactive chaos when pigrc is read
-    rl_bind_key('\t', rl_insert);
-
     /* Allow conditional parsing of an inputrc file. */
     /* commented out to force readline to use the default */
     /* .inputrc name */
