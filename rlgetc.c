@@ -240,9 +240,13 @@ LEXER *lp;
 	}
 	if (lineread == NULL) {
 	    linep = NULL;
-	    if (lp->token_stream == stdin) {
-		printf("trapped EOF on input: use QUIT to exit...\n");
-		c='\n';
+	    if (lp->token_stream == stdin) {  
+		if (signal(SIGINT, SIG_IGN) == SIG_IGN) {
+	    	    c=EOF;
+		} else {
+		    printf("trapped EOF on input: use QUIT to exit...\n");
+		    c='\n';
+		}
 	    } else {
 	    	c=EOF;
 	    }
