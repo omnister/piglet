@@ -2,8 +2,32 @@ $$
 $$ piglet initialization file
 $$ 
 
+SET PIG_PATH ".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
+$$ SET PIG_RC "pigrc"   	      $$ I suppose if you wanted to
+
+SET PIG_GEOMETRY "700x440+10+30";     $$ set X11 geometry
+SET PIG_X11MENU_FONT "10x20";	      $$ X11 font to use for menu
+SET PIG_SPLASH_REP "piglogo";         $$ startup logo file
+
+SET PIG_MENUDATA_FILE "MENUDATA_V";   $$ menu definition file
+
+SET PIG_NOTEDATA_FILE "SIMPLEX.F";    $$ note font file
+SET PIG_NOTEDATA_FILE "WHELV.F";      $$ note font file
+SET PIG_NOTEDATA_FILE "NOTEDATA.F";   $$ note font file
+
+SET PIG_TEXTDATA_FILE "ROMANT.F";     $$ text font file
+SET PIG_TEXTDATA_FILE "TEXTDATA.F";   $$ text font file
+
+SET PIG_PROCDATA_FILE "PROCDATA.P";   $$ text font file
+
+SET PIG_GRID "10 10 1 1 0 0";         $$ grid spec
+SET PIG_GRID_COLOR "3";               $$ grid color
+
+SET PIG_SHOW_DEFAULT "#E";    	      $$ make cells editable by default
+SET PIG_FONT_SLANT "0.0";             $$ default for TSLANT command
+SET PIG_FONT_SIZE "10.0";             $$ default for FSIZE command
+
 DEF wi "WIN :X.5;"		$$ window-in macro
 DEF wo "WIN :X2;"      		$$ window-out macro
 DEF wf "WIN :F;"        	$$ window-fit macro
-SET PIG_SHOW_DEFAULT "#E";    	$$ make cells editable by default
-SET PIG_GEOMETRY "700x440+10+30";  $$ set X11 geometry
+

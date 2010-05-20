@@ -30,9 +30,8 @@ chmod 666 pigtrace
 
 if ! grep "exited normally" pigtrace > /dev/null
 then
-    mv pigtrace pigtrace.$$
     echo "Piglet has crashed.  Please send a description of what you were doing"
-    echo "plus the last 100 lines of the file named \"pigtrace.$$\" to"
+    echo "plus the last 100 lines of the file named \"pigtrace\" to"
     echo "<walker@omnisterra.com>.  Thanks! - Rick Walker"
 else
     rm pigtrace

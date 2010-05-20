@@ -5,6 +5,8 @@
 # version 1.0.
 #
 
+[ ] SET A 4; echo $A+4; echo ($A+4);
+
 [ ] add primitives down one level with affine transformations?
 
 [x] fill4.ps shows how to fill with a stipple.  Make ps plots properly stipple

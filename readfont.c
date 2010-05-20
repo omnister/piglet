@@ -4,7 +4,7 @@
 
 #include "readfont.h"
 #include "db.h"
-#define MAXPOINT 5000
+#define MAXPOINT 20000
 
 /* 
 
@@ -15,15 +15,15 @@ height of each character definition and the second, the width.  Each
 character is then listed in printed form and the glyph is defined by a
 set of vector coordinates.  It is assumed that each successive x,y
 coordinate pair is connected by a stroke unless the path is broken by
-the special coordinate "-64,0".  Each definition is terminated by the
-special coordinate "-64,-64".  Here is an example of the first three
+the special coordinate "-128,0".  Each definition is terminated by the
+special coordinate "-128,-128".  Here is an example of the first three
 definitions in "NOTEDATA.F" for the characters <exclam>, <double-quote>,
 and <pound>:
 
 16,12
-! 6,2 6,3 -64,0 6,5 6,14 -64,-64
-" 4,14 4,10 -64,0 8,14 8,10 -64,-64
-# 2,6 10,6 -64,0 2,10 10,10 -64,0 4,2 4,14 -64,0 8,2 8,14 -64,-64
+! 6,2 6,3 -128,0 6,5 6,14 -128,-128
+" 4,14 4,10 -128,0 8,14 8,10 -128,-128
+# 2,6 10,6 -128,0 2,10 10,10 -128,0 4,2 4,14 -128,0 8,2 8,14 -128,-128
 
 */
 
@@ -70,8 +70,8 @@ int mode;		/* drawing mode */
     if (fillable[id]) {
 	startpoly(bb,mode);
     }
-    while (xdef[id][i] != -64 || ydef[id][i] != -64) {		/* -64,-64 == END */
-	if (xdef[id][i] != -64) {				/* end of polygon */
+    while (xdef[id][i] != -128 || ydef[id][i] != -128) { // -128,-128 == END 
+	if (xdef[id][i] != -128) {			 // end of polygon 
 	    xp = x + (0.8 * ( (double) xdef[id][i] / (double) dy[id]));
 	    yp = y + (0.8 * ( (double) ydef[id][i] / (double) dy[id]));
 	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
@@ -187,10 +187,11 @@ int id;
     extern int line;
     int index=0;	/* index into font table */
     int debug=0;
+    int w, fw, is_proportional;
 
     /* initialize font table */
     for (i=0; i<MAXPOINT; i++) {
-	xdef[id][i] = ydef[id][i] = -64;
+	xdef[id][i] = ydef[id][i] = -128;
     }
     for (i=0; i<=255; i++) {
 	fonttab[id][i]=-1;
@@ -209,24 +210,29 @@ int id;
     /* note reversed order of arguments */
 
     next=getxy(fp,&dy[id],&dx[id]);
-    /* printf("got %d, %d next=%x id=%d\n", dx[id],dy[id],next, id); */
+    next=getxy(fp,&is_proportional,&fw);
+
+    for (i=0; i<=255; i++) {
+        //width[i]=fw;
+    }
 
     /* make first line look properly terminated */
-    x=-64;
-    y=-64;
+    x=-128;
+    y=-128;
 
     while (!done) {
-	if (next == '\n') {
-	    line++;
-	    getc(fp);
-	    if (x==-64 && y==-64) {
-		if ((lit=eatwhite(fp)) != EOF) {
-		    /* printf("lit=%c\n",lit); */
-		    getc(fp);
-		    fonttab[id][(int) lit] = index;
-		} else {
-		    done++;
-		}
+
+	if (x==-128 && y==-128) {
+	    if (getint(fp,&w)) {
+		// width[(int) lit]=w;
+	    }
+	    if ((lit=eatwhite(fp)) != EOF) {
+		/* printf("lit=%c\n",lit); */
+		getc(fp);
+		fonttab[id][(int) lit] = index;
+		//valid[(int) lit]++;
+	    } else {
+		done++;
 	    }
 	} else if (next == EOF) {
 	    done++;
@@ -251,24 +257,23 @@ int *py;
 {
     int c;
     extern int line;
+    int ret;
 
     c=eatwhite(fp);
-    /* printf("eating white, next=%c\n",c); */
-    if(getint(fp,px) != 1) {
-	fprintf(stderr,"error at line %d: expected a digit\n", line);
+    if((ret=getint(fp,px)) != 1) {
+	fprintf(stderr,"error at line %d: expected a digit2: %c <%d>\n", line, c, ret);
 	exit(3);
     };		
 
     eatwhite(fp);
     if ((c=getc(fp)) != ',') {
-	ungetc(c,fp);
-	/* make comma optional to read graffy fonts */
+	ungetc(c,fp); /* make comma optional to read graffy fonts */
 	/* fprintf(stderr,"error at line %d: expected a comma\n", line); exit(2); */
     }
 
     eatwhite(fp);
     if(getint(fp,py) != 1) {
-	fprintf(stderr,"error at line %d: expected a digit\n", line);
+	fprintf(stderr,"error at line %d: expected a digit3n", line);
 	exit(3);
     };		
 
@@ -283,7 +288,10 @@ FILE *fp;
 
     while (!done) {
 	c=getc(fp);
-	if (c != ' ' && c != '\t') {
+	if (c=='\n') {
+	    line++;
+	}
+	if (c != ' ' && c != '\t' && c != '\n') {
 	    done++;
 	}
     }

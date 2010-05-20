@@ -8,6 +8,7 @@
 #include "postscript.h"
 #include "eprintf.h"
 #include "equate.h"
+#include "ev.h"
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines is as */
                         /* a fraction of minimum window dimension */
@@ -1663,6 +1664,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     }
 
     // implement BACK command
+
     if (nest == 0 && currep != NULL &&  currep->background != NULL) {
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }

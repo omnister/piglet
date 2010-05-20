@@ -115,6 +115,9 @@ DB_TAB *db_lookup(char *name)           /* find name in db */
     int debug=0;
 
     if (debug) printf("calling db_lookup with %s: ", name);
+    if (name==NULL) {
+       return(NULL);
+    } 
     if (HEAD != (DB_TAB *)0) {
 	for (sp=HEAD; sp!=(DB_TAB *)0; sp=sp->next) {
 	    if (strcmp(sp->name, name)==0) {
@@ -1314,7 +1317,7 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	yold = coords->coord.y-1.0;
 	while(coords != NULL) {
 	    fprintf(fp, " ");
-	    if (coords->coord.x != xold && coords->coord.y != yold) {
+	    if (coords->coord.x != xold || coords->coord.y != yold) {
 		// supress cooincident points created by stretching
 		printcoords(fp, xp,  coords->coord.x, coords->coord.y);
 	    }
