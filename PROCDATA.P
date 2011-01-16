@@ -9,16 +9,16 @@ EQU :C7 :P7 :M0 :D :F0 layer7  7
 EQU :C8 :P1 :M0 :D :F0 layer8  8
 EQU :C9 :P2 :M0 :D :F0 layer9  9
 
-EQU :C7 :P3 :M0 :D :F1 layer10 10
-EQU :C1 :P4 :M0 :D :F1 layer11 11
-EQU :C2 :P5 :M0 :D :F1 layer12 12
-EQU :C3 :P6 :M0 :D :F1 layer13 13
-EQU :C4 :P7 :M0 :D :F1 layer14 14
-EQU :C5 :P1 :M0 :D :F1 layer15 15
-EQU :C6 :P2 :M0 :D :F1 layer16 16
-EQU :C7 :P3 :M0 :D :F1 layer17 17
-EQU :C8 :P4 :M0 :D :F1 layer18 18
-EQU :C9 :P5 :M0 :D :F1 layer19 19
+EQU :C7 :P3 :M0 :D :F0 layer10 10
+EQU :C1 :P4 :M0 :D :F0 layer11 11
+EQU :C2 :P5 :M0 :D :F0 layer12 12
+EQU :C3 :P6 :M0 :D :F0 layer13 13
+EQU :C4 :P7 :M0 :D :F0 layer14 14
+EQU :C5 :P1 :M0 :D :F0 layer15 15
+EQU :C6 :P2 :M0 :D :F0 layer16 16
+EQU :C7 :P3 :M0 :D :F0 layer17 17
+EQU :C8 :P4 :M0 :D :F0 layer18 18
+EQU :C9 :P5 :M0 :D :F0 layer19 19
 
 EQU :C7 :P6 :M0 :D :F2 layer20 20
 EQU :C1 :P7 :M0 :D :F2 layer21 21
@@ -96,3 +96,124 @@ EQU :C6 :P7 :M3 :D :F0 layer86 86
 EQU :C7 :P7 :M3 :D :F0 layer87 87
 EQU :C8 :P7 :M3 :D :F0 layer88 88
 EQU :C9 :P7 :M3 :D :F0 layer89 89
+
+EQU :C7 :P7 :M0 :D :F0 layer90  90
+EQU :C1 :P1 :M0 :D :F0 layer91  91
+EQU :C2 :P2 :M0 :D :F0 layer92  92
+EQU :C3 :P3 :M0 :D :F0 layer93  93
+EQU :C4 :P4 :M0 :D :F0 layer94  94
+EQU :C5 :P5 :M0 :D :F0 layer95  95
+EQU :C6 :P6 :M0 :D :F0 layer96  96
+EQU :C7 :P7 :M0 :D :F0 layer97  97
+EQU :C8 :P1 :M0 :D :F0 layer98  98
+EQU :C9 :P2 :M0 :D :F0 layer99  99
+
+EQU :C7 :P3 :M0 :D :F0 layer100 100
+EQU :C1 :P4 :M0 :D :F0 layer101 101
+EQU :C2 :P5 :M0 :D :F0 layer102 102
+EQU :C3 :P6 :M0 :D :F0 layer103 103
+EQU :C4 :P7 :M0 :D :F0 layer104 104
+EQU :C5 :P1 :M0 :D :F0 layer105 105
+EQU :C6 :P2 :M0 :D :F0 layer106 106
+EQU :C7 :P3 :M0 :D :F0 layer107 107
+EQU :C8 :P4 :M0 :D :F0 layer108 108
+EQU :C9 :P5 :M0 :D :F0 layer109 109
+
+EQU :C7 :P6 :M0 :D :F2 layer110 110
+EQU :C1 :P7 :M0 :D :F2 layer111 111
+EQU :C2 :P1 :M0 :D :F2 layer112 112
+EQU :C3 :P2 :M0 :D :F2 layer113 113
+EQU :C4 :P3 :M0 :D :F2 layer114 114
+EQU :C5 :P4 :M0 :D :F2 layer115 115
+EQU :C6 :P5 :M0 :D :F2 layer126 116
+EQU :C7 :P6 :M0 :D :F2 layer117 117
+EQU :C8 :P7 :M0 :D :F2 layer118 118
+EQU :C9 :P1 :M0 :D :F2 layer119 119
+
+EQU :C7 :P2 :M0 :D :F3 layer120 120
+EQU :C1 :P3 :M0 :D :F3 layer121 121
+EQU :C2 :P4 :M0 :D :F3 layer122 122
+EQU :C3 :P5 :M0 :D :F3 layer123 123
+EQU :C4 :P6 :M0 :D :F3 layer124 124
+EQU :C5 :P7 :M0 :D :F3 layer125 125
+EQU :C6 :P1 :M0 :D :F3 layer126 126
+EQU :C7 :P2 :M0 :D :F3 layer127 127
+EQU :C8 :P3 :M0 :D :F3 layer128 128
+EQU :C9 :P4 :M0 :D :F3 layer129 129
+
+EQU :C7 :P5 :M0 :D :F4 layer130 130
+EQU :C1 :P6 :M0 :D :F4 layer131 131
+EQU :C2 :P7 :M0 :D :F4 layer132 132
+EQU :C3 :P1 :M0 :D :F4 layer133 133
+EQU :C4 :P2 :M0 :D :F4 layer134 134
+EQU :C5 :P3 :M0 :D :F4 layer135 135
+EQU :C6 :P4 :M0 :D :F4 layer136 136
+EQU :C7 :P5 :M0 :D :F4 layer137 137
+EQU :C8 :P6 :M0 :D :F4 layer138 138
+EQU :C9 :P7 :M0 :D :F4 layer139 139
+
+EQU :C7 :P1 :M0 :D :F5 layer140 140
+EQU :C1 :P2 :M0 :D :F5 layer141 141
+EQU :C2 :P3 :M0 :D :F5 layer142 142
+EQU :C3 :P4 :M0 :D :F5 layer143 143
+EQU :C4 :P5 :M0 :D :F5 layer144 144
+EQU :C5 :P6 :M0 :D :F5 layer145 145
+EQU :C6 :P7 :M0 :D :F5 layer146 146
+EQU :C7 :P1 :M0 :D :F5 layer147 147
+EQU :C8 :P2 :M0 :D :F5 layer148 148
+EQU :C9 :P3 :M0 :D :F5 layer149 149
+
+EQU :C7 :P4 :M1 :D :F6 layer150 150
+EQU :C1 :P5 :M1 :D :F6 layer151 151
+EQU :C2 :P6 :M1 :D :F6 layer152 152
+EQU :C3 :P7 :M1 :D :F6 layer153 153
+EQU :C4 :P7 :M1 :D :F6 layer154 154
+EQU :C5 :P7 :M1 :D :F6 layer155 155
+EQU :C6 :P7 :M1 :D :F6 layer156 156
+EQU :C7 :P7 :M1 :D :F6 layer157 157
+EQU :C8 :P7 :M1 :D :F6 layer158 158
+EQU :C9 :P7 :M1 :D :F6 layer159 159
+
+EQU :C7 :P4 :M2 :D :F7 layer160 160
+EQU :C1 :P5 :M2 :D :F7 layer161 161
+EQU :C2 :P6 :M2 :D :F7 layer162 162
+EQU :C3 :P7 :M2 :D :F7 layer163 163
+EQU :C4 :P7 :M2 :D :F7 layer164 164
+EQU :C5 :P7 :M2 :D :F7 layer165 165
+EQU :C6 :P7 :M2 :D :F7 layer166 166
+EQU :C7 :P7 :M2 :D :F7 layer167 167
+EQU :C8 :P7 :M2 :D :F7 layer168 168
+EQU :C9 :P7 :M2 :D :F7 layer169 169
+
+EQU :C7 :P4 :M3 :D :F0 layer170 170
+EQU :C1 :P5 :M3 :D :F0 layer171 171
+EQU :C2 :P6 :M3 :D :F0 layer172 172
+EQU :C3 :P7 :M3 :D :F0 layer173 173
+EQU :C4 :P7 :M3 :D :F0 layer174 174
+EQU :C5 :P7 :M3 :D :F0 layer175 175
+EQU :C6 :P7 :M3 :D :F0 layer176 176
+EQU :C7 :P7 :M3 :D :F0 layer177 177
+EQU :C8 :P7 :M3 :D :F0 layer178 178
+EQU :C9 :P7 :M3 :D :F0 layer179 179
+
+EQU :C7 :P4 :M1 :D :F6 layer180 180
+EQU :C1 :P5 :M1 :D :F6 layer181 181
+EQU :C2 :P6 :M1 :D :F6 layer182 182
+EQU :C3 :P7 :M1 :D :F6 layer183 183
+EQU :C4 :P7 :M1 :D :F6 layer184 184
+EQU :C5 :P7 :M1 :D :F6 layer185 185
+EQU :C6 :P7 :M1 :D :F6 layer186 186
+EQU :C7 :P7 :M1 :D :F6 layer187 187
+EQU :C8 :P7 :M1 :D :F6 layer188 188
+EQU :C9 :P7 :M1 :D :F6 layer189 189
+
+EQU :C7 :P4 :M2 :D :F7 layer190 190
+EQU :C1 :P5 :M2 :D :F7 layer191 191
+EQU :C2 :P6 :M2 :D :F7 layer192 192
+EQU :C3 :P7 :M2 :D :F7 layer193 193
+EQU :C4 :P7 :M2 :D :F7 layer194 194
+EQU :C5 :P7 :M2 :D :F7 layer195 195
+EQU :C6 :P7 :M2 :D :F7 layer196 196
+EQU :C7 :P7 :M2 :D :F7 layer197 197
+EQU :C8 :P7 :M2 :D :F7 layer198 198
+EQU :C9 :P7 :M2 :D :F7 layer199 199

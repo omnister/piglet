@@ -88,6 +88,16 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: requires a name or a selection point\n");
 		state = END;
+	    } else if (token == QUOTE) {	// RCW
+		token_get(lp,&word);
+		if (nfiles == 0) {
+		    strncpy(name, word, 128);
+		    nfiles++;
+		} else {
+		    printf("EDIT: wrong number of args\n");
+		    return(-1);
+		}
+		state = DOIT;
 	    } else if (token == IDENT) {
 		token_get(lp,&word);
 		if (nfiles == 0) {

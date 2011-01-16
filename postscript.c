@@ -4,6 +4,7 @@
 #include <sys/types.h> 
 #include <unistd.h>
 #include <math.h>
+#include <string.h>
 
 #include "db.h"
 #include "xwin.h"
@@ -22,21 +23,35 @@ int this_line=0;	// because lines are implicitly terminate
 int this_fill=0;	// by starting a new line which overwrites
 			// pen, line and fill
 
+int debug=0;
 
-void ps_set_fill(fill)
-int fill;
+FILE *fp=NULL;		// file descriptor for output file
+OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
+
+double bbllx, bblly, bburx, bbury;
+
+void ps_set_outputtype(OMODE mode) {
+   if (debug) printf("ps_set_outputtype: %d\n",mode);
+   outputtype=mode;
+}
+
+void ps_set_file(FILE *fout) 
+{
+  if (debug) printf("ps_set_file:\n");
+  fp=fout; 
+}
+
+void ps_set_fill(int fill)
 {
     filltype=fill;
 }
 
-void ps_set_line(line)
-int line;
+void ps_set_line(int line)
 {
     linetype=line;
 }
 
-void ps_set_pen(pen) 
-int pen;
+void ps_set_pen(int pen) 
 {
     pennum=pen;
 }
@@ -44,22 +59,23 @@ int pen;
 /*
 Letter  0 0 8.5i 11i 
 Legal   0 0 8.5i 14i
-ANSI-E  0 0  34i 44i
 Tabloid 0 0  11i 17i
 ANSI-C  0 0  17i 22i
 ANSI-D  0 0  22i 34i
+ANSI-E  0 0  34i 44i
 */
 
 /* the ps interpreter evidently pays attention to pagesize labels... */
 /* can't say Letter and give Ansi-A page sizes... */
 
-void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) 
-FILE *fp;
+
+void ps_preamble(dev, prog, pdx, pdy, llx, lly, urx, ury) 
 char *dev;
 char *prog;
 double pdx, pdy; 	    /* page size in inches */
 double llx, lly, urx, ury;  /* drawing bounding box in user coords */
 {
+
     time_t timep;
     char buf[MAXBUF];
     double xmid, ymid;
@@ -68,6 +84,34 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
     double xmax, ymax;
     int landscape;
     double tmp;
+    int debug=1;
+
+    if (debug) printf("ps_preamble:\n");
+
+    if ( outputtype == AUTOPLOT) {
+       fprintf(fp,"back\n");
+       fprintf(fp,"isotropic\n");
+       return;
+    } else if (outputtype == GERBER) {
+       fprintf(fp,"G4 Title: %s*\n", dev);
+       fprintf(fp,"G4 Creator: %s*\n", prog);
+       timep=time(&timep);
+       ctime_r(&timep, buf);
+       buf[strlen(buf)-1]='\0';
+       fprintf(fp,"G4 CreationDate: %s*\n", buf);
+       gethostname(buf,MAXBUF);
+       fprintf(fp,"G4 For: %s@%s (%s)*\n", getpwuid(getuid())->pw_name, buf, getpwuid(getuid())->pw_gecos );
+       fprintf(fp,"G01*\n");	// linear interpolation
+       fprintf(fp,"G70*\n");	// inches
+       fprintf(fp,"G90*\n");	// absolute
+       fprintf(fp,"%%MOIN*%%\n");	// absolute
+       fprintf(fp,"G04 Gerber Fmt 3.4, Leading zero omitted, Abs format*\n");
+       fprintf(fp,"%%FSLAX34Y34*%%\n");
+       return;
+    }
+
+    bbllx=llx; bblly=lly; bburx=urx; bbury=ury;
+    if (debug) printf("llx:%g lly:%g urx:%g ury:%g\n", llx, lly, urx, ury);
 
     /* now create transform commands based on bb and paper size */
     /* FIXME, check that bb is in canonic order */
@@ -89,8 +133,8 @@ setting landscape
     xdel = 1.05*fabs(urx-llx);
     ydel = 1.05*fabs(ury-lly);
 
-    pdx=8.5;
-    pdy=11.0;
+    // pdx=8.5;
+    // pdy=11.0;
 
     xmax=pdx*72.0;
     ymax=pdy*72.0;
@@ -127,7 +171,7 @@ setting landscape
     } else {
 	fprintf(fp,"%%%%Orientation: Portrait\n");
     }
-    fprintf(fp,"%%%%Pages: 1\n");
+    fprintf(fp,"%%%%Pages: (atend)\n");
     fprintf(fp,"%%%%BoundingBox: 0 0 %d %d\n", 
     	(int) (pdx*72.0), (int) (pdy*72.0));
     fprintf(fp,"%%%%DocumentPaperSizes: custom\n");
@@ -141,6 +185,7 @@ setting landscape
     fprintf(fp,"%%%%EndSetup\n");
     fprintf(fp,"%%%%Magnification: 1.0000\n");
     fprintf(fp,"%%%%EndComments\n");
+    fprintf(fp,"%%%%BeginProlog\n");
     fprintf(fp,"/$Pig2psDict 200 dict def\n");
     fprintf(fp,"$Pig2psDict begin\n");
     fprintf(fp,"$Pig2psDict /mtrx matrix put\n");
@@ -217,6 +262,7 @@ setting landscape
 	fprintf(fp,"matrix makepattern /f%d exch def\n",i);
     }
     fprintf(fp,"%% end stipple patterns\n");
+    fprintf(fp,"%%%%EndProlog\n");
 
     fprintf(fp,"%%BeginPageSetup\n");
     fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
@@ -234,36 +280,38 @@ setting landscape
     fprintf(fp,"%% here starts figure;\n");
 }
 
-void ps_end_line(fp)
-FILE *fp;
+
+void ps_end_line()
 {
     extern int this_pen;
     extern int this_fill;
     extern int this_line;
     extern int in_line;
 
-    fprintf(fp, "c%d\n", this_pen);
-    fprintf(fp, "%s\n", xwin_ps_dashes(this_line));
-    if (in_poly) {
-	fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
-	fprintf(fp, "gs kc f%d setpattern fill gr\n",
-	    get_stipple_index(this_fill,this_pen));
-	in_poly=0;
+    if (debug) printf("ps_end_line:\n");
+
+    if (outputtype == POSTSCRIPT) {
+	fprintf(fp, "c%d\n", this_pen);
+	fprintf(fp, "%s\n", xwin_ps_dashes(this_line));
+	if (in_poly) {
+	    fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
+	    fprintf(fp, "gs kc f%d setpattern fill gr\n",
+		get_stipple_index(this_fill,this_pen));
+	    in_poly=0;
+	}
+	fprintf(fp, "s\n");
+    } else {			// GERBER, AUTOPLOT
+	if (in_poly) {
+	    if (outputtype == GERBER) {			// GERBER
+	       // fprintf(fp, "G37*\n");
+	    }
+	    in_poly=0;
+	}
     }
-    fprintf(fp, "s\n");
     in_line=0;
 }
 
-void ps_continue_line(fp, x1, y1)
-FILE *fp;
-double x1, y1;
-{
-    fprintf(fp, "%g %g l\n",x1, y1);
-    in_line++;
-}
-
-void ps_start_line(fp, x1, y1)
-FILE *fp;
+void ps_start_line(x1, y1)
 double x1, y1;
 {
     extern int pennum;
@@ -273,6 +321,8 @@ double x1, y1;
     extern int this_line;
     extern int this_fill;
 
+    if (debug) printf("ps_start_line:\n");
+
     if (in_line) {
     	ps_end_line(fp);
     } 
@@ -281,26 +331,73 @@ double x1, y1;
     this_pen=pennum;		/* save characteristics at start of line */
     this_line=linetype;
     this_fill=filltype;
-    fprintf(fp, "n\n");
-    fprintf(fp, "%g %g m\n",x1, y1);
+
+
+    if (outputtype == POSTSCRIPT) {
+	fprintf(fp, "n\n");
+        // flip y coordinate from Xwin coords
+        y1 = bblly-(y1-bbury);
+	fprintf(fp, "%g %g m\n",x1, y1);
+    } else if (outputtype == AUTOPLOT) {		// AUTOPLOT
+	fprintf(fp, "jump\n");
+	V_to_R(&x1, &y1);
+	fprintf(fp, "%g %g\n",x1, y1);
+    } else if (outputtype == GERBER) {			// GERBER
+	V_to_R(&x1, &y1);
+	fprintf(fp, "X%04dY%04dD02*\n",(int)(x1*10000.0), (int)(y1*10000.0));
+    }
 }
 
-void ps_draw_poly(fp) 
-FILE *fp;
+void ps_continue_line(x1, y1)
+double x1, y1;
 {
+    if (debug) printf("ps_continue_line:\n");
+
+    if (outputtype == POSTSCRIPT) {
+	// flip y coordinate from Xwin coords
+	y1 = bblly-(y1-bbury);
+	fprintf(fp, "%g %g l\n",x1, y1);
+    } else if (outputtype == AUTOPLOT) {		// AUTOPLOT
+	V_to_R(&x1, &y1);
+	fprintf(fp, "%g %g\n",x1, y1);
+    } else if (outputtype == GERBER) {			// GERBER
+	V_to_R(&x1, &y1);
+	fprintf(fp, "X%04dY%04dD01*\n",(int)(x1*10000.0), (int)(y1*10000.0));
+    }
+    in_line++;
+}
+
+void ps_start_poly() 
+{
+    if (debug) printf("ps_start_poly:\n");
+    if (outputtype == GERBER) {			// GERBER
+       fprintf(fp, "G36*\n");
+    }
+}
+
+void ps_end_poly() 
+{
+    if (debug) printf("ps_end_poly:%d\n",outputtype);
+    if (outputtype == GERBER) {			// GERBER
+       fprintf(fp, "G37*\n");
+    }
     in_poly++;
 }
 
 
-void ps_postamble(fp)
-FILE *fp;
+void ps_postamble()
 {
+    if (debug) printf("ps_postamble:\n");
     if (in_line) {
     	ps_end_line(fp);
+	in_line=0;
     } 
-    fprintf(fp,"%% here ends figure;\n");
-    fprintf(fp,"%%Pig2psEnd\n");
-    fprintf(fp,"rs\n");
-    fprintf(fp,"showpage\n");
+    if (outputtype == POSTSCRIPT) {
+	fprintf(fp,"%% here ends figure;\n");
+	fprintf(fp,"%%Pig2psEnd\n");
+	fprintf(fp,"rs\n");
+	fprintf(fp,"showpage\n");
+	fprintf(fp,"%%%%EOF\n");
+    }
     fclose(fp);
 }

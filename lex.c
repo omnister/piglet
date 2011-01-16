@@ -21,6 +21,8 @@
 #include "path.h"
 #include "rubber.h"
 #include "ev.h"
+#include "version.h"
+#include "postscript.h"
 
 int readin();
 
@@ -344,6 +346,7 @@ LEXER *lp;
     while((token=token_get(lp, &word)) != EOF) {
         if (debug) printf("%s, line %d: IN MAIN: got %s: %s\n", 
 	    lp->name,  lp->line, tok2str(token), word);
+	aborted=0;
 	switch (lp->mode) {
 	    case MAIN:
 		rl_setprompt("MAIN> ");
@@ -464,6 +467,7 @@ int x;
     static int last=-1;
 
     printf("caught %d: %s. Use QUIT command to end program",x, strsignal(x));
+    aborted++;
     if (x == 3) {
        if (last==x) {
             exit(0);
@@ -1722,6 +1726,7 @@ char *arg;
     char name[128];
     int debug=0;
     int fit=0;
+    int plottype=0;
     extern void do_win();                /* found in com_window */
 
     if (debug) printf("    com_plot\n");
@@ -1737,6 +1742,9 @@ char *arg;
     // :F to do a fit before plotting, otherwise only plot current window view
     // :P<papersize> A,B,C,L=letter,widthxheight
 
+    plottype=POSTSCRIPT;
+    ps_set_outputtype(POSTSCRIPT);	// default is postscript
+
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_PLOT: got %s: %s\n", tok2str(token), word);
 	switch(token) {
@@ -1747,6 +1755,16 @@ char *arg;
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
 		    fit++;
+		} else if (strncasecmp(word, ":PA", 3) == 0) { /* autoplot */
+		    plottype=AUTOPLOT;
+		    ps_set_outputtype(AUTOPLOT);
+		} else if (strncasecmp(word, ":PP", 3) == 0) { /* postscript (default) */
+		    plottype=POSTSCRIPT;
+		    ps_set_outputtype(POSTSCRIPT);
+		} else if (strncasecmp(word, ":PG", 3) == 0) { /* gerber */
+		    fit++;
+		    plottype=GERBER;
+		    ps_set_outputtype(GERBER);
 		} else {
 	    	    weprintf("bad option to PLOT: %s\n", word);
 		    return(-1);
@@ -1766,7 +1784,7 @@ char *arg;
 		   com_window(lp, NULL);
 		}
 
-    		db_plot(name);
+    		db_plot(name,plottype);
 
 		if (fit) {			/* revert to old window params */
 		   token_unget(lp, EOC, ";");
@@ -2106,7 +2124,7 @@ int com_version(lp, arg)	/* identify the version number of program */
 LEXER *lp;
 char *arg;
 {
-    printf("    com_version: %s\n", version);
+    printf("    com_version: %s\n", VERSION);
     return (0);
 }
 

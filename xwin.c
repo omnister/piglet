@@ -852,8 +852,10 @@ char **s;
 	case UnmapNotify:
 	case ReparentNotify:
 	    break;
+	case KeyRelease:
+	    break;
 	default:
-	    eprintf("got unexpected default event: %s",
+	    printf("got unexpected default event: %s",
 		event_names[xe.type]);
 	    break;
 	}

@@ -441,7 +441,8 @@ a point on the radius, or on the major axis if <yxratio>!=1
 }
 
 N: ADD_INSTANCE
-U: ADD [I] <device> [.<cname>] [@<sname>] [:M<mirror>] [:R<rotation> [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... EOC
+U: ADD [I] <device> [.<cname>] [@<sname>] [:M<mirror>] [:R<angle>] [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy>... EOC
+U: ADD [I] <device> :S<col>,<row> [.<cname>] [@<sname>] [:M<mirror>] [:R<angle>] [:X<x>] [:Y<yxratio>] [:Z<slant>] <xy1> <xy2> <xy3> EOC
 D: Add an instance (sub-cell) to the current device
 S: good
 T: {
@@ -451,6 +452,20 @@ about the X axis, Y axis, or both.  <rotation> is the rotation angle in
 decimal degrees in the range -180.00 to +180.00 with 0.01 degree
 increment.  Multiple devices can be placed with multiple <xy> points. 
 EOC (or double click) is required to terminate the command. 
+
+If the :S option is given, then the instance will be stepped to create
+an array of <col> x <row> instances.  The <col> columns are spaced evenly
+along the line connecting <xy1> and <xy2>, and the <row> rows are
+spaced evenly along the line connecting <xy1> and <xy3>.  Because there
+are no limitations on the placement of the three points, the resulting
+array can be rectangular, sheared and/or rotated.  Only the placement of
+the instances are controlled by <xy1> <xy2> and <xy3> points.  The
+rotation, mirroring, scaling, and shearing of the individual instances
+are controlled independently by the :M,:R,:X,:Y,:Z options as described
+above.  If it is desired to simulate a rotated rectangular array, then
+the appropriate :R option will have to be calculated based on the
+placement of the control points.  Only one device can be placed with 
+the :S option and the command terminates after the third required point. 
 
 .SS OPTIONS
 .TP
@@ -475,8 +490,20 @@ y-to-x ratio for creating a "stretched" instance
 .I <slant>
 slant angle (degrees) for "shearing" the instance
 .TP
+.I <col>,<row>
+two integers specifying the number of columns and rows
+for a stepped instance.  ":S1,1" is equivalent to a 
+non-stepped instance.
+.TP
 .I <xy>
 the location of the instance.
+.I <xy1> <xy2> <xy3>
+coordinates controlling the placement and step spacing
+for an instance array.  <xy1> is the location of the 0,0
+corner of the array.  There will <row> number of instances
+spaced along the line between <xy1> and <xy2>.  There will
+be <col> number of rows spaced along the line between
+<xy1> and <xy3>.
 }
 
 N: ADD_LINE
@@ -1285,7 +1312,8 @@ The <label> associates a short mnemonic name with the mask which will be printed
 when components are IDEntified.
 .TP
 .I <layer>
-An integer from 0 to MAX_LAYER which specifies which layer is being modified.
+An integer from 0 to MAX_LAYER (defined in db.h, default is 1024) which
+specifies which layer is being modified. 
 }
 
 N: EXIt

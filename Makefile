@@ -31,7 +31,7 @@ rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c ev.h com_shell.c expr.c expr.h pigrc .git
+ev.c ev.h com_shell.c expr.c expr.h pigrc version.h .git
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
@@ -47,8 +47,16 @@ CC=cc -ggdb -Wall
 # we currently make pig.bin, and then run the binary under the
 # wrapper "pig" which catches and error backtrace with gdb
 
+
 pig.bin: $(OBJS) man/piglet.1p
 	$(CC) $(OBJS) -o pig.bin -lreadline $(XLIB) -lm -lcurses
+
+version: 
+	( V=`git describe`;\
+	  D=`date`;\
+	    echo "/* $$D */" > version.h; \
+	    echo "#define VERSION \"$$V\"" >> version.h; \
+	) 
 
 clean: 
 	rm -f *.o pig.bin
@@ -212,6 +220,7 @@ db.o: xwin.h
 draw.o: db.h
 draw.o: eprintf.h
 draw.o: equate.h
+draw.o: ev.h
 draw.o: postscript.h
 draw.o: rubber.h
 draw.o: xwin.h
@@ -272,6 +281,7 @@ lex.o: readfont.h
 lex.o: rlgetc.h
 lex.o: rubber.h
 lex.o: token.h
+lex.o: version.h
 lex.o: xwin.h
 lock.o: db.h
 lock.o: lock.h
@@ -280,7 +290,9 @@ opt_parse.o: db.h
 opt_parse.o: eprintf.h
 opt_parse.o: opt_parse.h
 path.o: path.h
+postscript.o: db.h
 postscript.o: postscript.h
+postscript.o: xwin.h
 readfont.o: db.h
 readfont.o: readfont.h
 readmenu.o: db.h

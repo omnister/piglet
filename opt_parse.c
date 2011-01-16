@@ -22,7 +22,7 @@ char *validopts;	/* a string like "WSRMYZF" */
 OPTS *popt;
 {
 
-    double optval;
+    double optval, optval2;
     int i;
 
     if (optstring[0] == '#' || optstring[0] == '-' || optstring[0] == '+') {
@@ -122,20 +122,25 @@ OPTS *popt;
 		}
 		popt->font_num = i;
 		break;
-	    case 'R':		/* resolution or rotation angle +/- 180 */
+	    case 'R':		/* resolution or rotation angle +/- 360 */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {
 		    weprintf("invalid option argument: %s\n", optstring+2); 
 		    return(ERR);
 		}
-		if (optval < -180.0 || optval > 180.0 ) {
+		if (optval <= -370.0 || optval >= 370.0 ) {
 		    weprintf("option out of range: %s\n", optstring+2); 
 		    return(ERR);
 		}
 		popt->rotation = optval;
 		break;
 	    case 'S':		/* step an instance */
-		weprintf("option ignored: instance stepping not implemented\n");
-		return(ERR);
+		if(sscanf(optstring+2, "%lf,%lf", &optval, &optval2) != 2) {
+		    weprintf("invalid option argument: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		popt->cols = (int) optval;
+		popt->rows = (int) optval2;
+		popt->stepflag = 1;
 		break;
 	    case 'W':		/* width */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {

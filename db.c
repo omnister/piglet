@@ -627,6 +627,8 @@ DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
 
 	dp->u.i->name=strsave(p->u.i->name);
 	dp->u.i->x = p->u.i->x; dp->u.i->y = p->u.i->y;
+	dp->u.i->x2 = p->u.i->x2; dp->u.i->y2 = p->u.i->y2;
+	dp->u.i->x3 = p->u.i->x3; dp->u.i->y3 = p->u.i->y3;
 
 	xform_point(xp, &(dp->u.i->x), &(dp->u.i->y));
 	break;
@@ -898,7 +900,7 @@ int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
     int child_ortho;
 
     if (cell == NULL) {
-        printf("bad reference in db_render\n");
+        printf("bad reference in db_arc_smash\n");
     	return(0);
     }
 
@@ -1169,7 +1171,7 @@ int *retval;
 }
 
 /* printcoords uses %g to minimize size of definition files.  Can print up to */
-/* 6 numbers to the right of the decimal, but will not print trailing 0's or */
+/* 10 numbers to the right of the decimal, but will not print trailing 0's or */
 /* decimal point.  Only problem with native %g is that it will print exponential */
 /* notation for numbers that are very close but not equal to zero.  So, we use */
 /* the fmod function to make all numbers multiples of 1/(10^RES) */
@@ -1180,7 +1182,7 @@ void printcoords(FILE *fp, XFORM *xp, double x, double y) {
     xform_point(xp, &x, &y);
     xx = x-fmod(x,1.0/pow(10.0,RES));
     yy = y-fmod(y,1.0/pow(10.0,RES));
-    fprintf(fp, " %g,%g", xx,yy);
+    fprintf(fp, " %.10g,%.10g", xx,yy);
 }
 
 /* printdef writes the definition of a single component *p to the */
@@ -1418,6 +1420,10 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	        db_print_opts(fp, p->u.i->opts, INST_OPTS);
 	    }
 	    printcoords(fp, xp,  p->u.i->x, p->u.i->y);
+	    if (p->u.i->opts->stepflag) {
+		printcoords(fp, xp,  p->u.i->x2, p->u.i->y2);
+		printcoords(fp, xp,  p->u.i->x3, p->u.i->y3);
+	    }
 	    fprintf(fp, ";\n");
 	}
 	break;
@@ -2028,7 +2034,7 @@ NUM x,y;
     return(0);
 }
 
-int db_add_inst(cell, subcell, opts, x, y)
+struct db_inst * db_add_inst(cell, subcell, opts, x, y)
 DB_TAB *cell;
 DB_TAB *subcell;
 OPTS *opts;
@@ -2050,9 +2056,13 @@ NUM x,y;
 
     ip->x=x;
     ip->y=y;
+    ip->x2=x;
+    ip->y2=y;
+    ip->x3=x;
+    ip->y3=y;
     ip->opts=opts;
     db_insert_component(cell,dp);
-    return(0);
+    return(ip);
 }
 
 /*
@@ -2121,6 +2131,9 @@ OPTS *opt_copy(OPTS *opts)
     tmp->font_size = opts->font_size;
     tmp->font_num = opts->font_num;
     tmp->justification = opts->justification;
+    tmp->stepflag = opts->stepflag;
+    tmp->rows = opts->rows;
+    tmp->cols = opts->cols;
     tmp->mirror = opts->mirror;
     tmp->rotation = opts->rotation;
     tmp->width = opts->width;
@@ -2139,6 +2152,9 @@ void opt_set_defaults(OPTS *opts)
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
     opts->font_num=0;		  /* :N<font_num> */
     opts->justification=0;	  /* :J<justification> */
+    opts->stepflag=0;		  /* not a stepped instance */
+    opts->rows=1;		  /* :S<rows>,<cols> */
+    opts->cols=1;
     opts->rotation = 0.0;         /* :R<rotation,resolution> */
     opts->width = 0.0;            /* :W<width> */
     opts->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
@@ -2215,6 +2231,11 @@ char *validopts;
 	    case 'R':
 		if (popt->rotation != 0.0) {
 		    fprintf(fp, ":R%g ", popt->rotation);
+		}
+	    	break;
+	    case 'S':
+		if (popt->stepflag) {
+		    fprintf(fp, ":S%d,%d ", popt->rows, popt->cols);
 		}
 	    	break;
 	    case 'W':

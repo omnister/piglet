@@ -11,6 +11,7 @@
 
 /* :Mmirror :Rrot :Xscale :Yyxratio :Zslant */
 
+
 static double bb_xmin, bb_ymin, bb_xmax, bb_ymax;
 void draw_inst_bb();
 
@@ -62,9 +63,11 @@ int loadrep(char *inst_name)
 
 int add_inst(LEXER *lp, char *inst_name)
 {
-    enum {START,NUM1,END} state = START;
+    enum {START,NUM1,NUM2,NUM3,NUM4,END} state = START;
 
     double x1, y1;	// pick value
+    double x2, y2;	// pick value
+    double x3, y3;	// pick value
     double xold, yold;	// previous pick value to suppress double pics
     int numpicks=0;	// number of picks
     int done=0;
@@ -72,6 +75,7 @@ int add_inst(LEXER *lp, char *inst_name)
     OPTS opts;
     char *word;
     int debug=0;
+    struct db_inst *ip;
 
     DB_TAB *ed_rep;
 
@@ -81,7 +85,7 @@ int add_inst(LEXER *lp, char *inst_name)
 
     opt_set_defaults(&opts);
 
-    rl_saveprompt();
+    // rl_saveprompt();
     rl_setprompt("ADD_INST> ");
 
     if (debug) printf("currep = %s\n", currep->name);
@@ -176,9 +180,17 @@ int add_inst(LEXER *lp, char *inst_name)
 
 			state = START;
 			rubber_set_callback(draw_inst_bb);
+		    	if (opts.stepflag) {
+			    rl_setprompt("ARRAY ORIGIN> ");
+			    rubber_clear_callback();
+			}
 		    }
 		} else if (token == NUMBER) {
-		    state = NUM1;
+		    if (opts.stepflag) {
+			state = NUM2;	
+		    } else {
+			state = NUM1;	
+		    }
 		} else if (token == EOL) {
 		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
@@ -202,6 +214,65 @@ int add_inst(LEXER *lp, char *inst_name)
 			}
 		        numpicks++; xold=x1; yold=y1;
 			state = START;
+	            } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
+		    token_get(lp, &word);
+		} else if (token == EOC  || token == CMD) {
+		    state = END; 
+		} else {
+		    token_err("INST", lp, "expected NUMBER", token);
+		    state = END; 
+		}
+		break;
+	    case NUM2:		/* get column end coordinate */
+		rubber_clear_callback();
+		if (token == NUMBER) {
+		    if (getnum(lp, "INST", &x1, &y1)) {
+    			rl_setprompt("COLUMN EXTENT> ");
+			state = NUM3;
+	            } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
+		    token_get(lp, &word);
+		} else if (token == EOC  || token == CMD) {
+		    state = END; 
+		} else {
+		    token_err("INST", lp, "expected NUMBER", token);
+		    state = END; 
+		}
+		break;
+	    case NUM3:		/* get column end coordinate */
+		if (token == NUMBER) {
+		    if (getnum(lp, "INST", &x2, &y2)) {
+    			rl_setprompt("ROW EXTENT> ");
+			state = NUM4;
+	            } else {
+			state = END;
+		    }
+		} else if (token == EOL) {
+		    token_get(lp, &word);
+		} else if (token == EOC  || token == CMD) {
+		    state = END; 
+		} else {
+		    token_err("INST", lp, "expected NUMBER", token);
+		    state = END; 
+		}
+		break;
+	    case NUM4:		/* get column end coordinate */
+		if (token == NUMBER) {
+		    if (getnum(lp, "INST", &x3, &y3)) {
+		        if (debug) printf("%g %g %g %g %g %g\n", x1, y1, x2, y2, x3, y3);
+			ip = db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
+			ip->x2 = x2;
+			ip->y2 = y2;
+			ip->x3 = x3;
+			ip->y3 = y3;
+			rubber_clear_callback();
+			need_redraw++;
+			state = END;
 	            } else {
 			state = END;
 		    }

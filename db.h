@@ -27,7 +27,7 @@
 #define RECT_OPTS "W"
 #define NOTE_OPTS "JMNRYZF"
 #define TEXT_OPTS "JMNRYZF"
-#define INST_OPTS "MRXYZ"
+#define INST_OPTS "MRSXYZ"
 #define NONAME_OPTS "MRX"
 
 #define MAX_LAYER 1024
@@ -210,6 +210,9 @@ typedef struct opt_list {
     int mirror;             /* :M<x,xy,y>    */
     int font_num;           /* :N<font_number> */
     int justification;      /* :J<justification> */
+    int stepflag;	    /* true if rows/cols valid */
+    int rows;		    /* :S<rows>,<cols> */
+    int cols;		
     double rotation;        /* :R<rotation,resolution> */
     double width;           /* :W<width> */
     double scale; 	    /* :X<scale> */
@@ -254,6 +257,8 @@ typedef struct db_inst {
     char *name; 	    /* was struct db_tab *def; */
     OPTS *opts;
     NUM x,y;
+    NUM x2,y2;		// column vector 
+    NUM x3,y3;		// row vector
 } DB_INST; 
 
 typedef struct db_line {
@@ -337,7 +342,7 @@ extern int db_add_circ(
 		NUM x2, NUM y2
 	    );
 
-extern int db_add_inst(
+extern struct db_inst * db_add_inst(
 		DB_TAB *cell, 
 		DB_TAB *subcell, 
 		OPTS *opts,
@@ -566,4 +571,5 @@ void db_free(DB_DEFLIST *dp);
 void db_fsck(DB_DEFLIST *dp);
 int readin();
 int loadrep();
+int aborted;	// used to abort drawing
 

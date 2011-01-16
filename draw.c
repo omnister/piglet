@@ -25,6 +25,7 @@ FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 int filled_object = 0;		/* global for managing polygon filling */
 int n_poly_points = 0;		/* number of points in filled polygon */
+int aborted=0;
 
 #define MAXPOLY 1024		/* maximum polygon size */
 XPoint Poly[MAXPOLY];
@@ -44,7 +45,7 @@ static double ymax;
 
 int pickcheck();
 void emit();
-int debug = 0;
+static int debug = 0;
 
 /****************************************************/
 /* rendering routines				    */
@@ -1421,7 +1422,7 @@ DB_TAB *cell;
     return(1);
 }
 
-int db_plot(char *name) {
+int db_plot(char *name, OMODE plottype) {
     BOUNDS bb;
     char buf[MAXFILENAME];
     double x1, y1, x2, y2;
@@ -1433,9 +1434,22 @@ int db_plot(char *name) {
 	return(0);
     }
 
-    snprintf(buf, MAXFILENAME, "%s.ps", name);
-    printf("plotting postcript to %s\n", buf);
-    fflush(stdout);
+    if (plottype  == AUTOPLOT) {
+	snprintf(buf, MAXFILENAME, "%s.pd", name);
+	printf("plotting autoplot format to %s\n", buf);
+	fflush(stdout);
+    } else if (plottype  == POSTSCRIPT) {
+	snprintf(buf, MAXFILENAME, "%s.ps", name);
+	printf("plotting postscript to %s\n", buf);
+	fflush(stdout);
+    } else if (plottype == GERBER) {
+	snprintf(buf, MAXFILENAME, "%s.gb", name);
+	printf("plotting gerber to %s\n", buf);
+	fflush(stdout);
+    } else {
+       printf("bad plottype: %d\n", plottype);
+       return(0);
+    }
 
     if((PLOT_FD=fopen(buf, "w+")) == 0) {
     	printf("db_plot: can't open plotfile: \"%s\"\n", buf);
@@ -1465,15 +1479,20 @@ int db_plot(char *name) {
     printf("bounds to ps: %g, %g, %g, %g\n", 
     	x1, y2, x2, y1);
 
-    /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
 
     /* FIXME: make version number a global or at least subroutine */
-    ps_preamble(PLOT_FD, currep->name, "piglet version 0.95h", 8.5, 11.0, 
-    0.0, 0.0, (double) g_width, (double) g_height);
+
+    ps_set_file(PLOT_FD);
+
+    /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
+    ps_preamble(currep->name, "piglet version 0.95h", 8.5, 11.0, 
+        0.0, 0.0, (double) g_width, (double) g_height);
     /* x1, y2, x2, y1); */
 
     db_render(currep, 0, &bb, D_NORM);      /* dump plot */
-    ps_postamble(PLOT_FD);
+
+    ps_postamble();
+
     X=1;				    /* turn X back on*/
     return(1);
 }
@@ -1669,7 +1688,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
 
-    for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
+    for (p=cell->dbhead; p!=(DB_DEFLIST *)0 && !aborted; p=p->next) {
 
 	childbb.init=0;
 	prims++;
@@ -1708,62 +1727,82 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	    	;
 	    }
 
-	    /* create transformation matrix from options */
-	    xp = matrix_from_opts(p->u.i->opts);
-
-	    xp->dx += p->u.i->x;
-	    xp->dy += p->u.i->y;
-
 	    save_transform = global_transform;
-	    global_transform = compose(xp,global_transform);
 
-	    if (nest >= nestlevel || !show_check_visible(currep, INST,0)) {
-		drawon = 0;
-	    } else {
-		drawon = 1;
-	    }
-
-	    // instances are called by name, not by pointer, otherwise
-	    // it is possible to PURGE a cell in memory and then
-	    // reference a bad pointer, causing a crash...  so instances
-	    // are always accessed with a db_lookup() call
-
+	    int row, col;				// RCW
 	    childbb.init=0;
+	    double dxc,dyc,dxr,dyr;
 
-	    // try to reread the definition from disk this can only
-	    // happen when a memory copy has been purged
+	    for (row=0; row<p->u.i->opts->rows; row++) {		// array instance RCW
+		if (aborted) break;
+		for (col=0; col<p->u.i->opts->cols; col++) {		
 
-	    if (db_lookup(p->u.i->name) == NULL) {
-		loadrep(p->u.i->name);
-	    } 
+		    /* create transformation matrix from options */
+		    xp = matrix_from_opts(p->u.i->opts);
 
-	    if (db_lookup(p->u.i->name) != NULL) {
-		prims += db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
-	    } else {
-	        printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
+		    dxc = (p->u.i->x2 - p->u.i->x)/max(p->u.i->opts->cols-1.0, 1.0);
+		    dyc = (p->u.i->y2 - p->u.i->y)/max(p->u.i->opts->cols-1.0, 1.0);
+		    dxr = (p->u.i->x3 - p->u.i->x)/max(p->u.i->opts->rows-1.0, 1.0);
+		    dyr = (p->u.i->y3 - p->u.i->y)/max(p->u.i->opts->rows-1.0, 1.0);
+
+		    // array instance offsets RCW	
+		    xp->dx += p->u.i->x+ ((double)row)*dxr + ((double)col)*dxc;
+		    xp->dy += p->u.i->y+ ((double)col)*dyc + ((double)row)*dyr;
+
+		    global_transform = compose(xp,save_transform);
+
+		    if (nest >= nestlevel || !show_check_visible(currep, INST,0)) {
+			drawon = 0;
+		    } else {
+			drawon = 1;
+		    }
+
+		    // instances are called by name, not by pointer, otherwise
+		    // it is possible to PURGE a cell in memory and then
+		    // reference a bad pointer, causing a crash...  so instances
+		    // are always accessed with a db_lookup() call
+
+		    // try to reread the definition from disk this can only
+		    // happen when a memory copy has been purged
+
+		    if (db_lookup(p->u.i->name) == NULL) {
+			loadrep(p->u.i->name);
+		    } 
+
+		    if (db_lookup(p->u.i->name) != NULL) {
+			prims += db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
+		    } else {
+			printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
+		    }
+
+		    p->xmin = childbb.xmin;
+		    p->xmax = childbb.xmax;
+		    p->ymin = childbb.ymin;
+		    p->ymax = childbb.ymax;
+
+		    // p->xmin = min(childbb.xmin, p->xmin);
+		    // p->xmax = max(childbb.xmax, p->xmax);
+		    // p->ymin = min(childbb.ymin, p->ymin);
+		    // p->ymax = max(childbb.ymax, p->ymin);
+
+		    /* don't draw anything below nestlevel */
+		    if (nest > nestlevel) {
+			drawon = 0;
+		    } else {
+			drawon = 1;
+		    }
+
+		    if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
+			set_layer(0,0);
+			db_drawbounds(childbb.xmin, childbb.ymin, 
+			    childbb.xmax, childbb.ymax, D_BB);
+		    }
+
+		    free(global_transform); 
+		    free(xp);	
+		    global_transform = save_transform;	/* set transform back */
+		}  
 	    }
-
-	    p->xmin = childbb.xmin;
-	    p->xmax = childbb.xmax;
-	    p->ymin = childbb.ymin;
-	    p->ymax = childbb.ymax;
-
-	    /* don't draw anything below nestlevel */
-	    if (nest > nestlevel) {
-		drawon = 0;
-	    } else {
-		drawon = 1;
-	    }
-
-            if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
-		set_layer(0,0);
-		db_drawbounds(childbb.xmin, childbb.ymin, 
-		    childbb.xmax, childbb.ymax, D_BB);
-	    }
-
-	    free(global_transform); 
-	    free(xp);	
-	    global_transform = save_transform;	/* set transform back */
 
 	    break;
 	default:
@@ -1811,6 +1850,9 @@ int mode;
 {
     filled_object = 1;		/* global for managing polygon filling */
     n_poly_points = 0;		/* number of points in filled polygon */
+    if (!X) {
+	ps_start_poly();
+    }
 }
 
 void endpoly(bb,mode) 
@@ -1818,13 +1860,13 @@ BOUNDS *bb;
 int mode;
 {
     clipl(2, 0.0, 0.0, bb, mode);	/* flush pipe */
-    filled_object = 0;		/* global for managing polygon filling */
-    if (n_poly_points >= 3) {
-	if (X) {
+    filled_object = 0;			/* global for managing polygon filling */
+    if (X) {
+        if (n_poly_points >=3) {
 	    xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon w/saved pts */
-	} else {
-	    ps_draw_poly(PLOT_FD);
 	}
+    } else {
+	ps_end_poly();
     }
 }
 
@@ -2207,10 +2249,10 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 		    }
 		} else {
 		    if (nseg == 1) {
-			ps_start_line(PLOT_FD, x, y);
+			ps_start_line(x, y);
 		    } else {
 			if (x!=xxold || y!=yyold) {
-			    ps_continue_line(PLOT_FD, x, y);
+			    ps_continue_line(x, y);
 			}
 		    }
 		}
@@ -2303,7 +2345,9 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 	} 
 	R_to_V(&xx, &yy);	/* convert to screen coordinates */ 
 	if (!X) {
-	    yy = (double) g_height - yy;    /* for postscript, flip y polarity */
+	    /* for postscript, flip y polarity */
+	    // now flipped in postscript.c
+	    // yy = (double) g_height - yy;    
 	}
 	clipl(0, xx, yy, bb, mode);	
     }
@@ -2354,9 +2398,6 @@ int mode;
 {
     nseg=0;  
     filled_object = 0;		/* automatically close polygon */
-    if (!X) {
-	/* if (drawon) fprintf(PLOT_FD, "jump\n");*/   /* autoplot */
-    }
 }
 
 void set_layer(lnum, comp)

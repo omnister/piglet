@@ -263,7 +263,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		if (isalnum(c)) {
 		    *w++ = c;
 		    continue;
-		} else if (strchr("+-.",c) != NULL) {
+		} else if (strchr("+-.,",c) != NULL) {
 		    *w++ = c;
 		    continue;
 		} else {
