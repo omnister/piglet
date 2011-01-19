@@ -12,6 +12,7 @@
 
 #define MAXBUF 256
 
+int layer=0;
 int linetype=0;
 int pennum=0;
 int filltype=0;
@@ -23,7 +24,7 @@ int this_line=0;	// because lines are implicitly terminate
 int this_fill=0;	// by starting a new line which overwrites
 			// pen, line and fill
 
-int debug=0;
+int debug=1;
 
 FILE *fp=NULL;		// file descriptor for output file
 OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
@@ -39,6 +40,10 @@ void ps_set_file(FILE *fout)
 {
   if (debug) printf("ps_set_file:\n");
   fp=fout; 
+}
+
+void ps_set_layer(int layernumber) {
+    layer=layernumber;
 }
 
 void ps_set_fill(int fill)
@@ -107,6 +112,10 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
        fprintf(fp,"%%MOIN*%%\n");	// absolute
        fprintf(fp,"G04 Gerber Fmt 3.4, Leading zero omitted, Abs format*\n");
        fprintf(fp,"%%FSLAX34Y34*%%\n");
+       fprintf(fp,"G04 Define D10 to be a 5mil circle*\n");
+       fprintf(fp,"%%ADD10C,.005*%%\n");
+       fprintf(fp,"G04 Make D10 the default aperture*\n");
+       fprintf(fp,"G54D10*\n");
        return;
     }
 
@@ -297,17 +306,10 @@ void ps_end_line()
 	    fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
 	    fprintf(fp, "gs kc f%d setpattern fill gr\n",
 		get_stipple_index(this_fill,this_pen));
-	    in_poly=0;
 	}
 	fprintf(fp, "s\n");
-    } else {			// GERBER, AUTOPLOT
-	if (in_poly) {
-	    if (outputtype == GERBER) {			// GERBER
-	       // fprintf(fp, "G37*\n");
-	    }
-	    in_poly=0;
-	}
     }
+    in_poly=0;
     in_line=0;
 }
 
@@ -332,7 +334,6 @@ double x1, y1;
     this_line=linetype;
     this_fill=filltype;
 
-
     if (outputtype == POSTSCRIPT) {
 	fprintf(fp, "n\n");
         // flip y coordinate from Xwin coords
@@ -344,7 +345,10 @@ double x1, y1;
 	fprintf(fp, "%g %g\n",x1, y1);
     } else if (outputtype == GERBER) {			// GERBER
 	V_to_R(&x1, &y1);
-	fprintf(fp, "X%04dY%04dD02*\n",(int)(x1*10000.0), (int)(y1*10000.0));
+        if (!in_poly) {
+	   fprintf(fp,"G04 LAYER %d *\n", layer);
+	}
+	fprintf(fp, "X%04dY%04dD02*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
     }
 }
 
@@ -362,7 +366,7 @@ double x1, y1;
 	fprintf(fp, "%g %g\n",x1, y1);
     } else if (outputtype == GERBER) {			// GERBER
 	V_to_R(&x1, &y1);
-	fprintf(fp, "X%04dY%04dD01*\n",(int)(x1*10000.0), (int)(y1*10000.0));
+	fprintf(fp, "X%04dY%04dD01*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
     }
     in_line++;
 }
@@ -371,8 +375,10 @@ void ps_start_poly()
 {
     if (debug) printf("ps_start_poly:\n");
     if (outputtype == GERBER) {			// GERBER
+       fprintf(fp,"G04 LAYER %d *\n", layer);
        fprintf(fp, "G36*\n");
     }
+    in_poly++;
 }
 
 void ps_end_poly() 
@@ -381,9 +387,8 @@ void ps_end_poly()
     if (outputtype == GERBER) {			// GERBER
        fprintf(fp, "G37*\n");
     }
-    in_poly++;
+    in_poly=0;
 }
-
 
 void ps_postamble()
 {
@@ -398,6 +403,9 @@ void ps_postamble()
 	fprintf(fp,"rs\n");
 	fprintf(fp,"showpage\n");
 	fprintf(fp,"%%%%EOF\n");
+    } else if (outputtype == GERBER) {
+        fprintf(fp,"G04 LAYER 999 *\n");
+	fprintf(fp,"M02*\n");
     }
     fclose(fp);
 }

@@ -19,6 +19,7 @@ extern void ps_set_outputtype(OMODE mode);	// 0=postscript; 1=gerber
 
 extern void ps_preamble();			// output standard header
 
+extern void ps_set_layer();			// set layer 
 extern void ps_set_line();			// change line type
 extern void ps_set_pen();			// change pen color
 extern void ps_set_fill();			// change fill pattern
