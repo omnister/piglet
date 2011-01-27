@@ -58,8 +58,11 @@ int add_rect(LEXER *lp, int *layer)
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
-	    } else if (token == EOC || token == CMD) {
-		 state = END;
+	    } else if (token == EOC) {
+		token_get(lp,&word); 
+		state = START;
+	    } else if (token == EOF) {
+	    	state = END;
 	    } else {
 		token_err("RECT", lp, "expected OPT or NUMBER", token);
 		state = END;	/* error */
@@ -75,9 +78,11 @@ int add_rect(LEXER *lp, int *layer)
 		}
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
 		printf("   cancelling ADD RECT\n");
-		state = END;	
+		rubber_clear_callback();
+		need_redraw++; 
+		state = START;	
 	    } else {
 		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
@@ -100,9 +105,11 @@ int add_rect(LEXER *lp, int *layer)
 		}
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
-	    } else if (token == EOC || token == CMD) {
+	    } else if (token == EOC) {
 		printf("ADD RECT: cancelling ADD RECT\n");
-	        state = END;
+		rubber_clear_callback();
+		need_redraw++; 
+	    	state = START;
 	    } else {
 		token_err("RECT", lp, "expected NUMBER", token);
 		state = END; 
@@ -110,10 +117,10 @@ int add_rect(LEXER *lp, int *layer)
 	    break;
 	case END:
 	default:
-	    if (token == EOC || token == CMD) {
-		;
+            if (token == EOC || token == CMD) {
+               ;
 	    } else {
-		token_flush_EOL(lp);
+		// token_flush_EOL(lp);
 	    }
 	    done++;
 	    break;

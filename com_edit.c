@@ -174,11 +174,16 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 
 		lp->mode = EDI;
 
-		if ((new_rep=db_lookup(name)) != NULL && new_rep->modified) { 
+		if ((new_rep=db_lookup(name)) != NULL && new_rep->modified && strncmp(name,"NONAME_",7)) { 
 		    if (ask(lp, "modified cell already in memory, read in a new copy?")) {
 		        db_unlink_cell(new_rep);
 		    }
 		}
+
+		// FIXME:  should remember file mtime when originally reading in a file
+		// then, any subsequent reads should ask to reload memory if the file
+		// is newer than the remembered read-in date.  This allows easy textual
+		// modification of a cell by exiting, editing and re-editing.
 	    
 		if ((new_rep=db_lookup(name)) == NULL) { /* Not already in memory */
 

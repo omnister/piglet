@@ -181,7 +181,7 @@ int add_line(LEXER *lp, int *layer)
 		    }
 		    rubber_set_callback(draw_line); 
 		    rubber_draw(x2, y2, 0);
-		} else if (token == EOC || token == CMD) {
+		} else if (token == CMD || token == EOC) {
 		    state = END; 
 		} else {
 		    token_err("LINE", lp, "expected NUMBER", token);
@@ -195,14 +195,13 @@ int add_line(LEXER *lp, int *layer)
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
 			need_redraw++;
 		    	; /* add geom */
-		} else if (token == CMD) {
-			/* should a CMD terminate a line? */
-			;
+		} else if (token == CMD || token == EOF) {
+		        done++; /* should a CMD terminate a line? */
 		} else {
 		    token_flush_EOL(lp);
 		}
 	    	rubber_clear_callback();
-		done++;
+		state=START;
 		break;
 	    default:
 	    	break;
