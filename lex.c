@@ -1371,6 +1371,7 @@ int mode;	/* EDI, MAIN, PRO, ... */
 	}
 
 	printf("loading %s\n", filename);
+	fflush(stdout);
 	xwin_display_set_state(D_OFF);
         
 	parse(my_lp);

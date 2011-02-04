@@ -24,7 +24,7 @@ int this_line=0;	// because lines are implicitly terminate
 int this_fill=0;	// by starting a new line which overwrites
 			// pen, line and fill
 
-int debug=1;
+int debug=0;
 
 FILE *fp=NULL;		// file descriptor for output file
 OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
