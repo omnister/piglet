@@ -53,16 +53,28 @@ void ps_set_fill(int fill)
     filltype=fill;
 }
 
+
 void ps_set_line(int line)
 {
     if (debug) printf("setting line:%d\n", line);
     linetype=line;
 }
 
+int dxf_penmap[] = {
+    7,1,3,5,
+    4,6,2,7,
+    9,8,7,1,
+    3,5,4,6
+};
+
 void ps_set_pen(int pen) 
 {
     if (debug) printf("setting pen:%d\n", pen); 
-    pennum=pen;
+    if (outputtype == DXF) {
+       pennum=dxf_penmap[pen%16];
+    } else {
+       pennum=pen;
+    }
 }
 
 /*
@@ -309,8 +321,16 @@ void ps_end_line()
 
     if (debug) printf("ps_end_line:\n");
 
-    if (outputtype == POSTSCRIPT) {
+    if (outputtype == GERBER) {			// GERBER
+       if (in_poly) {
+	   fprintf(fp, "G37*\n");
+       }
+    }else if (outputtype == POSTSCRIPT) {
 	fprintf(fp, "c%d ", this_pen);
+	if (in_poly) {
+	   fprintf(fp, "gs kc f%d setpattern fill gr\n",
+	   get_stipple_index(this_fill,this_pen));
+	}
 	fprintf(fp, "%s ", xwin_ps_dashes(this_line));
 	fprintf(fp, "s\n");
     }
@@ -321,8 +341,7 @@ void ps_end_line()
 double xold, yold;
 int in_progress=0;
 
-void ps_start_line(x1, y1)
-double x1, y1;
+void ps_start_line(double x1, double y1, int filled)
 {
     extern int pennum;
     extern int linetype;
@@ -332,6 +351,14 @@ double x1, y1;
     extern int this_fill;
 
     if (debug) printf("ps_start_line:\n");
+
+    if (filled) {
+	if (outputtype == GERBER) {			// GERBER
+	   fprintf(fp,"G04 LAYER %d *\n", layer);
+	   fprintf(fp, "G36*\n");
+	}
+	in_poly++;
+    }
 
     if (in_line) {
     	ps_end_line(fp);
@@ -409,36 +436,6 @@ double x1, y1;
 	yold = y1;
     }
     in_line++;
-}
-
-void ps_start_poly() 
-{
-    if (debug) printf("ps_start_poly:\n");
-    if (outputtype == GERBER) {			// GERBER
-       fprintf(fp,"G04 LAYER %d *\n", layer);
-       fprintf(fp, "G36*\n");
-    }
-    in_poly++;
-}
-
-void ps_end_poly() 
-{
-    extern int this_pen;
-    extern int this_fill;
-    extern int this_line;
-    extern int in_line;
-
-    if (debug) printf("ps_end_poly:%d\n",outputtype);
-    if (outputtype == GERBER) {			// GERBER
-       fprintf(fp, "G37*\n");
-    } else if (outputtype == POSTSCRIPT) {
-       fprintf(fp, "c%d ", this_pen);
-       fprintf(fp, "gs kc f%d setpattern fill gr\n",
-       get_stipple_index(this_fill,this_pen));
-       if (debug) printf("fill: %d pen: %d stipple:%d  \n",
-       	this_fill, this_pen, get_stipple_index(this_fill, this_pen));
-    }
-    in_poly=0;
 }
 
 void ps_postamble()

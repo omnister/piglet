@@ -1902,9 +1902,9 @@ int mode;
 {
     filled_object = 1;		/* global for managing polygon filling */
     n_poly_points = 0;		/* number of points in filled polygon */
-    if (!X) {
-	ps_start_poly();
-    }
+    // if (!X) {
+    // 	ps_start_poly();
+    // }
 }
 
 void endpoly(bb,mode) 
@@ -1918,7 +1918,7 @@ int mode;
 	    xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon w/saved pts */
 	}
     } else {
-	ps_end_poly();
+	// ps_end_poly();
     }
 }
 
@@ -2301,7 +2301,7 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 		    }
 		} else {
 		    if (nseg == 1) {
-			ps_start_line(x, y);
+			ps_start_line(x, y, filled_object);
 		    } else {
 			if (x!=xxold || y!=yyold) {
 			    ps_continue_line(x, y);

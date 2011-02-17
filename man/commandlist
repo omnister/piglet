@@ -1693,7 +1693,7 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a plot of the current device in various formats
 S: letter size only
-U: PLO [:F] [:PG|:PA|:PP] <plotname> <EOC>
+U: PLO [:F] [:PA|:PD|:PG|:PP] <plotname> <EOC>
 T: {
 The PLOT command creates a plot of the current window in the
 file "./<plotname>.<suffix>.  If the <plotname> is not specified, the name of
@@ -1705,6 +1705,20 @@ window to the postscript output.  If the size of the printed image is
 too small, it may be advantagious to resize the X11 display window to
 fit the cell more closely. 
 
+If the ":PA" option is used, Piglet will produce a simple file using the
+PdPlot line drawing syntax with the suffix ".pd".  The PdPlot file
+consists of x,y pairs, one pair per line, interspersed with "jump" and
+"pen <pennumber>" commands.  The default is to draw lines connecting
+consecutive points unless an intervening jump command temporarily turns
+off the drawing function.   PdPlot files should be easy to parse and pass
+to other programs for further processing.
+
+If the ":PD" option is used, Piglet will produce a line drawing in a
+subset of the DXF format using the suffix ".dxf".  The pen colors are
+adjusted to be suitable for direct importation into openoffice.  The DXF
+format currently does line drawing only.  The outlines of rectangles
+circles and polygons are drawn but not filled. 
+
 If the ":PG" option is used, Piglet will output a pseudo-gerber file
 with the suffix ".gb".  The output file is subset of the Gerber RS-274X
 syntax with extra comment lines added to call out various layers in the
@@ -1713,14 +1727,6 @@ Piglet is distributed with an awk script called "gerbsplit".  Running
 gerbsplit on the output plot file will create one properly formatted
 gerber file per layer, with the name "gerbplot.gb<layernumber>".   These
 layers are in a format suitable for sending to a PC board vendor.
-
-If the ":PA" option is used, Piglet will produce a simple file using the
-PdPlot line drawing syntax with the suffix ".pd".  The PdPlot file
-consists of x,y pairs, one pair per line, interspersed with "jump" and
-"pen <pennumber>" commands.  The default is to draw lines connecting
-consecutive points unless an intervening jump command temporarily turns
-off the drawing function.   PdPlot files should be easy to parse and pass
-to other programs for further processing.
 
 PLOT with no arguments will plot just the currently visible portion of
 the device.  The ":F" option will fit the window to the device prior to
@@ -1746,6 +1752,9 @@ settings are restored.
 .TP
 .I :PA
 Plot the current device in PdPlot (Autoplot) format with a ".pd" suffix.
+.TP
+.I :PD
+Plot the current device in DXF format with a ".dxf" suffix.
 .TP
 .I :PG
 Plot the current device in Gerber format with automatic :F fitting with a ".pg" suffix.

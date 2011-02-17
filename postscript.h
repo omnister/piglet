@@ -5,9 +5,9 @@
 // the call ps_preamble() to set up scaling
 // after that, you can change pen,line and fill at will
 // 
-// start simple lines with ps_start_line(), extend them with ps_continue_line()
-// if you want a filled path, then surround your list of points
-// with ps_start_poly() and ps_end_poly();
+// start simple lines with ps_start_line(x,y,fill), 
+// extend them with ps_continue_line(x,y)
+// if fill=1 the lines will be treated as polygons and filled
 //
 // when done plotting all the geometries, call ps_postamble();
 //
@@ -24,9 +24,7 @@ extern void ps_set_line();			// change line type
 extern void ps_set_pen();			// change pen color
 extern void ps_set_fill();			// change fill pattern
 
-extern void ps_start_poly();			// start a poly
 extern void ps_start_line();			// start a new line
 extern void ps_continue_line();			// continue a line
-extern void ps_end_poly();			// end a poly
-
 extern void ps_postamble();			// wrap it up
+
