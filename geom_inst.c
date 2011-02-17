@@ -95,9 +95,9 @@ int add_inst(LEXER *lp, char *inst_name)
     if (debug) printf("calling db_lookup with %s\n", inst_name);
 
     if (loadrep(inst_name) == 0) {
-	printf("can't add a null instance: %s\n", inst_name);
+	printf("warning: you can't add a null instance: %s\n", inst_name);
 	token_flush_EOL(lp);
-	done++;
+	done++;	
     }
 
     if ((ed_rep = db_lookup(inst_name)) == 0) {
@@ -246,7 +246,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		break;
 	    case NUM3:		/* get column end coordinate */
 		if (token == NUMBER) {
-		    if (getnum(lp, "INST", &x2, &y2)) {
+		    if (getnum(lp, "INST", &x3, &y3)) {
     			rl_setprompt("ROW EXTENT> ");
 			state = NUM4;
 	            } else {
@@ -263,13 +263,13 @@ int add_inst(LEXER *lp, char *inst_name)
 		break;
 	    case NUM4:		/* get column end coordinate */
 		if (token == NUMBER) {
-		    if (getnum(lp, "INST", &x3, &y3)) {
+		    if (getnum(lp, "INST", &x2, &y2)) {
 		        if (debug) printf("%g %g %g %g %g %g\n", x1, y1, x2, y2, x3, y3);
 			ip = db_add_inst(currep, ed_rep, opt_copy(&opts), x1, y1);
-			ip->x2 = x2;
-			ip->y2 = y2;
-			ip->x3 = x3;
-			ip->y3 = y3;
+			ip->colx = x3;
+			ip->coly = y3;
+			ip->rowx = x2;
+			ip->rowy = y2;
 			rubber_clear_callback();
 			need_redraw++;
 			state = END;

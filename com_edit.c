@@ -301,7 +301,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	    }
 	    if ((p=EVget("PIG_SHOW_DEFAULT")) != NULL) {
 		sprintf(buf, "SHOW %s;", p);
-		printf("Evaluating $PIG_SHOW_DEFAULT: \"SHOW %s\"\n", p);
+		// printf("Evaluating $PIG_SHOW_DEFAULT: \"SHOW %s\"\n", p);
 		rl_ungets(lp, buf);
 	    }
 	    done++;

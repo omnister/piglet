@@ -154,6 +154,7 @@ typedef struct db_tab {
     char *name;			/* cell name */
     double minx,miny;		/* for bounding box computation */
     double maxx,maxy;		/* ... */
+    int seqflag;
 
     double vp_xmin, vp_xmax;	/* for storing window parameters */
     double vp_ymin, vp_ymax;
@@ -257,8 +258,8 @@ typedef struct db_inst {
     char *name; 	    /* was struct db_tab *def; */
     OPTS *opts;
     NUM x,y;
-    NUM x2,y2;		// column vector 
-    NUM x3,y3;		// row vector
+    NUM colx,coly;		// column vector 
+    NUM rowx,rowy;		// row vector
 } DB_INST; 
 
 typedef struct db_line {

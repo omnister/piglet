@@ -1148,7 +1148,7 @@ double xorig,yorig;	/* grid origin */
 	     ((yend-ystart)/(dy*sx) >= (double) g_height/5) ) {
 
 	    if (!grid_notified) {
-		printf("grid suppressed, too many points\n");
+		// printf("grid suppressed, too many points\n");
 		grid_notified++;
 	    }
 

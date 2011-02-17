@@ -192,6 +192,7 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     sp->being_edited = 0;
     sp->is_tmp_rep = 0;
     sp->flag = 0;
+    sp->seqflag = 0;
 
     return(sp);
 }
@@ -627,8 +628,8 @@ DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
 
 	dp->u.i->name=strsave(p->u.i->name);
 	dp->u.i->x = p->u.i->x; dp->u.i->y = p->u.i->y;
-	dp->u.i->x2 = p->u.i->x2; dp->u.i->y2 = p->u.i->y2;
-	dp->u.i->x3 = p->u.i->x3; dp->u.i->y3 = p->u.i->y3;
+	dp->u.i->colx = p->u.i->colx; dp->u.i->coly = p->u.i->coly;
+	dp->u.i->rowx = p->u.i->rowx; dp->u.i->rowy = p->u.i->rowy;
 
 	xform_point(xp, &(dp->u.i->x), &(dp->u.i->y));
 	break;
@@ -1421,8 +1422,8 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	    }
 	    printcoords(fp, xp,  p->u.i->x, p->u.i->y);
 	    if (p->u.i->opts->stepflag) {
-		printcoords(fp, xp,  p->u.i->x2, p->u.i->y2);
-		printcoords(fp, xp,  p->u.i->x3, p->u.i->y3);
+		printcoords(fp, xp,  p->u.i->colx, p->u.i->coly);
+		printcoords(fp, xp,  p->u.i->rowx, p->u.i->rowy);
 	    }
 	    fprintf(fp, ";\n");
 	}
@@ -2056,10 +2057,10 @@ NUM x,y;
 
     ip->x=x;
     ip->y=y;
-    ip->x2=x;
-    ip->y2=y;
-    ip->x3=x;
-    ip->y3=y;
+    ip->colx=x;
+    ip->coly=y;
+    ip->rowx=x;
+    ip->rowy=y;
     ip->opts=opts;
     db_insert_component(cell,dp);
     return(ip);
@@ -2235,7 +2236,7 @@ char *validopts;
 	    	break;
 	    case 'S':
 		if (popt->stepflag) {
-		    fprintf(fp, ":S%d,%d ", popt->rows, popt->cols);
+		    fprintf(fp, ":S%d,%d ", popt->cols, popt->rows);
 		}
 	    	break;
 	    case 'W':

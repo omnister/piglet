@@ -20,7 +20,7 @@ int in_line=0;		/* set to 1 when working on a line */
 int in_poly=0;
 
 int this_pen=0;		// we need to save state at start of line
-int this_line=0;	// because lines are implicitly terminate
+int this_line=0;	// because lines are implicitly terminated
 int this_fill=0;	// by starting a new line which overwrites
 			// pen, line and fill
 
@@ -43,21 +43,25 @@ void ps_set_file(FILE *fout)
 }
 
 void ps_set_layer(int layernumber) {
+    if (debug) printf("setting layer :%d\n", layernumber);
     layer=layernumber;
 }
 
 void ps_set_fill(int fill)
 {
+    if (debug) printf("setting fill:%d\n", fill);
     filltype=fill;
 }
 
 void ps_set_line(int line)
 {
+    if (debug) printf("setting line:%d\n", line);
     linetype=line;
 }
 
 void ps_set_pen(int pen) 
 {
+    if (debug) printf("setting pen:%d\n", pen); 
     pennum=pen;
 }
 
@@ -116,6 +120,12 @@ double llx, lly, urx, ury;  /* drawing bounding box in user coords */
        fprintf(fp,"%%ADD10C,.005*%%\n");
        fprintf(fp,"G04 Make D10 the default aperture*\n");
        fprintf(fp,"G54D10*\n");
+       return;
+    } else if (outputtype == DXF) {
+       fprintf(fp, "0\n");
+       fprintf(fp, "SECTION\n");
+       fprintf(fp, "2\n");
+       fprintf(fp, "ENTITIES\n");
        return;
     }
 
@@ -293,25 +303,23 @@ setting landscape
 void ps_end_line()
 {
     extern int this_pen;
-    extern int this_fill;
     extern int this_line;
     extern int in_line;
+    int debug = 0;
 
     if (debug) printf("ps_end_line:\n");
 
     if (outputtype == POSTSCRIPT) {
-	fprintf(fp, "c%d\n", this_pen);
-	fprintf(fp, "%s\n", xwin_ps_dashes(this_line));
-	if (in_poly) {
-	    fprintf(fp, "%% pen %d, fill %d\n", this_pen, this_fill);
-	    fprintf(fp, "gs kc f%d setpattern fill gr\n",
-		get_stipple_index(this_fill,this_pen));
-	}
+	fprintf(fp, "c%d ", this_pen);
+	fprintf(fp, "%s ", xwin_ps_dashes(this_line));
 	fprintf(fp, "s\n");
     }
     in_poly=0;
     in_line=0;
 }
+
+double xold, yold;
+int in_progress=0;
 
 void ps_start_line(x1, y1)
 double x1, y1;
@@ -349,8 +357,20 @@ double x1, y1;
 	   fprintf(fp,"G04 LAYER %d *\n", layer);
 	}
 	fprintf(fp, "X%04dY%04dD02*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
+    } else if (outputtype == DXF) {
+        V_to_R(&x1, &y1);    
+	fprintf(fp, "0\n");		// start of entity
+	fprintf(fp, "LINE\n");		// line type entity
+	fprintf(fp, "8\n");		// layer name to follow
+	fprintf(fp, "%d\n",layer);	// layer name 
+	fprintf(fp, "62\n");		// color flag
+	fprintf(fp, "%d\n", pennum);	// color
+	fprintf(fp, "10\n%g\n", x1);	// initial x value
+	fprintf(fp, "20\n%g\n", y1);	// initial y value
+	in_progress=0;
     }
 }
+
 
 void ps_continue_line(x1, y1)
 double x1, y1;
@@ -367,6 +387,26 @@ double x1, y1;
     } else if (outputtype == GERBER) {			// GERBER
 	V_to_R(&x1, &y1);
 	fprintf(fp, "X%04dY%04dD01*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
+    } else if (outputtype == DXF) {
+	V_to_R(&x1, &y1);
+	if (!in_progress) {
+	    fprintf(fp, "11\n%g\n", x1);	// initial x value
+	    fprintf(fp, "21\n%g\n", y1);	// initial y value
+	    in_progress++;
+	} else {
+	    fprintf(fp, "0\n");		// start of entity
+	    fprintf(fp, "LINE\n");	// line type entity
+	    fprintf(fp, "8\n");		// layer name to follow
+	    fprintf(fp, "%d\n",layer);	// layer name 
+	    fprintf(fp, "62\n");		// color flag
+	    fprintf(fp, "%d\n", pennum);	// color
+	    fprintf(fp, "10\n%g\n", xold);	// initial x value
+	    fprintf(fp, "20\n%g\n", yold);	// initial y value
+	    fprintf(fp, "11\n%g\n", x1);	// initial x value
+	    fprintf(fp, "21\n%g\n", y1);	// initial y value
+	}
+	xold = x1;
+	yold = y1;
     }
     in_line++;
 }
@@ -383,9 +423,20 @@ void ps_start_poly()
 
 void ps_end_poly() 
 {
+    extern int this_pen;
+    extern int this_fill;
+    extern int this_line;
+    extern int in_line;
+
     if (debug) printf("ps_end_poly:%d\n",outputtype);
     if (outputtype == GERBER) {			// GERBER
        fprintf(fp, "G37*\n");
+    } else if (outputtype == POSTSCRIPT) {
+       fprintf(fp, "c%d ", this_pen);
+       fprintf(fp, "gs kc f%d setpattern fill gr\n",
+       get_stipple_index(this_fill,this_pen));
+       if (debug) printf("fill: %d pen: %d stipple:%d  \n",
+       	this_fill, this_pen, get_stipple_index(this_fill, this_pen));
     }
     in_poly=0;
 }
@@ -406,6 +457,9 @@ void ps_postamble()
     } else if (outputtype == GERBER) {
         fprintf(fp,"G04 LAYER 999 *\n");
 	fprintf(fp,"M02*\n");
+    } else if (outputtype == DXF) {
+        fprintf(fp,"0\nENDSEC\n");
+        fprintf(fp,"0\nEOF\n");
     }
     fclose(fp);
 }

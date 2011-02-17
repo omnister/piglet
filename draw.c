@@ -25,7 +25,6 @@ FILE *PLOT_FD;		  /* file descriptor for plotting */
 
 int filled_object = 0;		/* global for managing polygon filling */
 int n_poly_points = 0;		/* number of points in filled polygon */
-int aborted=0;
 
 #define MAXPOLY 1024		/* maximum polygon size */
 XPoint Poly[MAXPOLY];
@@ -1446,6 +1445,10 @@ int db_plot(char *name, OMODE plottype) {
 	snprintf(buf, MAXFILENAME, "%s.gb", name);
 	printf("plotting gerber to %s\n", buf);
 	fflush(stdout);
+    } else if (plottype == DXF) {
+	snprintf(buf, MAXFILENAME, "%s.dxf", name);
+	printf("plotting dxf to %s\n", buf);
+	fflush(stdout);
     } else {
        printf("bad plottype: %d\n", plottype);
        return(0);
@@ -1627,12 +1630,21 @@ void trace(DB_DEFLIST *p, int level) {
     }
 }
 
+static int seq=0;
+int seqnum() {		// return current sequence number
+   return (seq);
+}
+
+int nextseq() {		// generate a new sequence number
+   seq++;
+   return (seq);
+}
 
 int db_render(cell, nest, bb, mode)
 DB_TAB *cell;
 int nest;	/* nesting level */
 BOUNDS *bb;
-int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
+int mode; 	/* drawing mode: one of D_READIN, D_NORM, D_RUBBER, D_BB, D_PICK */
 {
     extern XFORM *global_transform;
     extern XFORM unity_transform;
@@ -1641,14 +1653,19 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
     XFORM *xp;
     XFORM *save_transform;
     extern int nestlevel;
-    // int debug=1;
     int prims = 0;	// keep track of complexity of drawing
 
+    DB_TAB *celltab;
     BOUNDS childbb;
     BOUNDS backbb;
     BOUNDS mybb;
     mybb.init=0; 
     backbb.init=0; 
+    int debug=0;
+
+    if (aborted) {
+       return(0);
+    }
 
     if (cell == NULL) {
         printf("bad reference in db_render\n");
@@ -1666,6 +1683,12 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	unity_transform.dx  = 0.0;
 	unity_transform.dy  = 0.0;
         global_transform = &unity_transform;
+	nextseq();
+    }
+
+    if (debug) {
+        printf("rendering %s(%d) %d %d\n", 
+	    cell->name, nest, seqnum(), cell->seqflag );
     }
 
     if (nest > nestlevel) { 	/* RCW */
@@ -1688,150 +1711,178 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
 
-    for (p=cell->dbhead; p!=(DB_DEFLIST *)0 && !aborted; p=p->next) {
+    if ((cell->seqflag != seqnum()) || (nest <= nestlevel)) {
+	for (p=cell->dbhead; p!=(DB_DEFLIST *)0 && !aborted; p=p->next) {
 
-	childbb.init=0;
-	prims++;
-
-	// if (debug) printf("in do_%s\n", prim_name(p) );
-	// if (debug) trace(p, nest);
-
-	switch (p->type) {
-        case ARC:  /* arc definition */
-	    do_arc(p, &childbb, mode);
-	    break;
-        case CIRC:  /* circle definition */
-	    do_circ(p, &childbb, mode);
-	    break;
-        case LINE:  /* line definition */
-	    do_line(p, &childbb, mode);
-	    break;
-        case NOTE:  /* note definition */
-	    do_note(p, &childbb, mode);
-	    break;
-        case OVAL:  /* oval definition */
-	    do_oval(p, &childbb, mode);
-	    break;
-        case POLY:  /* polygon definition */
-	    do_poly(p, &childbb, mode);
-	    break;
-	case RECT:  /* rectangle definition */
-	    do_rect(p, &childbb, mode);
-	    break;
-        case TEXT:  /* text definition */
-	    do_text(p, &childbb, mode);
-	    break;
-        case INST:  /* recursive instance call */
-
-	    if( !show_check_visible(currep, INST,0)) {
-	    	;
-	    }
-
-	    save_transform = global_transform;
-
-	    int row, col;				// RCW
 	    childbb.init=0;
-	    double dxc,dyc,dxr,dyr;
+	    prims++;
 
-	    for (row=0; row<p->u.i->opts->rows; row++) {		// array instance RCW
-		if (aborted) break;
-		for (col=0; col<p->u.i->opts->cols; col++) {		
+	    // if (debug) printf("in do_%s\n", prim_name(p) );
+	    // if (debug) trace(p, nest);
 
-		    /* create transformation matrix from options */
-		    xp = matrix_from_opts(p->u.i->opts);
+	    switch (p->type) {
+	    case ARC:  /* arc definition */
+		do_arc(p, &childbb, mode);
+		break;
+	    case CIRC:  /* circle definition */
+		do_circ(p, &childbb, mode);
+		break;
+	    case LINE:  /* line definition */
+		do_line(p, &childbb, mode);
+		break;
+	    case NOTE:  /* note definition */
+		do_note(p, &childbb, mode);
+		break;
+	    case OVAL:  /* oval definition */
+		do_oval(p, &childbb, mode);
+		break;
+	    case POLY:  /* polygon definition */
+		do_poly(p, &childbb, mode);
+		break;
+	    case RECT:  /* rectangle definition */
+		do_rect(p, &childbb, mode);
+		break;
+	    case TEXT:  /* text definition */
+		do_text(p, &childbb, mode);
+		break;
+	    case INST:  /* recursive instance call */
 
-		    dxc = (p->u.i->x2 - p->u.i->x)/max(p->u.i->opts->cols-1.0, 1.0);
-		    dyc = (p->u.i->y2 - p->u.i->y)/max(p->u.i->opts->cols-1.0, 1.0);
-		    dxr = (p->u.i->x3 - p->u.i->x)/max(p->u.i->opts->rows-1.0, 1.0);
-		    dyr = (p->u.i->y3 - p->u.i->y)/max(p->u.i->opts->rows-1.0, 1.0);
+		if( !show_check_visible(currep, INST,0)) {
+		    ;
+		}
 
-		    // array instance offsets RCW	
-		    xp->dx += p->u.i->x+ ((double)row)*dxr + ((double)col)*dxc;
-		    xp->dy += p->u.i->y+ ((double)col)*dyc + ((double)row)*dyr;
+		save_transform = global_transform;
 
-		    global_transform = compose(xp,save_transform);
+		int row, col;				// RCW
+		childbb.init=0;
+		double dxc,dyc,dxr,dyr;
 
-		    if (nest >= nestlevel || !show_check_visible(currep, INST,0)) {
-			drawon = 0;
-		    } else {
-			drawon = 1;
-		    }
+		for (row=0; row<p->u.i->opts->rows; row++) {		// array instance RCW
+		    if (aborted) break;
+		    for (col=0; col<p->u.i->opts->cols; col++) {		
 
-		    // instances are called by name, not by pointer, otherwise
-		    // it is possible to PURGE a cell in memory and then
-		    // reference a bad pointer, causing a crash...  so instances
-		    // are always accessed with a db_lookup() call
+			/* create transformation matrix from options */
+			xp = matrix_from_opts(p->u.i->opts);
 
-		    // try to reread the definition from disk this can only
-		    // happen when a memory copy has been purged
+			dxc = (p->u.i->colx - p->u.i->x)/max(p->u.i->opts->cols-1.0, 1.0);
+			dyc = (p->u.i->coly - p->u.i->y)/max(p->u.i->opts->cols-1.0, 1.0);
+			dxr = (p->u.i->rowx- p->u.i->x)/max(p->u.i->opts->rows-1.0, 1.0);
+			dyr = (p->u.i->rowy - p->u.i->y)/max(p->u.i->opts->rows-1.0, 1.0);
 
-		    if (db_lookup(p->u.i->name) == NULL) {
-			loadrep(p->u.i->name);
-		    } 
+			// array instance offsets RCW	
+			xp->dx += p->u.i->x+ ((double)row)*dxr + ((double)col)*dxc;
+			xp->dy += p->u.i->y+ ((double)col)*dyc + ((double)row)*dyr;
 
-		    if (db_lookup(p->u.i->name) != NULL) {
-			prims += db_render(db_lookup(p->u.i->name), nest+1, &childbb, mode);
-		    } else {
-			printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
-		    }
+			global_transform = compose(xp,save_transform);
 
-		    p->xmin = childbb.xmin;
-		    p->xmax = childbb.xmax;
-		    p->ymin = childbb.ymin;
-		    p->ymax = childbb.ymax;
+			if (nest >= nestlevel || !show_check_visible(currep, INST,0)) {
+			    drawon = 0;
+			} else {
+			    drawon = 1;
+			}
 
-		    // p->xmin = min(childbb.xmin, p->xmin);
-		    // p->xmax = max(childbb.xmax, p->xmax);
-		    // p->ymin = min(childbb.ymin, p->ymin);
-		    // p->ymax = max(childbb.ymax, p->ymin);
+			// instances are called by name, not by pointer, otherwise
+			// it is possible to PURGE a cell in memory and then
+			// reference a bad pointer, causing a crash...  so instances
+			// are always accessed with a db_lookup() call
 
-		    /* don't draw anything below nestlevel */
-		    if (nest > nestlevel) {
-			drawon = 0;
-		    } else {
-			drawon = 1;
-		    }
+			// try to reread the definition from disk this can only
+			// happen when a memory copy has been purged
 
-		    if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
-			set_layer(0,0);
-			db_drawbounds(childbb.xmin, childbb.ymin, 
-			    childbb.xmax, childbb.ymax, D_BB);
-		    }
+			if (db_lookup(p->u.i->name) == NULL) {
+			    loadrep(p->u.i->name);
+			} 
 
-		    free(global_transform); 
-		    free(xp);	
-		    global_transform = save_transform;	/* set transform back */
-		}  
+			if ((celltab = db_lookup(p->u.i->name)) != NULL) {
+			    prims += db_render(celltab, nest+1, &childbb, mode);
+			} else {
+			    printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
+			}
+
+			p->xmin = childbb.xmin;
+			p->xmax = childbb.xmax;
+			p->ymin = childbb.ymin;
+			p->ymax = childbb.ymax;
+
+			// p->xmin = min(childbb.xmin, p->xmin);
+			// p->xmax = max(childbb.xmax, p->xmax);
+			// p->ymin = min(childbb.ymin, p->ymin);
+			// p->ymax = max(childbb.ymax, p->ymin);
+
+			/* don't draw anything below nestlevel */
+			if (nest > nestlevel) {
+			    drawon = 0;
+			} else {
+			    drawon = 1;
+			}
+
+			if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
+			    set_layer(0,0);
+			    if (mode != D_READIN) {
+				db_drawbounds(childbb.xmin, childbb.ymin, 
+				    childbb.xmax, childbb.ymax, D_BB);
+			    } else {
+				db_drawbounds(childbb.xmin, childbb.ymin, 
+				    childbb.xmax, childbb.ymax, D_READIN);
+			    }
+			}
+
+
+			free(global_transform); 
+			free(xp);	
+			global_transform = save_transform;	/* set transform back */
+		    }  
+		}
+
+		break;
+	    default:
+		eprintf("unknown record type: %d in db_render\n", p->type);
+		return(1);
+		break;
 	    }
 
-	    break;
-	default:
-	    eprintf("unknown record type: %d in db_render\n", p->type);
-	    return(1);
-	    break;
-	}
+	    p->xmin = childbb.xmin;
+	    p->xmax = childbb.xmax;
+	    p->ymin = childbb.ymin;
+	    p->ymax = childbb.ymax;
 
-	p->xmin = childbb.xmin;
-	p->xmax = childbb.xmax;
-	p->ymin = childbb.ymin;
-	p->ymax = childbb.ymax;
+	    /* now pass bounding box back */
+	    db_bounds_update(&mybb, &childbb);
+	}
+    } else {
+	childbb.init=0;
+	jump(&mybb, D_BB);
+	set_layer(0,0);
+	draw(cell->minx, cell->maxy, &childbb, mode);
+	draw(cell->maxx, cell->maxy, &childbb, mode);
+	draw(cell->maxx, cell->miny, &childbb, mode);
+	draw(cell->minx, cell->miny, &childbb, mode);
+	draw(cell->minx, cell->maxy, &childbb, mode);
+	draw(cell->maxx, cell->miny, &childbb, mode);
+	prims = cell->prims;
 
 	/* now pass bounding box back */
 	db_bounds_update(&mybb, &childbb);
     }
 
     db_bounds_update(bb, &mybb);
+
+    int dmode;
  
     if (nest == 0) { 
-
 	if (nestlevel == 0) {
-	    jump(&mybb, D_BB);
+	    if (mode == D_READIN) {
+	       dmode = D_READIN;
+	    } else {
+	       dmode = D_BB;
+	    }
+	    jump(&mybb, dmode);
 	    set_layer(12,0);
-	    draw(bb->xmin, bb->ymax, &mybb, D_BB);
-	    draw(bb->xmax, bb->ymax, &mybb, D_BB);
-	    draw(bb->xmax, bb->ymin, &mybb, D_BB);
-	    draw(bb->xmin, bb->ymin, &mybb, D_BB);
-	    draw(bb->xmin, bb->ymax, &mybb, D_BB);
+	    draw(bb->xmin, bb->ymax, &mybb, dmode);
+	    draw(bb->xmax, bb->ymax, &mybb, dmode);
+	    draw(bb->xmax, bb->ymin, &mybb, dmode);
+	    draw(bb->xmin, bb->ymin, &mybb, dmode);
+	    draw(bb->xmin, bb->ymax, &mybb, dmode);
 	}
 
 	/* update cell and globals for db_bounds() */
@@ -1840,6 +1891,7 @@ int mode; 	/* drawing mode: one of D_NORM, D_RUBBER, D_BB, D_PICK */
 	cell->miny =  bb->ymin;
 	cell->maxy =  bb->ymax;
     } 
+    cell->seqflag = seqnum();
     cell->prims = prims;
     return(prims);
 }
@@ -2429,11 +2481,13 @@ int comp;	/* component type */
 	ps_set_layer(lnum);
         ps_set_pen(equate_get_color(lnum));	
 	ps_set_line(equate_get_linetype(lnum));
-	if (layer_fill) {
-	    ps_set_fill(equate_get_fill(lnum));
-	} else {
-	    ps_set_fill(1);
-	}
+
+	ps_set_fill(equate_get_fill(lnum));	//RCW/
+	//if (layer_fill) {
+	//    ps_set_fill(equate_get_fill(lnum));
+	//} else {
+	//    ps_set_fill(1);
+	//}
     }
 }
 

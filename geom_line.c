@@ -195,7 +195,7 @@ int add_line(LEXER *lp, int *layer)
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
 			need_redraw++;
 		    	; /* add geom */
-		} else if (token == CMD || token == EOF) {
+		} else if (token == EOC || token == CMD || token == EOF) {
 		        done++; /* should a CMD terminate a line? */
 		} else {
 		    token_flush_EOL(lp);

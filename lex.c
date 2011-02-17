@@ -467,6 +467,7 @@ int x;
     static int last=-1;
 
     printf("caught %d: %s. Use QUIT command to end program",x, strsignal(x));
+    fflush(stdout);
     aborted++;
     if (x == 3) {
        if (last==x) {
@@ -1762,6 +1763,9 @@ char *arg;
 		} else if (strncasecmp(word, ":PP", 3) == 0) { /* postscript (default) */
 		    plottype=POSTSCRIPT;
 		    ps_set_outputtype(POSTSCRIPT);
+		} else if (strncasecmp(word, ":PD", 3) == 0) { /* postscript (default) */
+		    plottype=DXF;
+		    ps_set_outputtype(DXF);
 		} else if (strncasecmp(word, ":PG", 3) == 0) { /* gerber */
 		    fit++;
 		    plottype=GERBER;
