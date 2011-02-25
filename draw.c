@@ -1227,6 +1227,7 @@ DB_DEFLIST *p;			/* print out identifying information */
 		    p->u.c->layer, equate_get_label(p->u.c->layer), p->u.c->x1, 
 		    p->u.c->y1, p->u.c->x2, p->u.c->y2);
 	    db_print_opts(stdout, p->u.c->opts, CIRC_OPTS);
+	    printf("Radius = %.5g", sqrt(pow(p->u.c->x1-p->u.c->x2,2.0)+pow(p->u.c->y1 - p->u.c->y2, 2.0)));
 	    printf("\n");
 	    break;
 	case LINE:  /* line definition */
@@ -1257,6 +1258,7 @@ DB_DEFLIST *p;			/* print out identifying information */
 		    p->u.r->layer, equate_get_label(p->u.r->layer),
 		    p->xmin, p->ymin, p->xmax, p->ymax);
 	    db_print_opts(stdout, p->u.r->opts, RECT_OPTS);
+	    printf("Width = %.5g, Height = %.5g", fabs(p->u.c->x1-p->u.c->x2), fabs(p->u.c->y1 - p->u.c->y2));
 	    printf("\n");
 	    break;
 	case TEXT:  /* text definition */

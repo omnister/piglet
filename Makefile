@@ -256,6 +256,13 @@ geom_inst.o: xwin.h
 geom_line.o: db.h
 geom_line.o: lock.h
 geom_line.o: opt_parse.h
+geom_line_orig.o: db.h
+geom_line_orig.o: lock.h
+geom_line_orig.o: opt_parse.h
+geom_line_orig.o: rlgetc.h
+geom_line_orig.o: rubber.h
+geom_line_orig.o: token.h
+geom_line_orig.o: xwin.h
 geom_line.o: rlgetc.h
 geom_line.o: rubber.h
 geom_line.o: token.h
@@ -268,6 +275,12 @@ geom_poly.o: token.h
 geom_poly.o: xwin.h
 geom_rect.o: db.h
 geom_rect.o: opt_parse.h
+geom_rect_orig.o: db.h
+geom_rect_orig.o: opt_parse.h
+geom_rect_orig.o: rlgetc.h
+geom_rect_orig.o: rubber.h
+geom_rect_orig.o: token.h
+geom_rect_orig.o: xwin.h
 geom_rect.o: rlgetc.h
 geom_rect.o: rubber.h
 geom_rect.o: token.h
@@ -300,6 +313,9 @@ path.o: path.h
 postscript.o: db.h
 postscript.o: postscript.h
 postscript.o: xwin.h
+postscriptsave.o: db.h
+postscriptsave.o: postscript.h
+postscriptsave.o: xwin.h
 readfont.o: db.h
 readfont.o: readfont.h
 readmenu.o: db.h

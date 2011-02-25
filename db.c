@@ -1171,18 +1171,63 @@ int *retval;
     }
 }
 
-/* printcoords uses %g to minimize size of definition files.  Can print up to */
-/* 10 numbers to the right of the decimal, but will not print trailing 0's or */
-/* decimal point.  Only problem with native %g is that it will print exponential */
-/* notation for numbers that are very close but not equal to zero.  So, we use */
-/* the fmod function to make all numbers multiples of 1/(10^RES) */
+void printcoord(FILE *fp, double x) {
+    double xint, xfrac;
+    char format[16];
+    static char buf[32];
+    int i;
+    double sign;
 
+    if (x<0) {
+       sign=-1;
+    } else {
+       sign=1;
+    }
+
+    x=fabs(x);
+
+    xfrac = fmod(x,1.0);
+    xint = x-xfrac;
+    xfrac = (double)((int)((xfrac*pow(10.0,RES))+0.5));
+    if (xfrac == (double)((int)pow(10.0,RES))) {
+       xint++;
+       xfrac=0.0;
+    }
+
+    if ((int)xfrac != 0) {
+	sprintf(format,"%%d.%%0%dd", RES);
+	sprintf(buf, format, (int)(sign*xint), (int)xfrac);
+	for (i=strlen(buf)-1; i>=0; i--) {
+	   if (buf[i]!='0') {
+	      break;
+	   } else {
+	      buf[i]='\0';
+	   }
+	}
+    } else {
+	sprintf(format,"%%d");
+	sprintf(buf, format, (int)(sign*xint));
+    }
+
+    fprintf(fp, "%s", buf);
+}
 
 void printcoords(FILE *fp, XFORM *xp, double x, double y) {
+    xform_point(xp, &x, &y);
+    fprintf(fp," ");
+    printcoord(fp,x);
+    fprintf(fp,",");
+    printcoord(fp,y);
+}
+
+void oldprintcoords(FILE *fp, XFORM *xp, double x, double y) {
     double xx, yy;
     xform_point(xp, &x, &y);
+    // xx = ((double)(int)(x*pow(10.0,RES)+0.5))/pow(10.0,RES);
+    // yy = ((double)(int)(y*pow(10.0,RES)+0.5))/pow(10.0,RES);
     xx = x-fmod(x,1.0/pow(10.0,RES));
     yy = y-fmod(y,1.0/pow(10.0,RES));
+    // printf("called with %g %g %g %g\n", x,y,xx,yy);
     fprintf(fp, " %.10g,%.10g", xx,yy);
 }
 

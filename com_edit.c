@@ -250,7 +250,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 				currep->vp_xmax, currep->vp_ymax);
 
 			do_win(lp, 4, currep->vp_xmin, currep->vp_ymin, 
-			        currep->vp_xmax, currep->vp_ymax, 1.0); 
+			        currep->vp_xmax, currep->vp_ymax, 1.05); 
 			currep->modified = 0;
 
 			if (old_rep == NULL ) {

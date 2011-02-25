@@ -352,6 +352,11 @@ void ps_start_line(double x1, double y1, int filled)
 
     if (debug) printf("ps_start_line:\n");
 
+    if (in_line) {
+    	ps_end_line(fp);
+    } 
+    in_line++;
+
     if (filled) {
 	if (outputtype == GERBER) {			// GERBER
 	   fprintf(fp,"G04 LAYER %d *\n", layer);
@@ -359,11 +364,6 @@ void ps_start_line(double x1, double y1, int filled)
 	}
 	in_poly++;
     }
-
-    if (in_line) {
-    	ps_end_line(fp);
-    } 
-    in_line++;
 
     this_pen=pennum;		/* save characteristics at start of line */
     this_line=linetype;
@@ -376,6 +376,7 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "%g %g m\n",x1, y1);
     } else if (outputtype == AUTOPLOT) {		// AUTOPLOT
 	fprintf(fp, "jump\n");
+	fprintf(fp, "pen %d\n", pennum);
 	V_to_R(&x1, &y1);
 	fprintf(fp, "%g %g\n",x1, y1);
     } else if (outputtype == GERBER) {			// GERBER
