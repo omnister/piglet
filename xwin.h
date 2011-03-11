@@ -51,6 +51,7 @@ extern void xwin_doXevent();
 
 void xwin_set_rubber_callback();
 void xwin_clear_rubber_callback();
+void xwin_set_title(char *title);
 
 extern char version[];
 extern void init_stipples();

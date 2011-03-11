@@ -312,7 +312,7 @@ int initX()
     class_hints->res_name = estrdup(progname());
     class_hints->res_class = class_hints->res_name;
 
-    XSetWMProperties(dpy, topwin, &windowName, &iconName,
+    XSetWMProperties(dpy, topwin, &windowName, &iconName, 
         (char **) NULL, (long int) NULL, size_hints, wm_hints, class_hints);
 
     XFree(windowName.value);
@@ -381,6 +381,14 @@ int initX()
     unity_transform.dy  = 0.0;
 
     return(0);
+}
+
+void xwin_set_title(char *title) {
+    static Atom atoms[2];
+    static char *atom_names[] = {"_NET_WM_NAME", "UTF8_STRING"};
+    XInternAtoms(dpy, atom_names, 2, FALSE, atoms);
+    XChangeProperty(dpy,topwin,atoms[0],atoms[1],8,PropModeReplace,
+        (unsigned char *)title, strlen(title));
 }
 
 void zoom(int dir, double scale)

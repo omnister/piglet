@@ -336,6 +336,7 @@ LEXER *lp;
     char *word;
     char *s;
     char buf[128];
+    char title[128];
     char *path;
     int retcode;
     COMMAND *command;
@@ -350,6 +351,7 @@ LEXER *lp;
 	switch (lp->mode) {
 	    case MAIN:
 		rl_setprompt("MAIN> ");
+		xwin_set_title("");
 		break;
 	    case PRO:
 		rl_setprompt("PROCESS> ");
@@ -367,8 +369,10 @@ LEXER *lp;
 		        stack_depth(&(currep->undo))-1, stack_depth(&(currep->redo)));
 		    } else {
 			sprintf(buf, "EDIT %s> ", currep->name);
+			sprintf(title, "PD_piglet %s> ", currep->name);
 		    }
 		    rl_setprompt(buf);
+		    xwin_set_title(title);
 		    db_checkpoint(lp);
 		} else {
 		    rl_setprompt("EDIT> ");
