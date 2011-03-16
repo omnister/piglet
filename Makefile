@@ -43,6 +43,7 @@ MANS=man/commandlist man/makemans man/seealso
 
 #CC=cc -O0 -ggdb -Wall
 CC=cc -ggdb -Wall
+#CC=cc -pg -ggdb -Wall 		# profiling
 
 # we currently make pig.bin, and then run the binary under the
 # wrapper "pig" which catches and error backtrace with gdb

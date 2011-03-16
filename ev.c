@@ -155,6 +155,10 @@ BOOLEAN EVinit() /* initialize symbol table from environment */
     int i, namelen;
     char name[200];	/* FIXME: can overflow */
 
+    for (i=0; i<HASHSIZE; i++) {
+       hashtab[HASHSIZE]=NULL;
+    }
+
     for (i=0; environ[i] != NULL; i++) {
         namelen = strcspn(environ[i], "=");
 	strncpy(name,environ[i],namelen);
