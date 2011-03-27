@@ -41,9 +41,9 @@ MANS=man/commandlist man/makemans man/seealso
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
 
-#CC=cc -O0 -ggdb -Wall
-CC=cc -ggdb -Wall
 #CC=cc -pg -ggdb -Wall 		# profiling
+#CC=cc -p -O0 -ggdb -Wall	# valgrind
+CC=cc -ggdb -Wall
 
 # we currently make pig.bin, and then run the binary under the
 # wrapper "pig" which catches and error backtrace with gdb

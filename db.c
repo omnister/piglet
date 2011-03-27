@@ -321,7 +321,9 @@ void db_fsck(DB_DEFLIST *dp) {		/* do a logical scan of a deflist */
 
 void db_free(DB_DEFLIST *dp) {		/* free an entire definition list */
     DB_DEFLIST *p;
-    for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
+    DB_DEFLIST *pn;
+    for (p=dp; p!=(struct db_deflist *)0; p=pn) {
+	pn=p->next;
 	db_free_component(p);
     }
 }
@@ -329,6 +331,7 @@ void db_free(DB_DEFLIST *dp) {		/* free an entire definition list */
 void db_unlink_cell(DB_TAB *sp) {
 
     DB_DEFLIST *p;
+    DB_DEFLIST *pn;
 
     if (currep == sp) {
 	currep = NULL;
@@ -348,7 +351,8 @@ void db_unlink_cell(DB_TAB *sp) {
 	sp->next->prev = sp->prev;
     }
 
-    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=p->next) {
+    for (p=sp->dbhead; p!=(struct db_deflist *)0; p=pn) {
+	pn=p->next;
 	db_free_component(p);
     }
 

@@ -180,16 +180,16 @@ char *prompt;
 	
 	/* add a newline to return string */
 
-	s = expdupstr(lineread,2);
+	s = expdupstr(lineread,3);
 	strcat(s,"\n");
 	free (lineread);
 	lineread = s;
     } else {
 	if (fgets(buf, 1023, pigrcfp) == NULL)  {
 	    pigrcfp=NULL;
-	    s = expdupstr(";\n",0);
+	    s = expdupstr(";\n",3);
 	} else {
-	    s = expdupstr(buf,2);
+	    s = expdupstr(buf,3);
 	    strcat(s,";\n");
 	}
 	rmctrls(s);
