@@ -288,11 +288,13 @@ int com_move(LEXER *lp, char *arg)
 			rubber_clear_callback();
 			if (mode == POINT) {
 			    db_move_component(p_best, x4-lastx, y4-lasty);
+			    currep->modified++;
 			} else {
 			    tmp = stack;
 			    while (tmp!=NULL) {
 				p_best = (DB_DEFLIST *) stack_walk(&tmp);
 				db_move_component(p_best, x4-lastx, y4-lasty);
+				currep->modified++;
 			    }
 			}
 			rubber_set_callback(draw_mbox);
