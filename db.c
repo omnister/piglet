@@ -1183,9 +1183,9 @@ void printcoord(FILE *fp, double x) {
     double sign;
 
     if (x<0) {
-       sign=-1;
+       sign=-1.0;
     } else {
-       sign=1;
+       sign=1.0;
     }
 
     x=fabs(x);
@@ -1194,20 +1194,24 @@ void printcoord(FILE *fp, double x) {
     xint = x-xfrac;
     xfrac = (double)((int)((xfrac*pow(10.0,RES))+0.5));
     if (xfrac == (double)((int)pow(10.0,RES))) {
-       xint++;
+       xint+=1.0;
        xfrac=0.0;
     }
 
     if ((int)xfrac != 0) {
-	sprintf(format,"%%d.%%0%dd", RES);
-	sprintf(buf, format, (int)(sign*xint), (int)xfrac);
-	for (i=strlen(buf)-1; i>=0; i--) {
-	   if (buf[i]!='0') {
-	      break;
-	   } else {
-	      buf[i]='\0';
-	   }
-	}
+        if (sign<0.0) {
+            sprintf(format,"-%%d.%%0%dd", RES);
+        } else {
+            sprintf(format,"%%d.%%0%dd", RES);
+        }
+        sprintf(buf, format, (int)(xint), (int)(xfrac+0.5));
+        for (i=strlen(buf)-1; i>=0; i--) {
+           if (buf[i]!='0') {
+              break;
+           } else {
+              buf[i]='\0';
+           }
+        }
     } else {
 	sprintf(format,"%%d");
 	sprintf(buf, format, (int)(sign*xint));

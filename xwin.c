@@ -1066,29 +1066,30 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
 
 
 // any changes to this routine need to be harmonized with xwin_set_pen_line_fill() above
+// we assume here that "sd" is a defined alias of "setdash" in the preamble
 const char * xwin_ps_dashes(int line)
 {
     switch (line % 7) {
     case 0:
-	return ("[] 0 setdash");
+	return ("[] 0 sd");
 	break;
     case 1:
-	return ("[2] 0 setdash");
+	return ("[2] 0 sd");
 	break;
     case 2:
-	return ("[7 5] 0 setdash");
+	return ("[7 5] 0 sd");
 	break;
     case 3:
-	return ("[7 2 1 2] 0 setdash");
+	return ("[7 2 1 2] 0 sd");
 	break;
     case 4:
-	return ("[7 2 3 2] 0 setdash");
+	return ("[7 2 3 2] 0 sd");
 	break;
     case 5:
-	return ("[9 5] 0 setdash");
+	return ("[9 5] 0 sd");
 	break;
     case 6:
-	return ("[4 4] 0 setdash");
+	return ("[4 4] 0 sd");
 	break;
     }
     return NULL;

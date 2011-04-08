@@ -379,12 +379,12 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "n\n");
         // flip y coordinate from Xwin coords
         y1 = bblly-(y1-bbury);
-	fprintf(fp, "%g %g m\n",x1, y1);
+	fprintf(fp, "%.10g %.10g m\n",x1, y1);
     } else if (outputtype == AUTOPLOT) {		// AUTOPLOT
 	fprintf(fp, "jump\n");
 	fprintf(fp, "pen %d\n", pennum);
 	V_to_R(&x1, &y1);
-	fprintf(fp, "%g %g\n",x1, y1);
+	fprintf(fp, "%.10g %.10g\n",x1, y1);
     } else if (outputtype == GERBER) {			// GERBER
 	V_to_R(&x1, &y1);
         if (!in_poly) {
@@ -399,8 +399,8 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "%d\n",layer);	// layer name 
 	fprintf(fp, "62\n");		// color flag
 	fprintf(fp, "%d\n", pennum);	// color
-	fprintf(fp, "10\n%g\n", x1);	// initial x value
-	fprintf(fp, "20\n%g\n", y1);	// initial y value
+	fprintf(fp, "10\n%.10g\n", x1);	// initial x value
+	fprintf(fp, "20\n%.10g\n", y1);	// initial y value
 	in_progress=0;
     }
 }
@@ -414,18 +414,18 @@ double x1, y1;
     if (outputtype == POSTSCRIPT) {
 	// flip y coordinate from Xwin coords
 	y1 = bblly-(y1-bbury);
-	fprintf(fp, "%g %g l\n",x1, y1);
+	fprintf(fp, "%.10g %.10g l\n",x1, y1);
     } else if (outputtype == AUTOPLOT) {		// AUTOPLOT
 	V_to_R(&x1, &y1);
-	fprintf(fp, "%g %g\n",x1, y1);
+	fprintf(fp, "%.10g %.10g\n",x1, y1);
     } else if (outputtype == GERBER) {			// GERBER
 	V_to_R(&x1, &y1);
 	fprintf(fp, "X%04dY%04dD01*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
     } else if (outputtype == DXF) {
 	V_to_R(&x1, &y1);
 	if (!in_progress) {
-	    fprintf(fp, "11\n%g\n", x1);	// initial x value
-	    fprintf(fp, "21\n%g\n", y1);	// initial y value
+	    fprintf(fp, "11\n%.10g\n", x1);	// initial x value
+	    fprintf(fp, "21\n%.10g\n", y1);	// initial y value
 	    in_progress++;
 	} else {
 	    fprintf(fp, "0\n");		// start of entity
@@ -434,10 +434,10 @@ double x1, y1;
 	    fprintf(fp, "%d\n",layer);	// layer name 
 	    fprintf(fp, "62\n");		// color flag
 	    fprintf(fp, "%d\n", pennum);	// color
-	    fprintf(fp, "10\n%g\n", xold);	// initial x value
-	    fprintf(fp, "20\n%g\n", yold);	// initial y value
-	    fprintf(fp, "11\n%g\n", x1);	// initial x value
-	    fprintf(fp, "21\n%g\n", y1);	// initial y value
+	    fprintf(fp, "10\n%.10g\n", xold);	// initial x value
+	    fprintf(fp, "20\n%.10g\n", yold);	// initial y value
+	    fprintf(fp, "11\n%.10g\n", x1);	// initial x value
+	    fprintf(fp, "21\n%.10g\n", y1);	// initial y value
 	}
 	xold = x1;
 	yold = y1;
@@ -454,8 +454,7 @@ void ps_postamble()
     } 
     if (outputtype == POSTSCRIPT) {
 	fprintf(fp,"%% here ends figure;\n");
-	fprintf(fp,"%%Pig2psEnd\n");
-	fprintf(fp,"rs\n");
+	fprintf(fp,"$Pig2psEnd\n");
 	fprintf(fp,"showpage\n");
 	fprintf(fp,"%%%%EOF\n");
     } else if (outputtype == GERBER) {
