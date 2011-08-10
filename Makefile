@@ -243,12 +243,6 @@ geom_circle.o: rubber.h
 geom_circle.o: token.h
 geom_circle.o: xwin.h
 geom_inst.o: db.h
-geom_instold.o: db.h
-geom_instold.o: opt_parse.h
-geom_instold.o: rlgetc.h
-geom_instold.o: rubber.h
-geom_instold.o: token.h
-geom_instold.o: xwin.h
 geom_inst.o: opt_parse.h
 geom_inst.o: rlgetc.h
 geom_inst.o: rubber.h
