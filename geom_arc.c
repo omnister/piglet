@@ -15,9 +15,7 @@ OPTS opts;
 
 double x1, yy1, x2, y2;
 
-int add_arc(lp, layer)
-LEXER *lp;
-int *layer;
+int add_arc(LEXER *lp, int *layer)
 {
     enum {START,NUM1,NUM2,NUM3,END} state = START;
 
@@ -139,9 +137,7 @@ int *layer;
     return(1);
 }
 
-void draw_arc(x3, y3, count) 
-double x3, y3;
-int count; /* number of times called */
+void draw_arc(double x3, double y3, int count) 
 {
 	static double x3old, y3old;
 	int debug=0;

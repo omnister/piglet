@@ -54,9 +54,7 @@ int pig_system(char *s) {
    return(status);
 }
 
-int com_echo(lp, arg)	/* echo variables */
-LEXER *lp;
-char *arg;
+int com_echo(LEXER *lp, char *arg)	/* echo variables */
 {
     char *word;	
     TOKEN token;
@@ -74,9 +72,7 @@ char *arg;
     return (0);
 }
 
-int com_define(lp, arg)	/* set macro definition */
-LEXER *lp;
-char *arg;
+int com_define(LEXER *lp, char *arg)	/* set macro definition */
 {
     int debug = 0;
     char *word;
@@ -115,9 +111,7 @@ char *arg;
     return (0);
 }
 
-int com_set(lp, arg)	/* set environment variables */
-LEXER *lp;
-char *arg;
+int com_set(LEXER *lp, char *arg)	/* set environment variables */
 {
     int debug = 0;
     char *word;
@@ -181,9 +175,7 @@ char *arg;
     return (0);
 }
 
-int com_shell(lp, arg)		/* run a program from within the editor */
-LEXER *lp;
-char *arg;
+int com_shell(LEXER *lp, char *arg)		/* run a program from within the editor */
 {
     int debug = 0;
     // char *shell;

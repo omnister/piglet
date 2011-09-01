@@ -870,11 +870,11 @@ char **s;
     }
 }
 
-void getGC(win, gc, font_info)
-Window win;
-GC *gc;
-XFontStruct *font_info;
-{
+void getGC(
+    Window win,
+    GC *gc,
+    XFontStruct *font_info
+) {
     unsigned long valuemask = 0;
 
     XGCValues values;
@@ -906,9 +906,7 @@ XFontStruct *font_info;
     XSetDashes(dpy, *gc, dash_offset, dash_list, list_length); 
 }
 
-void load_font(font_info)
-XFontStruct **font_info;
-{
+void load_font(XFontStruct **font_info) {
     /* char *fontname = "9x15"; */
     /* char *fontname = "12x24"; */
     /* char *fontname = "10x20"; */
@@ -936,8 +934,7 @@ XFontStruct **font_info;
 /* point selection.  It is identical to xwin_draw_line() but uses an xor style */
 
 /* used for grid, color changes with GRID :C<grid_color> */
-void xwin_xor_line(x1, y1, x2, y2)	
-int x1,y1,x2,y2;
+void xwin_xor_line(int x1, int y1, int x2, int y2)	
 {
     if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gcg, x1, y1, x2, y2);
@@ -945,8 +942,7 @@ int x1,y1,x2,y2;
 }
 
 /* always use white for XOR, otherwise goes black on some color */
-void xwin_rubber_line(x1, y1, x2, y2)	
-int x1,y1,x2,y2;
+void xwin_rubber_line(int x1, int y1, int x2, int y2)	
 {
     if (xwin_display_state() == D_ON) {
 	XDrawLine(dpy, win, gcx, x1, y1, x2, y2);
@@ -954,8 +950,7 @@ int x1,y1,x2,y2;
 }
 
 
-void xwin_draw_line(x1, y1, x2, y2)
-int x1,y1,x2,y2;
+void xwin_draw_line(int x1, int y1, int x2, int y2)
 {
     /* XSetFunction(dpy, gca, GXor); */
     if (xwin_display_state() == D_ON) {
@@ -963,9 +958,7 @@ int x1,y1,x2,y2;
     }
 }
 
-void xwin_fill_poly(poly, n) /* call XFillPolygon with saved points */
-XPoint *poly;
-int n;
+void xwin_fill_poly(XPoint *poly, int n) /* call XFillPolygon with saved points */
 {
     if (xwin_display_state() == D_ON) {
 	XFillPolygon(dpy, win, gcb, poly, n, Complex, CoordModeOrigin);
@@ -1096,13 +1089,13 @@ const char * xwin_ps_dashes(int line)
 }
 
 
-int draw_grid(win, gc, dx, dy, sx, sy, xorig, yorig)
-Window win;
-GC gc;
-double dx,dy;		/* grid delta */
-double sx,sy;		/* grid skip number */
-double xorig,yorig;	/* grid origin */
-{
+int draw_grid(
+    Window win,
+    GC gc,
+    double dx, double dy,		/* grid delta */
+    double sx, double sy,		/* grid skip number */
+    double xorig, double yorig		/* grid origin */
+) {
     extern unsigned int g_width, g_height;
     extern GRIDSTATE grid_state;
     extern int grid_color;
@@ -1230,8 +1223,7 @@ double xorig,yorig;	/* grid origin */
     return(0);
 }
 
-void xwin_draw_circle(x,y) 
-double x, y;
+void xwin_draw_circle(double x,double y) 
 {
     double delta;
     extern unsigned int g_width, g_height;
@@ -1272,9 +1264,7 @@ double x, y;
     }
 }
 
-void xwin_draw_text(x,y,s) 
-double x, y;
-char *s;
+void xwin_draw_text(double x, double y, char *s) 
 {
     R_to_V(&x,&y);
 
@@ -1284,8 +1274,7 @@ char *s;
 
 // #define RES 6  (in db.c)
 
-void xwin_draw_point(x,y) 
-double x, y;
+void xwin_draw_point(double x,double y) 
 {
     double delta, xx, yy;
     extern unsigned int g_width, g_height;
@@ -1314,8 +1303,7 @@ double x, y;
     XFlush(dpy);
 }
 
-void xwin_draw_origin(x,y) 
-double x, y;
+void xwin_draw_origin(double x,double y) 
 {
     double delta, xx, yy;
     extern unsigned int g_width, g_height;
@@ -1339,8 +1327,7 @@ double x, y;
     XFlush(dpy);
 }
 
-void snapxy(x,y)	/* snap world coordinates to grid ticks */
-double *x, *y;
+void snapxy(double *x,double *y)	/* snap world coordinates to grid ticks */
 {
     extern double grid_xo, grid_xd;
     extern double grid_yo, grid_yd;
@@ -1378,8 +1365,7 @@ double *x, *y;
 
 }
 
-void snapxy_major(x,y)	/* snap to grid ticks multiplied by ds,dy */
-double *x, *y;
+void snapxy_major(double *x,double *y)	/* snap to grid ticks multiplied by ds,dy */
 {
     extern double grid_xo, grid_xd, grid_xs;
     extern double grid_yo, grid_yd, grid_ys;
@@ -1416,8 +1402,7 @@ double *x, *y;
 	ydel*(-(int) (0.5-(((*y)-yo)/ydel)))+yo);
 }
 
-void xwin_grid_color(color) 
-int color;
+void xwin_grid_color(int color) 
 {
     extern int grid_color;
     int debug=0;
@@ -1451,8 +1436,7 @@ int xwin_display_state()
     }
 }
 
-void xwin_display_set_state(state)
-DISPLAYSTATE state;
+void xwin_display_set_state(DISPLAYSTATE state)
 {
     extern DISPLAYSTATE display_state;
     int debug=0;
@@ -1495,8 +1479,7 @@ DISPLAYSTATE state;
     }
 }
 
-void xwin_grid_state(state) 
-GRIDSTATE state;
+void xwin_grid_state(GRIDSTATE state)
 {
     extern GRIDSTATE grid_state;
     int debug=0;
@@ -1533,14 +1516,14 @@ GRIDSTATE state;
     }
 }
 
-void xwin_grid_pts( xd, yd, xs, ys, xo, yo)
-double xd;
-double yd;
-double xs;
-double ys;
-double xo; 
-double yo;
-{
+void xwin_grid_pts(
+    double xd,
+    double yd,
+    double xs,
+    double ys,
+    double xo, 
+    double yo
+) {
     int debug = 0;
     extern double grid_xd;
     extern double grid_yd;
@@ -1597,9 +1580,12 @@ WIN [:X[scale]] [:Z[power]] [:G{ON|OFF}] [:O{ON|OFF}] [:F] [:Nn] [xy1 [xy2]]
     xy1,xy2 zooms in on selected region
 */
 
-void xwin_window_parms_only(x1,y1,x2,y2) /* change the current window parameters */
-double x1,y1,x2,y2;
-{
+void xwin_window_parms_only( /* change the current window parameters */
+    double x1,
+    double y1,
+    double x2,
+    double y2
+) {
     extern double scale,xoffset,yoffset;
     extern int grid_notified;
     double dratio,wratio;
@@ -1660,17 +1646,18 @@ double x1,y1,x2,y2;
     	scale, xoffset, yoffset);
 }
 
-void xwin_window_set(x1,y1,x2,y2) /* change the current window parameters */
-double x1,y1,x2,y2;
-{
+void xwin_window_set( 	/* change the current window parameters */
+    double x1,
+    double y1,
+    double x2,
+    double y2
+) {
     xwin_window_parms_only(x1,y1,x2,y2);
     need_redraw++;
 }
 
 /* convert viewport coordinates to real-world coords */
-void V_to_R(x,y) 
-double *x;
-double *y;
+void V_to_R(double *x,double *y) 
 {
     extern double xoffset, yoffset, scale;
     if (currep != NULL) {
@@ -1683,9 +1670,7 @@ double *y;
 }
 
 /* convert real-world coordinates to viewport coords */
-void R_to_V(x,y) 
-double *x;
-double *y;
+void R_to_V(double *x,double *y) 
 {
     extern double xoffset, yoffset, scale;
     if (currep != NULL) {
@@ -1799,12 +1784,12 @@ int init_colors()
 /* following routine originally from Xlib Programming Manual Vol I., */
 /* O'Reilly & associates, page 533.  */
 
-void paint_pane(window, menutab, ngc, rgc, mode) 
-Window window;
-MENUENTRY menutab[];
-GC ngc, rgc;
-int mode;
-{
+void paint_pane(
+    Window window,
+    MENUENTRY menutab[],
+    GC ngc, GC rgc,
+    int mode
+) {
     int win;
     int x = 2, y;
     GC gc;
@@ -1886,12 +1871,13 @@ int shift_from_mask(int mask, int max) {
 // green mask= 65280
 // blue mask= 255
 
-int dump_window(window, gc, width, height, cmd) 
-Window window;
-GC gc;
-unsigned int width, height;
-char *cmd;
-{
+int dump_window(
+    Window window,
+    GC gc,
+    unsigned int width, 
+    unsigned int height,
+    char *cmd
+) {
     XImage *xi;
     int x, y;
     unsigned long pixel;

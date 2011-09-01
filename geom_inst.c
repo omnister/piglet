@@ -301,9 +301,7 @@ int add_inst(LEXER *lp, char *inst_name)
     return(1);
 }
 
-void draw_inst_bb(x, y, count) 
-double x, y;
-int count; /* number of times called */
+void draw_inst_bb(double x, double y, int count) 
 {
 	static double xold, yold;
 	BOUNDS bb;

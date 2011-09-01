@@ -115,8 +115,7 @@ struct varslot *Macroset(char *name, char *defn) /* set variable to be a macro *
     return(vp);
 }
 
-char *Macroget(name) /* get value of variable */
-char *name;
+char *Macroget(char *name) /* get value of variable */
 {
     struct varslot *vp;
 
@@ -127,8 +126,7 @@ char *name;
     return(vp->defn);
 }
 
-BOOLEAN EVexport(name) /* set variable to be exported */
-char *name;
+BOOLEAN EVexport(char *name) /* set variable to be exported */
 {
     struct varslot *vp;
     
@@ -139,8 +137,7 @@ char *name;
     return(TRUE);
 }
 
-char *EVget(name) /* get value of variable */
-char *name;
+char *EVget(char *name) /* get value of variable */
 {
     struct varslot *vp;
 

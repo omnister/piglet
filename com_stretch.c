@@ -601,9 +601,7 @@ void stretch_draw_point(double xx, double yy, int count)
         jump(&bb, D_RUBBER);
 }
 
-void stretch_draw_box(x3, y3, count)
-double x3, y3;
-int count; /* number of times called */
+void stretch_draw_box(double x3, double y3, int count)
 {
         static double x1old, x3old, y1old, y3old;
         BOUNDS bb;

@@ -79,8 +79,7 @@ void rl_setprompt(char *str)
 /* the real rlgetc() is a co-routine with procXevent */
 /* and gets characters from both mouse and keyboard */
 
-int xrlgetc(fd) 
-FILE *fd;
+int xrlgetc(FILE *fd) 
 {
     int c;
     c=getc(fd);
@@ -88,9 +87,7 @@ FILE *fd;
     return (c);
 }
 
-int xrl_ungetc(c,fd)
-int c;
-FILE *fd;
+int xrl_ungetc(int c, FILE *fd)
 {
     /* printf("ungetting %2.2x %c\n",c,c); */
     return ungetc(c,fd);
@@ -108,9 +105,7 @@ char * expdupstr(char *s, int n)
 }
 
 
-int rl_ungetc(lp,c) 
-LEXER *lp;
-int c;
+int rl_ungetc(LEXER *lp, int c) 
 {
     int debug=0;
 
@@ -124,9 +119,7 @@ int c;
 
 /* stuff a string back onto stdin in reverse order */
 
-int rl_ungets(lp,s) 
-char *s;
-LEXER *lp;
+int rl_ungets(LEXER *lp, char *s) 
 {
     int i;
     for (i=strlen(s)-1; i>=0; i--) {
@@ -152,8 +145,7 @@ void rmctrls(char *s) {
 }
 
 /* Read a string, and return a pointer to it.  Returns NULL on EOF. */
-char * rl_gets (prompt)
-char *prompt;
+char * rl_gets (char *prompt)
 {
 
     char *s;
@@ -219,8 +211,7 @@ void initialize_readline()
     rl_getc_function = procXevent;
 }
 
-int rlgetc(lp)
-LEXER *lp;
+int rlgetc(LEXER *lp)
 {
     int c;
     static char *linep = NULL;

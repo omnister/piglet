@@ -8,8 +8,7 @@
 
 static double xsnap, ysnap;
 
-void setlockpoint(x,y) 
-double x, y;
+void setlockpoint(double x,double y) 
 {
     int debug = 0;
 
@@ -19,9 +18,7 @@ double x, y;
     ysnap = y;
 }
 
-void lockpoint(px, py, lock) 
-double *px, *py;
-double lock;
+void lockpoint(double *px, double *py, double lock) 
 {
     double dx, dy;
     double theta;

@@ -114,9 +114,7 @@ int add_circ(LEXER *lp, int *layer)
     return(1);
 }
 
-void draw_circle(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
+void draw_circle(double x2, double y2, int count) 
 {
 	int debug=0;
 	BOUNDS bb;

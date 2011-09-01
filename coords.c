@@ -8,10 +8,7 @@ void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
 int  coord_count(COORDS *CP);
 
-int coord_get(CP, n, px, py) 	/* get nth set of x,y coords in list */
-COORDS *CP;
-int n;
-NUM *px, *py;
+int coord_get(COORDS *CP, int n, NUM *px, NUM *py) 	/* get nth set of x,y coords in list */
 {	
     COORDS *tmp;
     int i;
@@ -31,8 +28,7 @@ NUM *px, *py;
     return(err);
 }		
 
-int coord_count(CP) 	/* return number of coords in list */
-COORDS *CP;
+int coord_count(COORDS *CP) 	/* return number of coords in list */
 {	
     COORDS *tmp;
     int i;
@@ -45,8 +41,7 @@ COORDS *CP;
     return(i);
 }		
 
-COORDS *coord_new(x,y)
-double x,y;
+COORDS *coord_new(double x,double y)
 {
     COORDS *tmp;
     tmp = (COORDS *) malloc(sizeof(COORDS));
@@ -57,9 +52,7 @@ double x,y;
     return(tmp);
 }
 
-void coord_append(CP, x,y)
-COORDS *CP;
-double x,y;
+void coord_append(COORDS *CP, double x,double y)
 {
     COORDS *tmp;
     tmp = CP->prev;	/* save pointer to last coord */
@@ -68,16 +61,13 @@ double x,y;
     CP->prev = tmp->next;
 }
 
-void coord_swap_last(CP, x,y)
-COORDS *CP;
-double x,y;
+void coord_swap_last(COORDS *CP, double x,double y)
 {
     CP->prev->coord.x = x;
     CP->prev->coord.y = y;
 }
 
-void coord_drop(CP)
-COORDS *CP;
+void coord_drop(COORDS *CP)
 {
     COORDS *tmp;
     
@@ -87,8 +77,7 @@ COORDS *CP;
     free((COORDS *) tmp);
 }
 
-void coord_print(CP)
-COORDS *CP;
+void coord_print(COORDS *CP)
 {	
     COORDS *tmp;
     int i;
@@ -107,9 +96,7 @@ COORDS *CP;
 /* copies a coordinate list with optional transform */
 /* if xp is NULL, no transform done */
 
-COORDS *coord_copy(xp, CP)
-XFORM *xp;
-COORDS *CP;
+COORDS *coord_copy(XFORM *xp, COORDS *CP)
 {
     COORDS *p;
     COORDS *new_coords; 

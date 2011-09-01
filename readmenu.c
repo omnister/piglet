@@ -28,13 +28,13 @@ int testmain() {
 
 #define MAXBUF 256
 
-int loadmenu(m, maxcell, s, lw, mr) 
-MENUENTRY m[];	/* structure for storing the information */
-int maxcell;		/* maximum number of menu cells allocated */
-char *s;		/* name of menu file */
-int *lw;		/* max columns */
-int *mr;		/* max rows */
-{
+int loadmenu(
+    MENUENTRY m[],	/* structure for storing the information */
+    int maxcell,	/* maximum number of menu cells allocated */
+    char *s,		/* name of menu file */
+    int *lw,		/* max columns */
+    int *mr		/* max rows */
+) {
 
     FILE *fp;
     int n;
@@ -113,10 +113,10 @@ int *mr;		/* max rows */
     return(count);
 }
 
-int getcolor(s,k) 
-char *s;  /* a color string */
-int k;	  /* index of color */
-{
+int getcolor(
+    char *s,  	/* a color string */
+    int k	/* index of color */
+) {
     int i;
     int n=0;
     int c;

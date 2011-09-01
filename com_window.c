@@ -307,9 +307,7 @@ int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double 
     return(0);
 }
 
-void draw_bounds(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
+void draw_bounds(double x2, double y2, int count) 
 {
 	static double x1old, x2old, y1old, y2old;
 	static int called = 0;

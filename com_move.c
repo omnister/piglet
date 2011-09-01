@@ -346,9 +346,7 @@ int com_move(LEXER *lp, char *arg)
 }
 
 
-void draw_mbox(x, y, count)
-double x, y;  /* offset */
-int count; /* number of times called */
+void draw_mbox(double x, double y, int count)
 {
 	static double x1old, x2old, y1old, y2old;
 	static double xx1, yy1, xx2, yy2;
@@ -378,9 +376,7 @@ int count; /* number of times called */
 }
 
 
-void move_draw_box(x2, y2, count)
-double x2, y2;
-int count; /* number of times called */
+void move_draw_box(double x2, double y2, int count)
 {
         static double x1old, x2old, y1old, y2old;
         BOUNDS bb;

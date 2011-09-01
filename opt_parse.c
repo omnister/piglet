@@ -16,11 +16,11 @@
 validopts and returns ERR if invalid option, or if invalid
 scan of option value.  Updates opt structure if OK */
 
-int opt_parse(optstring, validopts, popt) 
-char *optstring;
-char *validopts;	/* a string like "WSRMYZF" */
-OPTS *popt;
-{
+int opt_parse(
+    char *optstring,
+    char *validopts,	/* a string like "WSRMYZF" */
+    OPTS *popt
+) {
 
     double optval, optval2;
     int i;

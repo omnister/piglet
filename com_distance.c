@@ -116,9 +116,7 @@ double grid(double num) {
    return (num-fmod(num,1.0/pow(10.0,RES)));
 }
 
-void draw_dist(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
+void draw_dist(double x2, double y2, int count) 
 {
 	static double x1old, x2old, y1old, y2old;
 	static char dxbuf[MAXDBUF];

@@ -90,12 +90,13 @@ ANSI-E  0 0  34i 44i
 /* can't say Letter and give Ansi-A page sizes... */
 
 
-void ps_preamble(dev, prog, pdx, pdy, llx, lly, urx, ury) 
-char *dev;
-char *prog;
-double pdx, pdy; 	    /* page size in inches */
-double llx, lly, urx, ury;  /* drawing bounding box in user coords */
-{
+void ps_preamble(
+    char *dev,
+    char *prog,
+    double pdx, double pdy, 	/* page size in inches */
+    double llx, double lly,	/* drawing bounding box in user coords */ 
+    double urx, double ury  
+) {
 
     time_t timep;
     char buf[MAXBUF];
@@ -406,8 +407,7 @@ void ps_start_line(double x1, double y1, int filled)
 }
 
 
-void ps_continue_line(x1, y1)
-double x1, y1;
+void ps_continue_line(double x1, double y1)
 {
     if (debug) printf("ps_continue_line:\n");
 

@@ -430,6 +430,8 @@ extern void db_set_nest(int nest); 	/* set global display nest level */
 extern void db_set_bounds(int bounds); 	/* set global display bounds level */
 
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
+// void db_unlink_component(DB_TAB *cell, struct db_deflist dp)
+
 
 typedef struct selpnt {
     DB_DEFLIST *p;

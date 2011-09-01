@@ -42,8 +42,7 @@ typedef int Function ();
 static int count=0;
 Function * rubber_callback = NULL;
 
-void rubber_set_callback(func) 
-Function * func;
+void rubber_set_callback(Function *func) 
 {
     count=0;
     rubber_callback = func;
@@ -67,9 +66,7 @@ void rubber_clear_callback()
  *  all calls with count >0.  
  */
 
-void rubber_draw(x,y,init)
-double x, y;
-int init;
+void rubber_draw(double x,double y, int init)
 {
     if (init) count=0;
     int debug=0;

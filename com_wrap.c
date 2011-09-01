@@ -300,9 +300,7 @@ int com_wrap(LEXER *lp, char *arg)
 }
 
 
-void wrap_draw_box(x3, y3, count)
-double x3, y3;
-int count; /* number of times called */
+void wrap_draw_box(double x3, double y3, int count)
 {
         static double x2old, x3old, y2old, y3old;
         BOUNDS bb;

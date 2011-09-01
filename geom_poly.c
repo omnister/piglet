@@ -190,9 +190,7 @@ int add_poly(LEXER *lp, int *layer)
 
 /* make  poly_check(CP) to remove collinear points and dups */
 
-void draw_poly(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
+void draw_poly(double x2, double y2, int count) 
 {
 	static double x1old, x2old, y1old, y2old;
 	int debug=0;

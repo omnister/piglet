@@ -46,8 +46,7 @@ void db_def_print();
 
 /********************************************************/
 
-DB_TAB * db_edit_pop(level)
-int level;
+DB_TAB * db_edit_pop(int level)
 {
 
     /* simply run through the db and return a pointer */
@@ -197,8 +196,7 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     return(sp);
 }
 
-DB_TAB *db_install(s)		/* install s in db */
-char *s;
+DB_TAB *db_install(char *s)		/* install s in db */
 {
     DB_TAB *sp;
 
@@ -222,9 +220,7 @@ char *s;
     return (sp);
 }
 
-int ask(lp, s) /* ask a y/n question */
-LEXER *lp;
-char    *s;
+int ask(LEXER *lp, char *s) /* ask a y/n question */
 {
     TOKEN token;
     char *word;
@@ -370,9 +366,7 @@ void db_unlink_cell(DB_TAB *sp) {
     free(sp);
 }
 
-void db_purge(lp, s)			/* remove all definitions for s */
-LEXER *lp;
-char *s;
+void db_purge(LEXER *lp, char *s)			/* remove all definitions for s */
 {
     DB_TAB *dp;
     DB_TAB *sp;
@@ -433,10 +427,10 @@ char *s;
 /* We assume here that there is no shearing or aspecting. */
 /* Rectangles rotated by non-multiples of 90 degrees */
 /* are converted into equivalent polygons */
+// DB_DEFLIST *p;	       /* component to be copied */
+// DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
 
-DB_DEFLIST *db_copy_component(p, pinstdef) 		/* create a copy of a component */
-DB_DEFLIST *p;	       /* component to be copied */
-DB_DEFLIST *pinstdef;  /* parent instance with transform for smashing */
+DB_DEFLIST *db_copy_component(DB_DEFLIST *p, DB_DEFLIST *pinstdef) 		/* create a copy of a component */
 {
     struct db_deflist *dp;
     XFORM *xp;
@@ -708,8 +702,7 @@ DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head) {	/* copy db_deflist chain */
     return(copy);
 }
 
-void db_free_component(p) 		/* recycle memory for component */
-DB_DEFLIST *p;
+void db_free_component(DB_DEFLIST *p) 		/* recycle memory for component */
 {
     int debug=0;
     COORDS *coords;
@@ -833,10 +826,7 @@ DB_DEFLIST *p;
 
 /* save a non-recursive archive of single cell to a file called "cell.d" */
 
-int db_save(lp, sp, name)           	/* print db */
-LEXER *lp;
-DB_TAB *sp;
-char *name;
+int db_save(LEXER *lp, DB_TAB *sp, char *name)           	/* print db */
 {
 
     FILE *fp;
@@ -891,11 +881,9 @@ char *name;
 }
 
 /* call it with unity xform in xp, ortho == 1 */
+// int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
 
-int db_arc_smash(cell, xform, ortho)
-DB_TAB *cell;
-XFORM *xform;
-int ortho; 	/* smash mode, 1 = ortho, 0=non-ortho */
+int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho)
 {
     // extern XFORM unity_transform;
 
@@ -1029,9 +1017,7 @@ int db_def_archive(DB_TAB *sp, int smash, int process)
    of the cell references. 
 */
 
-int db_def_files_recurse(fp,sp) 
-FILE *fp;
-DB_TAB *sp;
+int db_def_files_recurse(FILE *fp, DB_TAB *sp) 
 {
     DB_DEFLIST *p; 
     DB_TAB *dp;
@@ -1049,10 +1035,7 @@ DB_TAB *sp;
     return(0); 	
 }
 
-int db_def_arch_recurse(fp,sp,smash) 
-FILE *fp;
-DB_TAB *sp;
-int smash;
+int db_def_arch_recurse(FILE *fp, DB_TAB *sp, int smash) 
 {
     DB_DEFLIST *p; 
     DB_TAB *dp;
@@ -1061,7 +1044,7 @@ int smash;
 	if (p->type == INST) {
 	    dp = db_lookup(p->u.i->name);
 	    if (!(dp->flag) && !(dp->is_tmp_rep)) {	// do not archive tmp reps
-		db_def_arch_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
+		db_def_arch_recurse(fp, db_lookup(p->u.i->name), smash); 	/* RCW recurse */
 		((db_lookup(p->u.i->name))->flag)++;	// prevent duplicates
 		db_def_print(fp, db_lookup(p->u.i->name), ARCHIVE);  // print def
 	    }
@@ -1118,9 +1101,7 @@ int db_remove_autosavefiles()
 }
 
 
-int db_contains(name1, name2) /* return 0 if sp contains no reference to "name" */
-char *name1;
-char *name2;
+int db_contains(char *name1, char *name2) /* return 0 if sp contains no reference to "name" */
 {
 
     DB_TAB *sp;
@@ -1143,10 +1124,7 @@ char *name2;
     return (retval);
 }
 
-void db_contains_body(sp,name,retval) 
-DB_TAB *sp;
-char *name;
-int *retval;
+void db_contains_body(DB_TAB *sp, char *name, int *retval) 
 {
     DB_DEFLIST *p; 
     int debug=0;
@@ -1644,8 +1622,7 @@ void cksum(DB_DEFLIST *p) {
     }
 }
 
-int db_cksum(dp) 
-DB_DEFLIST *dp;
+int db_cksum(DB_DEFLIST *dp) 
 {
     DB_DEFLIST *p; 
     int debug=0;
@@ -1663,10 +1640,7 @@ DB_DEFLIST *dp;
 }
 
 
-void db_def_print(fp, dp, mode) 
-FILE *fp;
-DB_TAB *dp;
-int mode;
+void db_def_print(FILE *fp, DB_TAB *dp, int mode) 
 {
     DB_DEFLIST *p; 
     time_t now;
@@ -1710,9 +1684,10 @@ int mode;
 //        ^       | ^      | 
 //        +-------- +------  
 
-void db_unlink_component(cell, dp) 
-DB_TAB *cell;			/* current rep */
-struct db_deflist *dp;          /* pbest */
+// DB_TAB *cell;		   /* current rep */
+// struct db_deflist *dp;          /* pbest */
+
+void db_unlink_component(DB_TAB *cell, DB_DEFLIST *dp) 
 {
 
     if(dp == NULL) {
@@ -1740,9 +1715,10 @@ struct db_deflist *dp;          /* pbest */
 //        ^       | ^      | 
 //        +-------- +------  
 
-void db_insert_component(cell,dp) 
-DB_TAB *cell;
-struct db_deflist *dp;
+// DB_TAB *cell;
+// struct db_deflist *dp;
+
+void db_insert_component(DB_TAB *cell, struct db_deflist *dp) 
 {
     dp->next = NULL;
 
@@ -1759,9 +1735,7 @@ struct db_deflist *dp;
     cell->modified++;
 }
 
-void db_set_layer(p, new_layer) /* set the layer of any component */
-struct db_deflist *p;
-int new_layer;
+void db_set_layer(struct db_deflist *p, int new_layer) /* set the layer of any component */
 {
     if (p == NULL) {
     	printf("db_set_layer: can't change layer on null component!\n");
@@ -1800,9 +1774,7 @@ int new_layer;
     }
 }
 
-void db_move_component(p, dx, dy) /* move any component by dx, dy */
-struct db_deflist *p;
-double dx, dy;
+void db_move_component(struct db_deflist *p, double dx, double dy) /* move any component by dx, dy */
 {
     COORDS *coords;
 
@@ -1866,11 +1838,7 @@ double dx, dy;
     }
 }
 
-int db_add_arc(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-NUM x1,y1,x2,y2,x3,y3;
+int db_add_arc(DB_TAB *cell, int layer, OPTS *opts, NUM x1,NUM y1,NUM x2,NUM y2,NUM x3,NUM y3) 
 {
     struct db_arc *ap;
     struct db_deflist *dp;
@@ -1896,11 +1864,7 @@ NUM x1,y1,x2,y2,x3,y3;
     return(0);
 }
 
-int db_add_circ(cell, layer, opts, x1,y1,x2,y2)
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-NUM x1,y1,x2,y2;
+int db_add_circ(DB_TAB *cell, int layer, OPTS *opts, NUM x1,NUM y1,NUM x2,NUM y2)
 {
     struct db_circ *cp;
     struct db_deflist *dp;
@@ -1924,11 +1888,7 @@ NUM x1,y1,x2,y2;
     return(0);
 }
 
-int db_add_line(cell, layer, opts, coords)
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-COORDS *coords;
+int db_add_line(DB_TAB *cell, int layer, OPTS *opts, COORDS *coords)
 {
     struct db_line *lp;
     struct db_deflist *dp;
@@ -1947,11 +1907,7 @@ COORDS *coords;
     return(0);
 }
 
-int db_add_oval(cell, layer, opts, x1,y1,x2,y2,x3,y3) 
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-NUM x1,y1, x2,y2, x3,y3;
+int db_add_oval(DB_TAB *cell, int layer, OPTS *opts, NUM x1,NUM y1,NUM x2,NUM y2,NUM x3,NUM y3) 
 {
     struct db_oval *op;
     struct db_deflist *dp;
@@ -1977,11 +1933,7 @@ NUM x1,y1, x2,y2, x3,y3;
     return(0);
 }
 
-int db_add_poly(cell, layer, opts, coords)
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-COORDS *coords;
+int db_add_poly(DB_TAB *cell, int layer, OPTS *opts, COORDS *coords)
 {
     struct db_poly *pp;
     struct db_deflist *dp;
@@ -2004,11 +1956,7 @@ COORDS *coords;
     return(0);
 }
 
-int db_add_rect(cell, layer, opts, x1,y1,x2,y2)
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-NUM x1,y1,x2,y2;
+int db_add_rect(DB_TAB *cell, int layer, OPTS *opts, NUM x1,NUM y1,NUM x2,NUM y2)
 {
     struct db_rect *rp;
     struct db_deflist *dp;
@@ -2032,12 +1980,7 @@ NUM x1,y1,x2,y2;
     return(0);
 }
 
-int db_add_note(cell, layer, opts, string ,x,y) 
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-char *string;
-NUM x,y;
+int db_add_note(DB_TAB *cell, int layer, OPTS *opts, char *string ,NUM x,NUM y) 
 {
     struct db_note *np;
     struct db_deflist *dp;
@@ -2060,12 +2003,7 @@ NUM x,y;
     return(0);
 }
 
-int db_add_text(cell, layer, opts, string ,x,y) 
-DB_TAB *cell;
-int layer;
-OPTS *opts;
-char *string;
-NUM x,y;
+int db_add_text(DB_TAB *cell, int layer, OPTS *opts, char *string , NUM x, NUM y) 
 {
     struct db_text *tp;
     struct db_deflist *dp;
@@ -2088,11 +2026,7 @@ NUM x,y;
     return(0);
 }
 
-struct db_inst * db_add_inst(cell, subcell, opts, x, y)
-DB_TAB *cell;
-DB_TAB *subcell;
-OPTS *opts;
-NUM x,y;
+struct db_inst * db_add_inst(DB_TAB *cell, DB_TAB *subcell, OPTS *opts, NUM x, NUM y)
 {
     struct db_inst *ip;
     struct db_deflist *dp;
@@ -2320,8 +2254,7 @@ char *validopts;
 }
 
 
-char *strsave(s)   /* save string s somewhere */
-char *s;
+char *strsave(char *s)   /* save string s somewhere */
 {
     char *p;
 
@@ -2337,10 +2270,7 @@ char *s;
 /******************** plot geometries *********************/
 
 /* ADD Amask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord */ 
-void do_arc(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;
+void do_arc(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     NUM x1,y1,x2,y2,x3,y3;
     int res;
@@ -2501,10 +2431,9 @@ int mode;
 }
 
 /* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
-void do_circ(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;		/* drawing mode */
+// int mode;		/* drawing mode */
+
+void do_circ(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     int i;
     double r1, r2,theta,x,y,x1,y1,x2,y2;
@@ -2589,10 +2518,9 @@ r1 - r2 = ar+w
 */
 
 /* ADD Cmask [.cname] [@sname] [:Yyxratio] [:Wwidth] [:Rres] coord coord */
-void do_circ_orig(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;		/* drawing mode */
+// int mode;		/* drawing mode */
+
+void do_circ_orig(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     int i;
     double r1, r2,theta,x,y,x1,y1,x2,y2;
@@ -2711,11 +2639,9 @@ int pop(double *x, double *y) {
 /* --------------------------------------------------------- */
 
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
+// int mode; 	/* drawing mode */
 
-void do_line(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode; 	/* drawing mode */
+void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     COORDS *temp;
 
@@ -2948,10 +2874,7 @@ int mode; 	/* drawing mode */
 
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
 
-void do_oval(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;
+void do_oval(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     NUM x1,y1,x2,y2,x3,y3;
 
@@ -2970,10 +2893,7 @@ int mode;
 
 /* ADD Pmask [.cname] [@sname] [:Wwidth] coord coord coord [coord ...]  */ 
 
-void do_poly(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;
+void do_poly(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     COORDS *temp;
     int debug=0;
@@ -3028,11 +2948,9 @@ int mode;
 
 
 /* ADD Rmask [.cname] [@sname] [:Wwidth] coord coord  */
+// int mode;	/* drawing mode */
 
-void do_rect(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;	/* drawing mode */
+void do_rect(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
     double x1,y1,x2,y2;
     COORDS *cp;
@@ -3091,10 +3009,7 @@ int mode;	/* drawing mode */
  *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
  */
 
-void do_note(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;
+void do_note(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
 
     XFORM *xp;
@@ -3144,10 +3059,7 @@ int mode;
  *             [:Zslant] [:Ffontsize] [:Nfontnum] "string" coord  
  */
 
-void do_text(def, bb, mode)
-DB_DEFLIST *def;
-BOUNDS *bb;
-int mode;
+void do_text(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
 
     XFORM *xp;
@@ -3195,8 +3107,7 @@ int mode;
 
 /***************** coordinate transformation utilities ************/
 
-XFORM *compose(xf1, xf2)
-XFORM *xf1, *xf2;
+XFORM *compose(XFORM *xf1, XFORM *xf2)
 {
      XFORM *xp;
      xp = (XFORM *) emalloc(sizeof(XFORM)); 
@@ -3212,9 +3123,7 @@ XFORM *xf1, *xf2;
 }
 
 /* in-place rotate a transform matrix by theta degrees */
-void mat_rotate(xp, theta)
-XFORM *xp;
-double theta;
+void mat_rotate(XFORM *xp, double theta)
 {
     double s,c,t;
     s=sin(2.0*M_PI*theta/360.0);
@@ -3234,9 +3143,7 @@ double theta;
 }
 
 /* in-place scale transform */
-void mat_scale(xp, sx, sy) 
-XFORM *xp;
-double sx, sy;
+void mat_scale(XFORM *xp, double sx, double sy) 
 {
     xp->r11 *= sx;
     xp->r12 *= sy;
@@ -3247,9 +3154,7 @@ double sx, sy;
 }
 
 /* in-place slant transform (for italics) */
-void mat_slant(xp, theta) 
-XFORM *xp;
-double theta;
+void mat_slant(XFORM *xp, double theta) 
 {
     double s,c;
     double a;
@@ -3268,8 +3173,7 @@ double theta;
     if (debug) mat_print(xp);
 }
 
-void mat_print(xa)
-XFORM *xa;
+void mat_print(XFORM *xa)
 {
      printf("\n");
      printf("\t%g\t%g\t%g\n", xa->r11, xa->r12, 0.0);
@@ -3278,9 +3182,7 @@ XFORM *xa;
 }   
 
 
-void show_list(currep, layer) 
-DB_TAB *currep;
-int layer;
+void show_list(DB_TAB *currep, int layer) 
 {
     int i,j;
 
@@ -3299,8 +3201,9 @@ int layer;
     printf("\n");
 }
 
-int getbits(x,p,n)	/* get n bits from position p */ 
-unsigned int x, p, n;
+/* get n bits from position p */ 
+
+int getbits(unsigned int x, unsigned int p, unsigned int n)	
 {
     return((x >> (p+1-n)) & ~(~0 << n));
 }

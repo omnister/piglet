@@ -171,9 +171,7 @@ int mode;
 }
 
 
-void draw_text(x2, y2, count) 
-double x2, y2;
-int count; /* number of times called */
+void draw_text(double x2, double y2, int count) 
 {
 	static double xold, yold;
 	int debug=0;

@@ -46,15 +46,15 @@ int ydef[2][MAXPOINT];
 
 int fillable[2] = {0,1};
 
-void writechar(c,x,y,xf,id,bb,mode)
-int c;
-double x;
-double y;
-XFORM *xf;
-int id;			/* font id */
-BOUNDS *bb;
-int mode;		/* drawing mode */
-{
+void writechar(
+    int c,
+    double x,
+    double y,
+    XFORM *xf,
+    int id,		/* font id */
+    BOUNDS *bb,
+    int mode		/* drawing mode */
+) {
     int i;
     double xp,yp,xt,yt;
 
@@ -94,14 +94,14 @@ int mode;		/* drawing mode */
 }
 
 
-void writestring(s,xf, id, jf, bb, mode)
-char *s;
-XFORM *xf;
-int id; 	/* font id */
-int jf; 	/* font justification */
-BOUNDS *bb;
-int mode;
-{
+void writestring(
+    char *s,
+    XFORM *xf,
+    int id, 	/* font id */
+    int jf, 	/* font justification */
+    BOUNDS *bb,
+    int mode
+) {
     double yoffset=0.0;
     int debug=0;
     double xoffset=0.0;
@@ -173,9 +173,7 @@ int mode;
     }
 }
 
-void loadfont(file, id)
-char *file;
-int id;
+void loadfont(char *file, int id)
 {
     FILE *fp;
     int i;
@@ -250,10 +248,7 @@ int id;
 }
 
 
-int getxy(fp,px,py)
-FILE *fp;
-int *px;
-int *py;
+int getxy(FILE *fp, int *px, int *py)
 {
     int c;
     extern int line;
@@ -280,8 +275,7 @@ int *py;
     return(eatwhite(fp));
 }
 
-int eatwhite(fp)
-FILE *fp;
+int eatwhite(FILE *fp)
 {
     int c;
     int done=0;
@@ -303,9 +297,7 @@ FILE *fp;
 /* using just getc(fp) and ungetc(c,fp) */
 /* returns 0 if no digit found, 1 if successful */
 
-int getint(fp,pi) 	
-FILE *fp;
-int *pi;
+int getint(FILE *fp, int *pi) 	
 {
     int c;
     int state=0;

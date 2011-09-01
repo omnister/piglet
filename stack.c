@@ -27,9 +27,7 @@ int stack_depth(STACK **stack)
     }
 }
 
-void stack_push(stack, pointer)
-STACK **stack;
-char *pointer;
+void stack_push(STACK **stack, char *pointer)
 {
     STACK *tmp;
     tmp = stack_new();
@@ -46,8 +44,7 @@ char *pointer;
     /* stack_print(stack);  */
 }
 
-char *stack_pop(stack)
-STACK **stack;
+char *stack_pop(STACK **stack)
 {
 
     char *s;
@@ -64,8 +61,7 @@ STACK **stack;
     }
 }
 
-void stack_free(stack) 
-STACK **stack;
+void stack_free(STACK **stack) 
 {
 
      STACK *s;
@@ -78,8 +74,7 @@ STACK **stack;
      }
 }
 
-int stack_print(stack) 
-STACK **stack;
+int stack_print(STACK **stack) 
 {
      int i=0;
      STACK *sp;
@@ -97,8 +92,7 @@ STACK **stack;
      return(0);
 }
 
-char *stack_top(stack) 		/* return top of stack w/o pop */
-STACK **stack;
+char *stack_top(STACK **stack) 		/* return top of stack w/o pop */
 {
      char *p;
 
@@ -115,8 +109,7 @@ STACK **stack;
 }
      
 
-char *stack_walk(stack)		/* each call returns a new entry, modifies stack */ 
-STACK **stack;
+char *stack_walk(STACK **stack)		/* each call returns a new entry, modifies stack */ 
 {
      char *p;
      if (*stack == NULL) {

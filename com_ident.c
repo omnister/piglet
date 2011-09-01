@@ -225,9 +225,7 @@ int com_identify(LEXER *lp, char *arg)
     return(1);
 }
 
-void ident_draw_box(x2, y2, count)
-double x2, y2;
-int count; /* number of times called */
+void ident_draw_box(double x2, double y2, int count)
 {
         static double x1old, x2old, y1old, y2old;
         BOUNDS bb;

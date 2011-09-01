@@ -51,8 +51,7 @@ static int debug = 0;
 /* db_render() sets globals xmax, ymax, xmin, ymin; */
 /****************************************************/
 
-void db_set_fill(fill) 
-int fill;
+void db_set_fill(int fill) 
 {
     extern int draw_fill;
     if (fill == FILL_TOGGLE) {
@@ -69,16 +68,13 @@ int fill;
     }
 }
 
-void db_set_nest(nest) 
-int nest;
+void db_set_nest(int nest) 
 {
     extern int nestlevel;
     nestlevel = nest;
 }
 
-void db_bounds_update(mybb, childbb) 
-BOUNDS *mybb;
-BOUNDS *childbb;
+void db_bounds_update(BOUNDS *mybb, BOUNDS *childbb) 
 {
 
     if (mybb->init==0) {
@@ -100,8 +96,7 @@ BOUNDS *childbb;
 /* a fast approximation to euclidian distance */
 /* with no sqrt() and about 5% accuracy */
 
-double dist(dx,dy) 
-double dx,dy;
+double dist(double dx,double dy) 
 {
     dx = dx<0?-dx:dx; /* absolute value */
     dy = dy<0?-dy:dy;
@@ -122,10 +117,7 @@ double dx,dy;
 /* inside bb, otherwise return a number  between zero and 1 */
 /* monotonically related to inverse distance of xy from bounding box */
 
-double bb_distance(x, y, p, fuzz)
-double x,y;
-DB_DEFLIST *p;
-double fuzz;
+double bb_distance(double x, double y, DB_DEFLIST *p, double fuzz)
 {
     int outcode;
     double retval;
@@ -228,13 +220,14 @@ double fuzz;
  *
  */
 
-DB_DEFLIST *db_ident(cell, x, y, mode, pick_layer, comp, name)
-DB_TAB *cell;			/* device being edited */
-double x, y;	 		/* pick point */
-int mode; 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
-int pick_layer;			/* layer restriction, or 0=all */
-int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL */
+DB_DEFLIST *db_ident(
+    DB_TAB *cell,		/* device being edited */
+    double x, double y,	 	/* pick point */
+    int mode, 			/* 0=ident (any visible), 1=pick (pick restricted to modifiable objects) */
+    int pick_layer,		/* layer restriction, or 0=all */
+    int comp,			/* comp restriction */
+    char *name			/* instance name restrict or NULL */
+)
 {
     DB_DEFLIST *p;
     DB_DEFLIST *p_best = NULL;	/* gets returned */
@@ -408,13 +401,14 @@ char *name;			/* instance name restrict or NULL */
     return(p_best);
 }
 
-SELPNT *db_ident2(cell, x, y, mode, pick_layer, comp, name)
-DB_TAB *cell;			/* device being edited */
-double x, y;	 		/* pick point */
-int mode; 			/* 0=ident (any visible), 1=pick (only modifiable objects) */
-int pick_layer;			/* layer restriction, or 0=all */
-int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL */
+SELPNT *db_ident2(
+    DB_TAB *cell,		/* device being edited */
+    double x, double y,	 	/* pick point */
+    int mode, 			/* 0=ident (any visible), 1=pick (only modifiable objects) */
+    int pick_layer,		/* layer restriction, or 0=all */
+    int comp,			/* comp restriction */
+    char *name			/* instance name restrict or NULL */
+)
 {
     DB_DEFLIST *p;
     DB_DEFLIST *p_best=NULL;	
@@ -645,9 +639,16 @@ char *name;			/* instance name restrict or NULL */
     return(selpnt);
 }
 
-int bb_overlap(x1, y1, x2, y2, xc1, yc1, xc2, yc2) 
-double x1, y1, x2, y2, xc1, yc1, xc2, yc2;
-{
+int bb_overlap(
+    double x1, 
+    double y1,
+    double x2,
+    double y2,
+    double xc1,
+    double yc1,
+    double xc2,
+    double yc2
+) {
 
     int err = 0;
     double tmp;
@@ -698,17 +699,17 @@ int bounded(double *x, double *y, double xmin, double ymin, double xmax, double 
 }
 
                                                
-SELPNT *db_ident_region2(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
-DB_TAB *cell;			/* device being edited */
-NUM x1, y1;	 		/* pick point */
-NUM x2, y2;	 		/* pick point */
-int mode; 			/* 0 = ident (any visible) */
+SELPNT *db_ident_region2(
+    DB_TAB *cell,		/* device being edited */
+    NUM x1, NUM y1,	 		/* pick point */
+    NUM x2, NUM y2,	 		/* pick point */
+    int mode,			/* 0 = ident (any visible) */
 				/* 1 = enclose pick (pick restricted to modifiable objects) */
 				/* 2 = boundary overlap (restricted to modifiable objects) */
-int pick_layer;			/* layer restriction, or 0=all */
-int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL */
-{
+    int pick_layer,			/* layer restriction, or 0=all */
+    int comp,			/* comp restriction */
+    char *name			/* instance name restrict or NULL */
+) {
     DB_DEFLIST *p;
     SELPNT *selpnt=NULL;	/* gets returned */
     /* int debug=0; */
@@ -970,17 +971,17 @@ char *name;			/* instance name restrict or NULL */
     return(selpnt);
 }
 
-STACK *db_ident_region(cell, x1, y1, x2, y2, mode, pick_layer, comp, name) 
-DB_TAB *cell;			/* device being edited */
-NUM x1, y1;	 		/* pick point */
-NUM x2, y2;	 		/* pick point */
-int mode; 			/* 0 = ident (any visible) */
-				/* 1 = enclose pick (pick restricted to modifiable objects) */
-				/* 2 = boundary overlap (restricted to modifiable objects) */
-int pick_layer;			/* layer restriction, or 0=all */
-int comp;			/* comp restriction */
-char *name;			/* instance name restrict or NULL */
-{
+STACK *db_ident_region(
+    DB_TAB *cell,		/* device being edited */
+    NUM x1, NUM y1,	 		/* pick point */
+    NUM x2, NUM y2,	 		/* pick point */
+    int mode, 			/* 0 = ident (any visible) */
+				    /* 1 = enclose pick (pick restricted to modifiable objects) */
+				    /* 2 = boundary overlap (restricted to modifiable objects) */
+    int pick_layer,		/* layer restriction, or 0=all */
+    int comp,			/* comp restriction */
+    char *name			/* instance name restrict or NULL */
+) {
     DB_DEFLIST *p;
     STACK *stack=NULL;	/* gets returned */
     /* int debug=0; */
@@ -1070,9 +1071,7 @@ char *name;			/* instance name restrict or NULL */
     return(stack);
 }
 
-void db_drawbounds(xmin, ymin, xmax, ymax, mode)
-double xmin, ymin, xmax, ymax;
-int mode;
+void db_drawbounds( double xmin, double ymin, double xmax, double ymax, int mode)
 {
     BOUNDS bb;
 
@@ -1105,8 +1104,7 @@ int mode;
     }
 }
 
-double db_area(p)
-DB_DEFLIST *p;			/* return the area of component p */
+double db_area(DB_DEFLIST *p)	/* return the area of component p */
 {
 
     double area = 0.0;
@@ -1205,8 +1203,7 @@ DB_DEFLIST *p;			/* return the area of component p */
     return(area);
 }
 
-void db_notate(p)
-DB_DEFLIST *p;			/* print out identifying information */
+void db_notate(DB_DEFLIST *p)   /* print out identifying information */
 {
     int debug=0;
 
@@ -1281,8 +1278,7 @@ DB_DEFLIST *p;			/* print out identifying information */
     }
 }
 
-void db_highlight(p)
-DB_DEFLIST *p;			/* component to display */
+void db_highlight(DB_DEFLIST *p)	/* component to display */
 {
     BOUNDS bb;
     DB_TAB *def;
@@ -1394,8 +1390,7 @@ DB_DEFLIST *p;			/* component to display */
     }
 }
 
-int db_list(cell)
-DB_TAB *cell;
+int db_list(DB_TAB *cell)
 {
     DB_DEFLIST *p;
 
@@ -1502,10 +1497,7 @@ int db_plot(char *name, OMODE plottype) {
     return(1);
 }
 
-void xform_point(xp,xx,yy) 
-XFORM  *xp;
-double *xx;
-double *yy;
+void xform_point(XFORM *xp, double *xx, double *yy) 
 {
     double x,y;
 
@@ -1532,8 +1524,7 @@ int is_ortho(OPTS *opts)
     return(retval);
 }
 
-XFORM *matrix_from_opts(opts) /* initialize xfrom matrix from options */
-OPTS *opts;
+XFORM *matrix_from_opts(OPTS *opts) /* initialize xfrom matrix from options */
 {
     XFORM *xp;
 
@@ -1642,12 +1633,12 @@ int nextseq() {		// generate a new sequence number
    return (seq);
 }
 
-int db_render(cell, nest, bb, mode)
-DB_TAB *cell;
-int nest;	/* nesting level */
-BOUNDS *bb;
-int mode; 	/* drawing mode: one of D_READIN, D_NORM, D_RUBBER, D_BB, D_PICK */
-{
+int db_render(
+    DB_TAB *cell,
+    int nest,		/* nesting level */
+    BOUNDS *bb,
+    int mode 		/* drawing mode: one of D_READIN, D_NORM, D_RUBBER, D_BB, D_PICK */
+) {
     extern XFORM *global_transform;
     extern XFORM unity_transform;
 
@@ -1898,9 +1889,7 @@ int mode; 	/* drawing mode: one of D_READIN, D_NORM, D_RUBBER, D_BB, D_PICK */
     return(prims);
 }
 
-void startpoly(bb,mode)
-BOUNDS *bb;
-int mode;
+void startpoly(BOUNDS *bb, int mode)
 {
     filled_object = 1;		/* global for managing polygon filling */
     n_poly_points = 0;		/* number of points in filled polygon */
@@ -1909,9 +1898,7 @@ int mode;
     // }
 }
 
-void endpoly(bb,mode) 
-BOUNDS *bb;
-int mode;
+void endpoly(BOUNDS *bb, int mode) 
 {
     clipl(2, 0.0, 0.0, bb, mode);	/* flush pipe */
     filled_object = 0;			/* global for managing polygon filling */
@@ -1924,9 +1911,7 @@ int mode;
     }
 }
 
-void savepoly(x, y)
-int x;
-int y;
+void savepoly(int x, int y)
 {
     /* append points to Xwin Xpoint structure */
     Poly[n_poly_points].x = x;
@@ -1938,8 +1923,7 @@ int y;
 }
 
 
-void clip_setwindow(x1, y1, x2, y2)
-double x1, y1, x2, y2;
+void clip_setwindow(double x1, double y1, double x2, double y2)
 {
     extern double xmin, ymin, xmax, ymax;
     if (x1 < x2) {
@@ -1960,14 +1944,14 @@ double x1, y1, x2, y2;
 }
 
 
-void clipl(init, x, y, bb, mode) 
-int init;
-double x;
-double y;
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
-			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+void clipl(
+    int init,
+    double x,
+    double y,
+    BOUNDS *bb,	       /* bounding box */
+    int mode	       /* D_NORM=regular, D_RUBBER=rubberband, */
+		       /* D_BB=bounding box, D_PICK=pick checking */
+) {
     static int npts=0;
     static double xold=0.0;
     static double yold=0.0;
@@ -2028,14 +2012,14 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     oldinside = inside;
 }
 
-void clipr(init, x, y, bb, mode) 
-int init;
-double x;
-double y;
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
-			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+void clipr(
+    int init,
+    double x,
+    double y,
+    BOUNDS *bb,		   /* bounding box */
+    int mode		   /* D_NORM=regular, D_RUBBER=rubberband, */
+		           /* D_BB=bounding box, D_PICK=pick checking */
+) {
     static int npts=0;
     static double xold=0.0;
     static double yold=0.0;
@@ -2096,14 +2080,14 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     oldinside = inside;
 }
 
-void clipt(init, x, y, bb, mode) 
-int init;
-double x;
-double y;
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
-			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+void clipt(
+    int init,
+    double x,
+    double y,
+    BOUNDS *bb,		   /* bounding box */
+    int mode		   /* D_NORM=regular, D_RUBBER=rubberband, */
+		           /* D_BB=bounding box, D_PICK=pick checking */
+) {
     static int npts=0;
     static double xold=0.0;
     static double yold=0.0;
@@ -2172,14 +2156,14 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     oldinside = inside;
 }
 
-void clipb(init, x, y, bb, mode) 
-int init;
-double x;
-double y;
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
-			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+void clipb(
+    int init,
+    double x,
+    double y,
+    BOUNDS *bb,		   /* bounding box */
+    int mode		   /* D_NORM=regular, D_RUBBER=rubberband, */
+		           /* D_BB=bounding box, D_PICK=pick checking */
+) {
     static int npts=0;
     static double xold=0.0;
     static double yold=0.0;
@@ -2248,13 +2232,13 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
     oldinside = inside;
 }
 
-void emit(init, x, y, bb, mode) 
-int init;
-double x, y;
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
-			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+void emit(
+    int init,
+    double x, double y,
+    BOUNDS *bb,		   /* bounding box */
+    int mode		   /* D_NORM=regular, D_RUBBER=rubberband, */
+		           /* D_BB=bounding box, D_PICK=pick checking */
+) {
     static int nseg=0; 
     static double xxold = 0.0;
     static double yyold = 0.0;
@@ -2339,12 +2323,12 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
 
 static int nseg=0;
 
-void draw(x, y, bb, mode)  /* draw x,y transformed by extern global xf */
-NUM x,y;		   /* location in real coordinate space */
-BOUNDS *bb;		   /* bounding box */
-int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
+void draw(                 /* draw x,y transformed by extern global xf */
+    NUM x, NUM y,	   /* location in real coordinate space */
+    BOUNDS *bb,		   /* bounding box */
+    int mode		   /* D_NORM=regular, D_RUBBER=rubberband, */
 			   /* D_BB=bounding box, D_PICK=pick checking */
-{
+) {
     extern XFORM *global_transform;	/* global for efficiency */
     NUM xx, yy;
     int debug=0;
@@ -2417,10 +2401,15 @@ int mode;		   /* D_NORM=regular, D_RUBBER=rubberband, */
  * a boolean 0,1 goes back on bb->xmax
  */
 
-int pickcheck(x1,y1,x2,y2,x3,y3,eps)
-double x1,y1,x2,y2,x3,y3;
-double eps;
-{
+int pickcheck(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+    double eps
+) {
     double xn,yn, xp,yp, xr,yr;
     double d,s,c;
 
@@ -2446,18 +2435,16 @@ double eps;
     return(0);
 }
 
-void jump(bb, mode) 
-BOUNDS *bb;
-int mode;
+void jump(BOUNDS *bb, int mode) 
 {
     nseg=0;  
     filled_object = 0;		/* automatically close polygon */
 }
 
-void set_layer(lnum, comp)
-int lnum;	/* layer number */
-int comp;	/* component type */
-{
+void set_layer(
+    int lnum,	/* layer number */
+    int comp	/* component type */
+) {
     extern int showon;
 
     if (comp) {
@@ -2493,14 +2480,12 @@ int comp;	/* component type */
     }
 }
 
-double max(a,b) 
-double a, b;
+double max(double a, double b) 
 {
     return(a>=b?a:b);
 }
 
-double min(a,b) 
-double a, b;
+double min(double a, double b) 
 {
     return(a<=b?a:b);
 }
