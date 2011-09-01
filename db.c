@@ -284,13 +284,13 @@ void db_fsck(DB_DEFLIST *dp) {		/* do a logical scan of a deflist */
     DB_DEFLIST *next;
     DB_DEFLIST *nextold;
     DB_DEFLIST *prev;
-    DB_DEFLIST *prevold;
+    // DB_DEFLIST *prevold;
     DB_DEFLIST *final;
     int count=0;
 
     final = dp->prev; 	/* prev of first should point at last */
     nextold=NULL;
-    prevold=NULL;
+    // prevold=NULL;
 
     for (p=dp; p!=(struct db_deflist *)0; p=p->next) {
 	next = p->next;
@@ -311,7 +311,7 @@ void db_fsck(DB_DEFLIST *dp) {		/* do a logical scan of a deflist */
 	count++;
 	pold=p;
 	nextold=next;
-	prevold=prev;
+	// prevold=prev;
     }
 }
 
@@ -2876,18 +2876,18 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
 void do_oval(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
-    NUM x1,y1,x2,y2,x3,y3;
+    // NUM x1,y1,x2,y2,x3,y3;
 
     /* printf("# rendering oval (not implemented)\n"); */
 
-    x1=def->u.o->x1;	/* focii #1 */
-    y1=def->u.o->y1;
+    // x1=def->u.o->x1;	/* focii #1 */
+    // y1=def->u.o->y1;
 
-    x2=def->u.o->x2;	/* focii #2 */
-    y2=def->u.o->y2;
+    // x2=def->u.o->x2;	/* focii #2 */
+    // y2=def->u.o->y2;
 
-    x3=def->u.o->x3;	/* point on curve */
-    y3=def->u.o->y3;
+    // x3=def->u.o->x3;	/* point on curve */
+    // y3=def->u.o->y3;
 
 }
 

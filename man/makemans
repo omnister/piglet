@@ -106,8 +106,8 @@ function dumpman() {
 	print author >> manname
 	print "\nThe PD Piglet homepage is at " webhome "." >> manname
 	close(manname)
-	command="man2html -r " manname ">" tolower(manname) ".html"
-	system(command)
+	# command="man2html -r " manname ">" tolower(manname) ".html"
+	# system(command)
 }
 
 END {

@@ -335,7 +335,7 @@ void parse(LEXER *lp)
     char buf[128];
     char title[128];
     char *path;
-    int retcode;
+    // int retcode;
     COMMAND *command;
     COMMAND * find_command();
     int state = 0;
@@ -395,7 +395,8 @@ void parse(LEXER *lp)
 			    sprintf(buf, "%s> ", command->name);
 			    rl_setprompt(buf);
 
-			    retcode = ((*(command->func)) (lp, "")); /* call command */
+			    // retcode = ((*(command->func)) (lp, "")); 
+			    ((*(command->func)) (lp, "")); /* call command */
 
 			    rl_restoreprompt();
 			}
@@ -762,11 +763,11 @@ int com_display(LEXER *lp, char *arg)	/* turn the display on or off */
 {
     TOKEN token;
     int done=0;
-    char buf[128];
+    // char buf[128];
     char *word;
     DISPLAYSTATE display_state = D_TOGGLE;	
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
@@ -1006,13 +1007,13 @@ int com_files(LEXER *lp, char *arg)		/* purge named files */
 {
     TOKEN token;
     int done=0;
-    char buf[128];
+    // char buf[128];
     char *word;
     int debug=0;
 
     if (debug) printf("in com_files\n");
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
@@ -1043,11 +1044,11 @@ int com_fsize(LEXER *lp, char *arg)	/* Set the default font size for text and no
     TOKEN token;
     int done=0;
     int fsize;
-    char buf[128];
+    // char buf[128];
     char *word;
     int nnums=0;
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
@@ -1105,7 +1106,7 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
 {
     TOKEN token;
     int done=0;
-    char buf[128];
+    // char buf[128];
     char *word;
     int gridcolor=0;
     GRIDSTATE grid_state = G_TOGGLE;	
@@ -1117,7 +1118,7 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
     double UNITS=100.0;
     double tmp;
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case IDENT: 	/* identifier */
@@ -1439,11 +1440,11 @@ int com_layer(LEXER *lp, char *arg)		/* set a default layer number */
     TOKEN token;
     int done=0;
     int layer;
-    char buf[128];
+    // char buf[128];
     char *word;
     int nnums=0;
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
@@ -1495,11 +1496,11 @@ int com_level(LEXER *lp, char *arg)	/* set the logical level of the current devi
     TOKEN token;
     int done=0;
     int level;
-    char buf[128];
+    // char buf[128];
     char *word;
     int nnums=0;
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */
@@ -2001,11 +2002,11 @@ int com_tslant(LEXER *lp, char *arg)	/* set the default font slant for italic te
     TOKEN token;
     int done=0;
     int slant;
-    char buf[128];
+    // char buf[128];
     char *word;
     int nnums=0;
 
-    buf[0]='\0';
+    // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case NUMBER: 	/* number */

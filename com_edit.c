@@ -35,7 +35,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     DB_TAB *old_rep = NULL;  
     double x1, y1;
     DB_DEFLIST *p_best;
-    double xmin, ymin, xmax, ymax;
+    // double xmin, ymin, xmax, ymax;
     int code;
 
     enum {START,NUM1,DOIT,END} state = START;
@@ -120,10 +120,10 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		    if ((p_best=db_ident(currep, x1,y1,1, 0, INST, 0)) != NULL) {
 			db_notate(p_best);	    /* print out id information */
 			db_highlight(p_best);
-			xmin=p_best->xmin;
-			xmax=p_best->xmax;
-			ymin=p_best->ymin;
-			ymax=p_best->ymax;
+			// xmin=p_best->xmin;
+			// xmax=p_best->xmax;
+			// ymin=p_best->ymin;
+			// ymax=p_best->ymax;
 			printf("%s\n", p_best->u.i->name);
 			strncpy(name, p_best->u.i->name, 128);
 			state = DOIT; 

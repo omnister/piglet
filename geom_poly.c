@@ -192,7 +192,7 @@ int add_poly(LEXER *lp, int *layer)
 
 void draw_poly(double x2, double y2, int count) 
 {
-	static double x1old, x2old, y1old, y2old;
+	// static double x1old, x2old, y1old, y2old;
 	int debug=0;
 	BOUNDS bb;
 	static int called = 0;
@@ -238,10 +238,10 @@ void draw_poly(double x2, double y2, int count)
 	}
 
 	/* save old values */
-	x1old=x1;
-	y1old=y1;
-	x2old=x2;
-	y2old=y2;
+	// x1old=x1;
+	// y1old=y1;
+	// x2old=x2;
+	// y2old=y2;
 	jump(&bb, D_RUBBER);
 }
 

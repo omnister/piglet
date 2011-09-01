@@ -713,7 +713,7 @@ SELPNT *db_ident_region2(
     DB_DEFLIST *p;
     SELPNT *selpnt=NULL;	/* gets returned */
     /* int debug=0; */
-    BOUNDS childbb;
+    // BOUNDS childbb;
     double tmp;
     int layer;
     int bad_comp;
@@ -733,7 +733,7 @@ SELPNT *db_ident_region2(
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
-	childbb.init=0;
+	// childbb.init=0;
 
 	/* screen components by layers and bounding boxes */
 
@@ -985,7 +985,7 @@ STACK *db_ident_region(
     DB_DEFLIST *p;
     STACK *stack=NULL;	/* gets returned */
     /* int debug=0; */
-    BOUNDS childbb;
+    // BOUNDS childbb;
     double tmp;
     int layer;
     int bad_comp;
@@ -999,7 +999,7 @@ STACK *db_ident_region(
 
     for (p=cell->dbhead; p!=(DB_DEFLIST *)0; p=p->next) {
 
-	childbb.init=0;
+	// childbb.init=0;
 
 	/* screen components by layers and bounding boxes */
 

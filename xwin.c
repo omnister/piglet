@@ -622,7 +622,7 @@ char **s;
 
     static char buf[BUF_SIZE];
     static char pickbuf[BUF_SIZE];
-    static char tmp[BUF_SIZE];
+    // static char tmp[BUF_SIZE];
     static double xold,yold;
     unsigned long all = 0xffffffff;
 
@@ -847,8 +847,8 @@ char **s;
 		*s = keybuf;
 	    } else {
 		if (compose == NULL) {
-		    tmp[0]=(char) ((char)keysym - 64);
-		    tmp[1]='\0';
+		    // tmp[0]=(char) ((char)keysym - 64);
+		    // tmp[1]='\0';
 		    // FIXME: F11 started printing garbage (-94 decimal) when shift
 		    // key was pressed.  Traced it to this next statement...
 		    // *s = tmp;
@@ -1305,11 +1305,12 @@ void xwin_draw_point(double x,double y)
 
 void xwin_draw_origin(double x,double y) 
 {
-    double delta, xx, yy;
+    // double xx, yy;
+    double delta;
     extern unsigned int g_width, g_height;
 
-    xx = x-fmod(x,1.0/pow(10.0,RES));
-    yy = y-fmod(y,1.0/pow(10.0,RES));
+    // xx = x-fmod(x,1.0/pow(10.0,RES));
+    // yy = y-fmod(y,1.0/pow(10.0,RES));
 
     if (g_width > g_height) {
 	delta = (double) dpy_width/100;
@@ -1694,7 +1695,7 @@ static char *visual_class[] = {
 int init_colors() 
 {
     int default_depth;
-    Visual *default_visual;
+    // Visual *default_visual;
     static char *name[] = {
 	"white",        /* FIXME: eventually should be black */
 	"red",
@@ -1720,7 +1721,7 @@ int init_colors()
      * for StaticGray and GrayScale */
 
     default_depth = DefaultDepth(dpy, scr);
-    default_visual = DefaultVisual(dpy, scr);
+    // default_visual = DefaultVisual(dpy, scr);
     default_cmap = DefaultColormap(dpy, scr);
     if (default_depth == 1) {
 	/* Must be StaticGray, use black and white */
@@ -1970,7 +1971,7 @@ int dump_window(
 	   B = B>>bshift;
 	   buf[2] = (unsigned char) B;
 
-	   err=fwrite(buf, 3, 1, fd);
+	   err+=fwrite(buf, 3, 1, fd);
 	}
     }
     printf("\n");
@@ -1978,7 +1979,7 @@ int dump_window(
 
     return(pclose(fd));
     XDestroyImage(xi);
-    return(1);
+    return(err);
 }
 
 int xwin_dump_graphics(char *cmd) {

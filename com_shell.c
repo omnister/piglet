@@ -58,12 +58,10 @@ int com_echo(LEXER *lp, char *arg)	/* echo variables */
 {
     char *word;	
     TOKEN token;
-    int i;
     int debug=0;
 
     if (debug) printf("    com_echo\n");
 
-    i=0;
     while((token=token_get(lp, &word)) != EOF && token != EOL) {
     	printf("%s ",word);
     }

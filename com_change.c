@@ -84,7 +84,7 @@ int com_change(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
-	    if (token == OPT ) {
+	    if (token == (TOKEN) OPT ) {
 		token_get(lp,&word); /* ignore for now */
 		printf("CHA: ignoring option, please select component first\n");
 		state = START;
@@ -193,7 +193,7 @@ int com_change(LEXER *lp, char *arg)
 	    }
 	    break;
 	case OPT:
-	    if (token == OPT ) {
+	    if (token == (TOKEN) OPT ) {
 		token_get(lp, &word); 
 
 		new_layer=0;

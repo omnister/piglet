@@ -21,11 +21,10 @@ int add_arc(LEXER *lp, int *layer)
 
     int debug=0;
     int done=0;
-    int nsegs;
     TOKEN token;
     char *word;
     double x3, y3;
-    static double xold, yold;
+    // static double xold, yold;
 
     if (debug) {printf("layer %d\n",*layer);}
 
@@ -43,7 +42,6 @@ int add_arc(LEXER *lp, int *layer)
 	switch(state) {	
 	    case START:		/* get option or first xy pair */
 		db_checkpoint(lp);
-		nsegs=0;
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(lp,&word); 
@@ -63,7 +61,7 @@ int add_arc(LEXER *lp, int *layer)
 		    token_err("ARC", lp, "expected OPT or COORD", token);
 		    state = END; 
 		} 
-		xold=yold=0.0;
+		// xold=yold=0.0;
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
