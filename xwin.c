@@ -1280,10 +1280,10 @@ void xwin_draw_point(double x,double y)
     extern unsigned int g_width, g_height;
     char buf[BUF_SIZE];
 
-    xx = x-fmod(x,1.0/pow(10.0,RES));
-    yy = y-fmod(y,1.0/pow(10.0,RES));
+    // xx = x-fmod(x,1.0/pow(10.0,RES));
+    // yy = y-fmod(y,1.0/pow(10.0,RES));
 
-    sprintf(buf,"%g,%g", xx, yy);
+    // sprintf(buf,"%g,%g", xx, yy);
 
     if (g_width > g_height) {
 	delta = (double) dpy_width/100;
@@ -1298,7 +1298,7 @@ void xwin_draw_point(double x,double y)
     XDrawLine(dpy, win, gcx, 
 	    (int)(x-delta), (int)y, (int)(x+delta), (int)(y)); 
 
-    XDrawString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
+    // XDrawString(dpy,win,gcx, x+10, y-10, buf, strlen(buf));
 
     XFlush(dpy);
 }

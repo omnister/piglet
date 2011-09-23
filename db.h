@@ -21,7 +21,7 @@
 
 #define ARC_OPTS  "WR"
 #define CIRC_OPTS "WRY"
-#define LINE_OPTS "W"
+#define LINE_OPTS "WH"
 #define OVAL_OPTS "WR"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
@@ -208,6 +208,7 @@ typedef struct db_tab {
 
 typedef struct opt_list {
     double font_size;       /* :F<font_size> */
+    double height;
     int mirror;             /* :M<x,xy,y>    */
     int font_num;           /* :N<font_number> */
     int justification;      /* :J<justification> */

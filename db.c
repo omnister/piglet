@@ -2118,6 +2118,7 @@ OPTS *opt_copy(OPTS *opts)
     /* set defaults */
     tmp->font_size = opts->font_size;
     tmp->font_num = opts->font_num;
+    tmp->height = opts->height;
     tmp->justification = opts->justification;
     tmp->stepflag = opts->stepflag;
     tmp->rows = opts->rows;
@@ -2137,6 +2138,7 @@ OPTS *opt_copy(OPTS *opts)
 void opt_set_defaults(OPTS *opts)
 {
     opts->font_size = 10.0;       /* :F<font_size> */
+    opts->height = 0.0;       	  /* :H<substrate_height> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
     opts->font_num=0;		  /* :N<font_num> */
     opts->justification=0;	  /* :J<justification> */
@@ -2188,6 +2190,11 @@ char *validopts;
 	    case 'J':
 		if (popt->justification != 0) {
 		    fprintf(fp, ":J%d ", popt->justification);
+		}
+	    	break;
+	    case 'H':
+		if (popt->height != 0.0) {
+		    fprintf(fp, ":H%g ", popt->height);
 		}
 	    	break;
 	    case 'F':
@@ -2636,8 +2643,14 @@ int pop(double *x, double *y) {
    }
 }
 
-/* --------------------------------------------------------- */
+// given two vectors dx,dy and dxn,dyn
+// return the relative angle
 
+int rightturn(double dx,double dy,double dxn,double dyn) {
+   return((dy*dxn - dx*dyn)>0);
+}
+
+/* --------------------------------------------------------- */
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
 // int mode; 	/* drawing mode */
 
@@ -2650,10 +2663,27 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
     double xx, yy;
     double k,dxn,dyn;
     double width=0.0;
+    double height=0.0;
+    double d,x,aa;
     int segment;
     int debug=0;	/* set to 1 for copious debug output */
 
     width = def->u.l->opts->width;
+    height = def->u.l->opts->height;
+
+    // compute mitre parameters
+    if (height > 0.0) { 
+	d = width*sqrt(2.0);
+	x = d*(0.52 + 0.65*exp(-1.35*(width/height)));
+	// this aa factor differs from the
+	// paper for ease of implementation.  aa is
+	// defined from the natural end of the line
+	// rather than the inner intersection.  the
+	// final results are identical.
+	aa = (x-d/2.0)*sqrt(2.0)+(width/2.0);
+	if (debug) printf("aa=%g\n",aa);
+    }
+
     dx = dy = dxn  = dyn = 0.0;
 
     /* there are four cases for rendering lines with miters 
@@ -2696,7 +2726,6 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
     /* if (mode==D_RUBBER) { xwin_draw_circle(x2,y2); } */
 
-
     segment = 0;
     if (temp!=NULL) {
 	do {
@@ -2738,51 +2767,31 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 		    dyn *= a;
 		}
 		
+		//------------------------------------------------
 		if ( temp->next == NULL && segment == 0) {
+		    // just a square cap, only two points
 
 		    if (debug) printf("# in 4\n"); 
 		    xa = x1+dy*width; ya = y1-dx*width;
 		    xb = x2+dy*width; yb = y2-dx*width;
 		    xc = x2-dy*width; yc = y2+dx*width;
 		    xd = x1-dy*width; yd = y1+dx*width;
+		    draw(xd, yd, bb, mode);
+		    draw(xc, yc, bb, mode);
+		    push(xa, ya);
+		    push(xb, yb);
 
-		} else if (temp->next != NULL && segment == 0) {  
+		//------------------------------------------------
+		} else if (temp->next != NULL) {  
+		    // mid span: do a mitre or intersection
 
-		    if (debug) printf("# in 5\n"); 
-		    xa = x1+dy*width; ya = y1-dx*width;
-		    xd = x1-dy*width; yd = y1+dx*width;
-
-		    if (fabs(dx+dxn) < EPS) {
-			k = (dx - dxn)/(dyn + dy); 
-			if (debug) printf("# in 6, k=%g\n",k);
-		    } else {
-			k = (dyn - dy)/(dx + dxn);
-			if (debug) printf("# in 7, k=%g\n",k);
+		    if (segment == 0) {
+			// establish starting coordinates
+			xa = x1+dy*width; ya = y1-dx*width;
+			xd = x1-dy*width; yd = y1+dx*width;
+			draw(xd, yd, bb, mode);
+			push(xa, ya);
 		    }
-
-		    /* check for co-linearity of segments */
-		    if ((fabs(dx-dxn)<EPS && fabs(dy-dyn)<EPS) ||
-			(fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
-			if (debug) printf("# in 8\n"); 
-			xb = x2+dy*width; yb = y2-dx*width;
-			xc = x2-dy*width; yc = y2+dx*width;
-		    } else { 
-			if (debug) printf("# in 19\n");
-			xb = x2+dy*width + k*dx*width;
-			yb = y2-dx*width + k*dy*width;
-			xc = x2-dy*width - k*dx*width; 
-			yc = y2+dx*width - k*dy*width;
-		    }
-
-		} else if ((temp->next == NULL && segment >= 0) ||
-			  ( temp->next->coord.x == x2 && 
-			    temp->next->coord.y == y2)) {
-
-		    if (debug) printf("# in 10\n");
-		    xb = x2+dy*width; yb = y2-dx*width;
-		    xc = x2-dy*width; yc = y2+dx*width;
-
-		} else if (temp->next != NULL && segment >= 0) {  
 
 		    if (debug) printf("# in 11\n");
 		    if (fabs(dx+dxn) < EPS) {
@@ -2806,39 +2815,62 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 			xc = x2-dy*width - k*dx*width; 
 			yc = y2+dx*width - k*dy*width;
 		    }
-		}
 
+		    // RCW2
+		    if (height != 0.0) {
+		        if (rightturn(dx,dy,dxn,dyn)) {
+			    xc = x2-dy*width-aa*dx*2.0;
+			    yc = y2+dx*width-aa*dy*2.0;
+			    draw(xc, yc, bb, mode);
+			    xc = x2-dyn*width+aa*dxn*2.0;
+			    yc = y2+dxn*width+aa*dyn*2.0;
+			    draw(xc, yc, bb, mode);
+			    push(xb, yb);
+			} else {
+			    xb = x2+dy*width-aa*dx*2.0;
+			    yb = y2-dx*width-aa*dy*2.0;
+			    push(xb, yb);
+			    xb = x2+dyn*width+aa*dxn*2.0;
+			    yb = y2-dxn*width+aa*dyn*2.0;
+			    push(xb, yb);
+			    draw(xc, yc, bb, mode);
+			}
+		    } else {
+			draw(xc, yc, bb, mode);
+			push(xb, yb);
+			// draw(xd, yd, bb, mode);
+			// push(xa, ya);
+		    }
+
+		//------------------------------------------------
+		} else if ((temp->next == NULL && segment >= 0) ||
+			  ( temp->next->coord.x == x2 && 
+			    temp->next->coord.y == y2)) {
+		    // end cap on line with more than one segment
+
+		    if (debug) printf("# in 10\n");
+		    xb = x2+dy*width; yb = y2-dx*width;
+		    xc = x2-dy*width; yc = y2+dx*width;
+		    // draw(xd, yd, bb, mode);
+		    draw(xc, yc, bb, mode);
+		    // push(xa, ya);
+		    push(xb, yb);
+
+		}
+		//------------------------------------------------
 	    /* 
-	     *
-	     *
 	     *	    Each line segment with width:
 	     *
 	     *	    xy(a)---------xy(b)
-	     *      |                |
-	     *      |                |
 	     *	    xy(d)---------xy(c)
 	     *
-	     *      We immmediately draw() (xa,ya) (xb,yb)
-	     *      and push (xd,yd) (xc,yc) on a stack.
+	     *      We immmediately draw() (xd,yd) (xc,yc)
+	     *      and push (xa,ya) (xb,yb) on a stack.
 	     *
 	     *      When finished with all segments, we pop
 	     *      and draw() all the points on the stack
-	     *      and finish the polygonal line with (xa,ya)
-	     *
-	     *
+	     *      and finish the polygonal line with (xd,yd)
 	     */
-
-		/*
-		draw(xa, ya, bb, mode);
-		draw(xb, yb, bb, mode);
-		push(xd, yd);
-		push(xc, yc);
-		*/
-
-		draw(xd, yd, bb, mode);
-		draw(xc, yc, bb, mode);
-		push(xa, ya);
-		push(xb, yb);
 
 		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
 		/* check for co-linear reversal of path */

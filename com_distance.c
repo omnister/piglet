@@ -125,13 +125,28 @@ void draw_dist(double x2, double y2, int count)
 	static char dxbufold[MAXDBUF];
 	static char dybufold[MAXDBUF];
 	static char dxybufold[MAXDBUF];
+	double dxval,dyval,dxyval;
 	BOUNDS bb;
 
 	bb.init=0;
+       
+        dxbuf[0]='\0';
+        dybuf[0]='\0';
+        dxybuf[0]='\0';
 
-	snprintf(dxbuf,  MAXDBUF, "%g", grid(fabs(x1-x2)));
-	snprintf(dybuf,  MAXDBUF, "%g", grid(fabs(yy1-y2))),
-	snprintf(dxybuf, MAXDBUF, "%g", grid(sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0))));
+        dxval=grid(fabs(x1-x2));
+	dyval=grid(fabs(yy1-y2));
+	dxyval=grid(sqrt(pow((x1-x2),2.0)+pow((yy1-y2),2.0)));
+
+	if (dxval!=0.0 && dxval != dxyval) {
+	    snprintf(dxbuf,  MAXDBUF, "%g", dxval);
+	} 
+	if (dyval!=0 && dyval != dxyval) {
+	    snprintf(dybuf,  MAXDBUF, "%g", dyval);
+	} 
+	if (dxyval!=0) {
+	    snprintf(dxybuf,  MAXDBUF, "%g", dxyval);
+	} 
 
 	if (count == 0) {		/* first call */
 	    jump(&bb, D_RUBBER); /* draw new shape */

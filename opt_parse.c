@@ -61,6 +61,17 @@ int opt_parse(
 		}
 		popt->font_size = optval;
 		break;
+	    case 'H': 		/* :H(substrate_height) */
+		if(sscanf(optstring+2, "%lf", &optval) != 1) {
+		    weprintf("invalid option argument: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		if (optval < 0.0 ) {
+		    weprintf("height must be positive: %s\n", optstring+2); 
+		    return(ERR);
+		}
+		popt->height = optval;
+		break;
 	    case 'J': 		/* :J(justification) */
 		/* note: the order of these tests is important */
 		if (strncasecmp(optstring+2,"SW",2) ==  0) {

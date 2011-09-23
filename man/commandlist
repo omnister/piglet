@@ -509,7 +509,7 @@ be <col> number of rows spaced along the line between
 
 N: ADD_LINE
 D: Add a line to the current device
-U: ADD L<layer> [.<cname>] [@<sname>] [:W<width>] <xy1> <xy2> [<xy3> ...]  EOC
+U: ADD L<layer> [.<cname>] [@<sname>] [:W<width>] [:H height] <xy1> <xy2> [<xy3> ...]  EOC
 S: good
 T: {
 Add a line.  Lines are added with "ADD L<layer_number>".  Coordinates
@@ -517,6 +517,24 @@ are added with the left-mouse button.  Double-clicking on the same point
 will terminate the current line while still allowing new lines to be
 created.  Right-clicking or typing ";" will terminate both the line and
 the command. 
+
+Lines by default are zero width.  If the :W<width> option is given, then
+the line will be drawn with the specified width.  The coordinates specify
+the center of the line and the body of the line extends +/-(width/2) on
+either side of the centerline.
+
+If the :H<height> option is specified, then the corners of the line are
+mitered to produce a good approximation to a constant impedance.  The
+miter geometry calculation is described in [1],[2] and depends only on
+width and height of the line.  The miter geometry is independent of the
+dielectric constant of the substrate in the range of
+2.5<=(epsilon)<=25.0.  The generated lines are most accurate in the
+range of (width/height)>=0.25.  If it is desired to eliminate mitering,
+the <height> can be set to 0.0;
+
+The reference defines mitres only for exact 90 degree turns, but the
+algorithm implemented here produces interpolated miters for any angle,
+and which match the recommended miters for 0,90 degree bends.
 
 The LOCK command may be used to constrain line placement.  When
 extending a line using the mouse, the mouse coordinate is modified such
@@ -538,7 +556,20 @@ component name
 signal name
 .TP
 .I <width>
-width of line (default=0) (FIXME: not currently subject to resolution setting>
+width of line (default=0) 
+.I <height>
+height of line over ground plane (default=0)
+
+.SS REFERENCES
+.I [1] 
+R.J.P. Douville and D.S. James, Experimental Characterization of
+Microstrip Bends and Their Frequency Dependent Behavior, 1973 IEEE Conference
+Digest, October 1973, pp. 24-25.
+
+.I [2]
+R.J.P. Douville and D.S. James, Experimental Study of Symmetric Microstrip Bends
+and Their Compensation, IEEE Transactions on Microwave Theory and Techniques,
+Vol. MTT-26, March 1978, pp. 175-181.
 }
 
 N: ADD_NOTE
