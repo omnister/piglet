@@ -26,6 +26,7 @@ SET PIG_GRID_COLOR "3";               $$ grid color
 SET PIG_SHOW_DEFAULT "#E";    	      $$ make cells editable by default
 SET PIG_FONT_SLANT "0.0";             $$ default for TSLANT command
 SET PIG_FONT_SIZE "10.0";             $$ default for FSIZE command
+SET PIG_PAPER_SIZE "8.5x11";	      $$ default paper size for PLOT
 
 DEF wi "WIN :X.5;"		$$ window-in macro
 DEF wo "WIN :X2;"      		$$ window-out macro

@@ -16,7 +16,7 @@ OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
    com_point.o com_show.o com_area.o com_wrap.o com_smash.o \
    readmenu.o com_edit.o com_stretch.o com_undo.o postscript.o \
    lock.o path.o stack.o selpnt.o license.o stipple.o com_purge.o \
-   ev.o com_shell.o expr.o
+   ev.o com_shell.o expr.o paper.o
    
 
 TARS=QUICKSTART AAA_README COPYING \
@@ -25,13 +25,13 @@ com_copy.c com_move.c  com_point.c com_show.c com_window.c com_purge.c \
 coords.c db.c db.h com_wrap.c com_smash.c draw.c eprintf.c \
 eprintf.h eventnames.h equate.c equate.h geom_circle.c geom_inst.c \
 geom_line.c geom_arc.c  geom_poly.c geom_rect.c geom_text.c \
-lex.c Makefile PROCDATA.P MENUDATA_V NOTEDATA.F \
+paper.c lex.c Makefile PROCDATA.P MENUDATA_V NOTEDATA.F \
 opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c ev.h com_shell.c expr.c expr.h pigrc version.h .git gerbsplit
+ev.c ev.h com_shell.c expr.c expr.h pigrc version.h .git gerbsplit 
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \
 cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I

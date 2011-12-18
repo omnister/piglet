@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "stack.h"
+#include "paper.h"
 
 #define RES 5		/* number of decimals to allow */
 

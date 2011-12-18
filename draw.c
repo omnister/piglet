@@ -1418,7 +1418,8 @@ int db_list(DB_TAB *cell)
     return(1);
 }
 
-int db_plot(char *name, OMODE plottype) {
+// dx,dy page size in inches
+int db_plot(char *name, OMODE plottype, double dx, double dy) {
     BOUNDS bb;
     char buf[MAXFILENAME];
     double x1, y1, x2, y2;
@@ -1485,9 +1486,11 @@ int db_plot(char *name, OMODE plottype) {
     ps_set_file(PLOT_FD);
 
     /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
-    ps_preamble(currep->name, "piglet version 0.95h", 8.5, 11.0, 
-        0.0, 0.0, (double) g_width, (double) g_height);
+    // ps_preamble(currep->name, "piglet version 0.95h", 8.5, 11.0, 
     /* x1, y2, x2, y1); */
+
+    ps_preamble(currep->name, "piglet version 0.95h", dx, dy, 
+        0.0, 0.0, (double) g_width, (double) g_height);
 
     db_render(currep, 0, &bb, D_NORM);      /* dump plot */
 
@@ -1623,6 +1626,14 @@ void trace(DB_DEFLIST *p, int level) {
     }
 }
 
+// ---------------------------------------------------------
+// we generate a sequence number with each top level redraw.  
+// after we render any cell and have updated it's bounding box
+// we tag it with the current sequence number.  Later on, in 
+// the hierarchy, we don't rerender the cell again if it is
+// below the nesting layer.  We just reuse the cached bounding
+// box instead
+
 static int seq=0;
 int seqnum() {		// return current sequence number
    return (seq);
@@ -1632,6 +1643,7 @@ int nextseq() {		// generate a new sequence number
    seq++;
    return (seq);
 }
+// ---------------------------------------------------------
 
 int db_render(
     DB_TAB *cell,
@@ -1698,11 +1710,15 @@ int db_render(
 	mybb.init++;
     }
 
-    // implement BACK command
+    // implement BACKground command
 
     if (nest == 0 && currep != NULL &&  currep->background != NULL) {
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
+
+    // don't rerender anything that's not visible if it was already
+    // rendered for this particular update sequence number.  Just trust
+    // the cached bounding box
 
     if ((cell->seqflag != seqnum()) || (nest <= nestlevel)) {
 	for (p=cell->dbhead; p!=(DB_DEFLIST *)0 && !aborted; p=p->next) {

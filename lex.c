@@ -127,7 +127,7 @@ COMMAND commands[] =
     {"MOVE", com_move, "move a component from one location to another",
     	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
     {"PLOT", com_plot, "make a postscript plot of the current device",
-    	"PLO <EOC>"},
+    	"PLO :F:T<type>:P<pagesize><EOC>"},
     {"POINT", com_point, "display the specified point on the screen",
     	"POI {<xy1>...} <EOC>" },
     {"PROCESS", com_process, "enter the PROCESS subsystem",
@@ -224,6 +224,7 @@ int main(int argc, char **argv)
     EVset("PIG_SPLASH_REP", "piglogo");		/* startup logo file */
     EVset("PIG_FONT_SLANT", "0.0");		/* default for TSLANT command */
     EVset("PIG_FONT_SIZE", "10.0");		/* default for FSIZE command */
+    EVset("PIG_PAPER_SIZE", "8.5x11");		/* postscript papersize */
     EVset("PIG_RC", "pigrc");			/* default piglet startup file */
     EVset("PIG_X11MENU_FONT", "10x20");		/* default X11 menu font */
 
@@ -1685,10 +1686,14 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
     int done=0;
     char *word;
     char name[128];
+    char pagesize[128];
     int debug=0;
     int fit=0;
     int plottype=0;
     extern void do_win();                /* found in com_window */
+    double px=8.0;
+    double py=11.0;
+    double tx, ty;
 
     if (debug) printf("    com_plot\n");
 
@@ -1697,14 +1702,20 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 	return(2);
     }
 
-    strcpy(name,currep->name);		// default is to name plot after current cell
+    strcpy(name,currep->name);		// default is name plot after curcell
 
     // some possible options
     // :F to do a fit before plotting, otherwise only plot current window view
-    // :P<papersize> A,B,C,L=letter,widthxheight
+    // :P<papersize> A,B,C,L,letter,widthxheight
 
     plottype=POSTSCRIPT;
     ps_set_outputtype(POSTSCRIPT);	// default is postscript
+    if (EVget("PIG_PAPER_SIZE") != NULL) {
+       if(pnametosize(EVget("PIG_PAPERSIZE"), &tx, &ty)==1) {
+          px = tx;
+          py = ty;
+       }
+    } 
 
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	if (debug) printf("COM_PLOT: got %s: %s\n", tok2str(token), word);
@@ -1716,16 +1727,25 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
 		    fit++;
-		} else if (strncasecmp(word, ":PA", 3) == 0) { /* autoplot */
+		} else if (strncasecmp(word, ":P", 2) == 0) { /* pagesize */
+		    strcpy(pagesize, word+2);
+		    if (pnametosize(pagesize, &tx, &ty)==1) {
+		       px = tx;
+		       py = ty;
+		       printf("got pagesize: %s, %g %g\n", pagesize, px, py);
+		    } else {
+		       printf("bad pagesize: %s, using 8.5 x 11.0\n", pagesize);
+		    }
+		} else if (strncasecmp(word, ":TA", 3) == 0) { /* autoplot */
 		    plottype=AUTOPLOT;
 		    ps_set_outputtype(AUTOPLOT);
-		} else if (strncasecmp(word, ":PP", 3) == 0) { /* postscript (default) */
+		} else if (strncasecmp(word, ":TP", 3) == 0) { /* postscript */
 		    plottype=POSTSCRIPT;
 		    ps_set_outputtype(POSTSCRIPT);
-		} else if (strncasecmp(word, ":PD", 3) == 0) { /* postscript (default) */
+		} else if (strncasecmp(word, ":TD", 3) == 0) { /* dxf */
 		    plottype=DXF;
 		    ps_set_outputtype(DXF);
-		} else if (strncasecmp(word, ":PG", 3) == 0) { /* gerber */
+		} else if (strncasecmp(word, ":TG", 3) == 0) { /* gerber */
 		    fit++;
 		    plottype=GERBER;
 		    ps_set_outputtype(GERBER);
@@ -1748,7 +1768,7 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 		   com_window(lp, NULL);
 		}
 
-    		db_plot(name,plottype);
+    		db_plot(name,plottype,px,py);
 
 		if (fit) {			/* revert to old window params */
 		   token_unget(lp, EOC, ";");

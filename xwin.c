@@ -1276,9 +1276,10 @@ void xwin_draw_text(double x, double y, char *s)
 
 void xwin_draw_point(double x,double y) 
 {
-    double delta, xx, yy;
     extern unsigned int g_width, g_height;
-    char buf[BUF_SIZE];
+    double delta;
+    // double xx, yy;
+    // char buf[BUF_SIZE];
 
     // xx = x-fmod(x,1.0/pow(10.0,RES));
     // yy = y-fmod(y,1.0/pow(10.0,RES));

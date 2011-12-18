@@ -2650,6 +2650,7 @@ int rightturn(double dx,double dy,double dxn,double dyn) {
    return((dy*dxn - dx*dyn)>0);
 }
 
+
 /* --------------------------------------------------------- */
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
 // int mode; 	/* drawing mode */
@@ -2660,10 +2661,12 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
     double x1,y1,x2,y2,x3,y3,dx,dy,a;
     double xa,ya,xb,yb,xc,yc,xd,yd;
+    double l12, l23;
     double xx, yy;
     double k,dxn,dyn;
     double width=0.0;
     double height=0.0;
+    double ratio;
     double d,x,aa;
     int segment;
     int debug=0;	/* set to 1 for copious debug output */
@@ -2674,7 +2677,14 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
     // compute mitre parameters
     if (height > 0.0) { 
 	d = width*sqrt(2.0);
-	x = d*(0.52 + 0.65*exp(-1.35*(width/height)));
+
+	// prevent overcutting for absurd ratios
+	ratio = (width/height);
+	if (ratio < 0.25) {
+	   ratio=0.25;
+	}
+
+	x = d*(0.52 + 0.65*exp(-1.35*(ratio)));
 	// this aa factor differs from the
 	// paper for ease of implementation.  aa is
 	// defined from the natural end of the line
@@ -2738,12 +2748,14 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 		if (segment == 0) {
 		    dx = x2-x1; 
 		    dy = y2-y1;
-		    a = 1.0/(2.0*sqrt(dx*dx+dy*dy));
+		    l12 = sqrt(dx*dx+dy*dy);
+		    a = 1.0/(2.0*l12);
 		    if (debug) printf("# in 1, a=%g\n",a);
 		    dx *= a; 
 		    dy *= a;
 		} else {
 		    if (debug) printf("# in 2\n"); 
+		    l12=l23;
 		    dx=dxn;
 		    dy=dyn;
 		}
@@ -2757,9 +2769,11 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 		    /* prevent a singularity if the last */
 		    /* rubber band segment has zero length */
 		    if (dxn==0 && dyn==0) {
-			a = 0;
+			l23=0.0;
+			a = 0.0;
 		    } else {
-			a = 1.0/(2.0*sqrt(dxn*dxn+dyn*dyn));
+			l23=sqrt(dxn*dxn+dyn*dyn);
+			a = 1.0/(2.0*l23);
 		    }
 
 		    if (debug) printf("# in 3, a=%g\n",a); 
@@ -2819,19 +2833,19 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 		    // RCW2
 		    if (height != 0.0) {
 		        if (rightturn(dx,dy,dxn,dyn)) {
-			    xc = x2-dy*width-aa*dx*2.0;
-			    yc = y2+dx*width-aa*dy*2.0;
+			    xc = x2-dy*width-min(aa,l12)*dx*2.0;
+			    yc = y2+dx*width-min(aa,l12)*dy*2.0;
 			    draw(xc, yc, bb, mode);
-			    xc = x2-dyn*width+aa*dxn*2.0;
-			    yc = y2+dxn*width+aa*dyn*2.0;
+			    xc = x2-dyn*width+min(aa,l23)*dxn*2.0;
+			    yc = y2+dxn*width+min(aa,l23)*dyn*2.0;
 			    draw(xc, yc, bb, mode);
 			    push(xb, yb);
 			} else {
-			    xb = x2+dy*width-aa*dx*2.0;
-			    yb = y2-dx*width-aa*dy*2.0;
+			    xb = x2+dy*width-min(aa,l23)*dx*2.0;
+			    yb = y2-dx*width-min(aa,l23)*dy*2.0;
 			    push(xb, yb);
-			    xb = x2+dyn*width+aa*dxn*2.0;
-			    yb = y2-dxn*width+aa*dyn*2.0;
+			    xb = x2+dyn*width+min(aa,l23)*dxn*2.0;
+			    yb = y2-dxn*width+min(aa,l23)*dyn*2.0;
 			    push(xb, yb);
 			    draw(xc, yc, bb, mode);
 			}
@@ -2874,7 +2888,7 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
 		/* printf("#dx=%g dy=%g dxn=%g dyn=%g\n",dx,dy,dxn,dyn); */
 		/* check for co-linear reversal of path */
-		if ((fabs(dx+dxn)<EPS && fabs(dy+dyn)<EPS)) {
+		if ((fabs(dx+dxn)<0.0 && fabs(dy+dyn)<0.0)) {
 		    if (debug) printf("# in 20\n"); 
 		    xa = xc; ya = yc;
 		    xd = xb; yd = yb;

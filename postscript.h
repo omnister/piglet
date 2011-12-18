@@ -17,6 +17,7 @@ typedef enum {AUTOPLOT, POSTSCRIPT, GERBER, DXF} OMODE;
 extern void ps_set_file(FILE *fp);		// set file descriptor for output
 extern void ps_set_outputtype(OMODE mode);	// 0=postscript; 1=gerber
 
+extern void ps_set_pagesize(double x, double y);  // set pagesize
 extern void ps_preamble();			// output standard header
 
 extern void ps_set_layer();			// set layer 
