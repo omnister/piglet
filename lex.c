@@ -1710,10 +1710,11 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 
     plottype=POSTSCRIPT;
     ps_set_outputtype(POSTSCRIPT);	// default is postscript
-    if (EVget("PIG_PAPER_SIZE") != NULL) {
-       if(pnametosize(EVget("PIG_PAPERSIZE"), &tx, &ty)==1) {
-          px = tx;
-          py = ty;
+
+    if ((word=EVget("PIG_PAPER_SIZE")) != NULL) {
+       if(pnametosize(word, &tx, &ty)==1) {
+           px = tx;
+           py = ty;
        }
     } 
 
