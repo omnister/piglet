@@ -137,7 +137,7 @@ int rl_readin_file(FILE *fp) {
 
 void rmctrls(char *s) {
    while (*s != '\0') {
-       if (!isprint(*s)) {
+       if (!isprint((unsigned char)*s)) {
           *s = ' ';
        }
        s++;

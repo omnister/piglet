@@ -2186,7 +2186,7 @@ char *validopts;
     }
 
     for (p=validopts; *p != '\0'; p++) {
-    	switch(toupper(*p)) {
+    	switch(toupper((unsigned char)*p)) {
 	    case 'J':
 		if (popt->justification != 0) {
 		    fprintf(fp, ":J%d ", popt->justification);

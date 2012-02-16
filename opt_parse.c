@@ -44,12 +44,12 @@ int opt_parse(
     } else if (optstring[0] == ':') {
         /* got a regular option */
 
-	if (index(validopts, toupper(optstring[1])) == NULL) {
+	if (index(validopts, toupper((unsigned char)optstring[1])) == NULL) {
 	    weprintf("invalid option (2) %s\n", optstring); 
 	    return(ERR);
 	}
 
-	switch (toupper(optstring[1])) {
+	switch (toupper((unsigned char)optstring[1])) {
 	    case 'F': 		/* :F(fontsize) */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {
 		    weprintf("invalid option argument: %s\n", optstring+2); 

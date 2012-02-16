@@ -83,7 +83,7 @@ int com_wrap(LEXER *lp, char *arg)
 	    if (token == OPT ) {
 		token_get(lp,&word); 
                 if (word[0]==':') {
-                    switch (toupper(word[1])) {
+                    switch (toupper((unsigned char)word[1])) {
                         default:
                             printf("WRAP: bad option: %s\n", word);
                             state=END;
@@ -106,7 +106,7 @@ int com_wrap(LEXER *lp, char *arg)
 	    	state = START;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
-		if ((comp = is_comp(toupper(word[0])))) {
+		if ((comp = is_comp(toupper((unsigned char)word[0])))) {
 		    if (strlen(word) == 1) {
 			my_layer = default_layer();
 			printf("using default layer=%d\n",my_layer);
@@ -116,7 +116,7 @@ int com_wrap(LEXER *lp, char *arg)
 			/* check for any non-digit characters */
 			/* to allow instance names like "L1234b" */
 			for (i=0; i<strlen(&word[1]); i++) {
-			    if (!isdigit(word[1+i])) {
+			    if (!isdigit((unsigned char)word[1+i])) {
 				valid_comp=0;
 			    }
 			}

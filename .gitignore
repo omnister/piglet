@@ -1,0 +1,14 @@
+# binaries
+*.o
+pig.bin
+pig.bin.stackdump
+
+# vimswap files
+*.swp
+
+# generated man pages
+man/*.1p
+man/*.html
+
+# drawings
+cells/*.d

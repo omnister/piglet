@@ -124,7 +124,7 @@ int com_set(LEXER *lp, char *arg)	/* set environment variables */
     if (debug) printf("    com_set\n");
 
     while((token=token_get(lp, &word)) == OPT) {
-	switch (toupper(word[1])) {
+	switch (toupper((unsigned char)word[1])) {
 	    case 'E':
 		mode |= 1;	/* limit to exported vars */
 		break;

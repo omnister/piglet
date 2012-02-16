@@ -66,9 +66,9 @@ int equate2color(int c) {
 /* parse character for 0-7, WRGB...Y or return -1 */
 int color2equate(char c) {
    char *i;
-   if (isdigit(c)) {
+   if (isdigit((unsigned char)c)) {
        return((c-'0'));
-   } else if ((i=strchr(COLORTAB, toupper(c)))) {
+   } else if ((i=strchr(COLORTAB, toupper((unsigned char)c)))) {
        return((int)(i-COLORTAB));
    } else {
        return(-1);
@@ -81,7 +81,7 @@ int equate2masktype(int c) {
 
 int masktype2equate(char c) {
    char *i;
-   if ((i=strchr(MASKTYPE, toupper(c)))) {
+   if ((i=strchr(MASKTYPE, toupper((unsigned char)c)))) {
        return((int)(i-MASKTYPE));
    } else {
        return(-1);
@@ -94,9 +94,9 @@ int equate2linetype(int c) {
 
 int linetype2equate(char c) {
    char *i;
-   if (isdigit(c)) {
+   if (isdigit((unsigned char)c)) {
 	return((c-'0')%7);
-   } else if ((i=strchr(LINETYPE, toupper(c)))) {
+   } else if ((i=strchr(LINETYPE, toupper((unsigned char)c)))) {
        return((int)(i-LINETYPE));
    } else {
        return(-1);

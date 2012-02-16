@@ -104,7 +104,7 @@ int pnametosize(char *name, double *px, double *py)
     int matched = 0;
     if (debug) printf("pnametosize called with <%s>\n", name);
 
-    if (isalpha(name[0])) {
+    if (isalpha((unsigned char)name[0])) {
 	for (i = 0; psizes[i].x != 0.0; i++) {
 	    if (debug) printf("checking %s %s\n", name, psizes[i].name);
 	    if (strncasecmp(name, psizes[i].name, MAXBUF) == 0) {
@@ -114,7 +114,7 @@ int pnametosize(char *name, double *px, double *py)
 		break;
 	    }
 	}
-    } else if (isdigit(name[0])) {
+    } else if (isdigit((unsigned char)name[0])) {
 	if (sscanf(name, "%lfx%lf", px, py) == 2) {
 	    matched++;
 	} else if (sscanf(name, "%lf*%lf", px, py) == 2) {

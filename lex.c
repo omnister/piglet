@@ -529,7 +529,7 @@ int lookup_command(char *name)
 
 int is_comp(char c)
 {
-    switch(toupper(c)) {
+    switch(toupper((unsigned char)c)) {
     	case 'A':
 	    return(ARC);
 	    break;

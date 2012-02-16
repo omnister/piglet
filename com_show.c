@@ -48,7 +48,7 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
 	    case OPT:		/* option */
-		switch(toupper(word[0])) {
+		switch(toupper((unsigned char)word[0])) {
 		    case '-':
 		        visible=0;
 		        modifiable=0;
@@ -69,7 +69,7 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 		    }
 
 		    if (!done && strlen(word) > 1) {
-			switch(toupper(word[1])) {
+			switch(toupper((unsigned char)word[1])) {
 			   case 'E':
 				comp=ALL;
 				break;

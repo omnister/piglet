@@ -39,7 +39,7 @@ unsigned int hash(char *s)
 {
     unsigned int hashval;
     for (hashval = 0; *s != '\0'; s++) 
-    	hashval = toupper(*s)+31*hashval;
+    	hashval = toupper((unsigned char)*s)+31*hashval;
     return (hashval%HASHSIZE);
 }
 
@@ -96,7 +96,7 @@ struct varslot *EVset(char *name, char *defn)
 void strtoupper(char *name) {
     char *p;
     for (p=name; *p!='\0'; p++) {
-       *p = toupper(*p);
+       *p = toupper((unsigned char)*p);
     }
 }
 

@@ -40,7 +40,7 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 		    done++;
 		    token_flush_EOL(lp);
 		}
-		switch(toupper(word[1])) {
+		switch(toupper((unsigned char)word[1])) {
 		    case 'C':	/* color */
 			if ((color = color2equate(word[2])) == -1) {
 			    printf("EQUATE: bad color spec: %c\n", word[2]);

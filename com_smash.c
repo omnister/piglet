@@ -114,7 +114,7 @@ int com_smash(LEXER *lp, char *arg)
 	    if (token == OPT ) {
 		token_get(lp,&word);  
 		if (word[0]==':') {
-		    switch (toupper(word[1])) {
+		    switch (toupper((unsigned char)word[1])) {
 			case 'R':
 			    mode = REGION;
 			    break;

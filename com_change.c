@@ -100,7 +100,7 @@ int com_change(LEXER *lp, char *arg)
 	    	state = NUM1;
 		/* check to see if is a valid comp descriptor */
 		valid_comp=0;
-		if ((comp = is_comp(toupper(word[0])))) {
+		if ((comp = is_comp(toupper((unsigned char)word[0])))) {
 		    if (strlen(word) == 1) {
 			my_layer = default_layer();
 			printf("using default layer=%d\n",my_layer);
@@ -110,7 +110,7 @@ int com_change(LEXER *lp, char *arg)
 			/* check for any non-digit characters */
 			/* to allow instance names like "L1234b" */
 			for (i=0; i<strlen(&word[1]); i++) {
-			    if (!isdigit(word[1+i])) {
+			    if (!isdigit((unsigned char)word[1+i])) {
 				valid_comp=0;
 			    }
 			}
@@ -197,8 +197,8 @@ int com_change(LEXER *lp, char *arg)
 		token_get(lp, &word); 
 
 		new_layer=0;
-		if (word[0] == ':' && (index("L", toupper(word[1])) != NULL)) { /* parse some options locally */
-		    switch (toupper(word[1])) {	
+		if (word[0] == ':' && (index("L", toupper((unsigned char)word[1])) != NULL)) { /* parse some options locally */
+		    switch (toupper((unsigned char)word[1])) {	
 			case 'L': 		/* :L(layer) */
                             if (p_best->type == INST) {
 				weprintf("cannot change layer for instances: %s\n", word); 
