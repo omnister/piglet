@@ -1734,14 +1734,15 @@ S: letter size only
 U: PLO [:F] [:TA|:TD|:TG|:TP] [:P<papersize>] <plotname> <EOC>
 T: {
 The PLOT command creates a plot of the current window in the
-file "./<plotname>.<suffix>.  If the <plotname> is not specified, the name of
-the cell will be used instead.  The default output is postscript and the
-suffix is ".ps".  The postscript file will be plotted for printing on
-the paper size specified with the :P option, and will be printed as
-either landscape or portrait depending on the shape of the drawing. 
-Piglet fits the entire displayed window to the postscript output.  If
-the size of the printed image is too small, it may be advantagious to
-resize the X11 display window to fit the cell more closely. 
+file "./<plotname>.<suffix>.  If the <plotname> is not specified, the
+name of the cell will be used instead.  Unless changed with the :T
+option, the default output is postscript and the suffix is ".ps".  The
+postscript file will be plotted for printing on the paper size specified
+with the :P option, and will be printed as either landscape or portrait
+depending on the shape of the drawing.  Piglet fits the entire displayed
+window to the postscript output.  If the size of the printed image is
+too small, it may be advantagious to resize the X11 display window to
+fit the cell more closely. 
 
 The :P<pagesize> option will take either several common pagesize names
 or an explicit page size in inches.  Pagesize names include: A0, A1, A2,
@@ -1814,10 +1815,10 @@ Plot the current device in DXF format with a ".dxf" suffix.
 .I :TG
 Plot the current device in Gerber format with automatic :F fitting with a ".pg" suffix.
 .TP
-.I :TS
+.I :TP
 Plot the current device in Postscript format without automatic fitting
 using a ".ps" suffix.  Only the geometries visible on the display window
-will be plotted.  This is the default plot mode if no :P command is
+will be plotted.  This is the default plot mode if no :T<plottype> command is
 given.  
 .TP
 .I :P<pagesize>

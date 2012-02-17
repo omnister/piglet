@@ -1,11 +1,12 @@
-for file in *.c *.h Makefile MENU* PROC* NOTE* TEXT* AAA_README QUICKSTART piglogo.d
+for file in *.c *.h Makefile MENU* PROC* NOTE* TEXT* AAA_README QUICKSTART pi
 do
     rcsdiff $file >/tmp/$file.changes 2>&1
     if [ $? != 0 ] 
     then
-    	echo "v**********"  $file "**********v" 
-	cat /tmp/$file.changes
-    	echo "^**********"  $file "**********^" 
+       echo "v**********"  $file "**********v" 
+       cat /tmp/$file.changes
+       echo "^**********"  $file "**********^" 
     fi
    rm /tmp/$file.changes
 done
+
