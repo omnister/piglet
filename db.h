@@ -65,7 +65,7 @@ int show[MAX_LAYER];
 /*
  *  OK, we use doubly-linked lists all over the place in piglet.
  *  Here's how they work, since I've never seen this sort of
- *  list described before.
+ *  list described anywhere else before.
  *
  *  Each element of the list has pointers to the next element
  *  and pointers to the previous element.  db_deflist

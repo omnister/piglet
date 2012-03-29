@@ -1292,6 +1292,8 @@ void db_highlight(DB_DEFLIST *p)	/* component to display */
     }
 
     switch (p->type) {
+    case 0:  	// do nothing for a null type
+        break;
     case ARC:  /* arc definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	do_arc(p, &bb, D_RUBBER);
