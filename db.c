@@ -1516,6 +1516,7 @@ void digestopts(OPTS *opts, char *optstring) {
     digestdouble(opts->scale);
     digestdouble(opts->aspect_ratio);
     digestdouble(opts->slant);
+    digestdouble(opts->bezier);
     if (opts->cname != NULL) digeststr(opts->cname);
     if (opts->sname != NULL) digeststr(opts->sname);
 }
@@ -2129,6 +2130,7 @@ OPTS *opt_copy(OPTS *opts)
     tmp->aspect_ratio = opts->aspect_ratio;
     tmp->scale = opts->scale;
     tmp->slant = opts->slant;
+    tmp->bezier = opts->bezier;
     tmp->cname = strsave(opts->cname);
     tmp->sname = strsave(opts->sname);
 
@@ -2150,6 +2152,7 @@ void opt_set_defaults(OPTS *opts)
     opts->aspect_ratio = 1.0;     /* :Y<yx_aspect_ratio> */
     opts->scale=1.0;              /* :X<scale> */
     opts->slant=0.0;              /* :Z<slant_degrees> */
+    opts->bezier=0;		  /* flag to do spline curves */
     opts->cname= (char *) NULL;   /* component name */
     opts->sname= (char *) NULL;   /* signal name */
 }
@@ -2187,6 +2190,11 @@ char *validopts;
 
     for (p=validopts; *p != '\0'; p++) {
     	switch(toupper((unsigned char)*p)) {
+	    case 'B':
+		if (popt->bezier != 0) {
+		    fprintf(fp, ":B ");
+		}
+	    	break;
 	    case 'J':
 		if (popt->justification != 0) {
 		    fprintf(fp, ":J%d ", popt->justification);
@@ -2650,6 +2658,15 @@ int rightturn(double dx,double dy,double dxn,double dyn) {
    return((dy*dxn - dx*dyn)>0);
 }
 
+COORDS *bezier(COORDS *list) {
+
+    // FIXME:
+    // we want to eventually create a new list here
+    // by running spline calculation on original list
+    // for now, we just make a copy
+
+    return (coord_copy(NULL, list));
+}
 
 /* --------------------------------------------------------- */
 /* ADD Lmask [.cname] [@sname] [:Wwidth] coord coord [coord ...] */
@@ -2729,7 +2746,12 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 	clear();
     }
 
-    temp = def->u.l->coords;
+    if (def->u.l->opts->bezier) {
+	printf("got a bezier\n");
+        temp = bezier(def->u.l->coords);
+    } else {
+	temp = def->u.l->coords;
+    }
     x2=temp->coord.x;
     y2=temp->coord.y;
     temp = temp->next;
@@ -2916,6 +2938,10 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 	    endpoly(bb,mode);
 	}
     }
+
+    if (def->u.l->opts->bezier) {
+       free(temp);
+    }
 }
 
 /* ADD Omask [.cname] [@sname] [:Wwidth] [:Rres] coord coord coord   */
@@ -2925,6 +2951,7 @@ void do_oval(DB_DEFLIST *def, BOUNDS *bb, int mode)
     // NUM x1,y1,x2,y2,x3,y3;
 
     /* printf("# rendering oval (not implemented)\n"); */
+    // FIXME: just convert to a circle call with xy ratio opt set
 
     // x1=def->u.o->x1;	/* focii #1 */
     // y1=def->u.o->y1;

@@ -22,7 +22,7 @@
 
 #define ARC_OPTS  "WR"
 #define CIRC_OPTS "WRY"
-#define LINE_OPTS "WH"
+#define LINE_OPTS "BWH"
 #define OVAL_OPTS "WR"
 #define POLY_OPTS "W"
 #define RECT_OPTS "W"
@@ -223,6 +223,7 @@ typedef struct opt_list {
     double slant;           /* :Z<slant> */
     char *sname;	    /* signal name */
     char *cname;	    /* signal name */
+    int bezier;
 } OPTS;
 
 extern void    db_set_font_size(double size);

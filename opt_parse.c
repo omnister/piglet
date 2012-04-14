@@ -50,6 +50,9 @@ int opt_parse(
 	}
 
 	switch (toupper((unsigned char)optstring[1])) {
+	    case 'B': 		/* use bezier for line drawing */
+	        popt->bezier++;
+		break;
 	    case 'F': 		/* :F(fontsize) */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {
 		    weprintf("invalid option argument: %s\n", optstring+2); 
