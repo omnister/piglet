@@ -4,6 +4,7 @@
 #include "eprintf.h"
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #define MIRROR_OFF 0
 #define MIRROR_X   1
@@ -50,8 +51,12 @@ int opt_parse(
 	}
 
 	switch (toupper((unsigned char)optstring[1])) {
-	    case 'B': 		/* use bezier for line drawing */
-	        popt->bezier++;
+	    case 'B': 		/* :B(npoints) use bezier for line drawing */
+		if(sscanf(optstring+2, "%lf", &optval) != 1) {
+		    weprintf("invalid option argument: %s\n", optstring); 
+		    return(ERR);
+		}
+	        popt->bezier=(int) fabs(optval);
 		break;
 	    case 'F': 		/* :F(fontsize) */
 		if(sscanf(optstring+2, "%lf", &optval) != 1) {

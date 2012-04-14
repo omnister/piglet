@@ -2192,7 +2192,7 @@ char *validopts;
     	switch(toupper((unsigned char)*p)) {
 	    case 'B':
 		if (popt->bezier != 0) {
-		    fprintf(fp, ":B ");
+		    fprintf(fp, ":B%d ", popt->bezier);
 		}
 	    	break;
 	    case 'J':
@@ -2658,14 +2658,75 @@ int rightturn(double dx,double dy,double dxn,double dyn) {
    return((dy*dxn - dx*dyn)>0);
 }
 
-COORDS *bezier(COORDS *list) {
+// given sequence a,b,c,d,  take parameter (0 < u < 1.0) 
+// and interpolate between values b,c using catmull-rom
+// interpolation polynomial
 
-    // FIXME:
-    // we want to eventually create a new list here
-    // by running spline calculation on original list
-    // for now, we just make a copy
+double catmull(double u,double a,double b,double c,double d) {
+   return (
+      0.5*((2.0*b)+
+      (c-a)*u+
+      (2.0*a-5.0*b+4.0*c-d)*u*u+
+      (-a+3.0*b-3.0*c+d)*u*u*u)
+   );
+}
 
-    return (coord_copy(NULL, list));
+// take a list of coords from LINE and replace them
+// with an interpolated list of points using the
+// catmull-rom bezier algorithm.  The do_line routine
+// checks for a :B option and uses the interpolated
+// line for display instead of the definition point
+// list.
+
+COORDS *bezier(
+    COORDS *list, 		// original line segment list
+    int ninterp			// number of interpolated pts per segment
+) {
+    COORDS *p;
+    COORDS *new_coords=NULL;
+    double x0, x1, x2, x3;
+    double y0, y1, y2, y3;
+    double xx, yy;
+    double u;
+    int n=0;
+
+    x0=x1=x2=x3=0.0; y0=y1=y2=y3=0.0;
+
+    if (list == (COORDS *) NULL) {
+       printf("bezier: can't convert null coordinate list\n");
+    } else {
+
+       p=list; 
+
+       // double the first point by not incrementing p->next;
+       x0=x1; x1=x2; x2=x3; x3=p->coord.x;
+       y0=y1; y1=y2; y2=y3; y3=p->coord.y;
+       n=2;
+       while(p != NULL) {
+           n++;
+	   x0=x1; x1=x2; x2=x3; x3=p->coord.x;
+	   y0=y1; y1=y2; y2=y3; y3=p->coord.y;
+	   if (n>3) {
+	       for(u=0.0; u<1.0; u+=1.0/(double)ninterp) {
+	           xx=catmull(u,x0,x1,x2,x3);
+	           yy=catmull(u,y0,y1,y2,y3);
+		   if (n==4) {
+		       new_coords=coord_new(xx, yy);
+		   } else {
+		       coord_append(new_coords, xx, yy);
+		   }
+	       }
+	   }
+	   p=p->next;
+       }
+       // double the last point and go all the way to u==1.0
+       for(u=0.0; u<=1.0; u+=1.0/(double)ninterp) {
+	   xx=catmull(u,x1,x2,x3,x3);
+	   yy=catmull(u,y1,y2,y3,y3);
+	   coord_append(new_coords, xx, yy);
+       }
+    }
+    return (new_coords);
 }
 
 /* --------------------------------------------------------- */
@@ -2746,10 +2807,11 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 	clear();
     }
 
-    if (def->u.l->opts->bezier) {
-	printf("got a bezier\n");
-        temp = bezier(def->u.l->coords);
+    if (def->u.l->opts->bezier && mode==0) {
+	// convert to bezier in regular drawing mode
+        temp = bezier(def->u.l->coords, def->u.l->opts->bezier);
     } else {
+	// do not convert to bezier when in pick mode
 	temp = def->u.l->coords;
     }
     x2=temp->coord.x;
