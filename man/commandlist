@@ -16,7 +16,8 @@ example, you can add a rectangle to the current device with the command:
 	ADD R1 (5.3/(4-2)),10 (3*5.3/4),20;
 .fi 
 When entering points with the mouse, the clicks ALWAYS snap to the
-grid, giving a powerful way to enter precise coordinates. 
+grid, giving a powerful way to enter precise coordinates.  Coordinates
+hand typed at the prompt are not snapped to the grid.
 
 All the Piglet built-in commands are case-insensitive and can be
 abbreviated to just three letters with one exception.  DISPLAY must be
@@ -96,13 +97,18 @@ the design, and then click the next coordinate.   If you prefer not to
 use the scroll wheel, Piglet can also zoom by clicking on a point with the
 middle button and dragging either right or left to zoom in and out.
 
+Single clicking on any point with the middle button will center the viewport
+on the clicked point at the current magnification.  Clicking twice on
+any point with the middle button will fit the viewport to the bounding box
+of the currently edited cell.
+
 The WINDOW command can be used to adjust the current view.  "WIN :F;"
 will fit the device in the window.  "WIN 0,0 10,10;" will set the
 viewport so that a rectangle with a lower left coordinate of 0,0 and
-upper right of 10,10 fits as tightly as possible.  Using the WINDOW
-command with mouse picks is a good way to zoom into a specific detail of
-the current device.  After zooming in to check some detail, "WIN :Z;" 
-is handy to return to the previous window setting. 
+upper right of 10,10 is centered and fits as tightly as possible.  Using
+the WINDOW command with mouse picks is a good way to zoom into a
+specific detail of the current device.  After zooming in to check some
+detail, "WIN :Z;" is handy to return to the previous window setting. 
 
 .SS UNDO/REDO
 All commands which modify the drawing geometry can be undone with
@@ -114,7 +120,7 @@ to modify the geometry further, the REDO buffer is cleared.
 .SS AUTOSAVE
 As part of the UNDO/REDO machinery, Piglet keeps an autosave file named
 "#<cellname>.d" in the directory "./cells".  The autosave file is
-updated everytime the current cell is changed.  When a cell is finally
+updated every time the current cell is changed.  When a cell is finally
 SAVed the autosave file is deleted so that the normal "<cellname>.d"
 file is the only one remaining.  If Piglet crashes, or is QUIT without
 saving, then the autosave file will be found next time the cell is edited. 
@@ -125,14 +131,14 @@ changes at the next edit:
     MAIN> edi testcell;
     An autosave file was found that is newer than the device file.
        device file:    ./cells/testcell.d, 2803 bytes, Tue May  4 00:00:47 2010
-       autosave file: ./cells/#testcellt.d, 2827 bytes, Tue May  4 00:31:58 2010
+       autosave file: ./cells/#testcell.d, 2827 bytes, Tue May  4 00:31:58 2010
     read autosave file instead of .d file?: (y/n)? 
 .fi
 
-It is possible to examine the cells directory at any time and to
-compare the contents of any autosave files with the associated .d files,
-and to either delete the autosave file or copy it onto the .d file as
-appropriate. 
+Because all the piglet device files are in human readable format, it is
+possible to examine the cells directory at any time and to compare the
+contents of any autosave files with the associated .d files, and to
+either delete the autosave file or copy it onto the .d file as appropriate. 
 
 .SS COMMAND LINE EDITING
 Anything typed at the command line goes into a readline buffer.  
@@ -143,8 +149,9 @@ A vi command history binding can be obtained by adding the lines
 .ti +4
 \fBset keymap vi\fR
 
-to the file "~/.inputrc".  See the GNU readline(1) man page for more
-details about commandline editing.
+to the file "~/.inputrc".  It is possible to bind emacs or a simple
+up-arrow/down-arrow command-line editor also.  See the GNU readline(1)
+man page for more details about commandline editing. 
 
 .SS OUTPUT
 
@@ -172,25 +179,30 @@ searches the following directories to find the needed startup files.
     5) /usr/lib/piglet
 .fi
 
-
-The TEXT and FONT files by default are named "TEXTDATA.F" and "NOTEDATA.F"
-respectively.  These names can be overridden with Environment Variables. 
+The TEXT and FONT files are named "TEXTDATA.F" and "NOTEDATA.F"
+respectively.  These names can be overidden with ENvironment Variables.
 The format for both files is plain ASCII.  The files
 start with two integers separated by a comma.  The first gives the
-height of each character definition and the second, the width.  Each
-character is then listed in printed form and the glyph is defined by a
-set of vector coordinates.  It is assumed that each successive x,y
+height of each character definition and the second, the width.  The
+second line has two more integers separated by a comma.  The first is
+either 1 or 0 and indicates if font is proportional (1) or is a fixed
+width font (0), and the second number is an integer that gives the fixed
+width size of the font.
+
+Each character is then listed in printed form and the glyph is defined
+by a set of vector coordinates.  It is assumed that each successive x,y
 coordinate pair is connected by a stroke unless the path is broken by
-the special coordinate "-64,0".  Each definition is terminated by the
-special coordinate "-64,-64".  Here is an example of the first three
-definitions in "NOTEDATA.F" for the characters <exclam>, <double-quote>,
-and <pound>:
+the special coordinate "-128,0".  Each definition is terminated by the
+special coordinate "-128,-128" followed by a proportional width spacing
+for this character.  Here is an example of the first three definitions
+in "NOTEDATA.F" for the characters <exclam>, <plus> and <comma>.
 
 .nf
 16,12
-! 6,2 6,3 -64,0 6,5 6,14 -64,-64
-" 4,14 4,10 -64,0 8,14 8,10 -64,-64
-# 2,6 10,6 -64,0 2,10 10,10 -64,0 4,2 4,14 -64,0 8,2 8,14 -64,-64
+1,12
+! 5,5 7,5 7,15 5,15 5,5 -128,0 5,3 7,3 7,1 5,1 5,3 -128,-128 12
++  3,7 3,9 5,9 5,11 7,11 7,9 9,9 9,7 7,7 7,5 5,5 5,7 3,7 -128,-128 12
+,  5,3 5,5 7,5 7,3 5,1 6,3 5,3 -128,-128 12
 ...
 .fi
 
@@ -231,15 +243,22 @@ subsequent fields on each line will be displayed exactly as shown,
 rendered in the corresponding color.  The vertical bars are replaced
 with white bounding boxes. 
 
+For example, the last line of the example creates three boxes containing
+the text "EDI ", "UND ", and "RED ". The color of the three groups of
+text will be yellow, green and green, as specified by the color string
+"ygg". 
+
 When using the editor, any mouse pick on the menu boxes injects the menu
 text directly into the parse stream.  The menu designer should take care
-to leave extra spaces after command names so that any combination of
-mouse picks results in intelligible commands.  
+to leave any necessary spaces after command names so that any combination of
+mouse picks results in intelligible commands.   Most of the piglet command
+primitives are able to be concatenated without spaces, so that the string
+"ADD L1:W20:B " is a legal command fragment.
 
-The layer definition process file is named "PROCDATA.P".  Its format
-is also plain ASCII.  It consists of one EQUate command line per layer.
-The following PROCDATA.P file defines the characteristics of  9 
-layers.
+The layer definition process file is named "PROCDATA.P".  Its format is
+also plain ASCII.  It consists of one EQUate command line per layer. 
+The following PROCDATA.P file defines the characteristics of the first 9
+layers. 
 
 .nf
 EQU :C1 :P1 :M0 :B :F0 boundary 0
@@ -277,6 +296,9 @@ protect the ":" delimiters from being interpreted as Piglet options.
 The search path used for loading all of Piglet's auxiliary files such as
 NOTEDATA, TEXTDATA, MENUDATA, PROCDATA, etc.   
 Defaults to "./cells:.:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet"
+.TP
+.I PIG_RC "filename" ; default is "pigrc"
+The name of piglet's startup file for environment variables, macros and other customizations.
 .TP
 .I PIG_FONT_SIZE "<size>" ; default is "10.0"
 The default font size used for both note and text if not otherwise overridden with :F option.
@@ -319,6 +341,9 @@ all layers are visible and editable by default.
 .TP
 .I PIG_MENUDATA_FILE "<filename>" ; default is "MENUDATA_V"
 Sets the name used for loading the Menu definition file.
+.TP
+.I PIG_MENUDATA_FONT "<fontname>" ; default is "10x20"
+Sets the preferred X11 font name used for loading the Menu definition file.
 .TP
 .I PIG_NOTEDATA_FILE "<filename>" ; default is "NOTEDATA.F"
 Sets the name used for loading the stroke definition file for NOTEs.
@@ -367,7 +392,7 @@ Multiple arcs can be draw with the same command until an EOC is encounterd.
 
 NOTE: Arcs with width are implemented by drawing a line with width
 along the path of the arc.  This means that the finished
-arc has an effective radius <width>/2.0 larger than drawn. 
+arc has an effective outside radius <width>/2.0 larger than drawn. 
 
 .SS OPTIONS
 .TP
@@ -384,7 +409,7 @@ signal name
 line width
 .TP
 .I <res>
-arc resolution angle (in degrees) (default = 2 degrees)
+arc resolution angle (in degrees, default = 2 degrees)
 }
 
 N: ADD_CIRCLE
@@ -514,7 +539,7 @@ be <col> number of rows spaced along the line between
 
 N: ADD_LINE
 D: Add a line to the current device
-U: ADD L<layer> [.<cname>] [@<sname>] [:W<width>] [:H height] <xy1> <xy2> [<xy3> ...]  EOC
+U: ADD L<layer> [.<cname>] [@<sname>] [:B<nsegs>] [:W<width>] [:H height] <xy1> <xy2> [<xy3> ...]  EOC
 S: good
 T: {
 Add a line.  Lines are added with "ADD L<layer_number>".  Coordinates
@@ -536,6 +561,12 @@ this produces precise angles for 45 and 90 degrees, but may result in
 slight angle errors for other settings, especially on coarse grids. 
 A lock angle of 0 turns off all restrictions on line placement. 
 
+If the :B<nsegs> option is specified with a non-zero number of segments,
+the line is converted to a Catmull-Rom Spline curve with <nsegs>
+smoothed points inserted between each of the originally entered points. 
+The curve gets visually smoother with higher number of segments, and
+smoothing can be turned off by setting <nsegs> to zero. 
+
 If the :H<height> option is specified, it is assumed that the line being
 drawn is a microstrip transmission line of specified width and height over
 a ground plane. The corners of the line are mitered to minimize the excess
@@ -545,11 +576,10 @@ depends only on width and height of the line.  The miter geometry is
 independent of the dielectric constant of the substrate in the range of
 dielectric constant 2.5<=(epsilon)<=25.0.  The generated lines are most
 accurate in the range of (width/height)>=0.25.  If it is desired to
-eliminate mitering, the <height> can be set to 0.0;
-
-The published reference defines mitres only for exact 90 degree turns,
-but the algorithm implemented here produces interpolated miters for any
-angle while exactly matching the recommended miters for 0,90 degree bends. 
+eliminate mitering, the <height> can be set to 0.0; The published
+reference defines mitres only for exact 90 degree turns, but the
+algorithm implemented here produces interpolated miters for any angle
+while exactly matching the recommended miters for 0,90 degree bends. 
 
 .SS OPTIONS
 .TP
@@ -564,6 +594,11 @@ signal name
 .TP
 .I <width>
 width of line (default=0) 
+.TP
+.I <nsegs>
+number of interpolated segments inserted between each of the
+user-supplied control points (default=0) 
+.TP
 .I <height>
 height of line over ground plane (default=0)
 
@@ -611,7 +646,7 @@ handy for entering a multi-line block of information.
 
 The font is defined in NOTEDATA.F and is easily changed.  New fonts can
 be derived from the Hershey font database.  The format is documented in
-readfont.c. 
+the sourcode file "readfont.c". 
 
 .SS OPTIONS
 .TP
@@ -763,7 +798,7 @@ which are <fontsize> apart.  The <yxratio> is used to proportionally
 stretch or shrink the text to fill less horizontal space.  (Note: this
 is a change from HP Piglet which keeps width constant while changing
 height.  This redefinition is much more natural for creating narrow
-typefaces.  <Fontsize> controls height, and <xyratio> controls width.). 
+typefaces.  <Fontsize> controls height, and <xyratio> controls width). 
 
 The "string" may contain embedded newlines.  These can be entered by
 simply typing a carriage return while still in quotes.  This can be

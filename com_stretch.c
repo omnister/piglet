@@ -83,6 +83,7 @@ int com_stretch(LEXER *lp, char *arg)
 	} 
 	switch(state) {	
 	case START:		/* get option or first xy pair */
+	    p_best=(DB_DEFLIST *)NULL;
 	    db_checkpoint(lp);
 	    if (token == OPT ) {
 		token_get(lp,&word); 
@@ -459,7 +460,7 @@ int com_stretch(LEXER *lp, char *arg)
 			/* p_prev=p_best; */
 			selpnt_save(&selpnt, NULL, NULL, p_best);
 		    } else { 			/* mode == REGION */
-			 db_highlight(p_best);  // RCW unhighlight
+			 // db_highlight(p_best);  // RCW unhighlight
 			 if (selpnt) {
 			    if (debug) {
 			       printf("setting rubber callback\n");

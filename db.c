@@ -2697,20 +2697,19 @@ COORDS *bezier(
     } else {
 
        p=list; 
-
        // double the first point by not incrementing p->next;
        x0=x1; x1=x2; x2=x3; x3=p->coord.x;
        y0=y1; y1=y2; y2=y3; y3=p->coord.y;
-       n=2;
+       n=1;
        while(p != NULL) {
            n++;
 	   x0=x1; x1=x2; x2=x3; x3=p->coord.x;
 	   y0=y1; y1=y2; y2=y3; y3=p->coord.y;
-	   if (n>3) {
+	   if (n>2) {
 	       for(u=0.0; u<1.0; u+=1.0/(double)ninterp) {
 	           xx=catmull(u,x0,x1,x2,x3);
 	           yy=catmull(u,y0,y1,y2,y3);
-		   if (n==4) {
+		   if (n==3) {
 		       new_coords=coord_new(xx, yy);
 		   } else {
 		       coord_append(new_coords, xx, yy);
@@ -2809,7 +2808,7 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
     if (def->u.l->opts->bezier && mode==0) {
 	// convert to bezier in regular drawing mode
-        temp = bezier(def->u.l->coords, def->u.l->opts->bezier);
+        temp = bezier(def->u.l->coords, def->u.l->opts->bezier+1);
     } else {
 	// do not convert to bezier when in pick mode
 	temp = def->u.l->coords;

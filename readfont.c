@@ -11,19 +11,26 @@
 The TEXT and FONT files are named "TEXTDATA.F" and "NOTEDATA.F"
 respectively.  The format for both files is plain ASCII.  The file
 starts with two integers separated by a comma.  The first gives the
-height of each character definition and the second, the width.  Each
-character is then listed in printed form and the glyph is defined by a
-set of vector coordinates.  It is assumed that each successive x,y
+height of each character definition and the second, the width.  The
+second line has two more integers separated by a comma.  The first is
+either 1 or 0 and indicates if font is proportional (1) or is a fixed
+width font (0), and the second number is an integer that gives the fixed
+width size of the font. 
+
+Each character is then listed in printed form and the glyph is defined
+by a set of vector coordinates.  It is assumed that each successive x,y
 coordinate pair is connected by a stroke unless the path is broken by
 the special coordinate "-128,0".  Each definition is terminated by the
-special coordinate "-128,-128".  Here is an example of the first three
+special coordinate "-128,-128", followed by a proportional width to be
+used for this character. Here is an example of the first three
 definitions in "NOTEDATA.F" for the characters <exclam>, <double-quote>,
 and <pound>:
 
 16,12
-! 6,2 6,3 -128,0 6,5 6,14 -128,-128
-" 4,14 4,10 -128,0 8,14 8,10 -128,-128
-# 2,6 10,6 -128,0 2,10 10,10 -128,0 4,2 4,14 -128,0 8,2 8,14 -128,-128
+1,12
+! 6,2 6,3 -128,0 6,5 6,14 -128,-128 12
+" 4,14 4,10 -128,0 8,14 8,10 -128,-128 12
+# 2,6 10,6 -128,0 2,10 10,10 -128,0 4,2 4,14 -128,0 8,2 8,14 -128,-128 12
 
 */
 
