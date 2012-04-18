@@ -6,9 +6,9 @@ yyyggg |:F|:V|:Z|7|8|9|
 yyyggg |:D|:S|:L|,|0|.|
 yyyyy  |:W|:C|:N|:O|:R|
 yyaaaa |:X|:Y|:M|X|Y|@|
-ggg    |LAY |LEV |LOC |
-ggg    |FSI |TSL |    |
-gyyy   |SHO #E; |;|!| |
+yyyg   |:B|!|;|SHO #E;|
+ggg    |LOC |FSI |TSL |
+ggg    |LAY |LEV |    |
 wrgbapy|0|1|2|3|4|5|6 |
 ww     |       |      |
 aap    |MOV |COP |CHA |
@@ -19,6 +19,6 @@ ggg    |:PG |:PA |:F  |
 gby    |RET |SPL |INP |
 ggb    |ARE |WRA |GRO |
 ggr    |STR |SMA |PUR |
-rrr    |DEL |EXI |BYE |
+rrr    |DEL |EXI|BYE|
 ygg    |SAV |    |    |
-ygg    |EDI |UND |RED |
+ygg    |EDI |UND|RED|

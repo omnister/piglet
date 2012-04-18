@@ -1,4 +1,4 @@
-$$ Saved: Tue Dec 20 17:56:00 2011
+$$ Saved: Tue Apr 17 14:26:44 2012
 LOCK 0;
 LEVEL 1;
 GRID :C3 10 10 20 20 0 0;
@@ -712,6 +712,6 @@ ADD P3  3770,1560  3770,1670  3790,1690  3800,1720  3790,1760  3810,1870
       3940,1700  3940,1540;
 ADD N2 :F200 "Personal Interactive Graphic Layout EdiTor"  -500,-500;
 ADD N2 :F100 "(C) 1998-2012 Richard C. Walker <walker@omnisterra.com>, GPL V2.0"  0,-700;
-ADD T2 :J1 :Z20 :F200 "December 8, 2011"  30,2540;
-ADD T2 :J1 :Z20 :F300 "version 0.96"  80,2870;
-ADD T2 :J1 :Z20 :F400 "PD_piglet"  40,3200;
+ADD T3 :J1 :Z20 :F200 "April 15, 2012"  30,2540;
+ADD T3 :J1 :Z20 :F300 "version 0.97"  80,2870;
+ADD T3 :J1 :Z20 :F400 "PD_piglet"  40,3200;
