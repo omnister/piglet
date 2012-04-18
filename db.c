@@ -2690,17 +2690,16 @@ COORDS *bezier(
     double u;
     int n=0;
 
-    x0=x1=x2=x3=0.0; y0=y1=y2=y3=0.0;
-
     if (list == (COORDS *) NULL) {
        printf("bezier: can't convert null coordinate list\n");
     } else {
 
        p=list; 
-       // double the first point by not incrementing p->next;
-       x0=x1; x1=x2; x2=x3; x3=p->coord.x;
-       y0=y1; y1=y2; y2=y3; y3=p->coord.y;
+       x0=x1=x2=x3=p->coord.x;
+       y0=y1=y2=y3=p->coord.y;
+       p=p->next;
        n=1;
+       new_coords=NULL;
        while(p != NULL) {
            n++;
 	   x0=x1; x1=x2; x2=x3; x3=p->coord.x;
@@ -2709,11 +2708,7 @@ COORDS *bezier(
 	       for(u=0.0; u<1.0; u+=1.0/(double)ninterp) {
 	           xx=catmull(u,x0,x1,x2,x3);
 	           yy=catmull(u,y0,y1,y2,y3);
-		   if (n==3) {
-		       new_coords=coord_new(xx, yy);
-		   } else {
-		       coord_append(new_coords, xx, yy);
-		   }
+		   new_coords=coord_append(new_coords, xx, yy);
 	       }
 	   }
 	   p=p->next;

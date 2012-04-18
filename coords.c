@@ -2,7 +2,7 @@
 
 COORDS *coord_new(NUM x, NUM y);
 COORDS *coord_copy(XFORM *xp, COORDS *CP);
-void coord_append(COORDS *CP, NUM x, NUM y);
+COORDS *coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
@@ -52,17 +52,19 @@ COORDS *coord_new(double x,double y)
     return(tmp);
 }
 
-void coord_append(COORDS *CP, double x,double y)
+COORDS *coord_append(COORDS *CP, double x,double y)
 {
     COORDS *tmp;
     if (CP == NULL) {
-    	printf("coord_append: can't append to null list\n");
+	tmp = coord_new(x,y);
     } else {
 	tmp = CP->prev;	/* save pointer to last coord */
 	tmp->next = coord_new(x,y);
 	tmp->next->prev = tmp;
 	CP->prev = tmp->next;
+	tmp=CP;
     }
+    return (tmp);
 }
 
 void coord_swap_last(COORDS *CP, double x,double y)

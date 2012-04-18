@@ -134,7 +134,7 @@ typedef struct xform {
 
 COORDS *coord_new(NUM x, NUM y);
 COORDS *coord_copy(XFORM *xp, COORDS *CP);
-void coord_append(COORDS *CP, NUM x, NUM y);
+COORDS *coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP, NUM x, NUM y);
 int coord_get(COORDS *CP, int n, NUM *x, NUM *y);
 void coord_drop(COORDS *CP);
