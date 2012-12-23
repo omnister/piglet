@@ -15,6 +15,7 @@ STACK *stack_new()
     tmp = (STACK *) malloc(sizeof(STACK));
     tmp->saved = NULL;
     tmp->next = NULL;
+    tmp->count = 0;
     return(tmp);
 }
 

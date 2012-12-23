@@ -29,7 +29,7 @@ int debug=0;
 FILE *fp=NULL;		// file descriptor for output file
 OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
 
-double bbllx, bblly, bburx, bbury;
+double bbllx, bblly, bburx, bbury; // bounding box in screen coords
 
 void ps_set_outputtype(OMODE mode) {
    if (debug) printf("ps_set_outputtype: %d\n",mode);
@@ -70,7 +70,7 @@ int dxf_penmap[] = {
 void ps_set_pen(int pen) 
 {
     if (debug) printf("setting pen:%d\n", pen); 
-    if (outputtype == DXF) {
+    if (outputtype == DXF || outputtype == HPGL) {
        pennum=dxf_penmap[pen%16];
     } else {
        pennum=pen;
@@ -94,7 +94,7 @@ void ps_preamble(
     char *dev,
     char *prog,
     double pdx, double pdy, 	/* page size in inches */
-    double llx, double lly,	/* drawing bounding box in user coords */ 
+    double llx, double lly,	/* drawing bounding box in screen coords */ 
     double urx, double ury  
 ) {
 
@@ -139,6 +139,10 @@ void ps_preamble(
        fprintf(fp, "SECTION\n");
        fprintf(fp, "2\n");
        fprintf(fp, "ENTITIES\n");
+       return;
+    } else if (outputtype == HPGL) {
+       fprintf(fp, "INPU;\n");
+       fprintf(fp, "SP1;\n");
        return;
     }
 
@@ -332,7 +336,7 @@ void ps_end_line()
        if (in_poly) {
 	   fprintf(fp, "G37*\n");
        }
-    }else if (outputtype == POSTSCRIPT) {
+    } else if (outputtype == POSTSCRIPT) {
 	fprintf(fp, "c%d ", this_pen);
 	if (in_poly) {
 	   fprintf(fp, "gs kc f%d setpattern fill gr\n",
@@ -403,6 +407,10 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "10\n%.10g\n", x1);	// initial x value
 	fprintf(fp, "20\n%.10g\n", y1);	// initial y value
 	in_progress=0;
+    } else if (outputtype == HPGL) {
+        V_to_R(&x1, &y1);    
+	fprintf(fp, "SP %d;\n", pennum);
+        fprintf(fp, "PU %04d,%04d;\n",(int)((x1*20.0)+0.5), (int)((y1*20.0)+0.5));
     }
 }
 
@@ -441,6 +449,9 @@ void ps_continue_line(double x1, double y1)
 	}
 	xold = x1;
 	yold = y1;
+    } else if (outputtype == HPGL) {			// HPGL
+	V_to_R(&x1, &y1);
+        fprintf(fp, "PD %04d,%04d;\n",(int)((x1*20.0)+0.5), (int)((y1*20.0)+0.5));
     }
     in_line++;
 }
@@ -463,6 +474,10 @@ void ps_postamble()
     } else if (outputtype == DXF) {
         fprintf(fp,"0\nENDSEC\n");
         fprintf(fp,"0\nEOF\n");
+    } else if (outputtype == HPGL) {
+        fprintf(fp,"PU;\n");
+        fprintf(fp,"SP;\n");
+        fprintf(fp,"IN;\n");
     }
     fclose(fp);
 }

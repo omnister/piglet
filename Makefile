@@ -25,7 +25,7 @@ com_copy.c com_move.c  com_point.c com_show.c com_window.c com_purge.c \
 coords.c db.c db.h com_wrap.c com_smash.c draw.c eprintf.c \
 eprintf.h eventnames.h equate.c equate.h geom_circle.c geom_inst.c \
 geom_line.c geom_arc.c  geom_poly.c geom_rect.c geom_text.c \
-paper.c lex.c Makefile PROCDATA.P MENUDATA_V NOTEDATA.F \
+paper.h paper.c lex.c Makefile PROCDATA.P MENUDATA_V NOTEDATA.F \
 opt_parse.c opt_parse.h com_change.c readfont.c readfont.h rlgetc.c \
 rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \

@@ -1750,6 +1750,10 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 		    fit++;
 		    plottype=GERBER;
 		    ps_set_outputtype(GERBER);
+		} else if (strncasecmp(word, ":TH", 3) == 0) { /* hpgl */
+		    // fit++;
+		    plottype=HPGL;
+		    ps_set_outputtype(HPGL);
 		} else {
 	    	    weprintf("bad option to PLOT: %s\n", word);
 		    return(-1);

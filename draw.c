@@ -1449,6 +1449,10 @@ int db_plot(char *name, OMODE plottype, double dx, double dy) {
 	snprintf(buf, MAXFILENAME, "%s.dxf", name);
 	printf("plotting dxf to %s\n", buf);
 	fflush(stdout);
+    } else if (plottype == HPGL) {
+	snprintf(buf, MAXFILENAME, "%s.hpgl", name);
+	printf("plotting hpgl to %s\n", buf);
+	fflush(stdout);
     } else {
        printf("bad plottype: %d\n", plottype);
        return(0);

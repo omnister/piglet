@@ -12,7 +12,7 @@
 // when done plotting all the geometries, call ps_postamble();
 //
 
-typedef enum {AUTOPLOT, POSTSCRIPT, GERBER, DXF} OMODE;
+typedef enum {AUTOPLOT, POSTSCRIPT, GERBER, DXF, HPGL} OMODE;
 
 extern void ps_set_file(FILE *fp);		// set file descriptor for output
 extern void ps_set_outputtype(OMODE mode);	// 0=postscript; 1=gerber
