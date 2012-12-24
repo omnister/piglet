@@ -2492,8 +2492,8 @@ void set_layer(
 	ps_set_layer(lnum);
         ps_set_pen(equate_get_color(lnum));	
 	ps_set_line(equate_get_linetype(lnum));
-
 	ps_set_fill(equate_get_fill(lnum));	//RCW/
+
 	//if (layer_fill) {
 	//    ps_set_fill(equate_get_fill(lnum));
 	//} else {

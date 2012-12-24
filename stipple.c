@@ -134,3 +134,33 @@ char *get_stipple_bits(int i) {
    }
 }
 
+const char * get_hpgl_fill(int fill)
+{
+    switch (fill % 8) {
+    case 0:
+	return ("FT10,0;");
+	break;
+    case 1:
+	return ("FT10,50;");
+	break;
+    case 2:
+	return ("FT3,3,45;");
+	break;
+    case 3:
+	return ("FT3,4,135;");
+	break;
+    case 4:
+	return ("FT3,5,0;");
+	break;
+    case 5:
+	return ("FT3,4,90;");
+	break;
+    case 6:
+	return ("FT4,3,0;");
+	break;
+    case 7:
+	return ("FT4,4,45;");
+	break;
+    }
+    return NULL;
+}

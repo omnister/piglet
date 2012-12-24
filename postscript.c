@@ -14,15 +14,18 @@
 
 int layer=0;
 int linetype=0;
+int newtype=1;
 int pennum=0;
+int newpen=1;
 int filltype=0;
+int newfill=1;
 int in_line=0;		/* set to 1 when working on a line */
 int in_poly=0;
 
 int this_pen=0;		// we need to save state at start of line
 int this_line=0;	// because lines are implicitly terminated
 int this_fill=0;	// by starting a new line which overwrites
-			// pen, line and fill
+int this_isfilled=0;	// pen, line and fill
 
 int debug=0;
 
@@ -50,6 +53,9 @@ void ps_set_layer(int layernumber) {
 void ps_set_fill(int fill)
 {
     if (debug) printf("setting fill:%d\n", fill);
+    if (fill != filltype) {
+       newfill=1;
+    }
     filltype=fill;
 }
 
@@ -57,8 +63,18 @@ void ps_set_fill(int fill)
 void ps_set_line(int line)
 {
     if (debug) printf("setting line:%d\n", line);
+    if (line != linetype) {
+       newtype=1;
+    }
     linetype=line;
 }
+
+int hpgl_penmap[] = {
+    1,2,3,5,
+    7,6,4,1,
+    2,3,5,7,
+    6,4,1,2
+};
 
 int dxf_penmap[] = {
     7,1,3,5,
@@ -70,8 +86,15 @@ int dxf_penmap[] = {
 void ps_set_pen(int pen) 
 {
     if (debug) printf("setting pen:%d\n", pen); 
-    if (outputtype == DXF || outputtype == HPGL) {
+
+    if (pennum != pen) {
+       newpen=1;
+    }
+
+    if (outputtype == DXF) {
        pennum=dxf_penmap[pen%16];
+    } else if (outputtype == HPGL) {
+       pennum=hpgl_penmap[pen%16];
     } else {
        pennum=pen;
     }
@@ -110,6 +133,50 @@ void ps_preamble(
 
     if (debug) printf("ps_preamble:\n");
 
+    /* some preliminaries... */
+    /* create transform commands based on bb and paper size */
+
+    bbllx=llx; bblly=lly; bburx=urx; bbury=ury;
+    if (debug) printf("llx:%g lly:%g urx:%g ury:%g\n", llx, lly, urx, ury);
+
+    /* FIXME, check that bb is in canonic order */
+    if ((llx > urx) || (lly > ury)) {
+    	printf("bounding box error in postscript.c\n");
+    }
+
+    xmid = (llx+urx)/2.0;
+    ymid = (lly+ury)/2.0;
+    xdel = 1.05*fabs(urx-llx);
+    ydel = 1.05*fabs(ury-lly);
+
+    if ( outputtype == HPGL) {
+	// 0.0025mm per step = 1016 ticks/in
+	xmax=pdx*1016.0;
+	ymax=pdy*1016.0;
+    } else if ( outputtype == POSTSCRIPT) {
+	// 72 pts/in
+	xmax=pdx*72.0;
+	ymax=pdy*72.0;
+
+	printf("aspect is xdel: %g, ydel: %g\n", xdel, ydel);
+	if (xdel > ydel) { /* flip aspect */
+	    landscape=1;
+	    printf("setting landscape\n");
+	    tmp=xmax;  xmax=ymax; ymax=tmp;
+	} else {
+	    printf("setting portrait\n");
+	    landscape=0;
+	}
+    }
+
+    s1 = xmax/xdel;
+    s2 = ymax/ydel;
+
+    scale = s2;
+    if (s1 < s2) {
+    	scale = s1;
+    }
+
     if ( outputtype == AUTOPLOT) {
        fprintf(fp,"back\n");
        fprintf(fp,"isotropic\n");
@@ -122,7 +189,8 @@ void ps_preamble(
        buf[strlen(buf)-1]='\0';
        fprintf(fp,"G4 CreationDate: %s*\n", buf);
        gethostname(buf,MAXBUF);
-       fprintf(fp,"G4 For: %s@%s (%s)*\n", getpwuid(getuid())->pw_name, buf, getpwuid(getuid())->pw_gecos );
+       fprintf(fp,"G4 For: %s@%s (%s)*\n", 
+       		getpwuid(getuid())->pw_name, buf, getpwuid(getuid())->pw_gecos );
        fprintf(fp,"G01*\n");	// linear interpolation
        fprintf(fp,"G70*\n");	// inches
        fprintf(fp,"G90*\n");	// absolute
@@ -141,185 +209,167 @@ void ps_preamble(
        fprintf(fp, "ENTITIES\n");
        return;
     } else if (outputtype == HPGL) {
-       fprintf(fp, "INPU;\n");
-       fprintf(fp, "SP1;\n");
+       fprintf(fp, "IN;PU;\n");
+       fprintf(fp, "SP%d;\n", pennum);
+
+       // HPGL plots in units of 0.025 mm = 1016 ticks per inch...
+       // fprintf(fp, "page size is %g %g\n", pdx*1016.0, pdy*1016.0);
+       // fprintf(fp, "bb is llx:%g lly:%g urx:%g ury%g\n", llx, lly, urx, ury);
+       fprintf(fp, "IP %d,%d,%d,%d;\n", 0, 0, (int) ((urx-llx)*scale), (int) ((ury-lly)*scale) );
+
+       // flip y axis (Xwin puts 0,0 at top, increments going down)
+       fprintf(fp, "SC %.4f,%.4f,%.4f,%.4f;\n", llx, urx, ury, lly);
+
+       fprintf(fp, "PA0,0;\n");
+
+	//int i,j; char *ps;
+	//fprintf(fp,"CO \"define stipple patterns\";\n");
+	//for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
+	//    fprintf(fp,"RF%d,8,8",i);
+	//    for (j=0; j<=7; j++) {
+	//	for(k=0; k<=7; k++) {
+	//	   fprintf(fp, ",%c", ((ps[j]>>k)&1)?'1':'0');
+	//	}
+	//    }
+	//    fprintf(fp,";\n");
+	//}
+
        return;
-    }
-
-    bbllx=llx; bblly=lly; bburx=urx; bbury=ury;
-    if (debug) printf("llx:%g lly:%g urx:%g ury:%g\n", llx, lly, urx, ury);
-
-    /* now create transform commands based on bb and paper size */
-    /* FIXME, check that bb is in canonic order */
-    if ((llx > urx) || (lly > ury)) {
-    	printf("bounding box error in postscript.c\n");
-    }
-
-/*
-plotting postcript to zhongsheet.ps
-currep min/max bounds: 0, 0, 8.5, 11
-currep vp bounds: 0, 0, 8.5, 11
-currep screen bounds: 142.932, 787, 751.068, -1.42109e-14
-gwidth/height: 894, 787
-bounds to ps: 142.932, -1.42109e-14, 751.068, 787
-setting landscape
-*/
-    xmid = (llx+urx)/2.0;
-    ymid = (lly+ury)/2.0;
-    xdel = 1.05*fabs(urx-llx);
-    ydel = 1.05*fabs(ury-lly);
-
-    // pdx=8.5;
-    // pdy=11.0;
-
-    xmax=pdx*72.0;
-    ymax=pdy*72.0;
-    printf("aspect is xdel: %g, ydel: %g\n", xdel, ydel);
-    if (xdel > ydel) { /* flip aspect */
-	landscape=1;
-    	printf("setting landscape\n");
-	tmp=xmax;  xmax=ymax; ymax=tmp;
-    } else {
-    	printf("setting portrait\n");
-	landscape=0;
-    }
-
-    s1 = xmax/xdel;
-    s2 = ymax/ydel;
-
-    scale = s2;
-    if (s1 < s2) {
-    	scale = s1;
-    }
-
-    fprintf(fp,"%%!PS-Adobe-2.0\n");
-    fprintf(fp,"%%%%Title: %s\n", dev);
-    fprintf(fp,"%%%%Creator: %s\n", prog);
-    timep=time(&timep);
-    fprintf(fp,"%%%%CreationDate: %s", ctime(&timep));
-    gethostname(buf,MAXBUF);
-    fprintf(fp,"%%%%For: %s@%s (%s)\n", 
-    	getpwuid(getuid())->pw_name, 
-	buf,
-	getpwuid(getuid())->pw_gecos );
-    if (landscape) {
-	fprintf(fp,"%%%%Orientation: Landscape\n");
-    } else {
-	fprintf(fp,"%%%%Orientation: Portrait\n");
-    }
-    fprintf(fp,"%%%%Pages: (atend)\n");
-    fprintf(fp,"%%%%BoundingBox: 0 0 %d %d\n", 
-    	(int) (pdx*72.0), (int) (pdy*72.0));
-    fprintf(fp,"%%%%DocumentPaperSizes: custom\n");
-    fprintf(fp,"%%%%Magnification: 1.0000\n");
-    fprintf(fp,"%%%%EndComments\n");
-
-    fprintf(fp,"%%%%BeginSetup\n");
-    fprintf(fp,"mark {\n");
-    fprintf(fp,"%%BeginFeature: *PageRegion custom\n");
-    fprintf(fp,"<</PageSize [ %d %d ] /ImagingBBox null >> setpagedevice\n",
-    	(int)( pdx*72.0), (int) (pdy*72.0));
-    fprintf(fp,"%%EndFeature\n");
-    fprintf(fp,"} stopped cleartomark\n");
-    fprintf(fp,"%%%%EndSetup\n");
-
-    fprintf(fp,"%%%%BeginProlog\n");
-    fprintf(fp,"/$Pig2psDict 200 dict def\n");
-    fprintf(fp,"$Pig2psDict begin\n");
-    fprintf(fp,"$Pig2psDict /mtrx matrix put\n");
-    fprintf(fp,"/c-1 {0 setgray} bind def\n");
-    fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c1 {1.000 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c2 {0.000 1.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
-    fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
-    fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
-    fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
-    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
-    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
-    fprintf(fp,"/cp {closepath} bind def\n");
-    fprintf(fp,"/ef {eofill} bind def\n");
-    fprintf(fp,"/gr {grestore} bind def\n");
-    fprintf(fp,"/gs {gsave} bind def\n");
-    fprintf(fp,"/sa {save} bind def\n");
-    fprintf(fp,"/rs {restore} bind def\n");
-    fprintf(fp,"/kc { currentrgbcolor [/Pattern /DeviceRGB] setcolorspace } bind def\n");
-    fprintf(fp,"/l {lineto} bind def\n");
-    fprintf(fp,"/m {moveto} bind def\n");
-    fprintf(fp,"/rm {rmoveto} bind def\n");
-    fprintf(fp,"/n {newpath} bind def\n");
-    fprintf(fp,"/s {stroke} bind def\n");
-    fprintf(fp,"/sh {show} bind def\n");
-    fprintf(fp,"/slc {setlinecap} bind def\n");
-    fprintf(fp,"/slj {setlinejoin} bind def\n");
-    fprintf(fp,"/slw {setlinewidth} bind def\n");
-    fprintf(fp,"/srgb {setrgbcolor} bind def\n");
-    fprintf(fp,"/rot {rotate} bind def\n");
-    fprintf(fp,"/sc {scale} bind def\n");
-    fprintf(fp,"/sd {setdash} bind def\n");
-    fprintf(fp,"/ff {findfont} bind def\n");
-    fprintf(fp,"/sf {setfont} bind def\n");
-    fprintf(fp,"/scf {scalefont} bind def\n");
-    fprintf(fp,"/sw {stringwidth} bind def\n");
-    fprintf(fp,"/tr {translate} bind def\n");
-
-    fprintf(fp,"%% start stipple patterns\n");
-    int i,j; char *ps;
-    for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
-        fprintf(fp,"/p%d {\n",i);
-        fprintf(fp,"8 8 true  matrix {<");
-	for (j=0; j<=7; j++) {
-    	    fprintf(fp,"%02x",ps[j]&255);
+    } else if (outputtype == POSTSCRIPT) {
+	fprintf(fp,"%%!PS-Adobe-2.0\n");
+	fprintf(fp,"%%%%Title: %s\n", dev);
+	fprintf(fp,"%%%%Creator: %s\n", prog);
+	timep=time(&timep);
+	fprintf(fp,"%%%%CreationDate: %s", ctime(&timep));
+	gethostname(buf,MAXBUF);
+	fprintf(fp,"%%%%For: %s@%s (%s)\n", 
+	    getpwuid(getuid())->pw_name, 
+	    buf,
+	    getpwuid(getuid())->pw_gecos );
+	if (landscape) {
+	    fprintf(fp,"%%%%Orientation: Landscape\n");
+	} else {
+	    fprintf(fp,"%%%%Orientation: Portrait\n");
 	}
-        fprintf(fp,">} imagemask\n");
-    	fprintf(fp,"} bind def\n");
-	fprintf(fp,"<< /PatternType 1\n");
-        fprintf(fp,"   /PaintType 2\n");
-	fprintf(fp,"   /TilingType 1\n");
-	fprintf(fp,"   /XStep 8 /YStep 8\n");
-	fprintf(fp,"   /BBox [0 0 8 8]\n");
-	fprintf(fp,"   /PaintProc { p%d }\n",i);
-	fprintf(fp,">>\n");
-	fprintf(fp,"matrix makepattern /f%d exch def\n",i);
-    }
-    fprintf(fp,"%% end stipple patterns\n");
+	fprintf(fp,"%%%%Pages: (atend)\n");
+	fprintf(fp,"%%%%BoundingBox: 0 0 %d %d\n", 
+	    (int) (pdx*72.0), (int) (pdy*72.0));
+	fprintf(fp,"%%%%DocumentPaperSizes: custom\n");
+	fprintf(fp,"%%%%Magnification: 1.0000\n");
+	fprintf(fp,"%%%%EndComments\n");
 
-    fprintf(fp,"end\n");
-    fprintf(fp,"save\n");
+	fprintf(fp,"%%%%BeginSetup\n");
+	fprintf(fp,"mark {\n");
+	fprintf(fp,"%%BeginFeature: *PageRegion custom\n");
+	fprintf(fp,"<</PageSize [ %d %d ] /ImagingBBox null >> setpagedevice\n",
+	    (int)( pdx*72.0), (int) (pdy*72.0));
+	fprintf(fp,"%%EndFeature\n");
+	fprintf(fp,"} stopped cleartomark\n");
+	fprintf(fp,"%%%%EndSetup\n");
 
-    // fprintf(fp,"newpath\n");
-    // fprintf(fp,"0 %d moveto\n", (int) (pdy*72.0));
-    // fprintf(fp,"0 0 lineto\n");
-    // fprintf(fp,"%d 0 lineto\n", (int) (pdx*72.0));
-    // fprintf(fp,"%d %d lineto closepath clip newpath\n", 
-    // 	(int) (pdx*72.0), (int) (pdy*72.0));
+	fprintf(fp,"%%%%BeginProlog\n");
+	fprintf(fp,"/$Pig2psDict 200 dict def\n");
+	fprintf(fp,"$Pig2psDict begin\n");
+	fprintf(fp,"$Pig2psDict /mtrx matrix put\n");
+	fprintf(fp,"/c-1 {0 setgray} bind def\n");
+	fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
+	fprintf(fp,"/c1 {1.000 0.000 0.000 srgb} bind def\n");
+	fprintf(fp,"/c2 {0.000 1.000 0.000 srgb} bind def\n");
+	fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
+	fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
+	fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
+	fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
+	fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
+	fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
+	fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
+	fprintf(fp,"/cp {closepath} bind def\n");
+	fprintf(fp,"/ef {eofill} bind def\n");
+	fprintf(fp,"/gr {grestore} bind def\n");
+	fprintf(fp,"/gs {gsave} bind def\n");
+	fprintf(fp,"/sa {save} bind def\n");
+	fprintf(fp,"/rs {restore} bind def\n");
+	fprintf(fp,"/kc { currentrgbcolor [/Pattern /DeviceRGB] setcolorspace } bind def\n");
+	fprintf(fp,"/l {lineto} bind def\n");
+	fprintf(fp,"/m {moveto} bind def\n");
+	fprintf(fp,"/rm {rmoveto} bind def\n");
+	fprintf(fp,"/n {newpath} bind def\n");
+	fprintf(fp,"/s {stroke} bind def\n");
+	fprintf(fp,"/sh {show} bind def\n");
+	fprintf(fp,"/slc {setlinecap} bind def\n");
+	fprintf(fp,"/slj {setlinejoin} bind def\n");
+	fprintf(fp,"/slw {setlinewidth} bind def\n");
+	fprintf(fp,"/srgb {setrgbcolor} bind def\n");
+	fprintf(fp,"/rot {rotate} bind def\n");
+	fprintf(fp,"/sc {scale} bind def\n");
+	fprintf(fp,"/sd {setdash} bind def\n");
+	fprintf(fp,"/ff {findfont} bind def\n");
+	fprintf(fp,"/sf {setfont} bind def\n");
+	fprintf(fp,"/scf {scalefont} bind def\n");
+	fprintf(fp,"/sw {stringwidth} bind def\n");
+	fprintf(fp,"/tr {translate} bind def\n");
 
-    fprintf(fp,"/$Pig2psBegin\n");
-    fprintf(fp,"{$Pig2psDict begin /$Pig2psEnteredState save def}def\n");
-    fprintf(fp,"/$Pig2psEnd {$Pig2psEnteredState restore end} def\n");
+	fprintf(fp,"%% start stipple patterns\n");
+	int i,j; char *ps;
+	for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
+	    fprintf(fp,"/p%d {\n",i);
+	    fprintf(fp,"8 8 true  matrix {<");
+	    for (j=0; j<=7; j++) {
+		fprintf(fp,"%02x",ps[j]&255);
+	    }
+	    fprintf(fp,">} imagemask\n");
+	    fprintf(fp,"} bind def\n");
+	    fprintf(fp,"<< /PatternType 1\n");
+	    fprintf(fp,"   /PaintType 2\n");
+	    fprintf(fp,"   /TilingType 1\n");
+	    fprintf(fp,"   /XStep 8 /YStep 8\n");
+	    fprintf(fp,"   /BBox [0 0 8 8]\n");
+	    fprintf(fp,"   /PaintProc { p%d }\n",i);
+	    fprintf(fp,">>\n");
+	    fprintf(fp,"matrix makepattern /f%d exch def\n",i);
+	}
+	fprintf(fp,"%% end stipple patterns\n");
 
-    fprintf(fp,"%%BeginPageSetup\n");
-    fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
-    if (landscape) {
-    	fprintf(fp,"%g %g scale\n", scale, scale);
-	fprintf(fp,"%g %g translate\n", 
-	    (ymax/(2.0*scale))+ymid, (xmax/(2.0*scale))-xmid);
-	fprintf(fp,"90 rotate\n");
+	fprintf(fp,"end\n");
+	fprintf(fp,"save\n");
+
+	// fprintf(fp,"newpath\n");
+	// fprintf(fp,"0 %d moveto\n", (int) (pdy*72.0));
+	// fprintf(fp,"0 0 lineto\n");
+	// fprintf(fp,"%d 0 lineto\n", (int) (pdx*72.0));
+	// fprintf(fp,"%d %d lineto closepath clip newpath\n", 
+	// 	(int) (pdx*72.0), (int) (pdy*72.0));
+
+	fprintf(fp,"/$Pig2psBegin\n");
+	fprintf(fp,"{$Pig2psDict begin /$Pig2psEnteredState save def}def\n");
+	fprintf(fp,"/$Pig2psEnd {$Pig2psEnteredState restore end} def\n");
+
+	fprintf(fp,"%%BeginPageSetup\n");
+	fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
+	if (landscape) {
+	    fprintf(fp,"%g %g scale\n", scale, scale);
+	    fprintf(fp,"%g %g translate\n", 
+		(ymax/(2.0*scale))+ymid, (xmax/(2.0*scale))-xmid);
+	    fprintf(fp,"90 rotate\n");
+	} else {
+	    fprintf(fp,"%g %g scale\n", scale, scale);
+	    fprintf(fp,"%g %g translate\n",
+		(xmax/(2.0*scale))-xmid,  (ymax/(2.0*scale))-ymid);
+	}
+	fprintf(fp,"%%EndPageSetup\n");
+	fprintf(fp,"%%%%EndProlog\n");
+
+	fprintf(fp,"$Pig2psBegin\n");
+	fprintf(fp,"10 setmiterlimit\n");
+	fprintf(fp,"1 slj 1 slc\n");
+	fprintf(fp,"1.0 slw\n");
+
+	fprintf(fp,"%% here starts figure;\n");
+	return;
+
     } else {
-    	fprintf(fp,"%g %g scale\n", scale, scale);
-	fprintf(fp,"%g %g translate\n",
-	    (xmax/(2.0*scale))-xmid,  (ymax/(2.0*scale))-ymid);
+        printf("unrecognized plot type in postscript.c\n");
+	return;
     }
-    fprintf(fp,"%%EndPageSetup\n");
-    fprintf(fp,"%%%%EndProlog\n");
-
-    fprintf(fp,"$Pig2psBegin\n");
-    fprintf(fp,"10 setmiterlimit\n");
-    fprintf(fp,"1 slj 1 slc\n");
-    fprintf(fp,"1.0 slw\n");
-
-    fprintf(fp,"%% here starts figure;\n");
 }
 
 
@@ -328,6 +378,7 @@ void ps_end_line()
     extern int this_pen;
     extern int this_line;
     extern int in_line;
+    extern int this_isfilled;
     int debug = 0;
 
     if (debug) printf("ps_end_line:\n");
@@ -336,6 +387,19 @@ void ps_end_line()
        if (in_poly) {
 	   fprintf(fp, "G37*\n");
        }
+    } else if (outputtype == HPGL) {			// HPGL
+       if (in_poly) {
+	   fprintf(fp, "PM2;\n");
+	   if (this_isfilled) {
+	       fprintf(fp, "%s\n", get_hpgl_fill(this_fill));
+	       fprintf(fp, "LT; FP;\n");
+	   }
+	   if (this_line == 0) {
+	       fprintf(fp, "LT;EP;\n");
+	   } else {
+	       fprintf(fp, "LT%d;EP;\n", this_line);
+	   }
+	}
     } else if (outputtype == POSTSCRIPT) {
 	fprintf(fp, "c%d ", this_pen);
 	if (in_poly) {
@@ -360,6 +424,7 @@ void ps_start_line(double x1, double y1, int filled)
     extern int this_pen;
     extern int this_line;
     extern int this_fill;
+    extern int this_isfilled;
 
     if (debug) printf("ps_start_line:\n");
 
@@ -376,9 +441,11 @@ void ps_start_line(double x1, double y1, int filled)
 	in_poly++;
     }
 
+
     this_pen=pennum;		/* save characteristics at start of line */
     this_line=linetype;
     this_fill=filltype;
+    this_isfilled=filled;
 
     if (outputtype == POSTSCRIPT) {
 	fprintf(fp, "n\n");
@@ -408,9 +475,18 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "20\n%.10g\n", y1);	// initial y value
 	in_progress=0;
     } else if (outputtype == HPGL) {
-        V_to_R(&x1, &y1);    
-	fprintf(fp, "SP %d;\n", pennum);
-        fprintf(fp, "PU %04d,%04d;\n",(int)((x1*20.0)+0.5), (int)((y1*20.0)+0.5));
+	if (!filled) {
+	   if (this_line == 0) {
+	       fprintf(fp, "LT;\n");
+	   } else {
+	       fprintf(fp, "LT%d;\n", this_line);
+	   }
+	}
+	fprintf(fp, "SP%d;\n", this_pen);
+        fprintf(fp, "PU %.4f,%.4f;\n",x1,y1);
+        if (filled) {
+	   fprintf(fp,"PM0;\n");
+	}
     }
 }
 
@@ -450,8 +526,7 @@ void ps_continue_line(double x1, double y1)
 	xold = x1;
 	yold = y1;
     } else if (outputtype == HPGL) {			// HPGL
-	V_to_R(&x1, &y1);
-        fprintf(fp, "PD %04d,%04d;\n",(int)((x1*20.0)+0.5), (int)((y1*20.0)+0.5));
+        fprintf(fp, "PD %.4f,%.4f;\n",x1,y1);
     }
     in_line++;
 }
