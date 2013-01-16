@@ -30,6 +30,7 @@ int com_change(LEXER *lp, char *arg)
     TOKEN token;
     char *word;
     char buf[MAXBUF];
+    char buf2[MAXBUF];
     int debug=0;
     int done=0;
     int retval;
@@ -165,12 +166,14 @@ int com_change(LEXER *lp, char *arg)
 			db_highlight(p_best);
 			switch (p_best->type) {	/* put text in command buffer */
 			    case NOTE:
-				snprintf(buf, MAXBUF, "\"%s\"", p_best->u.n->text);
+				escstring(buf2, p_best->u.n->text);	// esc quotes
+				snprintf(buf, MAXBUF, "\"%s\"", buf2);
 				add_history(buf);
 				/* token_set_mode(lp, 1);	set raw for testing */
 				break;
 			    case TEXT:
-				snprintf(buf, MAXBUF, "\"%s\"", p_best->u.t->text);
+				escstring(buf2, p_best->u.t->text);	// esc quotes
+				snprintf(buf, MAXBUF, "\"%s\"", buf2);
 				add_history(buf);
 				break;
 			    default:
@@ -298,6 +301,7 @@ int com_change(LEXER *lp, char *arg)
 		token_get(lp,&word); 	/* just ignore it */
 		if (p_best->type == NOTE) {
 		    free(p_best->u.n->text);
+
 		    p_best->u.n->text = strsave(word);
 		    currep->modified++;
 		    need_redraw++;

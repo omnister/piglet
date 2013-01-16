@@ -18,6 +18,7 @@
 #include "ev.h"
 
 #define EPS 1e-6
+#define MAXBUF 128	// maximum escaped text string
 
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
@@ -1217,6 +1218,18 @@ void oldprintcoords(FILE *fp, XFORM *xp, double x, double y) {
     fprintf(fp, " %.10g,%.10g", xx,yy);
 }
 
+void escstring(char *dst, char *src) {
+   char *s;
+   char *d;
+   for (d=dst, s=src; *s!='\0'; s++) {
+      if (*s == '\"') {
+         *d++ = '\\';
+      } 
+      *d++ = *s;
+   }
+   *d='\0';
+}
+
 /* printdef writes the definition of a single component *p to the */
 /* the FILE *fp.  If *pinstdef is not NULL, then printdef will */
 /* transform the definitions by the offset and transform pointed */
@@ -1233,6 +1246,7 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
     XFORM *xp;
     OPTS *opts;
     double xold, yold;
+    char buf[MAXBUF];
 
     if (pinstdef != NULL) {
         xp = matrix_from_opts(pinstdef->u.i->opts);
@@ -1322,7 +1336,10 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	    db_print_opts(fp, p->u.n->opts, NOTE_OPTS);
 	}
 
-	fprintf(fp, "\"%s\" ", p->u.n->text);
+	// we need to backslash quotes in the string...
+
+	escstring(buf, p->u.n->text);
+	fprintf(fp, "\"%s\" ", buf);
 	printcoords(fp, xp,  p->u.n->x, p->u.n->y);
 	fprintf(fp, ";\n");
 	break;
@@ -1418,7 +1435,8 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 	    db_print_opts(fp, p->u.t->opts, TEXT_OPTS);
 	}
 
-	fprintf(fp, "\"%s\" ", p->u.t->text);
+	escstring(buf, p->u.t->text);
+	fprintf(fp, "\"%s\" ", buf);
 	printcoords(fp, xp,  p->u.t->x, p->u.t->y);
 	fprintf(fp, ";\n");
 	break;

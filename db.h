@@ -579,3 +579,5 @@ int readin();
 int loadrep();
 int aborted;	// used to abort drawing
 
+void escstring(char *dst, char *src);
+
