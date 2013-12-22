@@ -23,6 +23,7 @@
 #include "ev.h"
 #include "version.h"
 #include "postscript.h"
+#include "readshpfont.h"
 
 int readin();
 
@@ -192,6 +193,7 @@ int main(int argc, char **argv)
     char buf2[128];
     char *pig_path;
     FILE *fp;
+    int i;
 
     /* make stdin unbuffered - without this cut/paste fails */
     setvbuf(stdin, NULL, _IONBF, 0);	
@@ -262,7 +264,7 @@ int main(int argc, char **argv)
 
     findfile(pig_path, EVget("PIG_NOTEDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not file NOTEDATA file: %s\n", EVget("PIG_NOTEDATA_FILE"));
+	printf("Could not find NOTEDATA file: %s\n", EVget("PIG_NOTEDATA_FILE"));
 	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
@@ -271,11 +273,26 @@ int main(int argc, char **argv)
 
     findfile(pig_path, EVget("PIG_TEXTDATA_FILE"), buf, R_OK);
     if (buf[0] == '\0') {
-	printf("Could not file TEXTDATA file: %s\n", EVget("PIG_TEXTDATA_FILE"));
+	printf("Could not find TEXTDATA file: %s\n", EVget("PIG_TEXTDATA_FILE"));
 	printf("PIG_PATH=\"%s\"\n", pig_path);
 	exit(5);
     } else {
 	loadfont(buf,1);	/* load NOTE, TEXT definitions */
+    }
+
+    for (i=1; i<=10; i++) {
+       sprintf(buf, "PIG_SHPFONT%d", i);
+
+	if (EVget(buf) != NULL) {
+	    findfile(pig_path, EVget(buf), buf, R_OK);
+	    if (buf[0] == '\0') {
+		printf("Could not find font file: %s\n", EVget(buf));
+		printf("PIG_PATH=\"%s\"\n", pig_path);
+		// exit(5);
+	    } else {
+	    shp_loadfont(buf);	/* load FONT definition */
+	    }
+	}
     }
 
     initialize_equates();

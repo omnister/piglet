@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "readfont.h"
+#include "readshpfont.h"
 #include "db.h"
 #define MAXPOINT 20000
 
@@ -117,6 +118,16 @@ void writestring(
     double width=(((double)(dx[id]))*0.80*strlen(s))/((double)(dy[id]));
     double height=0.8;
     xoff = yoff = 0.0;
+
+    if (id <= 1) {				// 0 or 1
+   	;	// good to go... 
+    } else if ((shp_numfonts()+1) >= id)  {	// 2 or more and loaded
+    	shp_writestring(s,xf,id-2,jf,bb,mode);
+	return;
+    } else {					// not loaded
+	fprintf(stderr, "no font loaded at position %d, defaulting to %d\n", id, id%2);
+	id = id%2;
+    }
 
     switch (jf) {
         case 0:		/* SW */
@@ -283,6 +294,22 @@ int getxy(FILE *fp, int *px, int *py)
 }
 
 int eatwhite(FILE *fp)
+{
+    int c;
+
+    while ((c=getc(fp)) != EOF) {
+	if (c=='\n') {
+	    line++;
+	}
+	if (!isspace(c)) {
+	    break;
+	}
+    }
+    ungetc(c,fp);
+    return(c);
+}
+
+int old_eatwhite(FILE *fp)
 {
     int c;
     int done=0;

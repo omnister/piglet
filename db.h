@@ -44,7 +44,7 @@ int show[MAX_LAYER];
  *   all insertions are made at the tail to avoid reversing definition order
  *   everytime an archive is made and retrieved (a classic HP Piglet bug
  *   which made it very difficult to run a diff(1) on two versions of an
- *   archive file.
+ *   archive file).
  *
  *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
  *                           |                |                  |

@@ -31,7 +31,7 @@ void add_text(LEXER *lp, int *layer) {
 int add_annotation(lp, layer, mode)
 LEXER *lp;
 int *layer;
-int mode;
+int mode;	// 0 for note, 1 for text
 {
     enum {START,NUM1,END} state = START;
 
