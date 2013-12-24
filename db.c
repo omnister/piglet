@@ -2994,10 +2994,10 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 		    xd = xc; yd = yc;
 		}
 	    } else {		/* width == 0 */
-		jump(bb,mode);
+		// jump(bb,mode);
 		draw(x1,y1, bb, mode);
 		draw(x2,y2, bb, mode);
-		jump(bb,mode);
+		// jump(bb,mode);
 	    }
 
 	    temp = temp->next;
