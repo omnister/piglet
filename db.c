@@ -2706,6 +2706,7 @@ COORDS *bezier(
     double y0, y1, y2, y3;
     double xx, yy;
     double u;
+    double i;
     int n=0;
 
     if (list == (COORDS *) NULL) {
@@ -2723,7 +2724,8 @@ COORDS *bezier(
 	   x0=x1; x1=x2; x2=x3; x3=p->coord.x;
 	   y0=y1; y1=y2; y2=y3; y3=p->coord.y;
 	   if (n>2) {
-	       for(u=0.0; u<1.0; u+=1.0/(double)ninterp) {
+	       for(i=0.0; i<(double)ninterp; i++) {
+		   u=i/((double)ninterp);
 	           xx=catmull(u,x0,x1,x2,x3);
 	           yy=catmull(u,y0,y1,y2,y3);
 		   new_coords=coord_append(new_coords, xx, yy);
@@ -2732,7 +2734,8 @@ COORDS *bezier(
 	   p=p->next;
        }
        // double the last point and go all the way to u==1.0
-       for(u=0.0; u<=1.0; u+=1.0/(double)ninterp) {
+       for(i=0.0; i<=(double)ninterp; i++) {
+	   u=i/((double)ninterp);
 	   xx=catmull(u,x1,x2,x3,x3);
 	   yy=catmull(u,y1,y2,y3,y3);
 	   coord_append(new_coords, xx, yy);
@@ -2819,7 +2822,7 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 	clear();
     }
 
-    if (def->u.l->opts->bezier && mode==0) {
+    if (def->u.l->opts->bezier && mode==0 && coord_count(def->u.l->coords)>2) {
 	// convert to bezier in regular drawing mode
         temp = bezier(def->u.l->coords, def->u.l->opts->bezier+1);
     } else {
