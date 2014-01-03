@@ -711,7 +711,7 @@ ADD P3  3770,1560  3770,1670  3790,1690  3800,1720  3790,1760  3810,1870
       4250,1910  4270,2010  4250,2090  4190,2140  4110,2090  4030,1980  3970,1850
       3940,1700  3940,1540;
 ADD N2 :F200 "Personal Interactive Graphic Layout EdiTor"  -500,-500;
-ADD N2 :F100 "(C) 1998-2012 Richard C. Walker <walker@omnisterra.com>, GPL V2.0"  0,-700;
+ADD N2 :F100 "(C) 1998-2014 Richard C. Walker <walker@omnisterra.com>, GPL V2.0"  0,-700;
 ADD T3 :J1 :Z20 :F200 "April 15, 2012"  30,2540;
 ADD T3 :J1 :Z20 :F300 "version 0.97"  80,2870;
 ADD T3 :J1 :Z20 :F400 "PD_piglet"  40,3200;

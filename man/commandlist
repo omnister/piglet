@@ -561,7 +561,7 @@ this produces precise angles for 45 and 90 degrees, but may result in
 slight angle errors for other settings, especially on coarse grids. 
 A lock angle of 0 turns off all restrictions on line placement. 
 
-If the :B<nsegs> option is specified with a non-zero number of segments,
+If the :B<nsegs> option is specified with three or more points,
 the line is converted to a Catmull-Rom Spline curve with <nsegs>
 smoothed points inserted between each of the originally entered points. 
 The curve gets visually smoother with higher number of segments, and
@@ -616,7 +616,8 @@ Vol. MTT-26, March 1978, pp. 175-181.
 
 N: ADD_NOTE
 D: Add a note to the current device
-U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>]  "string" <xy> EOC
+U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirror>]
+[:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:N<fontindex>]  "string" <xy> EOC
 S: good
 T: {
 Add a note.  A note is zero width text.  <Rotation> is in degrees with
@@ -647,6 +648,19 @@ handy for entering a multi-line block of information.
 The font is defined in NOTEDATA.F and is easily changed.  New fonts can
 be derived from the Hershey font database.  The format is documented in
 the sourcode file "readfont.c". 
+
+Since version 0.98, Piglet can parse and display AutoCad .SHP font
+files.  Up to 10 .SHP files can be loaded at startup and used for either
+NOTE or TEXT by specifying the :N<index> option.  The classic piglet
+vector fonts are loaded by default at index 0 for NOTE and index 1 for
+TEXT.  Indices 2-12 are reserved for .SHP fonts.  Loading of .SHP files
+are controlled by setting the environment variables $PIG_SHPFONT1 through
+$PIG_SHPFONT10 in the pigrc file.  As an example, if the line "SET
+PIG_SHPFONT1 pan.shp" is added to the pigrc file, piglet will look in
+the $PIG_PATH to find a file named "pan.shp".  If found, the file will
+be loaded and the font can be specified for use with "ADD N1 :N2".  If a
+font has not been loaded for a given index, piglet will default back to
+index 0 for NOTES and index 1 for TEXT. 
 
 .SS OPTIONS
 .TP

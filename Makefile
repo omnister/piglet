@@ -64,7 +64,7 @@ clean:
 	rm -f *.o pig.bin
 	rm -rf man/*1p man/*html
 
-tar: $(TARS)
+tar: $(TARS) version
 	(  d=`date +%F`;\
 	   q=`pwd`;\
 	   p=`basename $$q`;\
