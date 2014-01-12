@@ -242,6 +242,11 @@ int initX()
 	y = dpy_height-top_height+y;
     } 
 
+    // Visual *visual = DefaultVisual(dpy,0);
+    // if (visual->class != TrueColor) {
+    //    fprintf(stderr,"cannot handle non TrueColor visual\n");
+    // }
+
     /* create top level window for packing graphic and menu windows */
     topwin = XCreateSimpleWindow(dpy, RootWindow(dpy,scr),
         x, y, top_width, top_height, border_width,
