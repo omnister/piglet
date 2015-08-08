@@ -135,10 +135,11 @@ int opt_parse(
 		    return(ERR);
 		}
 		i = (int) optval;
-		//if (i !=0 && i != 1) {
-		//    weprintf("font_num must be 0 or 1: %s\n", optstring+2); 
-		//    return(ERR);
-		//}
+		if (i <-2 || i >= 100) {
+		    // text is -2, note is -1, user can't set them
+		    weprintf("font_num must between 0 and 100: %s\n", optstring+2); 
+		    return(ERR);
+		}
 		popt->font_num = i;
 		break;
 	    case 'R':		/* resolution or rotation angle +/- 360 */

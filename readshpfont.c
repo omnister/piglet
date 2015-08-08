@@ -28,7 +28,6 @@ typedef struct font {
    char *fontname;
    char *fontpath;
    unsigned char *glyphtab[258]; // pointers to byte arrays
-   struct font *next;  
 } FONT;
 
 int nfonts=0;
@@ -66,17 +65,17 @@ char *estrdup(const char *s);
 void shp_eatwhite(FILE *fp);
 int shp_token_unget(TOKEN token, char *word);
 
-int shp_numfonts() {
-   return(nfonts);
-}
-
 FONT *shp_id2font(int id) {
-    if (id < nfonts && (fonttab[id]!=NULL)) {
+    if (fonttab[id]!=NULL) {
        return(fonttab[id]);
     } else {
        fprintf(stderr, "can't open font id:%d\n", id);
-       exit(1);
+       return(NULL);
     }
+}
+
+int shp_fontexists(int id) {
+    return (fonttab[id]!=NULL);
 }
 
 void shp_draw(double x, double y, XFORM *xf, BOUNDS *bb, int mode) {
@@ -536,8 +535,22 @@ void shp_fontinit() {
    //
    // do anything needed to initialize font structures
    for (i=0; i<MAXFONTS; i++) {
-     fonttab[i]=NULL;
+      fonttab[i]=NULL;
    }
+}
+
+void freefont(FONT *f) {
+   if (f==NULL) return;
+   if (f->glyphtab != NULL) {
+      free(f->glyphtab);
+   }
+   if (f->fontpath != NULL) {
+      free(f->fontpath);
+   }
+   if (f->fontname != NULL) {
+      free(f->fontpath);
+   }
+   free(f);
 }
 
 FONT *newfont() {
@@ -553,12 +566,11 @@ FONT *newfont() {
     for (i=0; i<258; i++) {
 	f->glyphtab[i] = NULL;
     }
-    f->next = NULL;
 
     return(f);
 }
 
-// int shp_loadfont(char *path);  
+// int shp_loadfont(char *path, int position);  
 	// returns fonttable index, -1 on err
 	// saves basename(path) into fontname;
         // note font is loaded in 0
@@ -586,7 +598,7 @@ FONT *newfont() {
 
 // -----------------------------------------
 
-int shp_loadfont(char *path)
+int shp_loadfont(char *path, int position)
 {
     char *tp;
     TOKEN token;
@@ -710,9 +722,12 @@ int shp_loadfont(char *path)
 
     f->fontpath=estrdup(path);
     f->fontname=estrdup(fontname);
-    fonttab[nfonts++]=f;
 
-    return(nfonts-1);
+    if (fonttab[position]!=NULL) {
+       printf("freeing font at postion %d\n", position);
+    }
+    fonttab[position]=f;
+    return(position);
 }
 
 
@@ -732,6 +747,7 @@ void shp_writestring(
 
     FONT *f;
     f = shp_id2font(id);
+    if (f==NULL) return;
 
     if (jf != 0) {
         // FIXME: compute actual font bounding boxes here
@@ -862,17 +878,17 @@ int test_main() {
    char buf[256];
 
    shp_fontinit();
-   shp_loadfont("/home/walker/shx/good/pan.shp");
-   shp_loadfont("/home/walker/shx/good/opt.shp");
-   shp_loadfont("/home/walker/shx/good/helvo.shp");
-   shp_loadfont("/home/walker/shx/good/scripts.shp");
-   shp_loadfont("/home/walker/shx/good/arctext.shp");
-   shp_loadfont("/home/walker/shx/good/handlet.shp");
-   shp_loadfont("/home/walker/shx/good/dim.shp");
-   shp_loadfont("/home/walker/shx/good/gothicen.shp");
-   shp_loadfont("/home/walker/shx/good/reverse.shp");
-   shp_loadfont("/home/walker/shx/good/complex.shp");
-   shp_loadfont("/home/walker/shx/good/hcomx.shp");
+   shp_loadfont("/home/walker/shx/good/pan.shp",0);
+   shp_loadfont("/home/walker/shx/good/opt.shp",1);
+   shp_loadfont("/home/walker/shx/good/helvo.shp",2);
+   shp_loadfont("/home/walker/shx/good/scripts.shp",3);
+   shp_loadfont("/home/walker/shx/good/arctext.shp",4);
+   shp_loadfont("/home/walker/shx/good/handlet.shp",5);
+   shp_loadfont("/home/walker/shx/good/dim.shp",6);
+   shp_loadfont("/home/walker/shx/good/gothicen.shp",7);
+   shp_loadfont("/home/walker/shx/good/reverse.shp",8);
+   shp_loadfont("/home/walker/shx/good/complex.shp",9);
+   shp_loadfont("/home/walker/shx/good/hcomx.shp",10);
   
    for (i=0; i<nfonts; i++) {
       f = shp_id2font(i);

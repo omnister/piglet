@@ -6,6 +6,7 @@
 #include "rlgetc.h"
 #include <string.h>
 
+
 DB_TAB dbtab; 
 DB_DEFLIST dbdeflist;
 DB_TEXT dbtext;
@@ -21,17 +22,17 @@ int add_annotation();
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
 void add_note(LEXER *lp, int *layer) {
-    add_annotation(lp, layer, 0);
+    add_annotation(lp, layer, NOTE_MODE);
 }
 
 void add_text(LEXER *lp, int *layer) {
-    add_annotation(lp, layer, 1);
+    add_annotation(lp, layer, TEXT_MODE);
 }
 
 int add_annotation(lp, layer, mode)
 LEXER *lp;
 int *layer;
-int mode;	// 0 for note, 1 for text
+int mode;	// NOTE_MODE for note, TEXT_MODE for text
 {
     enum {START,NUM1,END} state = START;
 
@@ -47,7 +48,7 @@ int mode;	// 0 for note, 1 for text
     opt_set_defaults( &opts );
     opts.font_size = db_get_font_size(); 	/* get default from FSIze command */
     opts.slant = db_get_text_slant(); 		/* get default from TSLant command */
-    opts.font_num = mode;			/* default note font=0, text=1 */
+    opts.font_num = mode;			/* default note mode=NOTE_MODE, text=TEXT_MODE */
 
     str[0] = '\0';
 
@@ -55,7 +56,7 @@ int mode;	// 0 for note, 1 for text
 
 	rl_saveprompt();
 
-	if (mode) {
+	if (mode==TEXT_MODE) {
 	    rl_setprompt("ADD_TEXT> ");
 	    type="TEXT";
 	} else {
@@ -78,9 +79,9 @@ int mode;	// 0 for note, 1 for text
 		    if (nargs > 1) {
 			rubber_clear_callback();
 		    }
-		    if (mode && opt_parse(word, TEXT_OPTS, &opts) == -1) {
+		    if ((mode == TEXT_MODE) && opt_parse(word, TEXT_OPTS, &opts) == -1) {
 			state = END;
-		    } else if (!mode && opt_parse(word, NOTE_OPTS, &opts) == -1) {
+		    } else if ((mode == NOTE_MODE) && opt_parse(word, NOTE_OPTS, &opts) == -1) {
 			state = END;
 		    } else {
 			state = START;
@@ -122,7 +123,7 @@ int mode;	// 0 for note, 1 for text
 				printf("   suppressing double click\n");
 			    } else {
 				rubber_clear_callback();
-				if (mode) {
+				if (mode == TEXT_MODE) {
 				    db_add_text(currep, *layer, opt_copy(&opts),
 					strsave(str), x1, y1);
 				} else {

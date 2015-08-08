@@ -2003,6 +2003,12 @@ int db_add_note(DB_TAB *cell, int layer, OPTS *opts, char *string ,NUM x,NUM y)
 {
     struct db_note *np;
     struct db_deflist *dp;
+    int debug=0;
+
+    if (debug) {
+       fprintf(stderr,"in db_add_note, opts->font_num = %d\n", opts->font_num);
+    }
+
  
     np = (struct db_note *) emalloc(sizeof(struct db_note));
     dp = (struct db_deflist *) emalloc(sizeof(struct db_deflist));
@@ -2160,7 +2166,7 @@ void opt_set_defaults(OPTS *opts)
     opts->font_size = 10.0;       /* :F<font_size> */
     opts->height = 0.0;       	  /* :H<substrate_height> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */
-    opts->font_num=0;		  /* :N<font_num> */
+    opts->font_num=-1;		  /* :N<font_num> */
     opts->justification=0;	  /* :J<justification> */
     opts->stepflag=0;		  /* not a stepped instance */
     opts->rows=1;		  /* :S<rows>,<cols> */
@@ -2245,7 +2251,7 @@ char *validopts;
 		}
 	    	break;
 	    case 'N':
-		if (popt->font_num != 0 && popt->font_num != 1) {
+		if (popt->font_num != -1 && popt->font_num != -2) {
 		    fprintf(fp, ":N%d ", popt->font_num);
 		}
 	    	break;

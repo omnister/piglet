@@ -31,6 +31,9 @@
 #define INST_OPTS "MRSXYZ"
 #define NONAME_OPTS "MRX"
 
+#define TEXT_MODE -2		// special :N opts for NOTE and TEXT
+#define NOTE_MODE -1	
+
 #define MAX_LAYER 1024
 
 extern char *PIG_PATH;
@@ -295,6 +298,7 @@ typedef struct db_note {
     char *text;
     NUM x,y;
 } DB_NOTE; 
+
 
 typedef struct db_text {
     int layer;

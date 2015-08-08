@@ -1367,8 +1367,15 @@ void snapxy(double *x,double *y)	/* snap world coordinates to grid ticks */
 	yd*( (int) ((((*y)-yo)/yd)+0.5))+yo : 
 	yd*(-(int) (0.5-(((*y)-yo)/yd)))+yo);
 
-    *x = xx-fmod(xx,1.0/pow(10.0,RES));
-    *y = yy-fmod(yy,1.0/pow(10.0,RES));
+    // *x = xx-fmod(xx+RES/2.0,1.0/pow(10.0,RES));
+    // *y = yy-fmod(yy+RES/2.0,1.0/pow(10.0,RES));
+    
+    // *x = ((double)((int)(xx*pow(10.0,RES)+0.5)))/pow(10.0,RES);
+    // *y = ((double)((int)(yy*pow(10.0,RES)+0.5)))/pow(10.0,RES);
+
+    *x = xx;
+    *y = yy;
+
 
 }
 

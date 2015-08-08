@@ -45,58 +45,62 @@ int getint();
 
 int line=1;
 
-int dx[2];		/* size of font cell */
-int dy[2];		/* size of font cell */	
-int fonttab[2][256];
+static int dx[2];		/* size of font cell */
+static int dy[2];		/* size of font cell */	
+static int fonttab[2][256];	/* starting index of each character */
 
-int xdef[2][MAXPOINT];
-int ydef[2][MAXPOINT];
+static int xdef[2][MAXPOINT];
+static int ydef[2][MAXPOINT];
 
-int fillable[2] = {0,1};
+int fillable(int fid) {
+   return(fid);
+}
 
 void writechar(
     int c,
     double x,
     double y,
     XFORM *xf,
-    int id,		/* font id */
+    int fid,		/* font id */
     BOUNDS *bb,
     int mode		/* drawing mode */
 ) {
     int i;
     double xp,yp,xt,yt;
+    int debug=0;
 
-    /* printf("# %c %d\n",c); */
-    
+    // BUG fails if fid==0;
+
     if (c==' ') {
 	return;
     }
 
-    i = fonttab[id][c];
+    i = fonttab[fid][c];
+    if (debug) fprintf(stderr, "writechar fid=%d, c=%c, font index = %d\n", fid, c, i);
 
     jump(bb, mode);
-    if (fillable[id]) {
+    if (fillable(fid)) {
 	startpoly(bb,mode);
     }
-    while (xdef[id][i] != -128 || ydef[id][i] != -128) { // -128,-128 == END 
-	if (xdef[id][i] != -128) {			 // end of polygon 
-	    xp = x + (0.8 * ( (double) xdef[id][i] / (double) dy[id]));
-	    yp = y + (0.8 * ( (double) ydef[id][i] / (double) dy[id]));
+    while (xdef[fid][i] != -128 || ydef[fid][i] != -128) { // -128,-128 == END 
+	if (xdef[fid][i] != -128) {			 // end of polygon 
+	    xp = x + (0.8 * ( (double) xdef[fid][i] / (double) dy[fid]));
+	    yp = y + (0.8 * ( (double) ydef[fid][i] / (double) dy[fid]));
 	    xt = xp*xf->r11 + yp*xf->r21 + xf->dx;
 	    yt = xp*xf->r12 + yp*xf->r22 + xf->dy;
 	    draw(xt,yt, bb, mode); 
 	} else {
-	    if (fillable[id]) {
+	    if (fillable(fid)) {
 		endpoly(bb,mode);
 	    }
 	    jump(bb, mode);
-	    if (fillable[id]) {
+	    if (fillable(fid)) {
 		 startpoly(bb,mode);
 	    }
 	}
 	i++;
     }
-    if (fillable[id]) {
+    if (fillable(fid)) {
 	endpoly(bb,mode);
     }
 }
@@ -111,23 +115,35 @@ void writestring(
     int mode
 ) {
     double yoffset=0.0;
-    int debug=0;
     double xoffset=0.0;
     double xoff, yoff;
-    
-    double width=(((double)(dx[id]))*0.80*strlen(s))/((double)(dy[id]));
-    double height=0.8;
-    xoff = yoff = 0.0;
+    int fid;
+    int debug=0;
 
-    if (id <= 1) {				// 0 or 1
+    if (id==NOTE_MODE) {
+      fid=0;
+    } else {
+      fid=1;
+    }
+
+    if (debug) fprintf(stderr, "writestring %s id=%d\n",s, id);
+    
+    if (id==NOTE_MODE || id ==TEXT_MODE) {				// 0 or 1
+	if (debug) fprintf(stderr, "is legacy font\n");
    	;	// good to go... 
-    } else if ((shp_numfonts()+1) >= id)  {	// 2 or more and loaded
-    	shp_writestring(s,xf,id-2,jf,bb,mode);
+    } else if (shp_fontexists(id))  {
+    	shp_writestring(s,xf,id,jf,bb,mode);
 	return;
     } else {					// not loaded
-	fprintf(stderr, "no font loaded at position %d, defaulting to %d\n", id, id%2);
-	id = id%2;
+	fprintf(stderr, "no font loaded at position %d, defaulting to NOTE\n", id);
+	id = NOTE_MODE;
     }
+
+    if (debug) printf("in writestring fid=%d\n", fid);
+   
+    double width=(((double)(dx[fid]))*0.80*strlen(s))/((double)(dy[fid]));
+    double height=0.8;
+    xoff = yoff = 0.0;
 
     switch (jf) {
         case 0:		/* SW */
@@ -171,17 +187,16 @@ void writestring(
 	    break;
     }
 
-    if (debug) printf("in writestring id=%d\n", id);
 
-    /* void writechar(c,x,y,xf,id,bb,mode) */
+    /* void writechar(c,x,y,xf,fid,bb,mode) */
 
     while(*s != 0) {
 	if (*s != '\n') {
 	    writechar(*s,
-	        (((double)(dx[id]))*0.80*xoffset)/((double)(dy[id]))+xoff,
-		-yoffset+yoff,xf,id, bb, mode);
-	    if (debug) printf("writing %c, dx:%d dy:%d id:%d\n",
-	    	*s, dx[id], dy[id], id);
+	        (((double)(dx[fid]))*0.80*xoffset)/((double)(dy[fid]))+xoff,
+		-yoffset+yoff,xf,fid, bb, mode);
+	    if (debug) printf("writing %c, dx:%d dy:%d fid:%d\n",
+	    	*s, dx[fid], dy[fid], fid);
 	    xoffset+=1.0;
 	} else {
 	    xoffset=0.0;
@@ -191,7 +206,7 @@ void writestring(
     }
 }
 
-void loadfont(char *file, int id)
+void loadfont(char *file, int fid)
 {
     FILE *fp;
     int i;
@@ -205,12 +220,14 @@ void loadfont(char *file, int id)
     int debug=0;
     int w, fw, is_proportional;
 
+    if (debug) fprintf(stderr, "loading font %s fid %d\n", file, fid);
+
     /* initialize font table */
     for (i=0; i<MAXPOINT; i++) {
-	xdef[id][i] = ydef[id][i] = -128;
+	xdef[fid][i] = ydef[fid][i] = -128;
     }
     for (i=0; i<=255; i++) {
-	fonttab[id][i]=-1;
+	fonttab[fid][i]=-1;
     }
 
     if((fp=fopen(file,"r")) == NULL) {
@@ -225,7 +242,7 @@ void loadfont(char *file, int id)
 
     /* note reversed order of arguments */
 
-    next=getxy(fp,&dy[id],&dx[id]);
+    next=getxy(fp,&dy[fid],&dx[fid]);
     next=getxy(fp,&is_proportional,&fw);
 
     for (i=0; i<=255; i++) {
@@ -245,7 +262,8 @@ void loadfont(char *file, int id)
 	    if ((lit=eatwhite(fp)) != EOF) {
 		/* printf("lit=%c\n",lit); */
 		getc(fp);
-		fonttab[id][(int) lit] = index;
+		fonttab[fid][(int) lit] = index;
+		if (debug) fprintf(stderr, "loadfont at fid:%d lit:%d index%d\n", fid, (int)lit, index);
 		//valid[(int) lit]++;
 	    } else {
 		done++;
@@ -257,8 +275,8 @@ void loadfont(char *file, int id)
 	if (!done) {
 	    next=getxy(fp,&x,&y);
 	    /* printf("line %d: got %d, %d next=%c\n", line, x,y,next);  */
-	    xdef[id][index] = x;
-	    ydef[id][index] = y;
+	    xdef[fid][index] = x;
+	    ydef[fid][index] = y;
 	    index++;
 	}
     }

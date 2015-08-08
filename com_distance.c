@@ -113,7 +113,8 @@ int com_distance(LEXER *lp, char *arg)
 
 /* return nearest exact multiple of 1/(10^RES)) */
 double grid(double num) {
-   return (num-fmod(num,1.0/pow(10.0,RES)));
+   // return (num-fmod(num,1.0/pow(10.0,RES)));
+   return ((double)((int)(num*pow(10.0,RES)+0.5)))/pow(10.0,RES);
 }
 
 void draw_dist(double x2, double y2, int count) 

@@ -39,6 +39,11 @@ cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
 
 MANS=man/commandlist man/makemans man/seealso 
 
+FONTS=shpfonts/arctext.shp shpfonts/complex.shp shpfonts/dim.shp \
+shpfonts/gothicen.shp shpfonts/handlet.shp shpfonts/hcomx.shp \
+shpfonts/helvo.shp shpfonts/opt.shp shpfonts/pan.shp \
+shpfonts/reverse.shp shpfonts/scripts.shp
+
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
 
@@ -75,6 +80,8 @@ tar: $(TARS) version
 	   cp -rp $(CELLS) $$p$$d/cells;\
 	   mkdir $$p$$d/man;\
 	   cp -rp $(MANS) $$p$$d/man;\
+	   mkdir $$p$$d/shpfonts;\
+	   cp -rp $(FONTS) $$p$$d/shpfonts;\
 	   tar czvf - $$p$$d >$$p$$d.tar.gz;\
 	)
 
@@ -100,6 +107,7 @@ install: man/piglet.1p pig.bin
 	cp MENUDATA_V $(LIBDIR)
 	cp piglogo.d $(LIBDIR)
 	cp pigrc $(LIBDIR)
+	cp shpfonts/* $(LIBDIR)
 
 depend: ${OBJ}
 	cp Makefile Makefile.bak
@@ -219,14 +227,6 @@ db2.o: rlgetc.h
 db2.o: rubber.h
 db2.o: token.h
 db2.o: xwin.h
-dbbak.o: db.h
-dbbak.o: eprintf.h
-dbbak.o: ev.h
-dbbak.o: readfont.h
-dbbak.o: rlgetc.h
-dbbak.o: rubber.h
-dbbak.o: token.h
-dbbak.o: xwin.h
 db.o: db.h
 db.o: eprintf.h
 db.o: ev.h
@@ -246,6 +246,7 @@ eprintf.o: eprintf.h
 equate.o: db.h
 equate.o: equate.h
 ev.o: ev.h
+expr2.o: expr.h
 expr.o: expr.h
 geom_arc.o: db.h
 geom_arc.o: opt_parse.h
@@ -268,13 +269,6 @@ geom_inst.o: xwin.h
 geom_line.o: db.h
 geom_line.o: lock.h
 geom_line.o: opt_parse.h
-geom_line_orig.o: db.h
-geom_line_orig.o: lock.h
-geom_line_orig.o: opt_parse.h
-geom_line_orig.o: rlgetc.h
-geom_line_orig.o: rubber.h
-geom_line_orig.o: token.h
-geom_line_orig.o: xwin.h
 geom_line.o: rlgetc.h
 geom_line.o: rubber.h
 geom_line.o: token.h
@@ -287,12 +281,6 @@ geom_poly.o: token.h
 geom_poly.o: xwin.h
 geom_rect.o: db.h
 geom_rect.o: opt_parse.h
-geom_rect_orig.o: db.h
-geom_rect_orig.o: opt_parse.h
-geom_rect_orig.o: rlgetc.h
-geom_rect_orig.o: rubber.h
-geom_rect_orig.o: token.h
-geom_rect_orig.o: xwin.h
 geom_rect.o: rlgetc.h
 geom_rect.o: rubber.h
 geom_rect.o: token.h
@@ -310,6 +298,7 @@ lex.o: ev.h
 lex.o: path.h
 lex.o: postscript.h
 lex.o: readfont.h
+lex.o: readshpfont.h
 lex.o: rlgetc.h
 lex.o: rubber.h
 lex.o: token.h
@@ -325,13 +314,13 @@ path.o: path.h
 postscript.o: db.h
 postscript.o: postscript.h
 postscript.o: xwin.h
-postscriptsave.o: db.h
-postscriptsave.o: postscript.h
-postscriptsave.o: xwin.h
 readfont.o: db.h
 readfont.o: readfont.h
+readfont.o: readshpfont.h
 readmenu.o: db.h
 readmenu.o: readmenu.h
+readshpfont.o: db.h
+readshpfont.o: readshpfont.h
 rlgetc.o: db.h
 rlgetc.o: eprintf.h
 rlgetc.o: token.h
@@ -339,6 +328,7 @@ rlgetc.o: xwin.h
 rubber.o: rubber.h
 selpnt.o: db.h
 stack.o: stack.h
+stackt.o: stack.h
 stipple.o: db.h
 stipple.o: xwin.h
 token2.o: db.h

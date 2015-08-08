@@ -362,6 +362,12 @@ The cell should already exist in PIG_PATH.
 Sets the default postscript paper size.  The argument can either be
 an explicit paper size in the form <width>x<length>, or any of the
 common names listed in the PLOt command manpage.
+.TP
+.I PIG_SHPFONT<n> "<shp_font_filename>.shp" ; 
+Sets the SHP font file name for position <n>.  Piglet allows loading up to 10
+SHP fonts.  The font files should be placed in piglet's search path, typically
+/usr/local/lib/piglet.  See ADD_NOTE and ADD_TEXT for how to specify which font
+to use.
 
 .SS DEBUGGING
 
@@ -620,9 +626,12 @@ U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirro
 [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:N<fontindex>]  "string" <xy> EOC
 S: good
 T: {
-Add a note.  A note is zero width text.  <Rotation> is in degrees with
-counterclockwise rotations being positive.  <Slant> is in the range
--90.00 to +90.00 degrees with 0.01 resolution, and specifies how many
+
+Add a note annotation to the drawing using a zero line-width font.  
+
+<Rotation> is in degrees with counterclockwise rotations being positive.
+<Slant> is in the range -90.00 to +90.00 degrees
+with 0.01 resolution, and specifies how many
 degrees the y-axis of the character is slanted with respect to the
 x-axis.  The note is scaled to have adequate clearance when packed into
 single-spaced lines which are <fontsize> apart.  The <yxratio> is used
@@ -645,17 +654,52 @@ The "string" may contain embedded newlines.  These can be entered by
 simply typing a carriage return while still in quotes.  This can be
 handy for entering a multi-line block of information. 
 
-The font is defined in NOTEDATA.F and is easily changed.  New fonts can
-be derived from the Hershey font database.  The format is documented in
-the sourcode file "readfont.c". 
+The default font is defined in NOTEDATA.F and is easily changed.  New 
+fonts can be derived from the Hershey font database.  The format is 
+documented in the sourcode file "readfont.c". 
 
 Since version 0.98, Piglet can parse and display AutoCad .SHP font
-files.  Up to 10 .SHP files can be loaded at startup and used for either
+files.  If :N<fontid> is not specified, the
+default note font is a zero line-width font.  This is in contrast to the
+ADD_TEXT command, "ADD T<layer", which adds a text annotation using a 
+fillable polygon font.
+
+If <fontid> is specified, then one of the loaded autocad SHP fonts will be
+used instead. SHP fonts are loaded by putting the ".shp" font file in
+piglet's search path and by setting one of the "PIG_SHPFONT<n>" environment
+variables in .pigrc to the name of the SHP font for position <n>.
+
+Up to 10 .SHP files can be loaded at startup and used for either
 NOTE or TEXT by specifying the :N<index> option.  The classic piglet
 vector fonts are loaded by default at index 0 for NOTE and index 1 for
 TEXT.  Indices 2-12 are reserved for .SHP fonts.  Loading of .SHP files
 are controlled by setting the environment variables $PIG_SHPFONT1 through
-$PIG_SHPFONT10 in the pigrc file.  As an example, if the line "SET
+$PIG_SHPFONT10 in the pigrc file.
+
+Piglet's default distribution provides the following fonts in 
+/usr/local/lib/piglet and assigns them with the following lines
+in /usr/local/lib/piglet/pigrc:
+
+.nf
+    SET PIG_SHPFONT1 "pan.shp"            $$ optional shp fonts
+    SET PIG_SHPFONT2 "opt.shp"
+    SET PIG_SHPFONT3 "helvo.shp"
+    SET PIG_SHPFONT4 "scripts.shp"
+    SET PIG_SHPFONT5 "arctext.shp"
+    SET PIG_SHPFONT6 "handlet.shp"
+    SET PIG_SHPFONT7 "dim.shp"
+    SET PIG_SHPFONT8 "gothicen.shp"
+    SET PIG_SHPFONT9 "complex.shp"
+    SET PIG_SHPFONT10 "hcomx.shp"
+.fi
+
+The command 'ADD N1 :f10 "hello world" 0,0;' will add the text "hello world"
+of 10 grid points height to location 0,0 using the default line font
+specified in "NOTEDATA.F".  The same command with the :N<num> option will use
+the corresponding SHP font instead.  For instance, the command 'ADD T1 :n4 :f10
+"hello world" 0,0;' will use the "scripts.shp" font.
+
+As an example, if the line "SET
 PIG_SHPFONT1 pan.shp" is added to the pigrc file, piglet will look in
 the $PIG_PATH to find a file named "pan.shp".  If found, the file will
 be loaded and the font can be specified for use with "ADD N1 :N2".  If a
@@ -798,12 +842,17 @@ width of line
 
 N: ADD_TEXT
 D: Add text to the current device
-U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:J<justification] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:N<fontid>] [:J<justification] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
 
-Add a text annotation to the drawing.  Text is a fillable polygon font
-with line width.  <Rotation> is in degrees with counterclockwise
+Add a text annotation to the drawing using a filled polygon font. 
+
+If <fontid> is not specified, the
+default text font is a fillable polygon font.  This is in contrast to the
+ADD_NOTE command, "ADD N<layer", which adds a note font using zero-width lines.
+
+<Rotation> is in degrees with counterclockwise
 rotations being positive.  <Slant> is in the range -90.00 to +90.00
 degrees with 0.01 resolution, and specifies how many degrees the y-axis
 of the character is slanted with respect to the x-axis.  The text is
@@ -827,9 +876,60 @@ This can be changed by the :J option to any of 9 different locations.
 This feature is very helpful for aligning labels to various sides of a
 component. 
 
-The font is defined in TEXTDATA.F and is easily
+The default font is defined in TEXTDATA.F and is easily
 changed.  New fonts can be easily derived from the Hershey
 font database.  The format is documented in readfont.c.
+
+Since version 0.98, Piglet can parse and display AutoCad .SHP font
+files.  If :N<fontid> is not specified, the
+default note font is a zero line-width font.  This is in contrast to the
+ADD_NOTE command, "ADD N<layer", which adds a note annotation using a 
+zero line-width font.
+
+If <fontid> is specified, then one of the loaded autocad SHP fonts will be
+used instead of the default TEXTDATA.F font. SHP fonts are loaded by
+putting the ".shp" font file in piglet's search path and by setting
+one of the "PIG_SHPFONT<n>" environment variables in .pigrc to the name
+of the SHP font for position <n>.
+
+Up to 10 .SHP files can be loaded at startup and used for either
+NOTE or TEXT by specifying the :N<index> option.  The classic piglet
+vector fonts are loaded by default at index 0 for NOTE and index 1 for
+TEXT.  Indices 2-12 are reserved for .SHP fonts.  Loading of .SHP files
+are controlled by setting the environment variables $PIG_SHPFONT1 through
+$PIG_SHPFONT10 in the pigrc file.
+
+Piglet's default distribution provides the following fonts in 
+/usr/local/lib/piglet and assigns them with the following lines
+in /usr/local/lib/piglet/pigrc:
+
+.nf
+    SET PIG_SHPFONT1 "pan.shp"            $$ optional shp fonts
+    SET PIG_SHPFONT2 "opt.shp"
+    SET PIG_SHPFONT3 "helvo.shp"
+    SET PIG_SHPFONT4 "scripts.shp"
+    SET PIG_SHPFONT5 "arctext.shp"
+    SET PIG_SHPFONT6 "handlet.shp"
+    SET PIG_SHPFONT7 "dim.shp"
+    SET PIG_SHPFONT8 "gothicen.shp"
+    SET PIG_SHPFONT9 "complex.shp"
+    SET PIG_SHPFONT10 "hcomx.shp"
+.fi
+
+The command 'ADD T1 :f10 "hello world" 0,0;' will add the text "hello world"
+of 10 grid points height to location 0,0 using the default line font
+specified in "TEXTDATA.F".  The same command with the :N<num> option will use
+the corresponding SHP font instead.  For instance, the command 'ADD T1 :n4 :f10
+"hello world" 0,0;' will use the "scripts.shp" font.
+
+As an example, if the line "SET
+PIG_SHPFONT1 pan.shp" is added to the pigrc file, piglet will look in
+the $PIG_PATH to find a file named "pan.shp".  If found, the file will
+be loaded and the font can be specified for use with "ADD N1 :N2".  If a
+font has not been loaded for a given index, piglet will default back to
+index 0 for NOTES and index 1 for TEXT.  Please note that there is an offset
+between the number used in the ENV var name and the :N<num> number.  
+
 .SS OPTIONS
 .TP
 .I <layer>

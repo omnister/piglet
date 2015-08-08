@@ -19,16 +19,17 @@ SET PIG_TEXTDATA_FILE "ROMANT.F";     $$ text font file
 SET PIG_TEXTDATA_FILE "TEXTDATA.F";   $$ text font file
 
 
-SET PIG_SHPFONT1 "pan.shp"	      $$ optional shp fonts
-SET PIG_SHPFONT2 "opt.shp"
-SET PIG_SHPFONT3 "helvo.shp"
-SET PIG_SHPFONT4 "scripts.shp"
-SET PIG_SHPFONT5 "arctext.shp"
-SET PIG_SHPFONT6 "handlet.shp"
-SET PIG_SHPFONT7 "dim.shp"
-SET PIG_SHPFONT8 "gothicen.shp"
-SET PIG_SHPFONT9 "complex.shp"
-SET PIG_SHPFONT10 "hcomx.shp"
+SET PIG_SHPFONT0 "shpfonts/pan.shp"	      $$ optional shp fonts
+SET PIG_SHPFONT1 "shpfonts/pan.shp"	      $$ optional shp fonts
+SET PIG_SHPFONT2 "shpfonts/opt.shp"
+SET PIG_SHPFONT3 "shpfonts/helvo.shp"
+SET PIG_SHPFONT4 "shpfonts/scripts.shp"
+SET PIG_SHPFONT5 "shpfonts/arctext.shp"
+SET PIG_SHPFONT6 "shpfonts/handlet.shp"
+SET PIG_SHPFONT7 "shpfonts/dim.shp"
+SET PIG_SHPFONT8 "shpfonts/gothicen.shp"
+SET PIG_SHPFONT9 "shpfonts/complex.shp"
+SET PIG_SHPFONT10 "shpfonts/hcomx.shp"
 
 SET PIG_PROCDATA_FILE "PROCDATA.P";   $$ text font file
 

@@ -43,9 +43,11 @@ int com_split(), com_step(), com_stretch(), com_time(), com_trace();
 int com_tslant(), com_undo(), com_units(), com_version(), com_window();
 int com_wrap();
 
+typedef int (*funcptr)();	// pointer to a function returning an int
+
 typedef struct {
     char *name;			/* User printable name of the function. */
-    Function *func;		/* Function to call to do the job. */
+    funcptr func;		/* Function to call to do the job. */
     char *doc;			/* Description of function.  */
     char *usage;		/* Usage for function.  */
 } COMMAND;
@@ -176,7 +178,7 @@ COMMAND commands[] =
     	"WINdow :X[<scale>] [:N<physical>] [:F] [:O] [<xy1> [<xy2>]] <EOC>"},
     {"WRAP", com_wrap, "create a new device using existing components",
     	"WRAP [<component>[<layer>]] [<devicename>] <xyorig> <xy1> <xy2> <EOC>"},
-    {(char *) NULL, (Function *) NULL, (char *) NULL, (char *) NULL}
+    {(char *) NULL, (funcptr) NULL, (char *) NULL, (char *) NULL}
 };
 
 static int def_layer=0;
@@ -280,7 +282,8 @@ int main(int argc, char **argv)
 	loadfont(buf,1);	/* load NOTE, TEXT definitions */
     }
 
-    for (i=1; i<=10; i++) {
+    shp_fontinit();
+    for (i=0; i<=10; i++) {
        sprintf(buf, "PIG_SHPFONT%d", i);
 
 	if (EVget(buf) != NULL) {
@@ -290,7 +293,8 @@ int main(int argc, char **argv)
 		printf("PIG_PATH=\"%s\"\n", pig_path);
 		// exit(5);
 	    } else {
-	    shp_loadfont(buf);	/* load FONT definition */
+	    	shp_loadfont(buf,i);	/* load FONT definition */
+		// printf("loaded font %s at position %d\n", buf, i);
 	    }
 	}
     }
