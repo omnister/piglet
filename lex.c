@@ -181,7 +181,8 @@ COMMAND commands[] =
     {(char *) NULL, (funcptr) NULL, (char *) NULL, (char *) NULL}
 };
 
-static int def_layer=0;
+static int def_layer=0;		// default layer for ADD commands
+static int def_units=1000;	// default maximum division of the grid
 
 #include <signal.h>
 #define MAXSIGNAL 31	/* biggest signal under linux */
@@ -1137,8 +1138,8 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
     int nopts=0;
     int debug=0;
     int i;
-    double UNITS=100.0;
     double tmp;
+    extern int def_units;
 
     // buf[0]='\0';
     while(!done && (token=token_get(lp, &word)) != EOF) {
@@ -1218,7 +1219,7 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
     }
 
     for (i=0; i<npts; i++) {
-    	tmp = floor((pts[i]*UNITS)+0.5)/UNITS;
+    	tmp = floor((pts[i]*def_units)+0.5)/def_units;
 	if (pts[i] != tmp) {
 	    printf("GRID: can't fit grid within UNITS, changing %d: %g to %g\n",i, pts[i], tmp);
 	    pts[i] = tmp;
@@ -2104,9 +2105,70 @@ int com_tslant(LEXER *lp, char *arg)	/* set the default font slant for italic te
 /* now in com_delete.c */
 /* com_undo(lp, arg) */ 	/* undo the last command */
 
-int com_units(LEXER *lp, char *arg)	/* set editor resolution and user unit type */
+int old_com_units(LEXER *lp, char *arg)	/* set editor resolution and user unit type */
 {
+    // FIXME: currently the grid resolution is hardwired in com_grid() in the UNITS variable;
+    // com_units should be able to set and query the value here
+    
     printf("    com_units\n");
+    return (0);
+}
+
+int com_units(LEXER *lp, char *arg)		/* set a default layer number */
+{
+    extern int def_units;
+
+    TOKEN token;
+    int done=0;
+    int units;
+    // char buf[128];
+    char *word;
+    int nnums=0;
+
+    // buf[0]='\0';
+    while(!done && (token=token_get(lp, &word)) != EOF) {
+	switch(token) {
+	    case NUMBER: 	/* number */
+		if(sscanf(word, "%d", &units) != 1) {
+		    weprintf("UNITS invalid unit number: %s\n", word);
+		    return(-1);
+		} 
+		if (units < 0 || units > (int)pow(10.0,RES)) {
+		    printf("UNITS: units must be positive integer less than %d\n", (int)pow(10.0,RES));
+		    return(-1);
+		}
+		nnums++;
+		break;
+	    case CMD:		/* command */
+		token_unget(lp, token, word);
+		done++;
+		break;
+	    case EOC:		/* end of command */
+		done++;
+		break;
+	    case EOL:		/* newline or carriage return */
+	    	break;	/* ignore */
+	    case IDENT: 	/* identifier */
+	    case COMMA:		/* comma */
+	    case QUOTE: 	/* quoted string */
+	    case OPT:		/* option */
+	    case END:		/* end of file */
+	    default:
+	        printf("UNITS: expected NUMBER, got: %s\n", tok2str(token));
+		return(-1);
+	    	break;
+	}
+    }
+
+    if (nnums==1) {
+	 def_units=units;
+    } else if (nnums==0) {
+	 printf("UNITS: current default is %d\n", def_units);
+    } else {
+	printf("UNITS: wrong number of arguments\n");
+	return(-1);
+    }
+
     return (0);
 }
 
