@@ -39,10 +39,7 @@ cells/PLAN_I cells/ALL_I cells/smorgasboard_I cells/schem2_I
 
 MANS=man/commandlist man/makemans man/seealso 
 
-FONTS=shpfonts/arctext.shp shpfonts/complex.shp shpfonts/dim.shp \
-shpfonts/gothicen.shp shpfonts/handlet.shp shpfonts/hcomx.shp \
-shpfonts/helvo.shp shpfonts/opt.shp shpfonts/pan.shp \
-shpfonts/reverse.shp shpfonts/scripts.shp
+FONTS=shpfonts/*
 
 # use "-O0" for valgrind memory usage checking
 # use "-ggdb" for gnu debugger
