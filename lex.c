@@ -283,7 +283,7 @@ int main(int argc, char **argv)
     }
 
     shp_fontinit();
-    for (i=0; i<=10; i++) {
+    for (i=0; i<=255; i++) {
        sprintf(buf, "PIG_SHPFONT%d", i);
 
 	if (EVget(buf) != NULL) {

@@ -364,7 +364,7 @@ an explicit paper size in the form <width>x<length>, or any of the
 common names listed in the PLOt command manpage.
 .TP
 .I PIG_SHPFONT<n> "<shp_font_filename>.shp" ; 
-Sets the SHP font file name for position <n>.  Piglet allows loading up to 10
+Sets the SHP font file name for position <n>.  Piglet allows loading up to 255
 SHP fonts.  The font files should be placed in piglet's search path, typically
 /usr/local/lib/piglet.  See ADD_NOTE and ADD_TEXT for how to specify which font
 to use.
@@ -627,7 +627,12 @@ U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirro
 S: good
 T: {
 
-Add a note annotation to the drawing using a zero line-width font.  
+Add a note annotation to the drawing using a zero line-width font. 
+This is in contrast to the ADD_TEXT command, "ADD T<layer", which adds a
+fillable text font using polygons.
+
+If a :N<fontindex> is given, piglet will instead use the SHX font loaded at
+the <fontindex> position rather than the legacy stroke font. 
 
 <Rotation> is in degrees with counterclockwise rotations being positive.
 <Slant> is in the range -90.00 to +90.00 degrees
@@ -656,55 +661,53 @@ handy for entering a multi-line block of information.
 
 The default font is defined in NOTEDATA.F and is easily changed.  New 
 fonts can be derived from the Hershey font database.  The format is 
-documented in the sourcode file "readfont.c". 
+documented in the sourcecode file "readfont.c". 
 
 Since version 0.98, Piglet can parse and display AutoCad .SHP font
-files.  If :N<fontid> is not specified, the
-default note font is a zero line-width font.  This is in contrast to the
-ADD_TEXT command, "ADD T<layer", which adds a text annotation using a 
-fillable polygon font.
+files.  If :N<fontindex> is not specified, the default note font is a
+zero line-width font.  This is in contrast to the ADD_TEXT command, "ADD
+T<layer>", which adds a text annotation using a fillable polygon font. 
 
-If <fontid> is specified, then one of the loaded autocad SHP fonts will be
-used instead. SHP fonts are loaded by putting the ".shp" font file in
-piglet's search path and by setting one of the "PIG_SHPFONT<n>" environment
-variables in .pigrc to the name of the SHP font for position <n>.
+If <fontindex> is specified, then one of the loaded autocad SHP fonts
+will be used instead.  SHP fonts are loaded by putting the ".shp" font
+file in piglet's search path and by setting one of the "PIG_SHPFONT<n>"
+environment variables in the ".pigrc" file to the name of the SHP font
+for position <n>. 
 
-Up to 10 .SHP files can be loaded at startup and used for either
+Up to 255 .SHP font files can be loaded at startup and used for either
 NOTE or TEXT by specifying the :N<index> option.  The classic piglet
-vector fonts are loaded by default at index 0 for NOTE and index 1 for
-TEXT.  Indices 2-12 are reserved for .SHP fonts.  Loading of .SHP files
+vector fonts are loaded by default at index -1 for NOTE and index -2 for
+TEXT.  Indices 0-255 are reserved for .SHP fonts.  Loading of .SHP files
 are controlled by setting the environment variables $PIG_SHPFONT1 through
-$PIG_SHPFONT10 in the pigrc file.
+$PIG_SHPFONT255 in the pigrc file.
 
-Piglet's default distribution provides the following fonts in 
-/usr/local/lib/piglet and assigns them with the following lines
-in /usr/local/lib/piglet/pigrc:
+Piglet's default distribution provides a large selection of public
+domain .SHP fonts fonts in /usr/local/lib/piglet/shpfonts and assigns
+a selection of them with the following lines in /usr/local/lib/piglet/pigrc:
 
 .nf
-    SET PIG_SHPFONT1 "pan.shp"            $$ optional shp fonts
-    SET PIG_SHPFONT2 "opt.shp"
-    SET PIG_SHPFONT3 "helvo.shp"
-    SET PIG_SHPFONT4 "scripts.shp"
-    SET PIG_SHPFONT5 "arctext.shp"
-    SET PIG_SHPFONT6 "handlet.shp"
-    SET PIG_SHPFONT7 "dim.shp"
-    SET PIG_SHPFONT8 "gothicen.shp"
-    SET PIG_SHPFONT9 "complex.shp"
-    SET PIG_SHPFONT10 "hcomx.shp"
+    SET PIG_SHPFONT1 "shpfonts/pan.shp"            $$ optional shp fonts
+    SET PIG_SHPFONT2 "shpfonts/opt.shp"
+    SET PIG_SHPFONT3 "shpfonts/helvo.shp"
+    SET PIG_SHPFONT4 "shpfonts/scripts.shp"
+    SET PIG_SHPFONT5 "shpfonts/arctext.shp"
+    SET PIG_SHPFONT6 "shpfonts/handlet.shp"
+    SET PIG_SHPFONT7 "shpfonts/dim.shp"
+    SET PIG_SHPFONT8 "shpfonts/gothicen.shp"
+    SET PIG_SHPFONT9 "shpfonts/complex.shp"
+    SET PIG_SHPFONT10 "shpfonts/hcomx.shp"
+    ...
 .fi
 
-The command 'ADD N1 :f10 "hello world" 0,0;' will add the text "hello world"
+The command 'ADD N1 :f10 "hello world" 0,0;' will add the note "hello world"
 of 10 grid points height to location 0,0 using the default line font
 specified in "NOTEDATA.F".  The same command with the :N<num> option will use
 the corresponding SHP font instead.  For instance, the command 'ADD T1 :n4 :f10
-"hello world" 0,0;' will use the "scripts.shp" font.
+"hello world" 0,0;' will use the "scripts.shp" font with the above PIG_SHPFONT4
+definition.
 
-As an example, if the line "SET
-PIG_SHPFONT1 pan.shp" is added to the pigrc file, piglet will look in
-the $PIG_PATH to find a file named "pan.shp".  If found, the file will
-be loaded and the font can be specified for use with "ADD N1 :N2".  If a
-font has not been loaded for a given index, piglet will default back to
-index 0 for NOTES and index 1 for TEXT. 
+If there is no file loaded at the <fontindex> position, piglet will default 
+back to using the default legacy fonts for NOTES and TEXT. 
 
 .SS OPTIONS
 .TP
@@ -842,15 +845,17 @@ width of line
 
 N: ADD_TEXT
 D: Add text to the current device
-U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:N<fontid>] [:J<justification] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
+U: ADD T<layer> [.<cname>] [@<sname>] [:M<mirror>] [:N<fontindex>] [:J<justification] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:F<fontsize>] "string" <xy> EOC
 S: good
 T: {
 
-Add a text annotation to the drawing using a filled polygon font. 
 
-If <fontid> is not specified, the
-default text font is a fillable polygon font.  This is in contrast to the
-ADD_NOTE command, "ADD N<layer", which adds a note font using zero-width lines.
+Add a text annotation to the drawing using a filled polygon font.  This
+is in contrast to the ADD_NOTE command, "ADD N<layer", which adds a note
+font using zero-width lines. 
+
+If a :N<fontindex> is given, piglet will instead use the SHX font loaded at
+the <fontindex> position rather than the legacy polygon font. 
 
 <Rotation> is in degrees with counterclockwise
 rotations being positive.  <Slant> is in the range -90.00 to +90.00
@@ -876,59 +881,55 @@ This can be changed by the :J option to any of 9 different locations.
 This feature is very helpful for aligning labels to various sides of a
 component. 
 
-The default font is defined in TEXTDATA.F and is easily
-changed.  New fonts can be easily derived from the Hershey
-font database.  The format is documented in readfont.c.
+The default font is defined in TEXTDATA.F and is easily changed.  New
+fonts can be easily derived from the Hershey font database.  The format
+is documented in readfont.c. 
 
 Since version 0.98, Piglet can parse and display AutoCad .SHP font
-files.  If :N<fontid> is not specified, the
-default note font is a zero line-width font.  This is in contrast to the
-ADD_NOTE command, "ADD N<layer", which adds a note annotation using a 
-zero line-width font.
+files.  If :N<fontindex> is not specified, the default text font is a
+fillable polygon font.  This is in contrast to the ADD_NOTE command, "ADD
+N<layer>", which adds a note annotation using a zero-line-width stroke font. 
 
-If <fontid> is specified, then one of the loaded autocad SHP fonts will be
-used instead of the default TEXTDATA.F font. SHP fonts are loaded by
-putting the ".shp" font file in piglet's search path and by setting
-one of the "PIG_SHPFONT<n>" environment variables in .pigrc to the name
-of the SHP font for position <n>.
+If <fontindex> is specified, then one of the loaded autocad SHP fonts
+will be used instead of the default font.  SHP fonts are loaded by
+putting the ".shp" font file in piglet's search path and by setting one
+of the "PIG_SHPFONT<n>" environment variables in the ".pigrc" file to
+the name of the SHP font for position <n>. 
 
-Up to 10 .SHP files can be loaded at startup and used for either
+Up to 255 .SHP font files can be loaded at startup and used for either
 NOTE or TEXT by specifying the :N<index> option.  The classic piglet
-vector fonts are loaded by default at index 0 for NOTE and index 1 for
-TEXT.  Indices 2-12 are reserved for .SHP fonts.  Loading of .SHP files
+vector fonts are loaded by default at index -1 for NOTE and index -2 for
+TEXT.  Indices 0-255 are reserved for .SHP fonts.  Loading of .SHP files
 are controlled by setting the environment variables $PIG_SHPFONT1 through
-$PIG_SHPFONT10 in the pigrc file.
+$PIG_SHPFONT255 in the pigrc file.
 
-Piglet's default distribution provides the following fonts in 
-/usr/local/lib/piglet and assigns them with the following lines
-in /usr/local/lib/piglet/pigrc:
+Piglet's default distribution provides a large selection of public
+domain .SHP fonts fonts in /usr/local/lib/piglet/shpfonts and assigns
+a selection of them with the following lines in /usr/local/lib/piglet/pigrc:
 
 .nf
-    SET PIG_SHPFONT1 "pan.shp"            $$ optional shp fonts
-    SET PIG_SHPFONT2 "opt.shp"
-    SET PIG_SHPFONT3 "helvo.shp"
-    SET PIG_SHPFONT4 "scripts.shp"
-    SET PIG_SHPFONT5 "arctext.shp"
-    SET PIG_SHPFONT6 "handlet.shp"
-    SET PIG_SHPFONT7 "dim.shp"
-    SET PIG_SHPFONT8 "gothicen.shp"
-    SET PIG_SHPFONT9 "complex.shp"
-    SET PIG_SHPFONT10 "hcomx.shp"
+    SET PIG_SHPFONT1 "shpfonts/pan.shp"            $$ optional shp fonts
+    SET PIG_SHPFONT2 "shpfonts/opt.shp"
+    SET PIG_SHPFONT3 "shpfonts/helvo.shp"
+    SET PIG_SHPFONT4 "shpfonts/scripts.shp"
+    SET PIG_SHPFONT5 "shpfonts/arctext.shp"
+    SET PIG_SHPFONT6 "shpfonts/handlet.shp"
+    SET PIG_SHPFONT7 "shpfonts/dim.shp"
+    SET PIG_SHPFONT8 "shpfonts/gothicen.shp"
+    SET PIG_SHPFONT9 "shpfonts/complex.shp"
+    SET PIG_SHPFONT10 "shpfonts/hcomx.shp"
+    ...
 .fi
 
 The command 'ADD T1 :f10 "hello world" 0,0;' will add the text "hello world"
 of 10 grid points height to location 0,0 using the default line font
 specified in "TEXTDATA.F".  The same command with the :N<num> option will use
 the corresponding SHP font instead.  For instance, the command 'ADD T1 :n4 :f10
-"hello world" 0,0;' will use the "scripts.shp" font.
+"hello world" 0,0;' will use the "scripts.shp" font with the above PIG_SHPFONT4
+definition.
 
-As an example, if the line "SET
-PIG_SHPFONT1 pan.shp" is added to the pigrc file, piglet will look in
-the $PIG_PATH to find a file named "pan.shp".  If found, the file will
-be loaded and the font can be specified for use with "ADD N1 :N2".  If a
-font has not been loaded for a given index, piglet will default back to
-index 0 for NOTES and index 1 for TEXT.  Please note that there is an offset
-between the number used in the ENV var name and the :N<num> number.  
+If there is no file loaded at the <fontindex> position, piglet will default 
+back to using the default legacy fonts for NOTES and TEXT. 
 
 .SS OPTIONS
 .TP
