@@ -1,0 +1,23 @@
+Piglet is a Piglet is a 2-D engineering drawing editor that supports
+hierarchical object description. It is inspired by Hewlett-Packard's
+proprietary HP PIGLET (Personal Interactive Graphic Layout EdiTor), which later
+became the commercial Graffy editor by DURST CAD.
+
+Piglet is a very nearly complete, from scratch, implementation of the original
+HP editor.  It has unlimited hierarchy, unlimited layers, a versatile SHOW
+command for filtering the layers displayed.
+
+Piglet supports polygons, rectangles, cirles and lines.  SHP reads
+autocad font files and can output editable drawings in postscript,
+GERBER, HPGL, dxf and pdplot.  It can also output screen captures in PNG
+and GIF format. 
+
+I've used piglet to design several integrated circuits, PCB boards and lots of
+CNC projects.  Exporting the autocad fonts as pdplot coordinate files can be
+trivially editing into G-code, or used with my velocity profiling program
+"velo(1)" for directly driving stepper motors.
+
+Piglet is small and lean, fitting on an old fashioned floppy (without
+the huge directory of SHP fonts).  It's written in C and Xlib is a good
+readable/hackable example of a well-thought out professional graphics
+editor circa 1986.   
