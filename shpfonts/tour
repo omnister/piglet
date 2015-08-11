@@ -1,0 +1,6 @@
+for file in *shp
+do
+   echo $file
+   parse2 < $file  | pd
+   read k
+done

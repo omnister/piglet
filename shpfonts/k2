@@ -1,0 +1,1651 @@
+==> agmo.shp <==
+*0,4,AU112S00
+
+==> agms.shp <==
+*0,4,AU112S01
+
+==> agsfont.shp <==
+*0,4,Z:\AGS\MAKEFONT\CALLOUT
+
+==> arcfast.shp <==
+*0,4,(ARCFAST)
+
+==> archb.shp <==
+*0,4,nARCHBOLD.shp
+
+==> archoldm.shp <==
+*0,4,ARCHO-M font
+
+==> archold.shp <==
+*0,4,SHINFONT font
+
+==> archoldt.shp <==
+*0,4,archt2 font
+
+==> archstd.shp <==
+*0,4,font
+
+==> archstyl.shp <==
+*0,4,Archstyl Font by Paul J. Aston 12/12/85
+
+==> archul.shp <==
+*0,4,ARCHUL font
+
+==> arcquick.shp <==
+*0,4,(ARCQUICK)
+
+==> arcsten.shp <==
+*0,4,(ARCSTEN)
+
+==> arctext.shp <==
+*0,4,(ARCTEXT)
+
+==> arcti-bo.shp <==
+*0,4,ArchTitl Bold(ARCTI-BO)
+
+==> arcti-b.shp <==
+*0,4,(ARCTI-B)
+
+==> arcti-bt.shp <==
+*0,4,(ARCTI-BS)
+
+==> arcti-o.shp <==
+*0,4,ArchTitl-(ARCTI-O)
+
+==> arcti.shp <==
+*0,4,(ARCTI)
+
+==> arctitle.shp <==
+*0,4,(ARCTITLE)
+
+==> arcti-t.shp <==
+*0,4,(ARCTI-S)
+
+==> arctx-bo.shp <==
+*0,4,(ARCTX-BO)
+
+==> arctx-b.shp <==
+*0,4,(ARCTX-B)
+
+==> arctx-bt.shp <==
+*0,4,(ARCTX-BS)
+
+==> arctx-o.shp <==
+*0,4,(ARCTX-O)
+
+==> arctx.shp <==
+*0,4,(ARCTX)
+
+==> arctx-t.shp <==
+*0,4,Architxt-(ARCTX-S)
+
+==> arcwy1gp.shp <==
+*0,4,arcwyde hand letter production face P 3/28/89
+
+==> arfor.shp <==
+*0,4,Arfor Monospaced 5/28/92
+
+==> arhand0.shp <==
+*0,4,AU150S00
+
+==> arhand1.shp <==
+*0,4,AU150S01
+
+==> arhand2.shp <==
+*0,4,AU150S02
+
+==> arl-o.shp <==
+*0,4,Arial
+
+==> arl.shp <==
+*0,4,Arial
+
+==> arl-t.shp <==
+*0,4,Arial
+
+==> arr-bo.shp <==
+*0,4,ArrusBTBold
+
+==> arr-b.shp <==
+*0,4,ArrusBTBold
+
+==> arr-bt.shp <==
+*0,4,ArrusBTBold
+
+==> arr-ho.shp <==
+*0,4,ArrusBlkBTBlack
+
+==> arr-h.shp <==
+*0,4,ArrusBlkBTBlack
+
+==> arr-ht.shp <==
+*0,4,ArrusBlkBTBlack
+
+==> arr-o.shp <==
+*0,4,BitstreamArrusBTRoman
+
+==> arr.shp <==
+*0,4,BitstreamArrusBTRoman
+
+==> arr-t.shp <==
+*0,4,BitstreamArrusBTRoman
+
+==> avg-bo.shp <==
+*0,4,(AVG-BO)
+
+==> avg-b.shp <==
+*0,4,(AVG-B)
+
+==> avg-bt.shp <==
+*0,4,(AVG-BS)
+
+==> avg-o.shp <==
+*0,4,(AVG-O)
+
+==> avg.shp <==
+*0,4,(AVG)
+
+==> avg-t.shp <==
+*0,4,(AVG-S)
+
+==> awolf.shp <==
+*0,4,\ACAD\AWOLF
+
+==> bc39an.shp <==
+*0,4,Bar Code 39 Font with A/N 12/12/87
+
+==> bc39.shp <==
+*0,4,Bar Code 39 Font 12/7/87
+
+==> bdp-o.shp <==
+*0,4,(BDP-O)
+
+==> bdp.shp <==
+*0,4,(BDP)
+
+==> bdp-t.shp <==
+*0,4,(BDP-S)
+
+==> bhs-bo.shp <==
+*0,4,(BHS-BO)
+
+==> bhs-b.shp <==
+*0,4,(BHS-B)
+
+==> bhs-bt.shp <==
+*0,4,(BHS-BS)
+
+==> bhs-ho.shp <==
+*0,4,(BHS-HO)
+
+==> bhs-h.shp <==
+*0,4,(BHS-H)
+
+==> bhs-ht.shp <==
+*0,4,(BHS-HS)
+
+==> bhs-lo.shp <==
+*0,4,(BHS-LO)
+
+==> bhs-l.shp <==
+*0,4,(BHS-L)
+
+==> bhs-lt.shp <==
+*0,4,(BHS-LS)
+
+==> bhs-o.shp <==
+*0,4,(BHS-O)
+
+==> bhs.shp <==
+*0,4,(BHS)
+
+==> bhs-t.shp <==
+*0,4,(BHS-S)
+
+==> bkm-bo.shp <==
+*0,4,(BKM-BO)
+
+==> bkm-b.shp <==
+*0,4,(BKM-B)
+
+==> bkm-bt.shp <==
+*0,4,(BKM-BS)
+
+==> bkm-o.shp <==
+*0,4,(BKM-O)
+
+==> bkm.shp <==
+*0,4,(BKM)
+
+==> bkm-t.shp <==
+*0,4,(BKM-S)
+
+==> block.shp <==
+*0,4,Xblock
+
+==> bng-bo.shp <==
+*0,4,(BNG-BO)
+
+==> bng-b.shp <==
+*0,4,(BNG-B)
+
+==> bng-bt.shp <==
+*0,4,(BNG-BS)
+
+==> bng-o.shp <==
+*0,4,(BNG-O)
+
+==> bng.shp <==
+*0,4,(BNG)
+
+==> bng-t.shp <==
+*0,4,(BNG-S)
+
+==> bold1.shp <==
+*0,4,Roman Simplex 1/20/86
+
+==> bold-3.shp <==
+*0,4,SG102S00
+
+==> boldshdw.shp <==
+*0,4,SHA
+
+==> broken.shp <==
+*0,4,broken
+
+==> brs-o.shp <==
+*0,4,(BRS-O)
+
+==> brs.shp <==
+*0,4,(BRS)
+
+==> brs-t.shp <==
+*0,4,(BRS-S)
+
+==> cb-hd.shp <==
+*0,4,
+
+==> cb-ld.shp <==
+*0,4,
+
+==> cb.shp <==
+*0,4,
+
+==> cbs_txt.shp <==
+*0,4,Standard Font (txt.shx) remaker by Wang_dongsong 5/10/96
+
+==> cdm_nc.shp <==
+*UNIFONT,6,CDM-NC-Font
+
+==> centbh.shp <==
+*0,4,nCTBBH.SHP
+
+==> cent.shp <==
+*0,4,nCENT1.SHP
+
+==> century.shp <==
+*0,4,NBOLD CREATED BY H. TRAN @ CAD NORTHWEST INC. 8/04/86
+
+==> chisel-l.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> chisel-m.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> chisel.shp <==
+*0,4,font
+
+==> chisel-s.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> cn1.shp <==
+*0,4,s0
+
+==> cof-o.shp <==
+*0,4,(COF-O)
+
+==> cof.shp <==
+*0,4,(COF)
+
+==> cof-t.shp <==
+*0,4,(COF-S)
+
+==> complex.shp <==
+*0,4,Roman Complex 11/27/85
+
+==> copyright <==
+
+==> corbu.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> cos-bo.shp <==
+*0,4,(COS-BO)
+
+==> cos-b.shp <==
+*0,4,(COS-B)
+
+==> cos-bt.shp <==
+*0,4,(COS-BS)
+
+==> cos-o.shp <==
+*0,4,(COS-O)
+
+==> cos.shp <==
+*0,4,(COS)
+
+==> cos-t.shp <==
+*0,4,(COS-S)
+
+==> cpr-ho.shp <==
+*0,4,(CPR-HO)
+
+==> cpr-h.shp <==
+*0,4,(CPR-H)
+
+==> cpr-ht.shp <==
+*0,4,(CPR-HS)
+
+==> csl-bo.shp <==
+*0,4,(CSL-B)
+
+==> csl-b.shp <==
+*0,4,(CSL-B)
+
+==> csl-bt.shp <==
+*0,4,(CSL-BS)
+
+==> csl-o.shp <==
+*0,4,(CSL-O)
+
+==> csl.shp <==
+*0,4,(CSL)
+
+==> csl-t.shp <==
+*0,4,(CSL-S)
+
+==> cx.shp <==
+*0,4,Extended Roman Complex, By Xumin 12/04/2001；逍遥客增补调整，09/23/2002
+
+==> cyrillic.shp <==
+*0,4,Cyrillic complex
+
+==> cyriltlc.shp <==
+*0,4,Cyrillic complex
+
+==> dashfont.shp <==
+*0,4,nDOTFONT.SHP
+
+==> data70.shp <==
+*0,4,Data70 Font 23/01/88
+
+==> dayucom.shp <==
+*0,4,Roman Complex 25/02/92
+
+==> dayusimp.shp <==
+*0,4,Dayu Simplex 8/26/91
+
+==> dim.shp <==
+*0,4,DIM 9/85
+
+==> din.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> dmc-bo.shp <==
+*0,4,(DMC-BO)
+
+==> dmc-b.shp <==
+*0,4,(DMC-B)
+
+==> dmc-bt.shp <==
+*0,4,(DMC-BS)
+
+==> dmc-o.shp <==
+*0,4,(DMC-O)
+
+==> dmc.shp <==
+*0,4,(DMC)
+
+==> dmc-t.shp <==
+*0,4,(DMC-S)
+
+==> dxf.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> ebe-hd.shp <==
+*0,4,
+
+==> ebe-ld.shp <==
+*0,4,
+
+==> ebe.shp <==
+*0,4,
+
+==> engrstan.shp <==
+*0,4,lnaleroy 12/11/86
+
+==> eqspmenu.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> eqsp.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> ers-bo.shp <==
+*0,4,(ERS-BO)
+
+==> ers-b.shp <==
+*0,4,(ERS-B)
+
+==> ers-bt.shp <==
+*0,4,(ERS-BS)
+
+==> ers-ho.shp <==
+*0,4,(ERS-HO)
+
+==> ers-h.shp <==
+*0,4,(ERS-H)
+
+==> ers-ht.shp <==
+*0,4,(ERS-HS)
+
+==> ers-lo.shp <==
+*0,4,(ERS-LO)
+
+==> ers-l.shp <==
+*0,4,(ERS-L)
+
+==> ers-lt.shp <==
+*0,4,(ERS-LS)
+
+==> ers-o.shp <==
+*0,4,(ERS-O)
+
+==> ers.shp <==
+*0,4,(ERS)
+
+==> ers-t.shp <==
+*0,4,(ERS-S)
+
+==> eur-bo.shp <==
+*0,4,Square721BTBold
+
+==> eur-b.shp <==
+*0,4,Square721BTBold
+
+==> eur-bt.shp <==
+*0,4,Square721BTBold
+
+==> eur-do.shp <==
+*0,4,Square721DmNormal
+
+==> eur-d.shp <==
+*0,4,Square721DmNormal
+
+==> eur-dt.shp <==
+*0,4,Square721DmNormal
+
+==> eur-ho.shp <==
+*0,4,Square721BlkNormal
+
+==> eur-h.shp <==
+*0,4,Square721BlkNormal
+
+==> eur-ht.shp <==
+*0,4,Square721BlkNormal
+
+==> eur-o.shp <==
+*0,4,Square721BTRoman
+
+==> eurostil.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> eur.shp <==
+*0,4,Square721BTRoman
+
+==> eur-t.shp <==
+*0,4,Square721BTRoman
+
+==> fancy10.shp <==
+*0,4,AU140S01
+
+==> fasteq.shp <==
+*0,4,nFASTEQEU.SHP
+
+==> fast.shp <==
+*0,4,nFASTISO.SHP
+
+==> fkg-bo.shp <==
+*0,4,(FKG-BO)
+
+==> fkg-b.shp <==
+*0,4,(FKG-B)
+
+==> fkg-bt.shp <==
+*0,4,(FKG-BS)
+
+==> fkg-ho.shp <==
+*0,4,(FKG-HO)
+
+==> fkg-h.shp <==
+*0,4,(FKG-H)
+
+==> fkg-ht.shp <==
+*0,4,(FKG-HS)
+
+==> fkg-o.shp <==
+*0,4,(FKG-O)
+
+==> fkg.shp <==
+*0,4,(FKG)
+
+==> fkg-t.shp <==
+*0,4,(FKG-S)
+
+==> freehand2.shp <==
+*0,4,Architectonic Hand Lettering 3/19/85 Lifezones
+
+==> freehand.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> frs-o.shp <==
+*0,4,(FRS-O)
+
+==> frs.shp <==
+*0,4,(FRS)
+
+==> frs-t.shp <==
+*0,4,(FRS-S)
+
+==> frz-bo.shp <==
+*0,4,(FRZ-BO)
+
+==> frz-b.shp <==
+*0,4,(FRZ-B)
+
+==> frz-bt.shp <==
+*0,4,(FRZ-BS)
+
+==> frz-o.shp <==
+*0,4,(FRZ-O)
+
+==> frz.shp <==
+*0,4,(FRZ)
+
+==> frz-t.shp <==
+*0,4,(FRZ-S)
+
+==> ft2-o.shp <==
+*0,4,(FT2-O)
+
+==> ft2.shp <==
+*0,4,(FT2)
+
+==> ft2-t.shp <==
+*0,4,(FT2-S)
+
+==> ftc-bo.shp <==
+*0,4,(FTC-BO)
+
+==> ftc-b.shp <==
+*0,4,(FTC-B)
+
+==> ftc-bt.shp <==
+*0,4,(FTC-BS)
+
+==> ftc-ho.shp <==
+*0,4,(FTC-HO)
+
+==> ftc-h.shp <==
+*0,4,(FTC-H)
+
+==> ftc-ht.shp <==
+*0,4,(FTC-HS)
+
+==> ftc-lo.shp <==
+*0,4,(FTC-LO)
+
+==> ftc-l.shp <==
+*0,4,(FTC-L)
+
+==> ftc-lt.shp <==
+*0,4,(FTC-LS)
+
+==> ftc-o.shp <==
+*0,4,(FTC-O)
+
+==> ftc.shp <==
+*0,4,(FTC)
+
+==> ftc-t.shp <==
+*0,4,(FTC-S)
+
+==> futura.shp <==
+*0,4,nFMH1.SHP
+
+==> futuro.shp <==
+*0,4,nFMH1.SHP
+
+==> gar-bo.shp <==
+*0,4,(GAR-BO)
+
+==> gar-b.shp <==
+*0,4,(GAR-B)
+
+==> gar-bt.shp <==
+*0,4,(GAR-BS)
+
+==> gar-o.shp <==
+*0,4,(GAR-O)
+
+==> gar.shp <==
+*0,4,(GAR)
+
+==> gar-t.shp <==
+*0,4,(GAR-S)
+
+==> gb-hd.shp <==
+*0,4,
+
+==> gb-ld.shp <==
+*0,4,
+
+==> gb.shp <==
+*0,4,
+
+==> genbold2.shp <==
+*0,4,GENSLER TITLEBLOCK FONT (HATCH .2) 12-13-1995
+
+==> genbold.shp <==
+*0,4,GENSLER TITLEBLOCK  (HATCH .5) 12-14-1995
+
+==> genhlvt.shp <==
+*0,4,nHELV.SHP
+
+==> gen.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> globe.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> gothicen.shp <==
+*0,4,Xgothicen
+
+==> gothicg.shp <==
+*0,4,Gothic German
+
+==> gothici.shp <==
+*0,4,Gothic Italian
+
+==> greekc.shp <==
+*0,4,Greek complex
+
+==> greeks.shp <==
+*0,4,Greek simplex
+
+==> grekcomp.shp <==
+*0,4,Xgrekcomp
+
+==> hand1h.shp <==
+*0,4,X-HAND1H, - 2.03 - 01/12/90 - AUTOGRAF U - MARC
+
+==> hand1.shp <==
+*0,4,HAND1
+
+==> hand2.shp <==
+*0,4,Rkas font (greg walter style) 7/30/85
+
+==> hand3.shp <==
+*0,4,AU150S03
+
+==> hand4.shp <==
+*0,4,AU150S04
+
+==> handlet.shp <==
+*0,4,font
+
+==> handl.shp <==
+*0,4,hand lettering
+
+==> handltr.shp <==
+*0,4,hand lettering scd 7/1/85
+
+==> handlttr.shp <==
+*0,4,handlttr Created using The Font Generator
+
+==> hand.shp <==
+*0,4,HAND TDK
+
+==> handtxt.shp <==
+*0,4,SG150S00
+
+==> haqui.shp <==
+*0,4,AquilliaComicHandBold-Normal
+
+==> harcbld.shp <==
+*0,4,Architect-Bold
+
+==> harctec.shp <==
+*0,4,Architect-
+
+==> hb-hd.shp <==
+*0,4,
+
+==> hb-ld.shp <==
+*0,4,
+
+==> hbold.shp <==
+*0,4,font
+
+==> hb.shp <==
+*0,4,
+
+==> hcb-hd.shp <==
+*0,4,
+
+==> hcb-ld.shp <==
+*0,4,
+
+==> hcb.shp <==
+*0,4,
+
+==> hcomx.shp <==
+*0,4,ComicsCarToon
+
+==> hdieg.shp <==
+*0,4,DiegoCaps-Normal
+
+==> hebtxtn.shp <==
+*0,4,hebrew english fold
+
+==> hebtxt.shp <==
+*0,4,hebrew english fold
+
+==> hel1-bld.shp <==
+*0,4,AU103S01
+
+==> hel2-bld.shp <==
+*0,4,AU103S02
+
+==> hel3-bld.shp <==
+*0,4,AU103S03
+
+==> hel-b-ls.shp <==
+*0,4,AU101S03
+
+==> helv1o.shp <==
+*0,4,X-HLVL1O
+
+==> helv1s.shp <==
+*0,4,X-HLVL1S
+
+==> helv-bld.shp <==
+*0,4,AU103S00
+
+==> helvbol0.shp <==
+*0,4,AU103S00
+
+==> helvbol1.shp <==
+*0,4,AU103S01
+
+==> helvbol2.shp <==
+*0,4,AU103S02
+
+==> helvbol3.shp <==
+*0,4,AU103S03
+
+==> helvl1.shp <==
+*0,4,SG101S00
+
+==> helvl2.shp <==
+*0,4,AU101S01
+
+==> helvl.shp <==
+*0,4,nHELVL.SHP
+
+==> helvlt0.shp <==
+*0,4,AU101S00
+
+==> helvlt1.shp <==
+*0,4,AU101S01
+
+==> helvlt2.shp <==
+*0,4,AU101S02
+
+==> helvlt3.shp <==
+*0,4,AU101S03
+
+==> helvm1.shp <==
+*0,4,AU102S00
+
+==> helvm2.shp <==
+*0,4,AU102S01
+
+==> helvmed0.shp <==
+*0,4,AU102S00
+
+==> helvmed1.shp <==
+*0,4,AU102S01
+
+==> helvmed2.shp <==
+*0,4,AU102S02
+
+==> helvmed3.shp <==
+*0,4,AU102S03
+
+==> helvm.shp <==
+*0,4,AU102S01
+
+==> helvo.shp <==
+*0,4,nHELV.SHP
+
+==> hlc-bo.shp <==
+*0,4,(HLC-BO)
+
+==> hlc-b.shp <==
+*0,4,(HLC-B)
+
+==> hlc-bt.shp <==
+*0,4,(HLC-BS)
+
+==> hlc-ho.shp <==
+*0,4,(HLC-HO)
+
+==> hlc-h.shp <==
+*0,4,(HLC-H)
+
+==> hlc-ht.shp <==
+*0,4,(HLC-HS)
+
+==> hlc-lo.shp <==
+*0,4,(HLC-LO)
+
+==> hlc-l.shp <==
+*0,4,(HLC-L)
+
+==> hlc-lt.shp <==
+*0,4,(HLC-LS)
+
+==> hlc-o.shp <==
+*0,4,(HLC-O)
+
+==> hlc.shp <==
+*0,4,(HLC)
+
+==> hlc-t.shp <==
+*0,4,(HLC-S)
+
+==> hl-hd.shp <==
+*0,4,
+
+==> hli-o.shp <==
+*0,4,(HLI-O)
+
+==> hli.shp <==
+*0,4,(HLI)
+
+==> hli-t.shp <==
+*0,4,(HLI-S)
+
+==> hl-ld.shp <==
+*0,4,
+
+==> hl.shp <==
+*0,4,
+
+==> hltr.shp <==
+*0,4,font
+
+==> hlv1.shp <==
+*0,4,Translated May 05 2005.
+
+==> hlv2.shp <==
+*0,4,Translated May 05 2005.
+
+==> hlv3.shp <==
+*0,4,Translated May 05 2005.
+
+==> hlv-bo.shp <==
+*0,4,(HLV-BO)
+
+==> hlv-b.shp <==
+*0,4,(HLV-B)
+
+==> hlv-bt.shp <==
+*0,4,(HLV-BS)
+
+==> hlv-ho.shp <==
+*0,4,(HLV-HO)
+
+==> hlv-h.shp <==
+*0,4,(HLV-H)
+
+==> hlv-ht.shp <==
+*0,4,(HLV-HS)
+
+==> hlv-lo.shp <==
+*0,4,(HLV-LO)
+
+==> hlv-l.shp <==
+*0,4,(HLV-L)
+
+==> hlv-lt.shp <==
+*0,4,(HLV-LS)
+
+==> hlvmenu.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> hlv-o.shp <==
+*0,4,(HLV-O)
+
+==> hlv.shp <==
+*0,4,(HLV)
+
+==> hlv-t.shp <==
+*0,4,(HLV-S)
+
+==> hm-ld.shp <==
+*0,4,
+
+==> hmo.shp <==
+*0,4,font
+
+==> hm.shp <==
+*0,4,
+
+==> hnote.shp <==
+*0,4,Notepad-Normal
+
+==> hob-o.shp <==
+*0,4,(HOB-O)
+
+==> hob.shp <==
+*0,4,(HOB)
+
+==> hob-t.shp <==
+*0,4,(HOB-S)
+
+==> hollow.shp <==
+*0,4,AU120S00
+
+==> houtl.shp <==
+*0,4,font
+
+==> htxt.shp <==
+*0,4,Standard Font 7/30/84
+
+==> hvbo.shp <==
+*0,4,AU103S00
+
+==> hvbs.shp <==
+*0,4,AU103S01
+
+==> hvlo.shp <==
+*0,4,AU101S00
+
+==> hvmo.shp <==
+*0,4,AU102S00
+
+==> hvmsolid.shp <==
+*0,4,AU102S01
+
+==> hvsolid.shp <==
+*0,4,HOT PROSPECTS INC
+
+==> i_gothic.shp <==
+*0,4,Xi_gothic
+
+==> isoeq.shp <==
+*0,4,nISOEQ.SHP
+
+==> iso.shp <==
+*0,4,ISO, Font 09/22/86 sonderzeichen 22.09.87 Siegemund international 22.11.90
+
+==> italcomp.shp <==
+*0,4,Xitalcomp
+
+==> italian.shp <==
+*0,4,XITALIAN
+
+==> italic.shp <==
+*0,4,Italic 11/27/85
+
+==> italic_t.shp <==
+*0,4,Xitaltrpx
+
+==> itcnew.shp <==
+*0,4,\acad\itcnew
+
+==> ivy.shp <==
+*0,4,\ACAD\IVY
+
+==> lereq.shp <==
+*0,4,nLEREQ.SHP
+
+==> leroy.shp <==
+*0,4,XUSCOE 5/87 rctoy
+
+==> ltg-bo.shp <==
+*0,4,(LTG-BO)
+
+==> ltg-b.shp <==
+*0,4,(LTG-B)
+
+==> ltg-bt.shp <==
+*0,4,(LTG-BS)
+
+==> ltg-o.shp <==
+*0,4,(LTG-O)
+
+==> ltg.shp <==
+*0,4,(LTG)
+
+==> ltg-t.shp <==
+*0,4,(LTG-S)
+
+==> mac-o.shp <==
+*0,4,(MAC-O)
+
+==> mac.shp <==
+*0,4,(MAC)
+
+==> mac-t.shp <==
+*0,4,(MAC-S)
+
+==> marcfast.shp <==
+*0,4,(MARCFAST)
+
+==> marcquik.shp <==
+*0,4,(MARCQUIK)
+
+==> marctitl.shp <==
+*0,4,(MARCTITL)
+
+==> marctxt.shp <==
+*0,4,(MARCTXT)
+
+==> medsol.shp <==
+*0,4,SG102S01
+
+==> mf04.shp <==
+*0,4,story
+
+==> mf05.shp <==
+*0,4,mf05
+
+==> michal_m.shp <==
+*0,4,font
+
+==> michal.shp <==
+*0,4,font
+
+==> microg.shp <==
+*0,4,nISOREC.SHP
+
+==> micro.shp <==
+*0,4,nMICRO.SHP
+
+==> mirym.shp <==
+*0,4,font
+
+==> miry.shp <==
+*0,4,font
+
+==> mis-o.shp <==
+*0,4,(MIS-O)
+
+==> mis.shp <==
+*0,4,(MIS)
+
+==> mis-t.shp <==
+*0,4,(MIS-S)
+
+==> mon.shp <==
+*0,4,Monospaced TXT Font 04/24/92
+
+==> mromans.shp <==
+*0,4,font
+
+==> msd.shp <==
+*0,4,Roman Simplex 7/30/84
+
+==> nbbj-bld.shp <==
+*0,4,NBBJ Bold  9/7/93
+
+==> nbv-bo.shp <==
+*0,4,(NBV-BO)
+
+==> nbv-b.shp <==
+*0,4,(NBV-B)
+
+==> nbv-bt.shp <==
+*0,4,(NBV-BS)
+
+==> nbv-o.shp <==
+*0,4,(NBV-O)
+
+==> nbv.shp <==
+*0,4,(NBV)
+
+==> nbv-t.shp <==
+*0,4,(NBV-S)
+
+==> ncriptc.shp <==
+*0,4,Complex script
+
+==> ncripts.shp <==
+*0,4,Simplex script
+
+==> nct-bo.shp <==
+*0,4,(NCT-BO)
+
+==> nct-b.shp <==
+*0,4,(NCT-B)
+
+==> nct-bt.shp <==
+*0,4,(NCT-BS)
+
+==> nct-o.shp <==
+*0,4,(NCT-O)
+
+==> nct.shp <==
+*0,4,(NCT)
+
+==> nct-t.shp <==
+*0,4,(NCT-S)
+
+==> noutline.shp <==
+*0,4,NOUTLINE
+
+==> opt-bo.shp <==
+*0,4,(OPT-BO)
+
+==> opt-b.shp <==
+*0,4,(OPT-B)
+
+==> opt-bt.shp <==
+*0,4,(OPT-BS)
+
+==> optm1o.shp <==
+*0,4,X-OPTM1O
+
+==> optm1s.shp <==
+*0,4,X-OPTM1S
+
+==> opt-o.shp <==
+*0,4,(OPT-O)
+
+==> opt.shp <==
+*0,4,(OPT)
+
+==> opt-t.shp <==
+*0,4,(OPT-S)
+
+==> or-hd.shp <==
+*0,4,
+
+==> or-ld.shp <==
+*0,4,
+
+==> or.shp <==
+*0,4,
+
+==> pal-bo.shp <==
+*0,4,(PAL-BO)
+
+==> pal-b.shp <==
+*0,4,(PAL)
+
+==> pal-bt.shp <==
+*0,4,(PAL-BS)
+
+==> pal-o.shp <==
+*0,4,(PAL-O)
+
+==> pal.shp <==
+*0,4,(PAL)
+
+==> pal-t.shp <==
+*0,4,(PAL-S)
+
+==> pan-bo.shp <==
+*0,4,(PAN-BO)
+
+==> pan-b.shp <==
+*0,4,(PAN-B)
+
+==> pan-bt.shp <==
+*0,4,(PAN-BS)
+
+==> pan-o.shp <==
+*0,4,(PAN-O)
+
+==> pan.shp <==
+*0,4,(PAN)
+
+==> pan-t.shp <==
+*0,4,(PAN-S)
+
+==> par-o.shp <==
+*0,4,(PAR-O)
+
+==> par.shp <==
+*0,4,(PAR)
+
+==> par-t.shp <==
+*0,4,(PAR-S)
+
+==> pgn-bo.shp <==
+*0,4,(PGN-BO)
+
+==> pgn-b.shp <==
+*0,4,(PGN-B)
+
+==> pgn-bt.shp <==
+*0,4,(PGN-BS)
+
+==> pgn-lo.shp <==
+*0,4,(PNG-LO)
+
+==> pgn-l.shp <==
+*0,4,(PNG-L)
+
+==> pgn-lt.shp <==
+*0,4,(PNG-LS)
+
+==> pgn-o.shp <==
+*0,4,(PGN-O)
+
+==> pgn.shp <==
+*0,4,(PGN)
+
+==> pgn-t.shp <==
+*0,4,(PGN-S)
+
+==> pnom1o.shp <==
+*0,4,X-PNOM1O
+
+==> pnom1s.shp <==
+*0,4,X-PNOM1S
+
+==> prs-o.shp <==
+*0,4,(PRS-O)
+
+==> prs.shp <==
+*0,4,(PRS)
+
+==> prs-t.shp <==
+*0,4,(PRS-S)
+
+==> raulp.shp <==
+*0,4,AU140S01
+
+==> reverse.shp <==
+*0,4,PetinaBold-Inverted
+
+==> rev-o.shp <==
+*0,4,(REV-O)
+
+==> rev.shp <==
+*0,4,(REV)
+
+==> rev-t.shp <==
+*0,4,(REV-S)
+
+==> rockwell.shp <==
+*0,4,SansSerif-Bold
+
+==> romand.shp <==
+*0,4,Roman duplex
+
+==> roman.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> roman_sl.shp <==
+*0,4,Roman Simplex 1/20/86 (SIMPLEX) Modified by Gale Gorman 12/87, 11/95
+
+==> romans.shp <==
+*0,4,Roman Simplex 1/20/86
+
+==> russell.shp <==
+*0,4,k
+
+==> s0.shp <==
+*0,4,CAD/ES Simplex 5/15/85
+
+==> s1.shp <==
+*0,4,CAD/ES Simplex 5/15/85
+
+==> screen.shp <==
+*0,4,font
+
+==> script.shp <==
+*0,4,Xscrpcomx
+
+==> scripts.shp <==
+*0,4,Simplex script
+
+==> scrpsimp.shp <==
+*0,4,Xscrpsimp
+
+==> sf.shp <==
+*0,4,Roman Simplex 1/20/86
+
+==> shadow.shp <==
+*0,4,\ACAD\SHADOW
+
+==> simpfrac.shp <==
+*0,4,Roman SimpFrac 7/30/84 modified 11/8/86
+
+==> simplex1.shp <==
+*0,4,Roman Simplex 1/20/86
+
+==> simplexa.shp <==
+*0,4,Roman Simplex 7/30/84
+
+==> sim.shp <==
+*0,4,DIM 9/85
+
+==> sivan_m.shp <==
+*0,4,dina
+
+==> sivan.shp <==
+*0,4,dina
+
+==> sjrf.shp <==
+*0,4,Roman Simplex 1/20/86
+
+==> solid.shp <==
+*0,4,font
+
+==> somplex.shp <==
+*0,4,Roman Complex 11/27/85
+
+==> sou-bo.shp <==
+*0,4,(SOU-BO)
+
+==> sou-b.shp <==
+*0,4,(SOU-B)
+
+==> sou-bt.shp <==
+*0,4,(SOU-BS)
+
+==> sou-o.shp <==
+*0,4,(SOU-O)
+
+==> sou.shp <==
+*0,4,(SOU)
+
+==> sou-t.shp <==
+*0,4,(SOU-S)
+
+==> ss.shp <==
+*0,4,
+
+==> standard.shp <==
+*0,4,Standard Font 11/27/85
+
+==> stars.shp <==
+*0,4,font
+
+==> stencil.shp <==
+*0,4,Stencil 10/27/88
+
+==> steneq.shp <==
+*0,4,nLEREQ.SHP
+
+==> stn-o.shp <==
+*0,4,(STN-O)
+
+==> stn.shp <==
+*0,4,(STN)
+
+==> stn-t.shp <==
+*0,4,(STN-S)
+
+==> syastro.shp <==
+*0,4,Astronomy symbol font
+
+==> symusic.shp <==
+*0,4,Music and electronics
+
+==> sysmenu1.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> sysmenu.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> t0.shp <==
+*0,4,CAD/ES Standard Font 6/22/85
+
+==> t1.shp <==
+*0,4,CAD/ES Standard Font 6/22/85
+
+==> tb-hd.shp <==
+*0,4,
+
+==> tb-ld.shp <==
+*0,4,
+
+==> tb.shp <==
+*0,4,
+
+==> tif-bo.shp <==
+*0,4,(TIF-BO)
+
+==> tif-b.shp <==
+*0,4,(TIF-B)
+
+==> tif-bt.shp <==
+*0,4,(TIF-BS)
+
+==> tif-ho.shp <==
+*0,4,(TIF-HO)
+
+==> tif-h.shp <==
+*0,4,(TIF-H)
+
+==> tif-ht.shp <==
+*0,4,(TIF-HS)
+
+==> tif-o.shp <==
+*0,4,(TIF-O)
+
+==> tif.shp <==
+*0,4,(TIF)
+
+==> tif-t.shp <==
+*0,4,(TIF-S)
+
+==> tim-bo.shp <==
+*0,4,(TIM-BO)
+
+==> tim-b.shp <==
+*0,4,(TIM-B)
+
+==> tim-bt.shp <==
+*0,4,(TIM-BS)
+
+==> timesout.shp <==
+*0,4,TIMESOUT
+
+==> times.shp <==
+*0,4,TIMES
+
+==> tim-o.shp <==
+*0,4,(TIM-O)
+
+==> tim.shp <==
+*0,4,(TIM)
+
+==> tim-t.shp <==
+*0,4,(TIM-S)
+
+==> tms.shp <==
+*0,4,Translated Apr 13 1998.
+
+==> tps.shp <==
+*0,4,
+
+==> triplex.shp <==
+*0,4,Xtriplex
+
+==> txt0.shp <==
+*0,4,Standard Font 11/27/85
+
+==> txt1.shp <==
+*0,4,Standard Font 11/27/85
+
+==> txt2.shp <==
+*0,4,Standard Font 11/27/85
+
+==> txt3.shp <==
+*0,4,Standard Font 11/27/85
+
+==> txtstrn.shp <==
+*0,4,Standard Font 11/27/85
+
+==> umb-o.shp <==
+*0,4,(UMB-O)
+
+==> umb.shp <==
+*0,4,(UMB)
+
+==> umb-t.shp <==
+*0,4,(UMB-S)
+
+==> univch.shp <==
+*0,4,nUMCH.SHP
+
+==> univcl.shp <==
+*0,4,nUNIVCL.SHP
+
+==> univh.shp <==
+*0,4,nUNIVH.SHP
+
+==> univ.shp <==
+*0,4,nUNIV.SHP
+
+==> unv-bo.shp <==
+*0,4,ZurichBTBold
+
+==> unv-b.shp <==
+*0,4,ZurichBTBold
+
+==> unv-bt.shp <==
+*0,4,ZurichBTBold
+
+==> unv-ho.shp <==
+*0,4,(UNV-HO)
+
+==> unv-h.shp <==
+*0,4,(UNV-H)
+
+==> unv-ht.shp <==
+*0,4,(UNV-HS)
+
+==> unv-lo.shp <==
+*0,4,(UNV-LO)
+
+==> unv-l.shp <==
+*0,4,(UNV-L)
+
+==> unv-lt.shp <==
+*0,4,(UNV-LS)
+
+==> unv-o.shp <==
+*0,4,ZurichBTRoman
+
+==> unv.shp <==
+*0,4,ZurichBTRoman
+
+==> unv-t.shp <==
+*0,4,ZurichBTRoman
+
+==> urm-o.shp <==
+*0,4,(URM-O)
+
+==> urm.shp <==
+*0,4,(URM)
+
+==> urm-t.shp <==
+*0,4,(URM-S)
+
+==> vag-bo.shp <==
+*0,4,(VAG-BO)
+
+==> vag-b.shp <==
+*0,4,(VAG-B)
+
+==> vag-bt.shp <==
+*0,4,(VAG-BS)
+
+==> vag-o.shp <==
+*0,4,(VAG-O)
+
+==> vag.shp <==
+*0,4,(VAG)
+
+==> vag-t.shp <==
+*0,4,(VAG-S)
+
+==> vertical.shp <==
+*0,4,Vertical Font 11/27/85 (*OBSOLETE*)
+
+==> x-hlvl1d.shp <==
+*0,4,X-HLVL1D, - 3.00 - 10/17/90 - AUTOGRAF U - MBUGBEY
+
+==> x-hlvl1s.shp <==
+*0,4,X-HLVL1S, - 3.00 - 10/17/90 - AUTOGRAF U - MBUGBEY
+
+==> x-hlvm1d.shp <==
+*0,4,X-HLVM1D, - 3.00 - 10/18/90 - AUTOGRAF U - MBUGBEY
+
+==> x-opta1d.shp <==
+*0,4,X-OPTA1D, - 2.02 - 12/22/89 - AUTOGRAF U. - MARC
+
+==> x-opta1o.shp <==
+*0,4,X-OPTA1O, - 2.02 - 12/21/89 - AUTOGRAF U. - ROY
+
+==> xopta1.shp <==
+*0,4,X-OPTA1D
+
+==> x-opta1s.shp <==
+*0,4,X-OPTA1S, - 2.02 - 12/27/89 - AUTOGRAF U. - BRYAN
+
+==> x-opta2s.shp <==
+*0,4,X-OPTA2S
+
+==> x-timr1d.shp <==
+*0,4,X-TIMR1D
+
+==> x-timr1o.shp <==
+*0,4,X-TIMR1O
+
+==> x-timr1s.shp <==
+*0,4,X-TIMR1S
+
+==> x-timr2d.shp <==
+*0,4,X-TIMR2D
+
+==> x-timr2o.shp <==
+*0,4,X-TIMR2O
+
+==> x-timr2s.shp <==
+*0,4,X-TIMR2S
+
+==> x-timr3d.shp <==
+*0,4,X-TIMR3D
+
+==> x-timr3o.shp <==
+*0,4,X-TIMR3O
+
+==> x-timr3s.shp <==
+*0,4,X-TIMR3S
+
+==> zch-o.shp <==
+*0,4,(ZCH-O)
+
+==> zch.shp <==
+*0,4,(ZCH)
+
+==> zch-t.shp <==
+*0,4,(ZCH-S)
