@@ -1907,7 +1907,7 @@ sensitive.
 
 Explicit page sizes use the format :P<width>x<length>.  For example,
 printing on legal paper could be done with either "PLO :Plegal;" or with
-"PLO :P11x17;".
+"PLO :P8.5x14;".
 
 If no papersize is given, the PLOt command will obey the $PIG_PAPER_SIZE 
 environment variable which defaults at startup to "8.5x11".  A line
@@ -2502,8 +2502,29 @@ UNDO prints the depth of both the UNDO and REDo stacks.
 }
 
 N: UNIts
-D: Set   editor  resolution  and  user  unit  type
-S: unimplemented
+D: Set   editor  resolution  
+U: UNIts [<unitvalue>] <EOC>
+S: partial
+T: {
+Piglet uses the <unitvalue> to constrain the possible GRID settings.  By
+default, <unitvalue> is set to 1000, which forces all user grids to be integer
+multiples of 1/1000 of the base unit.  For example, with <unitvalue> set to
+100, an attempt to set the GRID to 0.125 would result in an error
+message and the grid set to 0.13. 
+
+The <unitvalue> only constrains points entered by grid snapping.  Points explicitly
+typed at the commandline are quantized by Piglet's global resolution RES which can
+be set at compile time in "db.h" and is typically 5 significant digits.
+
+If UNITs is invoked without any arguments, the current unit setting is printed.
+
+.SS OPTIONS
+.TP
+.I <unitvalue>
+The <unitvalue> is the number of subdivisions that Piglet will allow for a unit grid.
+It must be a positive integer less than 10^RES.
+A <unitvalue> of 1000 would be suitable for a drawing in inches, with a resolution of 1/1000 of an inch.
+}
 
 N: VERsion
 D: Identify the version number of program

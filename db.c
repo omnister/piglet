@@ -908,7 +908,10 @@ int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho)
         case POLY:  /* polygon definition */
 	case RECT:  /* rectangle definition */
         case TEXT:  /* text definition */
-	    /* print_smash_def(p, child_xform, ortho); */
+
+	// void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
+
+	    /* print_smash_def(p, xform, ortho); */
 	    /* if ortho, then just emit primitive based on xform */
 	    /* otherwise convert primitive to polygon */
 	    break;
@@ -956,8 +959,10 @@ int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho)
     return(1);
 }
 
-/* write out archive file for sp, smash it if smash !=0 */
-/* FIXME: include process file if process !=0 */
+/* write out archive file for sp, smash it if smash !=0 
+* smashing currently unimplemented
+* FIXME: include process file if process !=0 
+*/
 
 int db_def_archive(DB_TAB *sp, int smash, int process) 
 {
@@ -1053,7 +1058,6 @@ int db_def_arch_recurse(FILE *fp, DB_TAB *sp, int smash)
     }
     return(0); 	
 }
-
 
 // list any unsaved files at BYE.  If user says "BYE; BYE;"
 // then db_remove_autosaved() files will be called to remove

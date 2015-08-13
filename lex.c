@@ -621,7 +621,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 	switch(token) {
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":S", 2) == 0) { /* smash archive */
-		    smash++;
+		    smash++;	// FIXME: parsed, but not implemented
 		} else if (strncasecmp(word, ":P", 2) == 0) { /* include process file */
 		    process++;	/* FIXME: parsed, but not currently used */
 		} else {
@@ -659,7 +659,11 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 	    xp = (XFORM *) emalloc(sizeof(XFORM));
 	    xp->r11 = 1.0; xp->r12 = 0.0; xp->r21 = 0.0; xp->r22 = 1.0;
 	    xp->dx  = 0.0; xp->dy  = 0.0;
+	    
+	    // FIXME: not implemented
 	    db_arc_smash(currep, xp, 1);
+
+	    printf("    smash archive not implemented: %s\n", currep->name);
 	    free(xp);
 	}
     } else {
