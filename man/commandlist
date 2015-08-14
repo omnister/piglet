@@ -1881,7 +1881,7 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a plot of the current device in various formats
 S: letter size only
-U: PLO [:F] [:TA|:TD|:TG|:TP] [:P<papersize>] <plotname> <EOC>
+U: PLO [:F] [:B] [:G] [:L<linewidth>][:TA|:TD|:TG|:TP] [:P<papersize>] <plotname> <EOC>
 T: {
 The PLOT command creates a plot of the current window in the
 file "./<plotname>.<suffix>.  If the <plotname> is not specified, the
@@ -1943,6 +1943,14 @@ PLOT with no arguments will plot just the currently visible portion of
 the device.  The ":F" option will fit the window to the device prior to
 plotting and restore the existing window settings after the plot.
 
+For postscript blueprints and presentations it is often helpful to
+create black and white drawings from an original color drawing.  The
+":B" option will plot the figure converting all pen colors to black. 
+The ":G" option will convert colors to various shades of grey. 
+
+Depending on the resolution of the drawing it may be helpful to change
+the postscript linewidth using ":L<linewidth>". 
+
 .SS IMPLEMENTATION DETAILS
 Currently, the postscript file is not hierarchical and so can be quite
 big.  It would be a nice project to define each cell individually and
@@ -1975,6 +1983,12 @@ given.
 Observed for postscript output.  Pagesize can be any number of common
 papersize names or an explicit page size given in the form of
 <width>x<height> in units of inches. 
+.TP
+.I :G
+Plot postscript in greyscale.
+.TP
+.I :B
+Plot postscript in black pen.
 }
 
 N: POInt

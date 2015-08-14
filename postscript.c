@@ -21,6 +21,8 @@ int filltype=0;
 int newfill=1;
 int in_line=0;		/* set to 1 when working on a line */
 int in_poly=0;
+int colorflag=1;	// 0=black; 1=color; 2=greyscale
+double linewidth=1.0;
 
 int this_pen=0;		// we need to save state at start of line
 int this_line=0;	// because lines are implicitly terminated
@@ -33,6 +35,16 @@ FILE *fp=NULL;		// file descriptor for output file
 OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
 
 double bbllx, bblly, bburx, bbury; // bounding box in screen coords
+
+void ps_set_color(int color) {
+   if (debug) printf("ps_set_color: %d\n",color);
+   colorflag=color;
+}
+
+void ps_set_linewidth(double width) {
+   if (debug) printf("ps_set_linewidth: %g\n", width);
+   linewidth=width;
+}
 
 void ps_set_outputtype(OMODE mode) {
    if (debug) printf("ps_set_outputtype: %d\n",mode);
@@ -271,17 +283,43 @@ void ps_preamble(
 	fprintf(fp,"/$Pig2psDict 200 dict def\n");
 	fprintf(fp,"$Pig2psDict begin\n");
 	fprintf(fp,"$Pig2psDict /mtrx matrix put\n");
-	fprintf(fp,"/c-1 {0 setgray} bind def\n");
-	fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
-	fprintf(fp,"/c1 {1.000 0.000 0.000 srgb} bind def\n");
-	fprintf(fp,"/c2 {0.000 1.000 0.000 srgb} bind def\n");
-	fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
-	fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
-	fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
-	fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
-	fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
-	fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
-	fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
+        if (colorflag==1) { 	// color
+	    fprintf(fp,"/c-1 {0 setgray} bind def\n");
+	    fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c1 {1.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c2 {0.000 1.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
+	    fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
+	    fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
+	    fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
+	    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
+	} else if (colorflag==0) {	// black
+	    fprintf(fp,"/c-1 {0 setgray} bind def\n");
+	    fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c1 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c2 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c3 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c4 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c5 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c6 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
+	    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
+	} else {			// gray
+	    fprintf(fp,"/c-1 {0 setgray} bind def\n");
+	    fprintf(fp,"/c0 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c1 {0.200 0.200 0.200 srgb} bind def\n");
+	    fprintf(fp,"/c2 {0.300 0.300 0.300 srgb} bind def\n");
+	    fprintf(fp,"/c3 {0.400 0.400 0.400 srgb} bind def\n");
+	    fprintf(fp,"/c4 {0.500 0.500 0.500 srgb} bind def\n");
+	    fprintf(fp,"/c5 {0.600 0.600 0.600 srgb} bind def\n");
+	    fprintf(fp,"/c6 {0.700 0.700 0.700 srgb} bind def\n");
+	    fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
+	    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");
+	}
 	fprintf(fp,"/cp {closepath} bind def\n");
 	fprintf(fp,"/ef {eofill} bind def\n");
 	fprintf(fp,"/gr {grestore} bind def\n");
@@ -361,7 +399,7 @@ void ps_preamble(
 	fprintf(fp,"$Pig2psBegin\n");
 	fprintf(fp,"10 setmiterlimit\n");
 	fprintf(fp,"1 slj 1 slc\n");
-	fprintf(fp,"1.0 slw\n");
+	fprintf(fp,"%.1g slw\n",linewidth);
 
 	fprintf(fp,"%% here starts figure;\n");
 	return;

@@ -1421,7 +1421,8 @@ int db_list(DB_TAB *cell)
 }
 
 // dx,dy page size in inches
-int db_plot(char *name, OMODE plottype, double dx, double dy) {
+int db_plot(char *name, OMODE plottype, double dx,
+            double dy, int color, double pen) {
     BOUNDS bb;
     char buf[MAXFILENAME];
     double x1, y1, x2, y2;
@@ -1490,6 +1491,8 @@ int db_plot(char *name, OMODE plottype, double dx, double dy) {
     /* FIXME: make version number a global or at least subroutine */
 
     ps_set_file(PLOT_FD);
+    ps_set_linewidth(pen);	// linewidth
+    ps_set_color(color);	// color==1, bw=0
 
     /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
     // ps_preamble(currep->name, "piglet version 0.95h", 8.5, 11.0, 

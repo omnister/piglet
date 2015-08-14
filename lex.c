@@ -1715,11 +1715,13 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
     char pagesize[128];
     int debug=0;
     int fit=0;
+    int color=1;
     int plottype=0;
     extern void do_win();                /* found in com_window */
     double px=8.0;
     double py=11.0;
     double tx, ty;
+    double width=1.0;
 
     if (debug) printf("    com_plot\n");
 
@@ -1732,7 +1734,7 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 
     // some possible options
     // :F to do a fit before plotting, otherwise only plot current window view
-    // :P<papersize> A,B,C,L,letter,widthxheight
+    // :P<papersize> A,B,C,L,letter,...,widthxheight
 
     plottype=POSTSCRIPT;
     ps_set_outputtype(POSTSCRIPT);	// default is postscript
@@ -1754,6 +1756,17 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 	    case OPT:		/* option */
 		if (strncasecmp(word, ":F", 2) == 0) { /* fit window */
 		    fit++;
+		} else if (strncasecmp(word, ":G", 2) == 0) {  // grayscale drawing
+		    color=2; 
+		} else if (strncasecmp(word, ":B", 2) == 0) {  // BW drawing
+		    color=0; 
+		} else if (strncasecmp(word, ":L", 2) == 0) {  // :L<linewidth>
+		    sscanf(word+2,"%lg",&width);
+		    if (width < 0.1 || width > 100.0 ) {
+			printf("bad width to PLOT :L<%s>, setting to 1.0\n", word+2);       
+			width = 1.0;
+		    }
+		    printf("using line width = %g\n", width);
 		} else if (strncasecmp(word, ":P", 2) == 0) { /* pagesize */
 		    strcpy(pagesize, word+2);
 		    if (pnametosize(pagesize, &tx, &ty)==1) {
@@ -1799,7 +1812,7 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 		   com_window(lp, NULL);
 		}
 
-    		db_plot(name,plottype,px,py);
+    		db_plot(name,plottype,px,py,color,width);
 
 		if (fit) {			/* revert to old window params */
 		   token_unget(lp, EOC, ";");
