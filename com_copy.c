@@ -107,10 +107,10 @@ int com_copy(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL || token == EOC) {
+	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
-	    } else if (token == CMD) {
+	    } else if (token == CMD || token == EOC) {
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,&word);

@@ -107,11 +107,11 @@ int com_move(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL || token == EOC) {
+	    } else if (token == EOL) {
 	    	rubber_clear_callback();
-		token_get(lp,&word); 	/* just eat it up */
+		token_get(lp,&word); 
 		state = START;
-	    } else if (token == CMD) {
+	    } else if (token == CMD || token == EOC) {
 		state = END;
 	    } else if (token == IDENT) {
 		token_get(lp,&word);

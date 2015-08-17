@@ -622,8 +622,7 @@ Vol. MTT-26, March 1978, pp. 175-181.
 
 N: ADD_NOTE
 D: Add a note to the current device
-U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirror>]
-[:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:N<fontindex>]  "string" <xy> EOC
+U: ADD N<layer> [.<cname>] [@<sname>] [:F<fontsize>][:J<justification>][:M<mirror>] [:R<rotation>] [:Y<yxratio>] [:Z<slant>] [:N<fontindex>]  "string" <xy> EOC
 S: good
 T: {
 

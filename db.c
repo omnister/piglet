@@ -2167,6 +2167,7 @@ OPTS *opt_copy(OPTS *opts)
 
 void opt_set_defaults(OPTS *opts)
 {
+    char *word;
     opts->font_size = 10.0;       /* :F<font_size> */
     opts->height = 0.0;       	  /* :H<substrate_height> */
     opts->mirror = MIRROR_OFF;    /* :M<x,xy,y>    */

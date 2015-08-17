@@ -55,11 +55,8 @@ int add_rect(LEXER *lp, int *layer)
 		}
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == EOL || token == EOC) {
 		token_get(lp,&word); 	/* just eat it up */
-		state = START;
-	    } else if (token == EOC) {
-		token_get(lp,&word); 
 		state = START;
 	    } else if (token == EOF) {
 	    	state = END;

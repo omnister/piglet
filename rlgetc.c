@@ -24,6 +24,9 @@ char	**gargv;    /* global argument list */
 int	gargc;
 char    *rl_gets();
 
+#define MAXHIST 1024
+#define HISTORY ".pighist"
+
 /*
 main() {
     char *s;
@@ -168,6 +171,7 @@ char * rl_gets (char *prompt)
 	/* If the line has any text in it, save it on the history. */
 	if (lineread && *lineread) {
 	    add_history (lineread);
+	    write_history(HISTORY);
 	}
 	
 	/* add a newline to return string */
@@ -209,6 +213,10 @@ void initialize_readline()
      * back and forth.
      */
     rl_getc_function = procXevent;
+    /* Allow conditional parsing of the ~/.inputrc file. */
+    stifle_history(MAXHIST);
+    read_history(HISTORY);
+	      
 }
 
 int rlgetc(LEXER *lp)

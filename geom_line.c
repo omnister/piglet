@@ -11,6 +11,7 @@
 #include "rlgetc.h"
 #include "opt_parse.h"
 #include "lock.h"
+#include "ev.h"
 
 static COORDS *CP;
 
@@ -75,10 +76,10 @@ int add_line(LEXER *lp, int *layer)
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
-		} else if (token == EOL) {
+		} else if (token == EOL || token == EOC) {
 		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
-		} else if (token == EOC || token == CMD) {
+		} else if (token == CMD) {
 		    state = END; 
 		} else {
 		    token_err("LINE", lp, "expected OPT or COORD", token);
@@ -267,4 +268,3 @@ void draw_line(double x2, double y2, int count)
 	// y2old=y2;
 	jump(&bb, D_RUBBER);
 }
-
