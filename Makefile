@@ -104,7 +104,7 @@ install: man/piglet.1p pig.bin
 	cp MENUDATA_V $(LIBDIR)
 	cp piglogo.d $(LIBDIR)
 	cp pigrc $(LIBDIR)
-	cp shpfonts/* $(LIBDIR)
+	cp $(FONTS) $(LIBDIR)/shpfonts
 
 depend: ${OBJ}
 	cp Makefile Makefile.bak
