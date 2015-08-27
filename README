@@ -3,6 +3,10 @@ hierarchical object description.  It is inspired by Hewlett-Packard's
 proprietary HP PIGLET (Personal Interactive Graphic Layout EdiTor),
 which later became the commercial Graffy editor by DURST CAD. 
 
+Piglet was widely used for PCB design, Integrated Circuit and Microwave
+thin/thick film circuit development.  In the days before Powerpoint,
+Piglet was also used for generating presentation slides. 
+
 Piglet is a very nearly complete, from scratch, implementation of the
 original HP editor.  It has unlimited hierarchy, unlimited layers, a
 versatile SHOW command for filtering the layers displayed. 
