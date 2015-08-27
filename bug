@@ -5,6 +5,10 @@
 # version 1.0.
 #
 
+[ ] if you start to draw a vertical line and move the second point off to the right, the rubberband
+    point moves up to keep the same radius.  It should probably keep the same X value for vertical lines
+    and same Y value for horizontal lines.  Extend the concept to any angle by projection.
+
 [ ] SET A 4; echo $A+4; echo ($A+4);
 
 [ ] add primitives down one level with affine transformations?

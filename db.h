@@ -138,11 +138,12 @@ typedef struct xform {
 COORDS *coord_new(NUM x, NUM y);
 COORDS *coord_copy(XFORM *xp, COORDS *CP);
 COORDS *coord_append(COORDS *CP, NUM x, NUM y);
-void coord_swap_last(COORDS *CP, NUM x, NUM y);
-int coord_get(COORDS *CP, int n, NUM *x, NUM *y);
+void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
-int coord_count(COORDS *CP);
+int  coord_count(COORDS *CP);
+int  coord_get(COORDS *CP, int n, NUM *px, NUM *py);
+int  coord_edit(COORDS *CP, int n, NUM x, NUM y); 
 
 typedef struct bounds {
     double xmin;

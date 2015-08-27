@@ -7,8 +7,30 @@ void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
 void coord_print(COORDS *CP);
 int  coord_count(COORDS *CP);
+int  coord_get(COORDS *CP, int n, NUM *px, NUM *py);
+int  coord_edit(COORDS *CP, int n, NUM x, NUM y); 
 
-int coord_get(COORDS *CP, int n, NUM *px, NUM *py) 	/* get nth set of x,y coords in list */
+int coord_edit(COORDS *CP, int n, NUM x, NUM y) 	/* mod nth set of coords */
+{	
+    COORDS *tmp;
+    int i;
+    int err=0;
+
+    i=1;
+    tmp = CP;
+    while(i<n && (tmp = tmp->next) != NULL) {
+	i++;
+    }
+    if (i!=n) {
+    	err = -1;
+    } else {
+    	tmp->coord.x = x;
+    	tmp->coord.y = y;
+    }
+    return(err);
+}		
+
+int coord_get(COORDS *CP, int n, NUM *px, NUM *py) 	/* get nth set of coords in list */
 {	
     COORDS *tmp;
     int i;
@@ -149,7 +171,7 @@ main()
     coord_print(CP);
     coord_swap_last(CP,9.0, 10.0);
     coord_print(CP);
-    coord_print(coord_copy(CP));
+    coord_print(coord_copy(NULL,CP));
     printf("num coords = %d\n", coord_count(CP));
     coord_get(CP, 1, &x, &y);
     printf("1st coord is = %g,%g\n",x,y);
@@ -157,5 +179,10 @@ main()
     printf("2nd coord is = %g,%g\n",x,y);
     coord_get(CP, 3, &x, &y);
     printf("3rd coord is = %g,%g\n",x,y);
+    coord_edit(CP, 2, 20,30); 
+    coord_get(CP, 2, &x, &y);
+    printf("2nd coord is = %g,%g\n",x,y);
+    exit(1);
+
 }
 */
