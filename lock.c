@@ -18,6 +18,13 @@ void setlockpoint(double x,double y)
     ysnap = y;
 }
 
+
+void getlockpoint(double *px,double *py) 
+{
+    *px = xsnap;
+    *py = ysnap;
+}
+
 void lockpoint(double *px, double *py, double lock) 
 {
     double dx, dy;
@@ -41,9 +48,9 @@ void lockpoint(double *px, double *py, double lock)
 	locktheta = 2.0*M_PI*lock/360.0;
 	snaptheta = locktheta*floor((theta+(locktheta/2.0))/locktheta);
 
-	printf("angle = %g, locked %g\n", 
-		theta*360.0/(2.0*M_PI), snaptheta*360.0/(2.0*M_PI));
-	fflush(stdout);
+	// printf("angle = %g, locked %g\n", 
+	// 	theta*360.0/(2.0*M_PI), snaptheta*360.0/(2.0*M_PI));
+	// fflush(stdout);
 
     	/* overwrite px, py, to produce vector with same radius, but proper theta */
 	*px = xsnap+radius*cos(snaptheta);

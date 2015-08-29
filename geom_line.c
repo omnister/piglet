@@ -45,7 +45,7 @@ int add_line(LEXER *lp, int *layer)
     char *word;
     double x2,y2;
     double xold, yold;
-    int debug=0;
+    int debug=1;
     int done=0;
     int nsegs=0;
 
@@ -126,12 +126,13 @@ int add_line(LEXER *lp, int *layer)
 
 			/* two identical clicks terminates this line */
 			/* but keeps the ADD L command in effect */
+                        printf("%d: xo-x2 = %le, yo-y2 = %le\n", nsegs, xold-x2, yold-y2);
 
 			if (nsegs==1 && x1==x2 && yy1==y2) {
 			    rubber_clear_callback();
 			    printf("error: a line must have finite length\n");
 			    state = START;
-			} else if (x2==xold && y2==yold && nsegs) {
+			} else if (x2==xold && y2==yold && nsegs > 0) {
 			    if (debug) coord_print(CP);
 			    printf("dropping coord\n");
 			    coord_drop(CP);  /* drop last coord */
@@ -215,7 +216,7 @@ int add_line(LEXER *lp, int *layer)
 
 void draw_line(double x2, double y2, int count) 
 {
-	// static double x1old, x2old, y1old, y2old;
+	double xl, yl;
 	int debug=0;
 	BOUNDS bb;
 	static int called = 0;
@@ -227,7 +228,15 @@ void draw_line(double x2, double y2, int count)
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_LINE dbline; */
 
+	getlockpoint(&xl, &yl);
 	lockpoint(&x2, &y2, currep->lock_angle); 
+
+	// can check here to see if new point is collinear
+	// with last and previous to last point 
+	// if not, then find new point and previous point
+	// such that p2 is p1+alpha(p1->lp) and 
+	// p2 + beta(lp->mousepoint) == mousepoint
+
 
         dbtab.dbhead = &dbdeflist;
         dbtab.next = NULL;
@@ -250,7 +259,9 @@ void draw_line(double x2, double y2, int count)
 	    jump(&bb, D_RUBBER); /* erase old shape */
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 	    jump(&bb, D_RUBBER); /* draw new shape */
-	    coord_swap_last(CP, x2, y2);
+
+	    coord_edit(CP, 0, x2, y2);  // change the last point
+
 	    do_line(&dbdeflist, &bb, D_RUBBER);
 	    called++;
 	} else {			/* last call, cleanup */

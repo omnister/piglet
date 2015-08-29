@@ -1369,12 +1369,16 @@ void snapxy(double *x,double *y)	/* snap world coordinates to grid ticks */
 
     // *x = xx-fmod(xx+RES/2.0,1.0/pow(10.0,RES));
     // *y = yy-fmod(yy+RES/2.0,1.0/pow(10.0,RES));
-    
-    // *x = ((double)((int)(xx*pow(10.0,RES)+0.5)))/pow(10.0,RES);
-    // *y = ((double)((int)(yy*pow(10.0,RES)+0.5)))/pow(10.0,RES);
+    //
+    // *x = xx;
+    // *y = yy;
 
-    *x = xx;
-    *y = yy;
+    
+    // if we don't limit resolution here, the doubled-point termination
+    // won't work in geom_line(). 
+    
+    *x = ((double)((int)(xx*pow(10.0,RES)+0.5)))/pow(10.0,RES);
+    *y = ((double)((int)(yy*pow(10.0,RES)+0.5)))/pow(10.0,RES);
 
 
 }

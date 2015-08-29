@@ -1,7 +1,7 @@
 #include "db.h"
 
 COORDS *coord_new(NUM x, NUM y);
-COORDS *coord_copy(XFORM *xp, COORDS *CP);
+// COORDS *coord_copy(XFORM *xp, COORDS *CP);
 COORDS *coord_append(COORDS *CP, NUM x, NUM y);
 void coord_swap_last(COORDS *CP,  NUM x, NUM y);
 void coord_drop(COORDS *CP);
@@ -10,42 +10,80 @@ int  coord_count(COORDS *CP);
 int  coord_get(COORDS *CP, int n, NUM *px, NUM *py);
 int  coord_edit(COORDS *CP, int n, NUM x, NUM y); 
 
+// perhaps all the void functions should instead return pointers
+// to the modified list?
+
+
+// if n>0;  edits nth coord from beginning counting 1, 2, 3
+// if n<=0; edits nth coord from end counting 0, -1, -2, -3...
+
+int coord_get(COORDS *CP, int n, NUM *px, NUM *py) 	/* get nth set of coords */
+{	
+    COORDS *tmp;
+    int i;
+    int err=0;
+
+    if (n>0) {	// positive counts from beginning
+	i=1;
+	tmp = CP;
+	while(i<n && (tmp = tmp->next) != NULL) {
+	    i++;
+	}
+	if (i!=n) {
+	    err = -1;
+	} else {
+	    *px = tmp->coord.x;
+	    *py = tmp->coord.y;
+	}
+    } else {	// negative counts from end
+	i=n;
+	tmp = CP->prev;
+	while(i<0 && (tmp = tmp->prev) != NULL) {
+	    i++;
+	}
+	if (i!=0) {
+	    err = -1;
+	} else {
+	    *px = tmp->coord.x;
+	    *py = tmp->coord.y;
+	}
+    }
+    return(err);
+}		
+
+// if n>0;  gets nth coord from beginning counting 1, 2, 3
+// if n<=0; gets nth coord from end counting 0, -1, -2, -3...
+
 int coord_edit(COORDS *CP, int n, NUM x, NUM y) 	/* mod nth set of coords */
 {	
     COORDS *tmp;
     int i;
     int err=0;
 
-    i=1;
-    tmp = CP;
-    while(i<n && (tmp = tmp->next) != NULL) {
-	i++;
-    }
-    if (i!=n) {
-    	err = -1;
-    } else {
-    	tmp->coord.x = x;
-    	tmp->coord.y = y;
-    }
-    return(err);
-}		
-
-int coord_get(COORDS *CP, int n, NUM *px, NUM *py) 	/* get nth set of coords in list */
-{	
-    COORDS *tmp;
-    int i;
-    int err=0;
-
-    i=1;
-    tmp = CP;
-    while(i<n && (tmp = tmp->next) != NULL) {
-	i++;
-    }
-    if (i!=n) {
-    	err = -1;
-    } else {
-    	*px = tmp->coord.x;
-    	*py = tmp->coord.y;
+    if (n>0) {	// positive counts from beginning
+	i=1;
+	tmp = CP;
+	while(i<n && (tmp = tmp->next) != NULL) {
+	    i++;
+	}
+	if (i!=n) {
+	    err = -1;
+	} else {
+	    tmp->coord.x = x;
+	    tmp->coord.y = y;
+	}
+    } else {	// negative counts from end
+	i=n;
+	tmp = CP->prev;
+	while(i<0 && (tmp = tmp->prev) != NULL) {
+	    i++;
+	}
+	if (i!=0) {
+	    err = -1;
+	} else {
+	    tmp->coord.x = x;
+	    tmp->coord.y = y;
+	}
     }
     return(err);
 }		
@@ -62,6 +100,17 @@ int coord_count(COORDS *CP) 	/* return number of coords in list */
     }
     return(i);
 }		
+
+
+// Piglet uses this doubly linked structure alot
+// It bears a short description every time 
+//
+// We have a doubly linked list of x,y nodes
+// COORDS->next points to the next one, or null at end
+// COORDS->prev points to the previous one, of the last one if first
+//
+// Cool, eh?  Can append at both ends with just at most a double redirect
+//
 
 COORDS *coord_new(double x,double y)
 {
@@ -157,10 +206,9 @@ COORDS *coord_copy(XFORM *xp, COORDS *CP)
 /* test harness */
 
 /*
-main() 
+int main() 
 {
     COORDS *CP;
-    COORDS *NP;
     double x,y;
 
     CP = coord_new(1.0,2.0);
@@ -169,8 +217,14 @@ main()
     coord_append(CP,7.0, 8.0);
     coord_drop(CP);
     coord_print(CP);
+    printf("doing coord_swap_last(CP,9,10)\n");
     coord_swap_last(CP,9.0, 10.0);
     coord_print(CP);
+    printf("doing coord_edit(CP,0, 3,0)\n");
+    coord_edit(CP,0,3,0);
+    coord_print(CP);
+
+
     coord_print(coord_copy(NULL,CP));
     printf("num coords = %d\n", coord_count(CP));
     coord_get(CP, 1, &x, &y);
@@ -183,6 +237,5 @@ main()
     coord_get(CP, 2, &x, &y);
     printf("2nd coord is = %g,%g\n",x,y);
     exit(1);
-
 }
 */
