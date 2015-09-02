@@ -350,7 +350,7 @@ void ps_preamble(
 	int i,j; char *ps;
 	for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
 	    fprintf(fp,"/p%d {\n",i);
-	    fprintf(fp,"8 8 true  matrix {<");
+	    fprintf(fp,".5 .5 scale 8 8 true  matrix {<");
 	    for (j=0; j<=7; j++) {
 		fprintf(fp,"%02x",ps[j]&255);
 	    }
@@ -359,7 +359,7 @@ void ps_preamble(
 	    fprintf(fp,"<< /PatternType 1\n");
 	    fprintf(fp,"   /PaintType 2\n");
 	    fprintf(fp,"   /TilingType 1\n");
-	    fprintf(fp,"   /XStep 8 /YStep 8\n");
+	    fprintf(fp,"   /XStep 4 /YStep 4\n");
 	    fprintf(fp,"   /BBox [0 0 8 8]\n");
 	    fprintf(fp,"   /PaintProc { p%d }\n",i);
 	    fprintf(fp,">>\n");

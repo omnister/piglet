@@ -103,6 +103,7 @@ int coord_count(COORDS *CP) 	/* return number of coords in list */
 
 
 // Piglet uses this doubly linked structure alot
+//
 // It bears a short description every time 
 //
 // We have a doubly linked list of x,y nodes

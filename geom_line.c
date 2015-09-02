@@ -36,6 +36,21 @@ OPTS opts;
 double x1=0.0;
 double yy1=0.0;
 
+void cleanup(COORDS *CP) {
+   int n;
+   int i;
+   double x,y;
+
+   n=coord_count(CP);
+   // printf("found %d points in line\n",n);
+   for (i=1; i<=n; i++) {
+      coord_get(CP, i, &x, &y);
+      // printf("point %d: %g %g\n",i,x,y); 
+   }
+
+	
+}
+
 int add_line(LEXER *lp, int *layer)
 {
     enum {START,NUM1,NUM2,END,ERR} state = START;
@@ -45,7 +60,7 @@ int add_line(LEXER *lp, int *layer)
     char *word;
     double x2,y2;
     double xold, yold;
-    int debug=1;
+    int debug=0;
     int done=0;
     int nsegs=0;
 
@@ -79,7 +94,7 @@ int add_line(LEXER *lp, int *layer)
 		} else if (token == EOL || token == EOC) {
 		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
-		} else if (token == CMD) {
+		} else if (token == CMD || token==EOF) {
 		    state = END; 
 		} else {
 		    token_err("LINE", lp, "expected OPT or COORD", token);
@@ -126,7 +141,7 @@ int add_line(LEXER *lp, int *layer)
 
 			/* two identical clicks terminates this line */
 			/* but keeps the ADD L command in effect */
-                        printf("%d: xo-x2 = %le, yo-y2 = %le\n", nsegs, xold-x2, yold-y2);
+                        // printf("%d: xo-x2 = %le, yo-y2 = %le\n", nsegs, xold-x2, yold-y2);
 
 			if (nsegs==1 && x1==x2 && yy1==y2) {
 			    rubber_clear_callback();
@@ -139,6 +154,7 @@ int add_line(LEXER *lp, int *layer)
 			    if (debug) coord_print(CP);
 			    if (debug) printf("got %d coords\n", coord_count(CP));
 			    if (coord_count(CP) > 1) {
+				cleanup(CP);	// clean up coords
 				db_add_line(currep, *layer, opt_copy(&opts), CP);
 			    }
 			    need_redraw++;
@@ -172,7 +188,7 @@ int add_line(LEXER *lp, int *layer)
 		    if (debug) printf("dropping coord\n");
 		    rubber_clear_callback(); 
 		    rubber_draw(x2, y2, 0);
-		    printf("num coords %d\n", coord_count(CP));
+		    // printf("num coords %d\n", coord_count(CP));
 		    if ((count = coord_count(CP)) >= 3) {
 			coord_drop(CP);  /* drop last coord */
 			coord_swap_last(CP, x2, y2);
@@ -194,6 +210,7 @@ int add_line(LEXER *lp, int *layer)
 		if (debug) printf("in end\n");
 		if (token == EOC && nsegs >= 2) {
 			coord_drop(CP);  /* drop last coord */
+			cleanup(CP);	// clean up coords
 			db_add_line(currep, *layer, opt_copy(&opts), CP);
 			need_redraw++;
 		    	; /* add geom */
