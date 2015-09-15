@@ -36,13 +36,14 @@ OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
 
 double bbllx, bblly, bburx, bbury; // bounding box in screen coords
 
+
 void ps_set_color(int color) {
    if (debug) printf("ps_set_color: %d\n",color);
    colorflag=color;
 }
 
 void ps_set_linewidth(double width) {
-   if (debug) printf("ps_set_linewidth: %g\n", width);
+   if (debug) printf("ps_set_linewidth: %f\n", width);
    linewidth=width;
 }
 
@@ -149,7 +150,7 @@ void ps_preamble(
     /* create transform commands based on bb and paper size */
 
     bbllx=llx; bblly=lly; bburx=urx; bbury=ury;
-    if (debug) printf("llx:%g lly:%g urx:%g ury:%g\n", llx, lly, urx, ury);
+    if (debug) printf("llx:%f lly:%f urx:%f ury:%f\n", llx, lly, urx, ury);
 
     /* FIXME, check that bb is in canonic order */
     if ((llx > urx) || (lly > ury)) {
@@ -170,7 +171,7 @@ void ps_preamble(
 	xmax=pdx*72.0;
 	ymax=pdy*72.0;
 
-	printf("aspect is xdel: %g, ydel: %g\n", xdel, ydel);
+	printf("aspect is xdel: %f, ydel: %f\n", xdel, ydel);
 	if (xdel > ydel) { /* flip aspect */
 	    landscape=1;
 	    printf("setting landscape\n");
@@ -215,9 +216,9 @@ void ps_preamble(
        fprintf(fp,"G54D10*\n");
        return;
     } else if (outputtype == DXF) {
-       fprintf(fp, "0\n");
+       fprintf(fp, "  0\n");
        fprintf(fp, "SECTION\n");
-       fprintf(fp, "2\n");
+       fprintf(fp, "  2\n");
        fprintf(fp, "ENTITIES\n");
        return;
     } else if (outputtype == HPGL) {
@@ -225,8 +226,8 @@ void ps_preamble(
        fprintf(fp, "SP%d;\n", pennum);
 
        // HPGL plots in units of 0.025 mm = 1016 ticks per inch...
-       // fprintf(fp, "page size is %g %g\n", pdx*1016.0, pdy*1016.0);
-       // fprintf(fp, "bb is llx:%g lly:%g urx:%g ury%g\n", llx, lly, urx, ury);
+       // fprintf(fp, "page size is %f %f\n", pdx*1016.0, pdy*1016.0);
+       // fprintf(fp, "bb is llx:%f lly:%f urx:%f ury%f\n", llx, lly, urx, ury);
        fprintf(fp, "IP %d,%d,%d,%d;\n", 0, 0, (int) ((urx-llx)*scale), (int) ((ury-lly)*scale) );
 
        // flip y axis (Xwin puts 0,0 at top, increments going down)
@@ -382,15 +383,15 @@ void ps_preamble(
 	fprintf(fp,"/$Pig2psEnd {$Pig2psEnteredState restore end} def\n");
 
 	fprintf(fp,"%%BeginPageSetup\n");
-	fprintf(fp,"%%BB is %g,%g %g,%g\n", llx, lly, urx, ury);	
+	fprintf(fp,"%%BB is %f,%f %f,%f\n", llx, lly, urx, ury);	
 	if (landscape) {
-	    fprintf(fp,"%g %g scale\n", scale, scale);
-	    fprintf(fp,"%g %g translate\n", 
+	    fprintf(fp,"%f %f scale\n", scale, scale);
+	    fprintf(fp,"%f %f translate\n", 
 		(ymax/(2.0*scale))+ymid, (xmax/(2.0*scale))-xmid);
 	    fprintf(fp,"90 rotate\n");
 	} else {
-	    fprintf(fp,"%g %g scale\n", scale, scale);
-	    fprintf(fp,"%g %g translate\n",
+	    fprintf(fp,"%f %f scale\n", scale, scale);
+	    fprintf(fp,"%f %f translate\n",
 		(xmax/(2.0*scale))-xmid,  (ymax/(2.0*scale))-ymid);
 	}
 	fprintf(fp,"%%EndPageSetup\n");
@@ -399,7 +400,7 @@ void ps_preamble(
 	fprintf(fp,"$Pig2psBegin\n");
 	fprintf(fp,"10 setmiterlimit\n");
 	fprintf(fp,"1 slj 1 slc\n");
-	fprintf(fp,"%.1g slw\n",linewidth);
+	fprintf(fp,"%.1f slw\n",linewidth);
 
 	fprintf(fp,"%% here starts figure;\n");
 	return;
@@ -410,6 +411,21 @@ void ps_preamble(
     }
 }
 
+void ps_comment(char *comment)
+{
+
+    if (outputtype == GERBER) {			// GERBER
+	//fprintf(fp, "G37*\n");
+    } else if (outputtype == HPGL) {		// HPGL
+	// fprintf(fp, "LT%d;EP;\n", this_line);
+    } else if (outputtype == DXF) {		// DXF
+	// fprintf(fp, "c%d ", this_pen);
+    } else if (outputtype == POSTSCRIPT) {	// PS
+	// fprintf(fp, "c%d ", this_pen);
+    } else if (outputtype == AUTOPLOT) {	// AUTOPLOT
+	fprintf(fp, "#%s\n",comment);
+    }
+}
 
 void ps_end_line()
 {
@@ -503,14 +519,14 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "X%04dY%04dD02*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
     } else if (outputtype == DXF) {
         V_to_R(&x1, &y1);    
-	fprintf(fp, "0\n");		// start of entity
+	fprintf(fp, "  0\n");		// start of entity
 	fprintf(fp, "LINE\n");		// line type entity
-	fprintf(fp, "8\n");		// layer name to follow
+	fprintf(fp, "  8\n");		// layer name to follow
 	fprintf(fp, "%d\n",layer);	// layer name 
-	fprintf(fp, "62\n");		// color flag
+	fprintf(fp, "  62\n");		// color flag
 	fprintf(fp, "%d\n", pennum);	// color
-	fprintf(fp, "10\n%.10g\n", x1);	// initial x value
-	fprintf(fp, "20\n%.10g\n", y1);	// initial y value
+	fprintf(fp, "  10\n%.10g\n", x1);	// initial x value
+	fprintf(fp, "  20\n%.10g\n", y1);	// initial y value
 	in_progress=0;
     } else if (outputtype == HPGL) {
 	if (!filled) {
@@ -546,20 +562,20 @@ void ps_continue_line(double x1, double y1)
     } else if (outputtype == DXF) {
 	V_to_R(&x1, &y1);
 	if (!in_progress) {
-	    fprintf(fp, "11\n%.10g\n", x1);	// initial x value
-	    fprintf(fp, "21\n%.10g\n", y1);	// initial y value
+	    fprintf(fp, "  11\n%.10f\n", x1);	// initial x value
+	    fprintf(fp, "  21\n%.10f\n", y1);	// initial y value
 	    in_progress++;
 	} else {
-	    fprintf(fp, "0\n");		// start of entity
-	    fprintf(fp, "LINE\n");	// line type entity
-	    fprintf(fp, "8\n");		// layer name to follow
-	    fprintf(fp, "%d\n",layer);	// layer name 
-	    fprintf(fp, "62\n");		// color flag
+	    fprintf(fp, "  0\n");		// start of entity
+	    fprintf(fp, "LINE\n");		// line type entity
+	    fprintf(fp, "  8\n");		// layer name to follow
+	    fprintf(fp, "%d\n",layer);		// layer name 
+	    fprintf(fp, "  62\n");		// color flag
 	    fprintf(fp, "%d\n", pennum);	// color
-	    fprintf(fp, "10\n%.10g\n", xold);	// initial x value
-	    fprintf(fp, "20\n%.10g\n", yold);	// initial y value
-	    fprintf(fp, "11\n%.10g\n", x1);	// initial x value
-	    fprintf(fp, "21\n%.10g\n", y1);	// initial y value
+	    fprintf(fp, "  10\n%.10f\n", xold);	// initial x value
+	    fprintf(fp, "  20\n%.10f\n", yold);	// initial y value
+	    fprintf(fp, "  11\n%.10f\n", x1);	// initial x value
+	    fprintf(fp, "  21\n%.10f\n", y1);	// initial y value
 	}
 	xold = x1;
 	yold = y1;
@@ -585,8 +601,8 @@ void ps_postamble()
         fprintf(fp,"G04 LAYER 999 *\n");
 	fprintf(fp,"M02*\n");
     } else if (outputtype == DXF) {
-        fprintf(fp,"0\nENDSEC\n");
-        fprintf(fp,"0\nEOF\n");
+        fprintf(fp,"  0\nENDSEC\n");
+        fprintf(fp,"  0\nEOF\n");
     } else if (outputtype == HPGL) {
         fprintf(fp,"PU;\n");
         fprintf(fp,"SP;\n");

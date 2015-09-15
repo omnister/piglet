@@ -1491,6 +1491,9 @@ void printdef(FILE *fp, DB_DEFLIST *p, DB_DEFLIST *pinstdef) {
 }
 
 /* ------------------------------------------- */
+// what follows is a set of methods to checksum an entire
+// state of the editor to check to see if there have been any 
+// changes made.
 
 static int digestvalue;
 

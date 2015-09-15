@@ -26,6 +26,8 @@ extern void ps_set_layer();			// set layer
 extern void ps_set_line();			// change line type
 extern void ps_set_pen();			// change pen color
 extern void ps_set_fill();			// change fill pattern
+extern void ps_comment(char *comment);		// print an inline comment
+
 
 extern void ps_start_line();			// start a new line
 extern void ps_continue_line();			// continue a line

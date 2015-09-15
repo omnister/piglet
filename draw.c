@@ -9,6 +9,7 @@
 #include "eprintf.h"
 #include "equate.h"
 #include "ev.h"
+#include "readfont.h"
 
 #define FUZZBAND 0.01	/* how big the fuzz around lines is as */
                         /* a fraction of minimum window dimension */
@@ -1636,6 +1637,9 @@ void trace(DB_DEFLIST *p, int level) {
 }
 
 // ---------------------------------------------------------
+// Massive speed-up for hierarchies with lots of leaf cell
+// reuse:
+//
 // we generate a sequence number with each top level redraw.  
 // after we render any cell and have updated it's bounding box
 // we tag it with the current sequence number.  Later on, in 
@@ -1666,6 +1670,7 @@ int db_render(
     DB_DEFLIST *p;
     XFORM *xp;
     XFORM *save_transform;
+    // XFORM *xxp;
     extern int nestlevel;
     int prims = 0;	// keep track of complexity of drawing
 
@@ -1675,7 +1680,11 @@ int db_render(
     BOUNDS mybb;
     mybb.init=0; 
     backbb.init=0; 
-    int debug=0;
+    char msg[128];	//max size of dump output comments
+    double xx, yy;
+    double x, y;
+
+    // int debug=0;
 
     if (aborted) {
        return(0);
@@ -1685,11 +1694,39 @@ int db_render(
         printf("bad reference in db_render\n");
     	return(0);
     }
+		
+   // annotate the plot file with the coordinates of this cell
+   // and some details like scale and rotation
+
+   double theta;
+
+   // transform (0.0,0.0) and (1.0,0.0) and subtract them
+   x=1.0; y=0.0; 
+   xx = x*global_transform->r11 + y*global_transform->r21 + global_transform->dx;
+   yy = x*global_transform->r12 + y*global_transform->r22 + global_transform->dy;
+   x=0.0; y=0.0; 
+   xx -= x*global_transform->r11 + y*global_transform->r21 + global_transform->dx;
+   yy -= x*global_transform->r12 + y*global_transform->r22 + global_transform->dy;
+   theta=360.0*atan2(yy,xx)/(2.0*M_PI);
+
+   // make 0.0<=theta<=360.0
+
+   for(; theta<0.0; theta+=360.0) {
+       ;
+   }
+
+   sprintf(msg,"label %f %f %s %d scale=%f, theta=%f", 
+   	global_transform->dx,
+	global_transform->dy,
+	cell->name,
+	nest,
+	sqrt(xx*xx+yy*yy), theta);
+   ps_comment(msg);
 
     /* clip to two pixels inside of actual window so we can see enclosing polys */
     clip_setwindow(2.0, 2.0, (double) (g_width-3), (double) (g_height-3));
 
-    if (nest == 0) {
+    if (nest == 0) {	// at top of hierarchy
 	unity_transform.r11 = 1.0;
 	unity_transform.r12 = 0.0;
 	unity_transform.r21 = 0.0;
@@ -1700,10 +1737,6 @@ int db_render(
 	nextseq();
     }
 
-    if (debug) {
-        printf("rendering %s(%d) %d %d\n", 
-	    cell->name, nest, seqnum(), cell->seqflag );
-    }
 
     if (nest > nestlevel) { 	/* RCW */
 	drawon = 0;
@@ -1798,6 +1831,7 @@ int db_render(
 			} else {
 			    drawon = 1;
 			}
+			
 
 			// instances are called by name, not by pointer, otherwise
 			// it is possible to PURGE a cell in memory and then
@@ -1816,6 +1850,19 @@ int db_render(
 			} else {
 			    printf("skipping load of %s, not in memory or disk\n", p->u.i->name);
 			}
+
+			/*
+			// Display text for .<label> and @<label> here
+			if (p->u.i->opts->sname != NULL) {
+			    // need to set optstring to null if "@" opt has no extra characters
+			    xxp = (XFORM *) emalloc(sizeof(XFORM)); 
+			    xxp->r11=1.0; xxp->r12=0.0; xxp->r21=0.0;
+			    xxp->r22=1.0; xxp->dx=0.0; xxp->dy=0.0;
+			    mat_scale(xxp, 10.0, 10.0);
+			    writestring(p->u.i->opts->sname, xxp , -1, 4, &childbb, mode);
+			    free(xxp);
+			}
+			*/
 
 			p->xmin = childbb.xmin;
 			p->xmax = childbb.xmax;
@@ -1882,6 +1929,10 @@ int db_render(
 	/* now pass bounding box back */
 	db_bounds_update(&mybb, &childbb);
     }
+
+    sprintf(msg,"} %d: %s", 
+	nest, cell->name);
+    ps_comment(msg);
 
     db_bounds_update(bb, &mybb);
 
