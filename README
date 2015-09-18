@@ -3,9 +3,9 @@ hierarchical object description.  It is inspired by Hewlett-Packard's
 proprietary HP PIGLET (Personal Interactive Graphic Layout EdiTor),
 which later became the commercial Graffy editor by DURST CAD. 
 
-Piglet was widely used for PCB design, Integrated Circuit and Microwave
-thin/thick film circuit development.  In the days before Powerpoint,
-Piglet was also used for generating presentation slides. 
+Piglet was widely used for PCB design, Integrated Circuit design and
+Microwave thin/thick film circuit development.  In the days before
+Powerpoint, Piglet was also used for generating presentation slides. 
 
 Piglet is a very nearly complete, from scratch, implementation of the
 original HP editor.  It has unlimited hierarchy, unlimited layers, a
@@ -13,8 +13,9 @@ versatile SHOW command for filtering the layers displayed.
 
 Piglet supports polygons, rectangles, circles and lines.  Piglet reads
 autocad SHP font files and can output editable drawings in postscript,
-GERBER, HPGL, dxf and pdplot(1).  It can also output screen captures in PNG
-and GIF format.  There are very complete man pages for all the commands. 
+GERBER, HPGL, dxf and pdplot(1).  It can also output screen captures in
+PNG and GIF format.  There are very complete man pages for all the
+commands. 
 
 I've used piglet to design several integrated circuits, PCB boards and
 lots of CNC projects.  Exporting drawings using autocad fonts as pdplot

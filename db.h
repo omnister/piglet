@@ -432,10 +432,10 @@ extern void printdef(
 #define FILL_OFF 0
 #define FILL_ON 1
 #define FILL_TOGGLE 2
-extern void db_set_fill(int nest); 	/* set global fill level */
-
-extern void db_set_nest(int nest); 	/* set global display nest level */
-extern void db_set_bounds(int bounds); 	/* set global display bounds level */
+extern void db_set_fill(int nest); 	   	/* set global fill level */
+extern void db_set_nest(int nest); 		/* set global display nest level */
+extern void db_set_logical(int logical); 	/* set global display logical level */
+extern void db_set_bounds(int bounds); 		/* set global display bounds level */
 
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
 // void db_unlink_component(DB_TAB *cell, struct db_deflist dp)
@@ -585,4 +585,4 @@ int loadrep();
 int aborted;	// used to abort drawing
 
 void escstring(char *dst, char *src);
-
+int pig_system(char *cmd);

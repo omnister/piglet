@@ -18,7 +18,8 @@
 /* global variables that need to eventually be on a stack for nested edits */
 static int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 static int showon=1;		  /* 0 = layer currently turned off */
-static int nestlevel=9;
+static int nestlevel=9;		  // physical nesting level
+static int logicallevel=9;	  // logical nesting level
 static int draw_fill=FILL_OFF;
 static int layer_fill=FILL_OFF;
 static int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
@@ -67,6 +68,12 @@ void db_set_fill(int fill)
 	printf("bad fill argument in db_set_fill() %d\n", fill);
 	exit(1);
     }
+}
+
+void db_set_logical(int logical) 
+{
+    extern int logicallevel;
+    logicallevel = logical;
 }
 
 void db_set_nest(int nest) 

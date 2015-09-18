@@ -87,7 +87,7 @@ COMMAND commands[] =
     {"DISPLAY", com_display, "turn the display on or off",
     	"DISP [ON|OFF]"},
     {"DUMP", com_dump, "dump graphics window to file or printer",
-        "DUM <EOC>"},
+        "DUM [:F][:R][:T{bmp|gif|jpg|png|pgm|ppm|xbm}] <plotname> <EOC>"},
     {"ECHO", com_echo, "print a shell variable",
     	"ECHO <arguments> ... <EOC>"},
     {"EDIT", com_edit, "begin edit of an old or new device",
@@ -130,7 +130,7 @@ COMMAND commands[] =
     {"MOVE", com_move, "move a component from one location to another",
     	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
     {"PLOT", com_plot, "make a postscript plot of the current device",
-    	"PLO :F:T<type>:P<pagesize><EOC>"},
+    	"PLO [:F][:B][:G] [:L<linewidth>][:Tautoplot|:Tdxf|:Tgerber:Tpostscript]:P<pagesize><plotname><EOC>"},
     {"POINT", com_point, "display the specified point on the screen",
     	"POI {<xy1>...} <EOC>" },
     {"PROCESS", com_process, "enter the PROCESS subsystem",
@@ -1295,6 +1295,7 @@ int com_help(LEXER *lp, char *arg)
     register int i;
     int printed = 0;
     int size;
+    char cmd[128];
 
     while(!done && (token=token_get(lp, &word)) != EOF) {
 	switch(token) {
@@ -1306,12 +1307,15 @@ int com_help(LEXER *lp, char *arg)
     
 		for (i = 0; commands[i].name; i++) {
 		    if (strncasecmp(word, commands[i].name, size) == 0) {
+
+			// call the system man page in the 1p section
+			sprintf(cmd,"man 1p %s", commands[i].name);
+			pig_system(cmd);
+
+			// then do a fall back short summary just in case
 			printf("    %-12s: %s.\n    %s\n", 
 				commands[i].name, commands[i].doc, commands[i].usage);
 			printed++;
-
-			/* doesn't connect to stdin... */
-			/*system("nroff -man web/man1p/grid.1p | less");*/
 		    }
 		} 
 	    	break;

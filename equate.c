@@ -9,7 +9,7 @@ typedef struct flags {
     unsigned int color    : 4;  /* Color, 3-bits, 0=Red, 1=G, ... BYPAW, 60% grey, 33% grey */
     unsigned int fill     : 3;  /* 0=unfilled, 1=solid, 2=stip, 3=45_up, 4=45_down... */
     unsigned int override : 1;  /* 1=forces solid fill (used by win:o<layer>) */
-    unsigned int masktype : 2;  /* 0=Detail, 1=Symbolic, 2=Interconnect */	
+    unsigned int masktype : 2;  /* 0=Boundary, 1=Detail, 2=Symbolic, 3=Interconnect */	
     unsigned int pen      : 3;  /* Pen, 3-bits (0=unused) */  
     unsigned int linetype : 3;  /* Mask: 0=Solid, 1=Dotted, 2=Broken */
     unsigned int used     : 1;  /* Set 1 if defined, otherwise not plotted */
@@ -30,7 +30,7 @@ int initialize_equates() {
     	equates[i].label=strsave(buf);
 	equates[i].flags.fill=0;	/* default unfilled */
 	equates[i].flags.override=0;	/* default unfilled */
-	equates[i].flags.masktype=0;	/* detail, symbolic; interconnect */
+	equates[i].flags.masktype=0;	/* boundary, detail, symbolic; interconnect */
 	equates[i].flags.pen=1;	        /* Pen, 3-bits (0=unused) */  
 	equates[i].flags.color=1;	/* set default G: 0-7=>WRGBCMY */
 	equates[i].flags.linetype=0;	/* default Solid Lines */

@@ -2586,7 +2586,7 @@ of 0.01 ... 100.0.
 Specify fitting the window to the bounding box of the current device
 .TP
 .I :N<physical>
-Only display nesting down to <physical> number of hierarchy levels (default=3)
+Only display nesting down to <physical> number of hierarchy levels (default=9)
 .TP
 .I :Z 
 Toggles window to previous settings.

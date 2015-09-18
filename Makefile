@@ -215,6 +215,7 @@ com_wrap.o: rlgetc.h
 com_wrap.o: rubber.h
 com_wrap.o: token.h
 com_wrap.o: xwin.h
+coords_edit.o: db.h
 coords.o: db.h
 db2.o: db.h
 db2.o: eprintf.h
@@ -227,6 +228,7 @@ db2.o: xwin.h
 db.o: db.h
 db.o: eprintf.h
 db.o: ev.h
+db.o: postscript.h
 db.o: readfont.h
 db.o: rlgetc.h
 db.o: rubber.h
@@ -237,6 +239,7 @@ draw.o: eprintf.h
 draw.o: equate.h
 draw.o: ev.h
 draw.o: postscript.h
+draw.o: readfont.h
 draw.o: rubber.h
 draw.o: xwin.h
 eprintf.o: eprintf.h
@@ -264,6 +267,7 @@ geom_inst.o: rubber.h
 geom_inst.o: token.h
 geom_inst.o: xwin.h
 geom_line.o: db.h
+geom_line.o: ev.h
 geom_line.o: lock.h
 geom_line.o: opt_parse.h
 geom_line.o: rlgetc.h

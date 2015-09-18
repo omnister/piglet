@@ -1,3 +1,0 @@
-Check copyright date in license.c
-Check piglogo.d for proper version, date, and copyright
-Do a "make depend" so Makefile is uptodate
