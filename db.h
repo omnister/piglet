@@ -442,6 +442,8 @@ extern void printdef(
 extern void db_set_fill(int nest); 	   	/* set global fill level */
 extern void db_set_nest(int nest); 		/* set global display nest level */
 extern void db_set_physical(int physical); 	/* set global display 1=phys, 0=logical */
+extern int  physicalnest;
+
 extern void db_set_bounds(int bounds); 		/* set global display bounds level */
 
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);

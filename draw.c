@@ -20,7 +20,7 @@ static int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 static int showon=1;		  /* 0 = layer currently turned off */
 
 static int nestlevel=9;		  // nesting level
-static int physicalnest=1;	  // 1=physical (WIN:N), 0=logical (WIN:L)
+int physicalnest=1;	  // 1=physical (WIN:N), 0=logical (WIN:L)
 
 static int draw_fill=FILL_OFF;
 static int layer_fill=FILL_OFF;

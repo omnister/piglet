@@ -541,6 +541,7 @@ int procXevent()
     /* readline select stuff */
     int nf, nfds, cn, in; 
     int i;
+    char nestindicator;
 
     struct timeval *timer = (struct timeval *) 0;	/* select blocks indefinitely */
     //struct timeval timer;
@@ -574,6 +575,8 @@ int procXevent()
 		if (xwin_display_state() == D_ON) {
 		    rubber_draw(x, y, 1); 
 		}
+		nestindicator=physicalnest?'P':'L';
+		XDrawImageString(dpy,win,gcg,g_width-20, g_height-20, &nestindicator, 1);
 		XFlush(dpy);
 	    } else {
 	    	for (i=1; i<=num_menus; i++) {
