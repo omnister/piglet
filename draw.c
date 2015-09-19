@@ -18,8 +18,10 @@
 /* global variables that need to eventually be on a stack for nested edits */
 static int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 static int showon=1;		  /* 0 = layer currently turned off */
-static int nestlevel=9;		  // physical nesting level
-static int logicallevel=9;	  // logical nesting level
+
+static int nestlevel=9;		  // nesting level
+static int physicalnest=1;	  // 1=physical (WIN:N), 0=logical (WIN:L)
+
 static int draw_fill=FILL_OFF;
 static int layer_fill=FILL_OFF;
 static int X=1;		  /* 1 = draw to X, 0 = emit autoplot commands */
@@ -70,10 +72,10 @@ void db_set_fill(int fill)
     }
 }
 
-void db_set_logical(int logical) 
+void db_set_physical(int physical) 	// 1=physical (WIN:N), 0=logical (WIN:L)
 {
-    extern int logicallevel;
-    logicallevel = logical;
+    extern int physicalnest;
+    physicalnest = physical;
 }
 
 void db_set_nest(int nest) 
@@ -1419,11 +1421,19 @@ int db_list(DB_TAB *cell)
     printf("   logical level = %d\n", currep->logical_level);
     printf("   lock angle    = %g\n", currep->lock_angle);
     printf("   num prims     = %d\n", currep->prims);
+    printf("   nesting is = ");
+    if (physicalnest) {
+	printf("%d physical\n", nestlevel);
+    } else {
+	printf("%d logical\n", nestlevel);
+    }
+
     if (currep->modified) {
 	printf("   cell is modified\n");
     } else {
 	printf("   cell is not modified\n");
     }
+
 
     return(1);
 }

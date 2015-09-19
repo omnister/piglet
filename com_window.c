@@ -62,12 +62,21 @@ int com_window(LEXER *lp, char *arg)
 			    state = END;
 			}
 		    }
-		} else if (strncasecmp(word, ":N", 2) == 0) {
+		} else if (strncasecmp(word, ":L", 2) == 0) {	// logical nesting
 		    if(sscanf(word+2, "%d", &nest) != 1) {
-		        weprintf("WIN invalid nest level %s\n", word+2);
+		        weprintf("WIN invalid logical nest level %s\n", word+2);
 		        state=END;
 		    } else {
-			db_set_nest(nest);
+			db_set_physical(0);	// logical nest
+			db_set_nest(nest);	// nest level
+		    }
+		} else if (strncasecmp(word, ":N", 2) == 0) {	// physical nesting
+		    if(sscanf(word+2, "%d", &nest) != 1) {
+		        weprintf("WIN invalid physical nest level %s\n", word+2);
+		        state=END;
+		    } else {
+			db_set_physical(1);	// physical nest
+			db_set_nest(nest);	// nest level
 		    }
 		} else if (strncasecmp(word, ":O", 2) == 0) {
 		    if(sscanf(word+2, "%d", &layer) == 1) {
