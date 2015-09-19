@@ -170,6 +170,13 @@ typedef struct db_tab {
 
     int show[MAX_LAYER];	/* each component has its own show set */
 
+    // working on proper logical nesting... need way to store:
+    // :B<min>,<max>
+    // :D<min>,<max>
+    // :S<min>,<max>
+    // :I<min>,<max>
+    int physical;	// 1 is physical nesting (WIN:N), 0 is logical (WIN:L)
+
     /* grid settings for each cell are stored in this structure  */
     /* the grid in use at time of SAVE is put in the disk */
     /* archive with a GRID command.  When you edit a cell in memory */
@@ -183,7 +190,7 @@ typedef struct db_tab {
     double grid_yo;
     int    grid_color;	
 
-    int logical_level;
+    int logical_level;		
     double lock_angle;
 
     int display_state;		/* turns X11 display on or off (see xwin.c)*/

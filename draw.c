@@ -2524,6 +2524,7 @@ void jump(BOUNDS *bb, int mode)
     filled_object = 0;		/* automatically close polygon */
 }
 
+
 void set_layer(
     int lnum,	/* layer number */
     int comp	/* component type */

@@ -187,7 +187,8 @@ DB_TAB *new_dbtab() {	/* return a new dbtab set to default values */
     }
 
     sp->display_state=G_ON;
-    sp->logical_level=1;
+    sp->logical_level=1;	// all cells default to logical level 1
+    sp->physical=1;		// default is physical nesting (WIN:N)
     sp->lock_angle=0.0;
     sp->modified = 0;
     sp->being_edited = 0;
