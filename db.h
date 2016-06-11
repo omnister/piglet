@@ -176,6 +176,7 @@ typedef struct db_tab {
     // :S<min>,<max>
     // :I<min>,<max>
     int physical;	// 1 is physical nesting (WIN:N), 0 is logical (WIN:L)
+    int nestlevel;	// nestlevel used when displaying this cell
 
     /* grid settings for each cell are stored in this structure  */
     /* the grid in use at time of SAVE is put in the disk */
