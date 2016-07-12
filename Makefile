@@ -20,7 +20,7 @@ OBJS=db.o draw.o equate.o xwin.o readfont.o rubber.o opt_parse.o \
    
 
 TARS=QUICKSTART AAA_README COPYING \
-changes com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
+com_add.c com_delete.c com_distance.c com_equate.c com_ident.c \
 com_copy.c com_move.c  com_point.c com_show.c com_window.c com_purge.c \
 coords.c db.c db.h com_wrap.c com_smash.c draw.c eprintf.c \
 eprintf.h eventnames.h equate.c equate.h geom_circle.c geom_inst.c \
@@ -31,7 +31,7 @@ rlgetc.h rubber.c rubber.h TEXTDATA.F token.c token.h xwin.c xwin.h \
 postscript.c pig postscript.h readmenu.h readmenu.c \
 com_area.c com_edit.c com_stretch.c stack.h com_undo.c \
 selpnt.c path.h path.c lock.c lock.h stack.c piglogo.d license.c stipple.c \
-ev.c ev.h com_shell.c expr.c expr.h pigrc version.h .git gerbsplit \
+ev.c ev.h com_shell.c expr.c expr.h pigrc version.h .git \
 readshpfont.c
 
 CELLS=cells/tone_I cells/slic_I cells/GLINKV3_I cells/H20919M1_I \

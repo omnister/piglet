@@ -130,7 +130,7 @@ COMMAND commands[] =
     {"MOVE", com_move, "move a component from one location to another",
     	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
     {"PLOT", com_plot, "make a postscript plot of the current device",
-    	"PLO [:F][:B][:G] [:L<linewidth>][:Tautoplot|:Tdxf|:Tgerber:Tpostscript:Tsvg]:P<pagesize><plotname><EOC>"},
+    	"PLO [:F][:B][:G] [:L<linewidth>][:Tautoplot|:Tdxf|:Tgerber:|Tpostscript:|Tsvg]:P<pagesize><plotname><EOC>"},
     {"POINT", com_point, "display the specified point on the screen",
     	"POI {<xy1>...} <EOC>" },
     {"PROCESS", com_process, "enter the PROCESS subsystem",
@@ -1293,6 +1293,7 @@ int com_help(LEXER *lp, char *arg)
     char *word;
     int debug=0;
     register int i;
+    int j;
     int printed = 0;
     int size;
     char cmd[128];
@@ -1310,6 +1311,11 @@ int com_help(LEXER *lp, char *arg)
 
 			// call the system man page in the 1p section
 			sprintf(cmd,"man 1p %s", commands[i].name);
+
+			for (j=0;  j<strlen(cmd); j++) {
+			    cmd[j] = tolower(cmd[j]);
+			}
+			
 			pig_system(cmd);
 
 			// then do a fall back short summary just in case
@@ -1319,11 +1325,11 @@ int com_help(LEXER *lp, char *arg)
 		    }
 		} 
 	    	break;
+	    case EOL:		/* newline or carriage return */
 	    case EOC:		/* end of command */
 		done++;
 		break;
 	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
 	    case OPT:		/* option */
