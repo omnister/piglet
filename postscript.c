@@ -245,8 +245,8 @@ void ps_preamble(
 	V_to_R(&urx,&ury);
 	fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
 	    llx, lly, urx, ury );
-	fprintf(fp,"<svg width=\"1200\" height=\"800\" viewBox=\"0 0 %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
-	    urx-llx, ury-lly);
+	fprintf(fp,"<svg width=\"900\" height=\"600\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
+	    llx, lly, urx-llx, ury-lly);
     } else if (outputtype == GERBER) {
        fprintf(fp,"G4 Title: %s*\n", dev);
        fprintf(fp,"G4 Creator: %s*\n", prog);
