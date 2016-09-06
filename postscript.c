@@ -112,6 +112,10 @@ void ps_set_pen(int pen)
     } else {
        pennum=pen;
     }
+
+    if (colorflag != 1) {
+       pennum=0;		// force black and white
+    }
 }
 
 char *pen_to_svg_color(int pen) {
