@@ -595,14 +595,16 @@ void ps_start_line(double x1, double y1, int filled)
 	fprintf(fp, "X%04dY%04dD02*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
     } else if (outputtype == DXF) {			// DXF
         V_to_R(&x1, &y1);    
-	fprintf(fp, "  0\n");		// start of entity
-	fprintf(fp, "LINE\n");		// line type entity
-	fprintf(fp, "  8\n");		// layer name to follow
-	fprintf(fp, "%d\n",layer);	// layer name 
-	fprintf(fp, "  62\n");		// color flag
-	fprintf(fp, "%d\n", pennum);	// color
-	fprintf(fp, "  10\n%.10g\n", x1);	// initial x value
-	fprintf(fp, "  20\n%.10g\n", y1);	// initial y value
+	// fprintf(fp, "  0\n");		// start of entity
+	// fprintf(fp, "LINE\n");		// line type entity
+	// fprintf(fp, "  8\n");		// layer name to follow
+	// fprintf(fp, "%d\n",layer);	// layer name 
+	// fprintf(fp, "  62\n");		// color flag
+	// fprintf(fp, "%d\n", pennum);	// color
+	// fprintf(fp, "  10\n%.10g\n", x1);	// initial x value
+	// fprintf(fp, "  20\n%.10g\n", y1);	// initial y value
+	xold=x1;
+	yold=y1;
 	in_progress=0;
     } else if (outputtype == HPGL) {
 	if (!filled) {
@@ -642,6 +644,14 @@ void ps_continue_line(double x1, double y1)
     } else if (outputtype == DXF) {
 	V_to_R(&x1, &y1);
 	if (!in_progress) {
+	    fprintf(fp, "  0\n");		// start of entity
+	    fprintf(fp, "LINE\n");		// line type entity
+	    fprintf(fp, "  8\n");		// layer name to follow
+	    fprintf(fp, "%d\n",layer);	// layer name 
+	    fprintf(fp, "  62\n");		// color flag
+	    fprintf(fp, "%d\n", pennum);	// color
+	    fprintf(fp, "  10\n%.10g\n", xold);	// initial x value
+	    fprintf(fp, "  20\n%.10g\n", yold);	// initial y value
 	    fprintf(fp, "  11\n%.10f\n", x1);	// initial x value
 	    fprintf(fp, "  21\n%.10f\n", y1);	// initial y value
 	    in_progress++;
