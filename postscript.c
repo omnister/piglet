@@ -96,6 +96,7 @@ int dxf_penmap[] = {
     3,5,4,6
 };
 
+
 void ps_set_pen(int pen) 
 {
     if (debug) printf("setting pen:%d\n", pen); 
@@ -116,6 +117,47 @@ void ps_set_pen(int pen)
        pennum=pen;
     }
 
+    if (colorflag != 1) {
+       pennum=0;		// force black and white
+    }
+}
+
+char *pen_to_svg_color(int pen) {
+    switch (pen) {
+       default:
+       case 0:
+	return("black");
+	break;
+       case 1:
+	return("red");
+	break;
+       case 2:
+	return("green");
+	break;
+       case 3:
+	return("blue");
+	break;
+       case 4:
+	// return("cyan");
+	return("slateblue");
+	break;
+       case 5:
+	return("magenta");
+	break;
+       case 6:
+	// return("yellow");
+	return("gold");
+	break;
+       case 7:
+	return("black");
+	break;
+       case 8:
+	return("slategrey");
+	break;
+       case 9:
+	return("darkgrey");
+	break;
+    }
 }
 
 /*
@@ -199,6 +241,20 @@ void ps_preamble(
        fprintf(fp,"back\n");
        fprintf(fp,"isotropic\n");
        return;
+    } else if ( outputtype == SVG) {
+        lly = bblly-(lly-bbury);
+        ury = bblly-(ury-bbury);
+	fprintf(fp,"<html>\n");
+	fprintf(fp,"<body>\n");
+	fprintf(fp,"<title> %s </title>\n", dev);
+	fprintf(fp,"<h1> %s </h1>\n", dev);
+	fprintf(fp,"<!-- program %s -->\n", prog);
+	V_to_R(&llx,&lly);
+	V_to_R(&urx,&ury);
+	fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
+	    llx, lly, urx, ury );
+	fprintf(fp,"<svg width=\"900\" height=\"600\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
+	    llx, lly, urx-llx, ury-lly);
     } else if (outputtype == GERBER) {
        fprintf(fp,"G4 Title: %s*\n", dev);
        fprintf(fp,"G4 Creator: %s*\n", prog);
@@ -418,19 +474,23 @@ void ps_preamble(
 
 void ps_comment(char *comment)
 {
-
-    if (outputtype == GERBER) {			// GERBER
-	//fprintf(fp, "G37*\n");
-    } else if (outputtype == HPGL) {		// HPGL
-	// fprintf(fp, "LT%d;EP;\n", this_line);
-    } else if (outputtype == DXF) {		// DXF
-	// fprintf(fp, "c%d ", this_pen);
-    } else if (outputtype == POSTSCRIPT) {	// PS
-	// fprintf(fp, "c%d ", this_pen);
-    } else if (outputtype == AUTOPLOT) {	// AUTOPLOT
-	fprintf(fp, "#%s\n",comment);
+    if ((fp != NULL)) {
+	if (outputtype == GERBER) {		// GERBER
+	    ;
+	} else if (outputtype == HPGL) {	// HPGL
+	    ;
+	} else if (outputtype == DXF) {		// DXF
+	    ;
+	} else if (outputtype == POSTSCRIPT) {	// PS
+	    ;
+	} else if (outputtype == SVG) {		// Scalable vector graphics
+	    fprintf(fp, "<!--%s-->\n",comment);
+	} else if (outputtype == AUTOPLOT) {	// AUTOPLOT
+	    fprintf(fp, "#%s\n",comment);
+	}
     }
 }
+
 
 void ps_end_line()
 {
@@ -446,6 +506,9 @@ void ps_end_line()
        if (in_poly) {
 	   fprintf(fp, "G37*\n");
        }
+    } else if (outputtype == SVG) {			// SVG
+       fprintf(fp,
+       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:1\"/>\n",pen_to_svg_color(this_pen));
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");
@@ -469,6 +532,13 @@ void ps_end_line()
 	fprintf(fp, "s\n");
     }
     in_poly=0;
+    in_line=0;
+}
+
+void ps_flush() {
+    if (in_line) {
+    	ps_end_line(fp);
+    } 
     in_line=0;
 }
 
@@ -506,7 +576,12 @@ void ps_start_line(double x1, double y1, int filled)
     this_fill=filltype;
     this_isfilled=filled;
 
-    if (outputtype == POSTSCRIPT) {
+    if (outputtype == SVG) {				// SVG
+	fprintf(fp, "<polyline points=\"\n");
+        y1 = bblly-(y1-bbury);
+	V_to_R(&x1,&y1);
+	fprintf(fp, "  %g,%g\n", x1, y1);
+    } else if (outputtype == POSTSCRIPT) {		// Postscript
 	fprintf(fp, "n\n");
         // flip y coordinate from Xwin coords
         y1 = bblly-(y1-bbury);
@@ -522,16 +597,18 @@ void ps_start_line(double x1, double y1, int filled)
 	   fprintf(fp,"G04 LAYER %d *\n", layer);
 	}
 	fprintf(fp, "X%04dY%04dD02*\n",(int)((x1*10000.0)+0.5), (int)((y1*10000.0)+0.5));
-    } else if (outputtype == DXF) {
+    } else if (outputtype == DXF) {			// DXF
         V_to_R(&x1, &y1);    
-	fprintf(fp, "  0\n");		// start of entity
-	fprintf(fp, "LINE\n");		// line type entity
-	fprintf(fp, "  8\n");		// layer name to follow
-	fprintf(fp, "%d\n",layer);	// layer name 
-	fprintf(fp, "  62\n");		// color flag
-	fprintf(fp, "%d\n", pennum);	// color
-	fprintf(fp, "  10\n%.10g\n", x1);	// initial x value
-	fprintf(fp, "  20\n%.10g\n", y1);	// initial y value
+	// fprintf(fp, "  0\n");		// start of entity
+	// fprintf(fp, "LINE\n");		// line type entity
+	// fprintf(fp, "  8\n");		// layer name to follow
+	// fprintf(fp, "%d\n",layer);	// layer name 
+	// fprintf(fp, "  62\n");		// color flag
+	// fprintf(fp, "%d\n", pennum);	// color
+	// fprintf(fp, "  10\n%.10g\n", x1);	// initial x value
+	// fprintf(fp, "  20\n%.10g\n", y1);	// initial y value
+	xold=x1;
+	yold=y1;
 	in_progress=0;
     } else if (outputtype == HPGL) {
 	if (!filled) {
@@ -554,7 +631,11 @@ void ps_continue_line(double x1, double y1)
 {
     if (debug) printf("ps_continue_line:\n");
 
-    if (outputtype == POSTSCRIPT) {
+    if (outputtype == SVG) {				// SVG
+        y1 = bblly-(y1-bbury);
+	V_to_R(&x1, &y1);
+	fprintf(fp, "  %g,%g\n", x1, y1);
+    } else if (outputtype == POSTSCRIPT) {
 	// flip y coordinate from Xwin coords
 	y1 = bblly-(y1-bbury);
 	fprintf(fp, "%.10g %.10g l\n",x1, y1);
@@ -567,6 +648,14 @@ void ps_continue_line(double x1, double y1)
     } else if (outputtype == DXF) {
 	V_to_R(&x1, &y1);
 	if (!in_progress) {
+	    fprintf(fp, "  0\n");		// start of entity
+	    fprintf(fp, "LINE\n");		// line type entity
+	    fprintf(fp, "  8\n");		// layer name to follow
+	    fprintf(fp, "%d\n",layer);	// layer name 
+	    fprintf(fp, "  62\n");		// color flag
+	    fprintf(fp, "%d\n", pennum);	// color
+	    fprintf(fp, "  10\n%.10g\n", xold);	// initial x value
+	    fprintf(fp, "  20\n%.10g\n", yold);	// initial y value
 	    fprintf(fp, "  11\n%.10f\n", x1);	// initial x value
 	    fprintf(fp, "  21\n%.10f\n", y1);	// initial y value
 	    in_progress++;
@@ -592,6 +681,9 @@ void ps_continue_line(double x1, double y1)
 
 void ps_postamble()
 {
+    time_t timep;
+    char buf[MAXBUF];
+
     if (debug) printf("ps_postamble:\n");
     if (in_line) {
     	ps_end_line(fp);
@@ -612,6 +704,38 @@ void ps_postamble()
         fprintf(fp,"PU;\n");
         fprintf(fp,"SP;\n");
         fprintf(fp,"IN;\n");
-    }
-    fclose(fp);
+    } else if (outputtype == SVG) {
+	fprintf(fp,"<hr>\n");
+        timep=time(&timep);
+        ctime_r(&timep, buf);
+        buf[strlen(buf)-1]='\0';
+	fprintf(fp,"<p> creation date %s<br>\n", buf);
+        gethostname(buf,MAXBUF);
+        fprintf(fp,"<p> For: %s@%s (%s) <br>\n",
+            getpwuid(getuid())->pw_name,
+            buf,
+            getpwuid(getuid())->pw_gecos );
+        fprintf(fp,"</p>\n");
+        fprintf(fp,"</svg>\n");
+        fprintf(fp,"</body>\n");
+        fprintf(fp,"</html>\n");
+	
+    } 
+    fclose(fp); fp=NULL;
 }
+
+
+void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double ymax) {
+    if ((fp != NULL) && outputtype == SVG && nest==1) {
+        ymin = bblly-(ymin-bbury);
+        ymax = bblly-(ymax-bbury);
+	V_to_R(&xmin,&ymin);
+	V_to_R(&xmax,&ymax);
+	fprintf(fp, "\n<!-- %g %g %g %g-->\n", xmin, ymin, xmax, ymax);
+	fprintf(fp, "\n<a xlink:href=\"%s.html\">\n", name);
+	fprintf(fp, "    <rect x=\"%g\" y=\"%g\" fill=\"#ff0\" opacity=\"0.2\" width=\"%g\" height=\"%g\"/>\n",
+	xmin,ymax,xmax-xmin,ymin-ymax);
+	fprintf(fp, "</a>\n");
+    }
+}
+

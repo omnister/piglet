@@ -1474,6 +1474,10 @@ int db_plot(char *name, OMODE plottype, double dx,
 	snprintf(buf, MAXFILENAME, "%s.hpgl", name);
 	printf("plotting hpgl to %s\n", buf);
 	fflush(stdout);
+    } else if (plottype == SVG) {
+	snprintf(buf, MAXFILENAME, "%s.html", name);
+	printf("plotting svg to %s\n", buf);
+	fflush(stdout);
     } else {
        printf("bad plottype: %d\n", plottype);
        return(0);
@@ -1688,6 +1692,7 @@ int effective_nest(DB_TAB *cell, int nest) {
     }
 }
 
+char msg[128];	//max size of dump output comments
 
 int db_render(
     DB_TAB *cell,
@@ -1710,7 +1715,6 @@ int db_render(
     BOUNDS mybb;
     mybb.init=0; 
     backbb.init=0; 
-    char msg[128];	//max size of dump output comments
     double xx, yy;
     double x, y;
 
@@ -1966,9 +1970,23 @@ int db_render(
 	db_bounds_update(&mybb, &childbb);
     }
 
-    sprintf(msg,"} %d: %s", 
-	nest, cell->name);
+    sprintf(msg,"} %d: %s %g %g %g %g", 
+	nest, cell->name, childbb.xmin, childbb.ymin, childbb.xmax, childbb.ymax);
     ps_comment(msg);
+
+    ps_flush();		// write all pending lines
+
+    // this is used to create SVG imagemap rectangles
+    double vxmin=mybb.xmin;
+    double vxmax=mybb.xmax;
+    double vymin=mybb.ymin;
+    double vymax=mybb.ymax;
+
+    R_to_V(&vxmin, &vymin);
+    R_to_V(&vxmax, &vymax);
+
+   // ps_link(nest, cell->name, mybb.xmin, mybb.ymin, mybb.xmax, mybb.ymax); // RCW
+    ps_link(nest, cell->name, vxmin, vymin, vxmax, vymax); // RCW
 
     db_bounds_update(bb, &mybb);
 

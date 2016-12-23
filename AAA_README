@@ -482,8 +482,9 @@ PLOT
 ----
 
 The PLOT command creates a Postcript dump of the current windowed device
-in the file "./<device_name>.ps.   There are several different options
-available to also output in Gerber, DXF, or simple ASCII formats too.
+in the file "./<device_name>.ps.  There are several different options
+available to also output in Gerber, DXF, SVG, or simple ASCII formats
+too. 
 
 IDENTIFY
 --------

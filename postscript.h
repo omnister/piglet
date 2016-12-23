@@ -12,7 +12,7 @@
 // when done plotting all the geometries, call ps_postamble();
 //
 
-typedef enum {AUTOPLOT, POSTSCRIPT, GERBER, DXF, HPGL} OMODE;
+typedef enum {AUTOPLOT, POSTSCRIPT, GERBER, DXF, HPGL, SVG} OMODE;
 
 extern void ps_set_file(FILE *fp);		// set file descriptor for output
 extern void ps_set_outputtype(OMODE mode);	// 0=postscript; 1=gerber
@@ -27,6 +27,9 @@ extern void ps_set_line();			// change line type
 extern void ps_set_pen();			// change pen color
 extern void ps_set_fill();			// change fill pattern
 extern void ps_comment(char *comment);		// print an inline comment
+
+extern void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double ymax);
+extern void ps_flush();
 
 
 extern void ps_start_line();			// start a new line

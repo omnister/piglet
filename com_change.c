@@ -203,7 +203,7 @@ int com_change(LEXER *lp, char *arg)
 		if (word[0] == ':' && (index("L", toupper((unsigned char)word[1])) != NULL)) { /* parse some options locally */
 		    switch (toupper((unsigned char)word[1])) {	
 			case 'L': 		/* :L(layer) */
-                            if (p_best->type == INST) {
+                            if (p_best!=NULL && p_best->type == INST) {
 				weprintf("cannot change layer for instances: %s\n", word); 
                                 state=END;
 			    }
