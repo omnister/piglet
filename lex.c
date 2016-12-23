@@ -1379,6 +1379,8 @@ int readin(		/* work routine for com_input */
 
 	if (editmode) {
 	    show_set_modify(currep, ALL,0,1); 
+	    currep->physical=1;		// default is physical
+	    currep->nestlevel=9;	// default nestlevel
 	}
 
 	printf("loading %s\n", filename);

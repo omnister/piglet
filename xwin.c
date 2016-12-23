@@ -498,7 +498,7 @@ void dosplash() {
 
     bb.init=0;
 
-    splashrep=db_lookup(EVget("PIG_SPLASH_REP"));
+    currep=splashrep=db_lookup(EVget("PIG_SPLASH_REP"));
     if (splashrep != NULL) {
 	x1 = splashrep->vp_xmin; 
 	y1 = splashrep->vp_ymin;
@@ -575,7 +575,7 @@ int procXevent()
 		if (xwin_display_state() == D_ON) {
 		    rubber_draw(x, y, 1); 
 		}
-		nestindicator=physicalnest?'P':'L';
+		nestindicator=currep->physical?'P':'L';
 		XDrawImageString(dpy,win,gcg,g_width-20, g_height-20, &nestindicator, 1);
 		XFlush(dpy);
 	    } else {

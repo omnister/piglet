@@ -19,8 +19,8 @@
 static int drawon=1;		  /* 0 = dont draw, 1 = draw (used in nesting)*/
 static int showon=1;		  /* 0 = layer currently turned off */
 
-static int nestlevel=9;		  // nesting level
-int physicalnest=1;	  // 1=physical (WIN:N), 0=logical (WIN:L)
+// static int nestlevel=9;		  // nesting level
+// int physicalnest=1;	  	  // 1=physical (WIN:N), 0=logical (WIN:L)
 
 static int draw_fill=FILL_OFF;
 static int layer_fill=FILL_OFF;
@@ -74,14 +74,16 @@ void db_set_fill(int fill)
 
 void db_set_physical(int physical) 	// 1=physical (WIN:N), 0=logical (WIN:L)
 {
-    extern int physicalnest;
-    physicalnest = physical;
+    if (currep != NULL) {
+	currep->physical = physical;
+    }
 }
 
 void db_set_nest(int nest) 
 {
-    extern int nestlevel;
-    nestlevel = nest;
+    if (currep != NULL) {
+	currep->nestlevel = nest;
+    }
 }
 
 void db_bounds_update(BOUNDS *mybb, BOUNDS *childbb) 
@@ -1422,10 +1424,10 @@ int db_list(DB_TAB *cell)
     printf("   lock angle    = %g\n", currep->lock_angle);
     printf("   num prims     = %d\n", currep->prims);
     printf("   nesting is = ");
-    if (physicalnest) {
-	printf("%d physical\n", nestlevel);
+    if (currep->physical) {
+	printf("%d physical\n", currep->nestlevel);
     } else {
-	printf("%d logical\n", nestlevel);
+	printf("%d logical\n", currep->nestlevel);
     }
 
     if (currep->modified) {
@@ -1675,6 +1677,18 @@ int nextseq() {		// generate a new sequence number
 }
 // ---------------------------------------------------------
 
+// return effective nest level for a cell
+// considering logical or physical mode
+
+int effective_nest(DB_TAB *cell, int nest) { 	
+    if (currep->physical) {		// physical nesting
+    	return(nest);
+    } else {				// logical nesting
+  	return(cell->logical_level);
+    }
+}
+
+
 int db_render(
     DB_TAB *cell,
     int nest,		/* nesting level */
@@ -1688,7 +1702,6 @@ int db_render(
     XFORM *xp;
     XFORM *save_transform;
     // XFORM *xxp;
-    extern int nestlevel;
     int prims = 0;	// keep track of complexity of drawing
 
     DB_TAB *celltab;
@@ -1755,7 +1768,7 @@ int db_render(
     }
 
 
-    if (nest > nestlevel) { 	/* RCW */
+    if (effective_nest(cell,nest) > currep->nestlevel) { 
 	drawon = 0;
     } else {
 	drawon = 1; 
@@ -1775,11 +1788,15 @@ int db_render(
 	db_render(db_lookup(currep->background), nest+1, &backbb, mode);
     }
 
-    // don't rerender anything that's not visible if it was already
-    // rendered for this particular update sequence number.  Just trust
-    // the cached bounding box
+    // when we only did physical nesting, we didn't
+    // rerender anything that wasn't visible if it was already
+    // rendered for this particular update sequence number.  Just trusted
+    // the cached bounding box.  Now that we also do logic levels, we need
+    // to render all the way down.
 
-    if ((cell->seqflag != seqnum()) || (nest <= nestlevel)) {
+    // if ((cell->seqflag != seqnum()) || (nest <= currep->nestlevel)) {
+    //
+    if ((cell->seqflag != seqnum())||1){
 	for (p=cell->dbhead; p!=(DB_DEFLIST *)0 && !aborted; p=p->next) {
 
 	    childbb.init=0;
@@ -1843,12 +1860,13 @@ int db_render(
 
 			global_transform = compose(xp,save_transform);
 
-			if (nest >= nestlevel || !show_check_visible(currep, INST,0)) {
+
+    			if (effective_nest(cell,nest) > currep->nestlevel || 
+				!show_check_visible(currep, INST, 0)) { 
 			    drawon = 0;
 			} else {
 			    drawon = 1;
 			}
-			
 
 			// instances are called by name, not by pointer, otherwise
 			// it is possible to PURGE a cell in memory and then
@@ -1892,13 +1910,14 @@ int db_render(
 			// p->ymax = max(childbb.ymax, p->ymin);
 
 			/* don't draw anything below nestlevel */
-			if (nest > nestlevel) {
+    			if (effective_nest(cell,nest) > currep->nestlevel) {
 			    drawon = 0;
 			} else {
 			    drawon = 1;
 			}
 
-			if (nest == nestlevel) { /* if at nestlevel, draw bounding box */
+			/* if at nestlevel, draw bounding box */
+    			if (effective_nest(cell,nest) == currep->nestlevel) {
 			    set_layer(0,0);
 			    if (mode != D_READIN) {
 				db_drawbounds(childbb.xmin, childbb.ymin, 
@@ -1956,7 +1975,7 @@ int db_render(
     int dmode;
  
     if (nest == 0) { 
-	if (nestlevel == 0) {
+	if (currep->nestlevel == 0) {
 	    if (mode == D_READIN) {
 	       dmode = D_READIN;
 	    } else {

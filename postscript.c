@@ -100,6 +100,10 @@ void ps_set_pen(int pen)
 {
     if (debug) printf("setting pen:%d\n", pen); 
 
+    if (!colorflag) {
+    	pen = 0;	// when !colorflag force to black
+    }
+
     if (pennum != pen) {
        newpen=1;
     }
@@ -111,6 +115,7 @@ void ps_set_pen(int pen)
     } else {
        pennum=pen;
     }
+
 }
 
 /*
