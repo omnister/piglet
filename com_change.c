@@ -228,6 +228,7 @@ int com_change(LEXER *lp, char *arg)
 				new_layer = (int) optval;
 				db_set_layer(p_best, new_layer);
 				currep->modified++;
+			        p_best=NULL;
 				need_redraw++;
 			    }
 			    break;
@@ -291,6 +292,7 @@ int com_change(LEXER *lp, char *arg)
 			state = OPT;
 			currep->modified++;
 			need_redraw++;
+			p_best=NULL;
 		    } else {
 			state = END;
 		    }
@@ -330,6 +332,10 @@ int com_change(LEXER *lp, char *arg)
 	case END:
 	default:
 	    if (token == EOC || token == CMD) {
+		if (p_best != NULL) {
+		    db_highlight(p_best); 	/* unhighlight it */
+		    p_best = NULL; 
+		}
 		;
 	    } else {
 		token_flush_EOL(lp);
