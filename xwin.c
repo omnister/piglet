@@ -626,9 +626,6 @@ int procXevent()
 		XDrawImageString(dpy,win,gcg,g_width-20, g_height-20, &nestindicator, 1);
 		XFlush(dpy);
 	    } else {
-	    	// for (i=1; i<=num_menus; i++) {
-		//    paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
-	    	// }
 		dosplash();
 		draw_grid(win, gcg, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
@@ -705,9 +702,6 @@ char **s;
 	    }
 	    XFlush(dpy);
 	} else {
-	    // for (i=1; i<=num_menus; i++) {
-	    //    paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
-	    // }
 	    dosplash();
 	    draw_grid(win, gcg, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
@@ -937,7 +931,7 @@ void getGC(
     unsigned long valuemask = 0;
 
     XGCValues values;
-    unsigned int line_width = 0;
+    unsigned int line_width = 1;
     int line_style = LineSolid;
     int cap_style = CapButt;
     int join_style = JoinMiter;
@@ -1037,6 +1031,7 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
      * only db::set_pen() calls here, and uses pen%5 as the argument 
      */
 
+
     /* optimize out unnecessary Xserver calls */
     static int oldpen=(-9999);
     if (pen == oldpen) return;
@@ -1100,7 +1095,10 @@ void xwin_set_pen_line_fill(int pen, int line, int fill)
     }
 
     dash_offset=0;
-    XSetLineAttributes(dpy, gca, 0, line_style, CapButt, JoinRound); 
+
+    // GOTCHA:  If third argument (line_width) is zero, then dashes do not work
+
+    XSetLineAttributes(dpy, gca, 1, line_style, CapButt, JoinRound); 
     XSetDashes(dpy, gca, dash_offset, dash_list, dash_n);
 
     /* optimize out unnecessary Xserver calls */

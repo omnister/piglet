@@ -1316,13 +1316,13 @@ void db_highlight(DB_DEFLIST *p)	/* component to display */
 	do_circ(p, &bb, D_RUBBER);
 	break;
     case LINE:  /* line definition */
-	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
+	// db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	do_line(p, &bb, D_RUBBER);
 	break;
     case NOTE:  /* note definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	xwin_draw_origin(p->u.n->x, p->u.n->y);
-	/* do_note(p, &bb, D_RUBBER); */
+	do_note(p, &bb, D_RUBBER);		// was commented out 
 	break;
     case OVAL: /* oval definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
@@ -1336,7 +1336,7 @@ void db_highlight(DB_DEFLIST *p)	/* component to display */
     case TEXT: /* text definition */
 	db_drawbounds(p->xmin, p->ymin, p->xmax, p->ymax, D_RUBBER);
 	xwin_draw_origin(p->u.t->x, p->u.t->y);
-	/* do_note(p, &bb, D_RUBBER); */
+	do_note(p, &bb, D_RUBBER);		// was commented out
 	break;
     case INST: /* instance call */
 	def = db_lookup(p->u.i->name);

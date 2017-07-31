@@ -2255,7 +2255,7 @@ from being interpreted as Piglet options.
 
 N: SHOw
 D: Define which kinds of things to display
-U: SHOW {+|-|#}{EACILN0PRT}<layer>
+U: SHOW {+|-|#}{EACILNOPRT}<layer>
 S: complete
 T: {
 The SHOW command controls what layers are visible and modifiable in the
