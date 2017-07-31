@@ -1880,7 +1880,7 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a plot of the current device in various formats
 S: letter size only
-U: PLO [:F] [:B] [:G] [:L<linewidth>][:TA|:TD|:TG|:TP] [:P<papersize>] <plotname> <EOC>
+U: PLO [:F] [:B] [:G] [:L<linewidth>][:TA|:TD|:TG|:TP|:TS] [:P<papersize>] <plotname> <EOC>
 T: {
 The PLOT command creates a plot of the current window in the
 file "./<plotname>.<suffix>.  If the <plotname> is not specified, the
@@ -1977,6 +1977,13 @@ Plot the current device in Postscript format without automatic fitting
 using a ".ps" suffix.  Only the geometries visible on the display window
 will be plotted.  This is the default plot mode if no :T<plottype> command is
 given.  
+.I :TS
+Plot the current device in scalable vector graphics format 
+with automatic fitting using a ".html" suffix. If the .html file
+is displayed in a web browser, any top level cells will be
+automatically clickable to the link <name>.html.  This allows
+piglet to be used for generating hierarchical dynamically linked 
+graphical documentation.
 .TP
 .I :P<pagesize>
 Observed for postscript output.  Pagesize can be any number of common

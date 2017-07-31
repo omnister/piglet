@@ -396,6 +396,25 @@ void xwin_set_title(char *title) {
         (unsigned char *)title, strlen(title));
 }
 
+void slide(double dx, double dy)
+{
+    double xmin,ymin,xmax,ymax;
+
+    if (currep != NULL) {
+	xmin = currep->vp_xmin;
+	ymin = currep->vp_ymin;
+	xmax = currep->vp_xmax;
+	ymax = currep->vp_ymax;
+
+	xmin=xmin+dx;
+	xmax=xmax+dx;
+	ymin=ymin+dy;
+	ymax=ymax+dy;
+
+	xwin_window_set(xmin,ymin,xmax,ymax);
+    }
+}
+
 void zoom(int dir, double scale)
 {
     double xmin,ymin,xmax,ymax;
@@ -447,6 +466,7 @@ void pan(double x1, double y1)
     double xmin,ymin,xmax,ymax;
     double dx,dy;
 
+
     if (currep != NULL) {
 	xmin = currep->vp_xmin;
 	ymin = currep->vp_ymin;
@@ -472,20 +492,44 @@ void pan_init(int x, int y) {
    pan_y=y;
 }
 
+
+// RCW: possible improvement
+// pan could be modified to scroll
+// when middle button is held down and moved
+
 void pan_update(int x, int y) {
    int dx;
    int dy;
 
    dx = pan_x-x;
    dy = pan_y-y;
-   
-   if (abs(dx)+abs(dy) > 10) {
-       if (dx > dy) {
+
+   double xx, yy;
+   xx=(double)dx;
+   yy=(double)dy;
+
+   if (abs(dx) > abs(dy)) {
+      slide(xx/scale, 0.0);
+   } else {
+      slide(0.0, -yy/scale);
+   }
+   pan_x=x; pan_y=y;
+}
+
+void oldpan_update(int x, int y) {
+   int dx;
+   int dy;
+
+   dx = pan_x-x;
+   dy = pan_y-y;
+
+  if (abs(dx)+abs(dy) > 10) {
+      if (dx > dy) {
 	  zoom(1,1.1);
-       } else {
-	  zoom(-1,1.1);
-       }
-       pan_x=x; pan_y=y;
+      } else {
+          zoom(-1,1.1);
+      }
+      pan_x=x; pan_y=y;
    }
 }
 
@@ -566,6 +610,9 @@ int procXevent()
 	if (need_redraw) {
 	    need_redraw = 0;
 	    XClearArea(dpy, win, 0, 0, 0, 0, False);
+	    for (i=1; i<=num_menus; i++) {
+	       paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	    }
 	    if (currep != NULL ) {
 		bb.init=0;
 		db_render(currep,0,&bb,0);  /* render the current rep */
@@ -579,9 +626,9 @@ int procXevent()
 		XDrawImageString(dpy,win,gcg,g_width-20, g_height-20, &nestindicator, 1);
 		XFlush(dpy);
 	    } else {
-	    	for (i=1; i<=num_menus; i++) {
-		   paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
-	    	}
+	    	// for (i=1; i<=num_menus; i++) {
+		//    paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	    	// }
 		dosplash();
 		draw_grid(win, gcg, grid_xd, grid_yd,
 		    grid_xs, grid_ys, grid_xo, grid_yo);
@@ -644,6 +691,9 @@ char **s;
     if (need_redraw) {
 	need_redraw = 0;
 	XClearArea(dpy, win, 0, 0, 0, 0, False);
+	for (i=1; i<=num_menus; i++) {
+	   paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	}
 	if (currep != NULL ) {
 	    bb.init=0;
 	    db_render(currep,0,&bb,0); /* render the current rep */
@@ -655,9 +705,9 @@ char **s;
 	    }
 	    XFlush(dpy);
 	} else {
-	    for (i=1; i<=num_menus; i++) {
-	       paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
-	    }
+	    // for (i=1; i<=num_menus; i++) {
+	    //    paint_pane(menutab[i].pane, menutab, gca, gcb, BLACK);
+	    // }
 	    dosplash();
 	    draw_grid(win, gcg, grid_xd, grid_yd,
 		grid_xs, grid_ys, grid_xo, grid_yo);
@@ -819,13 +869,14 @@ char **s;
 			/* just ignore unexpected events... */
 			/* my laptop touchpad mouse makes random */
 			/* button #7 events all the time (?) */
-			/* printf("a: unexpected button event: %d",
-			    xe.xbutton.button); */
+			// printf("a: unexpected button event: %d",
+			//     xe.xbutton.button); 
 			break;
 		}
 	    } else {
 		for (j=1; j<=num_menus; j++) {
 		    if (menutab[j].pane == xe.xbutton.window) {
+
 			switch (xe.xbutton.button) {
 			case 1:
 			   *s=menutab[j].text;
