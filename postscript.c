@@ -353,7 +353,7 @@ void ps_preamble(
 	    fprintf(fp,"/c3 {0.000 0.000 1.000 srgb} bind def\n");
 	    fprintf(fp,"/c4 {0.000 1.000 1.000 srgb} bind def\n");
 	    fprintf(fp,"/c5 {1.000 0.000 1.000 srgb} bind def\n");
-	    fprintf(fp,"/c6 {1.000 1.000 0.000 srgb} bind def\n");
+	    fprintf(fp,"/c6 {1.000 0.700 0.000 srgb} bind def\n");
 	    fprintf(fp,"/c7 {0.000 0.000 0.000 srgb} bind def\n");
 	    fprintf(fp,"/c8 {0.300 0.300 0.300 srgb} bind def\n");
 	    fprintf(fp,"/c9 {0.600 0.600 0.600 srgb} bind def\n");

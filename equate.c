@@ -51,7 +51,7 @@ int initialize_equates() {
     return(0);
 }
 
-static char *COLORTAB =  "WWRGBCMYLD";
+static char *COLORTAB =  "WRGBCMYWLD";
 static char *LINETYPE =  "SDB34567";
 static char *MASKTYPE =  "BDSI";
 

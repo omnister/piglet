@@ -1452,8 +1452,8 @@ drawn with color 7 (white), plotted with pen 7, filled with pattern 0
 .SS OPTIONS
 .TP
 .I <color>
-an integer from 1-9 or one of the characters "WRGBCMYLD" signifying 
-white, red, green, blue, cyan, magenta, yellow, light grey and dark grey.
+an integer from 0-9 or one of the characters "WRGBCMWYLD" signifying 
+white, red, green, blue, cyan, magenta, yellow, white, light grey and dark grey.
 .TP
 .I <pen>
 an integer from 1-7 to specify a plot pen, or 0 to suppress plotting.
