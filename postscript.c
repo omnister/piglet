@@ -9,6 +9,7 @@
 #include "db.h"
 #include "xwin.h"
 #include "postscript.h"
+#include "ev.h"
 
 #define MAXBUF 256
 
@@ -247,14 +248,20 @@ void ps_preamble(
 	fprintf(fp,"<html>\n");
 	fprintf(fp,"<body>\n");
 	fprintf(fp,"<title> %s </title>\n", dev);
-	fprintf(fp,"<h1> %s </h1>\n", dev);
+	// fprintf(fp,"<h1> %s </h1>\n", dev);
 	fprintf(fp,"<!-- program %s -->\n", prog);
 	V_to_R(&llx,&lly);
 	V_to_R(&urx,&ury);
 	fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
 	    llx, lly, urx, ury );
-	fprintf(fp,"<svg width=\"900\" height=\"600\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
+	// fprintf(fp,"<svg width=\"1200\" height=\"900\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
+	fprintf(fp,"<svg width=\"100%%\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
 	    llx, lly, urx-llx, ury-lly);
+	fprintf(fp,"<style>");
+	fprintf(fp,"   rect:hover {");
+	fprintf(fp,"      opacity: 0.5");
+	fprintf(fp,"   }");
+	fprintf(fp,"</style>");
     } else if (outputtype == GERBER) {
        fprintf(fp,"G4 Title: %s*\n", dev);
        fprintf(fp,"G4 Creator: %s*\n", prog);
@@ -508,7 +515,7 @@ void ps_end_line()
        }
     } else if (outputtype == SVG) {			// SVG
        fprintf(fp,
-       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:1\"/>\n",pen_to_svg_color(this_pen));
+       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:0.5\"/>\n",pen_to_svg_color(this_pen));
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");
@@ -726,13 +733,23 @@ void ps_postamble()
 
 
 void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double ymax) {
+
+    // FIXME: protect against null pointer...
+    char *p;	// link to prefix
+    char *s;	// link to suffix
+
     if ((fp != NULL) && outputtype == SVG && nest==1) {
+
+	p=EVget("PIG_HTML_PREFIX");
+	s=EVget("PIG_HTML_SUFFIX");
+
+
         ymin = bblly-(ymin-bbury);
         ymax = bblly-(ymax-bbury);
 	V_to_R(&xmin,&ymin);
 	V_to_R(&xmax,&ymax);
 	fprintf(fp, "\n<!-- %g %g %g %g-->\n", xmin, ymin, xmax, ymax);
-	fprintf(fp, "\n<a xlink:href=\"%s.html\">\n", name);
+	fprintf(fp, "\n<a xlink:href=\"%s%s%s\">\n", p, name, s);
 	fprintf(fp, "    <rect x=\"%g\" y=\"%g\" fill=\"#ff0\" opacity=\"0.2\" width=\"%g\" height=\"%g\"/>\n",
 	xmin,ymax,xmax-xmin,ymin-ymax);
 	fprintf(fp, "</a>\n");

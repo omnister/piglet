@@ -333,6 +333,23 @@ Any parameters left off will remain set to the default grid specification of "10
 .I PIG_GRID_COLOR "<num>" ; default is "3"
 Used to set the default grid color when editing new cells.
 .TP
+.I PIG_HTML_PREFIX "<string>" ; default is "http://130.127.50.124/legion/doku.php?id="
+When creating an SVG web graphic, all subcells are clickable.
+The web link used is "http://$PIGLET_HTML_PREFIX<name>$PIGLET_HTML_SUFFIX".  This allows
+linking to an arbitrary host with any type of web page.  The
+example creates a link to a dokuwiki where the name of the page
+is simply the name of the piglet cell.
+.TP
+.I PIG_HTML_SUFFIX "<string>" ; default is a null string.
+When creating an SVG web graphic, all subcells are clickable.
+The web link used is "http://$PIGLET_HTML_PREFIX<name>$PIGLET_HTML_SUFFIX".  This allows
+linking to an arbitrary host with any type of web page.  The
+example creates a link to a dokuwiki where the name of the page
+is simply the name of the piglet cell.  If you wished to link to
+a traditional web page rather than a wiki page, you could set
+PIG_HTML_SUFFIX to ".html".
+
+.TP
 .I PIG_SHOW_DEFAULT "<SHO_CMD_OPTIONS>" ; default is not defined
 If defined, then the SHOW command will be run with <SHO_CMD_OPTIONS>
 as an argument immediately after opening any new drawing.
@@ -1977,11 +1994,12 @@ Plot the current device in Postscript format without automatic fitting
 using a ".ps" suffix.  Only the geometries visible on the display window
 will be plotted.  This is the default plot mode if no :T<plottype> command is
 given.  
+.TP
 .I :TS
 Plot the current device in scalable vector graphics format 
 with automatic fitting using a ".html" suffix. If the .html file
 is displayed in a web browser, any top level cells will be
-automatically clickable to the link <name>.html.  This allows
+automatically clickable to the link "http://$PIGLET_HTML_PREFIX<name>$PIGLET_HTML_SUFFIX".  This allows
 piglet to be used for generating hierarchical dynamically linked 
 graphical documentation.
 .TP

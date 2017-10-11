@@ -300,22 +300,24 @@ int com_change(LEXER *lp, char *arg)
 	    } else if (token == EOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == QUOTE) {
-		token_get(lp,&word); 	/* just ignore it */
-		if (p_best->type == NOTE) {
-		    free(p_best->u.n->text);
+		token_get(lp,&word); 
+		if (p_best != NULL) {
+		    if (p_best->type == NOTE) {
+			free(p_best->u.n->text);
 
-		    p_best->u.n->text = strsave(word);
-		    currep->modified++;
-		    need_redraw++;
-		} else if(p_best->type == TEXT ) {
-		    free(p_best->u.t->text);
-		    p_best->u.t->text = strsave(word);
-		    currep->modified++;
-		    need_redraw++;
-		} else {
-		    printf("can't add text to this kind of component\n");
-		    state = END;
-		}
+			p_best->u.n->text = strsave(word);
+			currep->modified++;
+			need_redraw++;
+		    } else if(p_best->type == TEXT ) {
+			free(p_best->u.t->text);
+			p_best->u.t->text = strsave(word);
+			currep->modified++;
+			need_redraw++;
+		    } else {
+			printf("can't add text to this kind of component\n");
+			state = END;
+		    }
+	        }
 	    } else if (token == RAW) {	/* FIXME: a stub for testing RAW mode */
 	        /* token_get(lp,&word);
 		printf("RAW: %s <%02x>\n",word, (unsigned int) word[0]);

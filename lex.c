@@ -232,6 +232,8 @@ int main(int argc, char **argv)
     EVset("PIG_PAPER_SIZE", "8.5x11");		/* postscript papersize */
     EVset("PIG_RC", "pigrc");			/* default piglet startup file */
     EVset("PIG_X11MENU_FONT", "10x20");		/* default X11 menu font */
+    EVset("PIG_HTML_PREFIX", "http://130.27.50.124/legion/doku.php?id=");		/* header for svg links */
+    EVset("PIG_HTML_SUFFIX", ""); 		/* trailer for svg links */
 
     license();			/* print GPL notice */
 
