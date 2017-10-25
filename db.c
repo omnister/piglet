@@ -3179,7 +3179,7 @@ void do_note(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
 
     XFORM *xp;
-    char msg[MAXBUF];
+    // char msg[MAXBUF];
 
     /* create a unit xform matrix */
 
@@ -3216,8 +3216,8 @@ void do_note(DB_DEFLIST *def, BOUNDS *bb, int mode)
     xp->dx += def->u.n->x;
     xp->dy += def->u.n->y;
 
-    sprintf(msg,"text: %s %f %f\n",def->u.t->text, xp->dx, xp->dy);
-    ps_comment(msg);
+    // sprintf(msg,"text: %s %f %f\n",def->u.t->text, xp->dx, xp->dy);
+    // ps_comment(msg);
 
     writestring(def->u.n->text, xp, def->u.n->opts->font_num,
     	def->u.n->opts->justification, bb, mode);

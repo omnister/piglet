@@ -245,18 +245,22 @@ void ps_preamble(
     } else if ( outputtype == SVG) {
         lly = bblly-(lly-bbury);
         ury = bblly-(ury-bbury);
-	fprintf(fp,"<html>\n");
-	fprintf(fp,"<body>\n");
-	fprintf(fp,"<title> %s </title>\n", dev);
-	// fprintf(fp,"<h1> %s </h1>\n", dev);
-	fprintf(fp,"<!-- program %s -->\n", prog);
+	// fprintf(fp,"<html>\n");
+	// fprintf(fp,"<body>\n");
+	fprintf(fp,"<?xml version=\"1.0\" standalone=\"no\"?>\n");
+	fprintf(fp,"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n");
+	fprintf(fp,"\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
+	// fprintf(fp,"<title> %s </title>\n", dev);
+	fprintf(fp,"<svg xmlns=\"http://www.w3.org/2000/svg\"\n");
 	V_to_R(&llx,&lly);
 	V_to_R(&urx,&ury);
-	fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
-	    llx, lly, urx, ury );
+	// fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
+	//     llx, lly, urx, ury );
 	// fprintf(fp,"<svg width=\"1200\" height=\"900\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
-	fprintf(fp,"<svg width=\"100%%\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
+	fprintf(fp,"width=\"100%%\" height=\"100%%\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
 	    llx, lly, urx-llx, ury-lly);
+	// fprintf(fp,"<h1> %s </h1>\n", dev);
+	// fprintf(fp,"<!-- program %s -->\n", prog);
 	fprintf(fp,"<style>");
 	fprintf(fp,"   rect:hover {");
 	fprintf(fp,"      opacity: 0.5");
@@ -320,7 +324,7 @@ void ps_preamble(
 	fprintf(fp,"%%!PS-Adobe-2.0\n");
 	fprintf(fp,"%%%%Title: %s\n", dev);
 	fprintf(fp,"%%%%Creator: %s\n", prog);
-	timep=time(&timep);
+	// timep=time(&timep);
 	fprintf(fp,"%%%%CreationDate: %s", ctime(&timep));
 	gethostname(buf,MAXBUF);
 	fprintf(fp,"%%%%For: %s@%s (%s)\n", 
@@ -491,7 +495,7 @@ void ps_comment(char *comment)
 	} else if (outputtype == POSTSCRIPT) {	// PS
 	    ;
 	} else if (outputtype == SVG) {		// Scalable vector graphics
-	    fprintf(fp, "<!--%s-->\n",comment);
+	    // fprintf(fp, "<!--%s-->\n",comment);
 	} else if (outputtype == AUTOPLOT) {	// AUTOPLOT
 	    fprintf(fp, "#%s\n",comment);
 	}
@@ -688,8 +692,8 @@ void ps_continue_line(double x1, double y1)
 
 void ps_postamble()
 {
-    time_t timep;
-    char buf[MAXBUF];
+    // time_t timep;
+    // char buf[MAXBUF];
 
     if (debug) printf("ps_postamble:\n");
     if (in_line) {
@@ -712,20 +716,20 @@ void ps_postamble()
         fprintf(fp,"SP;\n");
         fprintf(fp,"IN;\n");
     } else if (outputtype == SVG) {
-	fprintf(fp,"<hr>\n");
-        timep=time(&timep);
-        ctime_r(&timep, buf);
-        buf[strlen(buf)-1]='\0';
-	fprintf(fp,"<p> creation date %s<br>\n", buf);
-        gethostname(buf,MAXBUF);
-        fprintf(fp,"<p> For: %s@%s (%s) <br>\n",
-            getpwuid(getuid())->pw_name,
-            buf,
-            getpwuid(getuid())->pw_gecos );
-        fprintf(fp,"</p>\n");
+	//fprintf(fp,"<hr>\n");
+        //timep=time(&timep);
+        //ctime_r(&timep, buf);
+        //buf[strlen(buf)-1]='\0';
+	////fprintf(fp,"<p> creation date %s<br>\n", buf);
+        //gethostname(buf,MAXBUF);
+        //fprintf(fp,"<p> For: %s@%s (%s) <br>\n",
+        //    getpwuid(getuid())->pw_name,
+        //    buf,
+        //    getpwuid(getuid())->pw_gecos );
+        //fprintf(fp,"</p>\n");
         fprintf(fp,"</svg>\n");
-        fprintf(fp,"</body>\n");
-        fprintf(fp,"</html>\n");
+        // fprintf(fp,"</body>\n");
+        // fprintf(fp,"</html>\n");
 	
     } 
     fclose(fp); fp=NULL;
@@ -738,7 +742,8 @@ void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double
     char *p;	// link to prefix
     char *s;	// link to suffix
 
-    if ((fp != NULL) && outputtype == SVG && nest==1) {
+    // FIXME: turn linking off for svg output
+    if (0 && (fp != NULL) && outputtype == SVG && nest==1) {
 
 	p=EVget("PIG_HTML_PREFIX");
 	s=EVget("PIG_HTML_SUFFIX");

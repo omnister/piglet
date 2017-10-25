@@ -1475,7 +1475,7 @@ int db_plot(char *name, OMODE plottype, double dx,
 	printf("plotting hpgl to %s\n", buf);
 	fflush(stdout);
     } else if (plottype == SVG) {
-	snprintf(buf, MAXFILENAME, "%s.html", name);
+	snprintf(buf, MAXFILENAME, "%s.svg", name);
 	printf("plotting svg to %s\n", buf);
 	fflush(stdout);
     } else {
