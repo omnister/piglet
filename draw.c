@@ -1478,6 +1478,10 @@ int db_plot(char *name, OMODE plottype, double dx,
 	snprintf(buf, MAXFILENAME, "%s.svg", name);
 	printf("plotting svg to %s\n", buf);
 	fflush(stdout);
+    } else if (plottype == WEB) {
+	snprintf(buf, MAXFILENAME, "%s.html", name);
+	printf("plotting svg to %s\n", buf);
+	fflush(stdout);
     } else {
        printf("bad plottype: %d\n", plottype);
        return(0);

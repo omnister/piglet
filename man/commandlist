@@ -1897,7 +1897,7 @@ after the first coordinate to help the user define the region.
 N: PLOt
 D: Make a plot of the current device in various formats
 S: letter size only
-U: PLO [:F] [:B] [:G] [:L<linewidth>][:TA|:TD|:TG|:TP|:TS] [:P<papersize>] <plotname> <EOC>
+U: PLO [:F] [:B] [:G] [:L<linewidth>][:TA|:TD|:TG|:TP|:TS|:TW] [:P<papersize>] <plotname> <EOC>
 T: {
 The PLOT command creates a plot of the current window in the
 file "./<plotname>.<suffix>.  If the <plotname> is not specified, the
@@ -1997,7 +1997,12 @@ given.
 .TP
 .I :TS
 Plot the current device in scalable vector graphics format 
-with automatic fitting using a ".svg" suffix. If the .svg file
+with automatic fitting using a ".svg" suffix.  The resulting file
+will display in a web browser and can be included in open office
+and powerpoint documents.
+.I :TW
+Plot the current device in scalable vector graphics format 
+with automatic fitting using a ".html" suffix. If the file
 is displayed in a web browser, any top level cells will be
 automatically clickable to the link "http://$PIGLET_HTML_PREFIX<name>$PIGLET_HTML_SUFFIX".  This allows
 piglet to be used for generating hierarchical dynamically linked 

@@ -130,7 +130,7 @@ COMMAND commands[] =
     {"MOVE", com_move, "move a component from one location to another",
     	"MOV [<component>[<layer>]] { [[:P] <xysel>] | [:R <xy1> <xy2>] xyref xynewref } ... <EOC>"},
     {"PLOT", com_plot, "make a postscript plot of the current device",
-    	"PLO [:F][:B][:G] [:L<linewidth>][:Tautoplot|:Tdxf|:Tgerber:|Tpostscript:|Tsvg]:P<pagesize><plotname><EOC>"},
+    	"PLO [:F][:B][:G] [:L<linewidth>][:Tautoplot|:Tdxf|:Tgerber|:Tpostscript|:Tsvg|:Tweb]:P<pagesize><plotname><EOC>"},
     {"POINT", com_point, "display the specified point on the screen",
     	"POI {<xy1>...} <EOC>" },
     {"PROCESS", com_process, "enter the PROCESS subsystem",
@@ -1811,6 +1811,10 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 		    fit++;
 		    plottype=SVG;
 		    ps_set_outputtype(SVG);
+		} else if (strncasecmp(word, ":TW", 3) == 0) { /* web = html*/
+		    fit++;
+		    plottype=WEB;
+		    ps_set_outputtype(WEB);
 		} else {
 	    	    weprintf("bad option to PLOT: %s\n", word);
 		    return(-1);

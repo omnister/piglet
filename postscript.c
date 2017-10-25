@@ -242,23 +242,32 @@ void ps_preamble(
        fprintf(fp,"back\n");
        fprintf(fp,"isotropic\n");
        return;
-    } else if ( outputtype == SVG) {
+    } else if ( outputtype == SVG || outputtype == WEB) {
         lly = bblly-(lly-bbury);
         ury = bblly-(ury-bbury);
-	// fprintf(fp,"<html>\n");
-	// fprintf(fp,"<body>\n");
+	if (outputtype == WEB) {
+	    fprintf(fp,"<html>\n");
+	    fprintf(fp,"<body>\n");
+	}	
 	fprintf(fp,"<?xml version=\"1.0\" standalone=\"no\"?>\n");
 	fprintf(fp,"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n");
 	fprintf(fp,"\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
-	// fprintf(fp,"<title> %s </title>\n", dev);
+	if (outputtype == WEB) {
+	    fprintf(fp,"<title> %s </title>\n", dev);
+	}
 	fprintf(fp,"<svg xmlns=\"http://www.w3.org/2000/svg\"\n");
 	V_to_R(&llx,&lly);
 	V_to_R(&urx,&ury);
 	// fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
 	//     llx, lly, urx, ury );
-	// fprintf(fp,"<svg width=\"1200\" height=\"900\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
-	fprintf(fp,"width=\"100%%\" height=\"100%%\" viewBox=\"%g %g %g %g \" preserveAspectRatio=\"xMinYMin meet\">\n", 
-	    llx, lly, urx-llx, ury-lly);
+	if (outputtype == SVG) {
+	    fprintf(fp,"width=\"100%%\" height=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
+		llx, lly, urx-llx, ury-lly);
+	}
+	if (outputtype == WEB) {
+	    fprintf(fp,"width=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
+		llx, lly, urx-llx, ury-lly);
+	}
 	// fprintf(fp,"<h1> %s </h1>\n", dev);
 	// fprintf(fp,"<!-- program %s -->\n", prog);
 	fprintf(fp,"<style>");
@@ -496,6 +505,8 @@ void ps_comment(char *comment)
 	    ;
 	} else if (outputtype == SVG) {		// Scalable vector graphics
 	    // fprintf(fp, "<!--%s-->\n",comment);
+	} else if (outputtype == WEB) {		// WEB = html
+	    fprintf(fp, "<!--%s-->\n",comment);
 	} else if (outputtype == AUTOPLOT) {	// AUTOPLOT
 	    fprintf(fp, "#%s\n",comment);
 	}
@@ -517,7 +528,7 @@ void ps_end_line()
        if (in_poly) {
 	   fprintf(fp, "G37*\n");
        }
-    } else if (outputtype == SVG) {			// SVG
+    } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,
        "\"\nstyle=\"fill:none;stroke:%s;stroke-width:0.5\"/>\n",pen_to_svg_color(this_pen));
     } else if (outputtype == HPGL) {			// HPGL
@@ -587,7 +598,7 @@ void ps_start_line(double x1, double y1, int filled)
     this_fill=filltype;
     this_isfilled=filled;
 
-    if (outputtype == SVG) {				// SVG
+    if (outputtype == SVG || outputtype == WEB) {				// SVG
 	fprintf(fp, "<polyline points=\"\n");
         y1 = bblly-(y1-bbury);
 	V_to_R(&x1,&y1);
@@ -642,7 +653,7 @@ void ps_continue_line(double x1, double y1)
 {
     if (debug) printf("ps_continue_line:\n");
 
-    if (outputtype == SVG) {				// SVG
+    if (outputtype == SVG || outputtype == WEB) {				// SVG
         y1 = bblly-(y1-bbury);
 	V_to_R(&x1, &y1);
 	fprintf(fp, "  %g,%g\n", x1, y1);
@@ -715,7 +726,12 @@ void ps_postamble()
         fprintf(fp,"PU;\n");
         fprintf(fp,"SP;\n");
         fprintf(fp,"IN;\n");
-    } else if (outputtype == SVG) {
+    } else if (outputtype == SVG || outputtype == WEB) {
+        fprintf(fp,"</svg>\n");
+	if (outputtype == WEB) {
+	    fprintf(fp,"</body>\n");
+	    fprintf(fp,"</html>\n");
+	}
 	//fprintf(fp,"<hr>\n");
         //timep=time(&timep);
         //ctime_r(&timep, buf);
@@ -726,10 +742,6 @@ void ps_postamble()
         //    getpwuid(getuid())->pw_name,
         //    buf,
         //    getpwuid(getuid())->pw_gecos );
-        //fprintf(fp,"</p>\n");
-        fprintf(fp,"</svg>\n");
-        // fprintf(fp,"</body>\n");
-        // fprintf(fp,"</html>\n");
 	
     } 
     fclose(fp); fp=NULL;
@@ -742,8 +754,7 @@ void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double
     char *p;	// link to prefix
     char *s;	// link to suffix
 
-    // FIXME: turn linking off for svg output
-    if (0 && (fp != NULL) && outputtype == SVG && nest==1) {
+    if ((fp != NULL) && outputtype == WEB && nest==1) {
 
 	p=EVget("PIG_HTML_PREFIX");
 	s=EVget("PIG_HTML_SUFFIX");
