@@ -273,8 +273,8 @@ void ps_preamble(
 	fprintf(fp,"<style>");
 	fprintf(fp,"   rect:hover {");
 	fprintf(fp,"      opacity: 0.5");
-	fprintf(fp,"   }");
-	fprintf(fp,"</style>");
+	fprintf(fp,"   }\n");
+	fprintf(fp,"</style>\n");
     } else if (outputtype == GERBER) {
        fprintf(fp,"G4 Title: %s*\n", dev);
        fprintf(fp,"G4 Creator: %s*\n", prog);
@@ -530,7 +530,7 @@ void ps_end_line()
        }
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,
-       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:0.5\"/>\n",pen_to_svg_color(this_pen));
+       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:1.5\"/>\n",pen_to_svg_color(this_pen));
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");
