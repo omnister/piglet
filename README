@@ -26,4 +26,6 @@ for engraving projects.  The filled fonts look very professional.
 Piglet is small and lean, fitting on an old fashioned floppy (without
 the huge directory of SHP fonts).  It is written in C and Xlib is a good
 readable/hackable example of a well-thought out professional graphics
-editor circa 1986. 
+editor circa 1986.
+
+Site: http://andybrown.me.uk/2013/02/24/generic-nokia-lcd-hacking-board/
