@@ -1989,7 +1989,6 @@ int db_render(
     R_to_V(&vxmin, &vymin);
     R_to_V(&vxmax, &vymax);
 
-   // ps_link(nest, cell->name, mybb.xmin, mybb.ymin, mybb.xmax, mybb.ymax); // RCW
     ps_link(nest, cell->name, vxmin, vymin, vxmax, vymax); // RCW
 
     db_bounds_update(bb, &mybb);

@@ -18,8 +18,11 @@ SET PIG_NOTEDATA_FILE "NOTEDATA.F";   $$ note font file
 SET PIG_TEXTDATA_FILE "ROMANT.F";     $$ text font file
 SET PIG_TEXTDATA_FILE "TEXTDATA.F";   $$ text font file
 
+$$ optional shp fonts
+$$ you can select font 5, for example with :n5
+$$ add n1 :n5 "example";
 
-SET PIG_SHPFONT0  "shpfonts/pan.shp"	      $$ optional shp fonts
+SET PIG_SHPFONT0  "shpfonts/pan.shp"	      
 SET PIG_SHPFONT1  "shpfonts/complex.shp"
 SET PIG_SHPFONT2  "shpfonts/opt.shp"
 SET PIG_SHPFONT3  "shpfonts/archoldt.shp"
@@ -42,12 +45,12 @@ SET PIG_SHPFONT19 "shpfonts/hcomx.shp"
 
 SET PIG_PROCDATA_FILE "PROCDATA.P";   $$ text font file
 
-SET PIG_GRID "10 10 1 1 0 0";         $$ grid spec
-SET PIG_GRID_COLOR "3";               $$ grid color
+SET PIG_GRID "10 10 1 1 0 0";         $$ default grid spec
+SET PIG_GRID_COLOR "3";               $$ default grid color
 
 SET PIG_SHOW_DEFAULT "#E";    	      $$ make cells editable by default
-SET PIG_FONT_SLANT "0.0";             $$ default for TSLANT command
-SET PIG_FONT_SIZE "10.0";             $$ default for FSIZE command
+SET PIG_FONT_SLANT "0.0";             $$ default angle for TSLANT command
+SET PIG_FONT_SIZE "10.0";             $$ default fontsize for FSIZE command
 SET PIG_PAPER_SIZE "8.5x11";	      $$ default paper size for PLOT
 
 DEF wi "WIN :X.5;"		$$ window-in macro

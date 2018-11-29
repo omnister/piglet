@@ -108,9 +108,9 @@ int coord_count(COORDS *CP) 	/* return number of coords in list */
 //
 // We have a doubly linked list of x,y nodes
 // COORDS->next points to the next one, or null at end
-// COORDS->prev points to the previous one, of the last one if first
+// COORDS->prev points to the previous one, or the last one if first
 //
-// Cool, eh?  Can append at both ends with just at most a double redirect
+// Cool, eh?  Can append at both ends with at most a double redirect
 //
 
 COORDS *coord_new(double x,double y)

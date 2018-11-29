@@ -99,7 +99,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
     if (lp->bufp > 0) {		/* characters in pushback buffer */
 	strcpy(*word, lp->tokbuf[--(lp->bufp)].word);
 	if ((lp->tokbuf[lp->bufp].word) != NULL) {
-	    free(lp->tokbuf[lp->bufp].word);
+	    free(lp->tokbuf[lp->bufp].word);		// FIXME: have seen crashes here...
 	}
 	lp->tokbuf[lp->bufp].word = (char *) NULL;
 	return(lp->tokbuf[lp->bufp].tok);

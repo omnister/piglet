@@ -256,10 +256,17 @@ void ps_preamble(
 	    fprintf(fp,"<title> %s </title>\n", dev);
 	}
 	fprintf(fp,"<svg xmlns=\"http://www.w3.org/2000/svg\"\n");
+	fprintf(fp,"xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n");
+
 	V_to_R(&llx,&lly);
 	V_to_R(&urx,&ury);
-	// fprintf(fp,"<!-- llx:%g lly:%g urx:%g ury:%g -->\n",
-	//     llx, lly, urx, ury );
+
+	// bounding box for output geometries
+	// printf("<!-- llx:%g lly:%g urx:%g ury:%g -->\n", llx, lly, urx, ury );
+
+	// set default pen width to be a fraction diagonal
+	ps_set_linewidth(sqrt(pow(fabs(urx-llx),2.0)+pow(fabs(ury-lly),2.0))/700.0);
+
 	if (outputtype == SVG) {
 	    fprintf(fp,"width=\"100%%\" height=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
 		llx, lly, urx-llx, ury-lly);
@@ -267,14 +274,14 @@ void ps_preamble(
 	if (outputtype == WEB) {
 	    fprintf(fp,"width=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
 		llx, lly, urx-llx, ury-lly);
+	    fprintf(fp,"<style>");
+	    fprintf(fp,"   rect:hover {");
+	    fprintf(fp,"      opacity: 0.5");
+	    fprintf(fp,"   }\n");
+	    fprintf(fp,"</style>\n");
 	}
 	// fprintf(fp,"<h1> %s </h1>\n", dev);
 	// fprintf(fp,"<!-- program %s -->\n", prog);
-	fprintf(fp,"<style>");
-	fprintf(fp,"   rect:hover {");
-	fprintf(fp,"      opacity: 0.5");
-	fprintf(fp,"   }\n");
-	fprintf(fp,"</style>\n");
     } else if (outputtype == GERBER) {
        fprintf(fp,"G4 Title: %s*\n", dev);
        fprintf(fp,"G4 Creator: %s*\n", prog);
@@ -506,7 +513,7 @@ void ps_comment(char *comment)
 	} else if (outputtype == SVG) {		// Scalable vector graphics
 	    // fprintf(fp, "<!--%s-->\n",comment);
 	} else if (outputtype == WEB) {		// WEB = html
-	    fprintf(fp, "<!--%s-->\n",comment);
+	    // fprintf(fp, "<!--%s-->\n",comment);
 	} else if (outputtype == AUTOPLOT) {	// AUTOPLOT
 	    fprintf(fp, "#%s\n",comment);
 	}
@@ -530,7 +537,8 @@ void ps_end_line()
        }
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,
-       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:1.5\"/>\n",pen_to_svg_color(this_pen));
+       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:%g;stroke-linejoin:round;\"/>\n",
+	pen_to_svg_color(this_pen),linewidth);
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");
@@ -753,19 +761,28 @@ void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double
     // FIXME: protect against null pointer...
     char *p;	// link to prefix
     char *s;	// link to suffix
+    char *e;
+    char buf[MAXBUF];
+
+    strncpy(buf, name, MAXBUF);
 
     if ((fp != NULL) && outputtype == WEB && nest==1) {
 
-	p=EVget("PIG_HTML_PREFIX");
-	s=EVget("PIG_HTML_SUFFIX");
-
+	if ((e=strstr(buf, "_sym"))!=NULL) {	// check if sym
+	    *e = '\0';				// truncate suffix
+	    p=EVget("PIG_HTML_SYM_PREFIX");
+	    s=EVget("PIG_HTML_SYM_SUFFIX");
+	} else {
+	    p=EVget("PIG_HTML_PREFIX");
+	    s=EVget("PIG_HTML_SUFFIX");
+	}
 
         ymin = bblly-(ymin-bbury);
         ymax = bblly-(ymax-bbury);
 	V_to_R(&xmin,&ymin);
 	V_to_R(&xmax,&ymax);
-	fprintf(fp, "\n<!-- %g %g %g %g-->\n", xmin, ymin, xmax, ymax);
-	fprintf(fp, "\n<a xlink:href=\"%s%s%s\">\n", p, name, s);
+	// fprintf(fp, "\n<!-- %g %g %g %g-->\n", xmin, ymin, xmax, ymax);
+	fprintf(fp, "\n<a xlink:href=\"%s%s%s\">\n", p, buf, s);
 	fprintf(fp, "    <rect x=\"%g\" y=\"%g\" fill=\"#ff0\" opacity=\"0.2\" width=\"%g\" height=\"%g\"/>\n",
 	xmin,ymax,xmax-xmin,ymin-ymax);
 	fprintf(fp, "</a>\n");
