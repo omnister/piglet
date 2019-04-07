@@ -9,6 +9,8 @@
 #include "rlgetc.h"
 #include "lock.h"
 
+#define UNUSED(x) (void)(x)
+
 #define POINT  0
 #define REGION 1
 
@@ -48,6 +50,7 @@ DB_DEFLIST *p_best;
 
 int com_stretch(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,
           NUM1,	/* xysel, xyll: x1, yy1 */
 	  NUM2,	/* xyur:        x2, y2  */

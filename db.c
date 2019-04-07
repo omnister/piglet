@@ -18,6 +18,8 @@
 #include "ev.h"
 #include "postscript.h"
 
+#define UNUSED(x) (void)(x)
+
 #define EPS 1e-6
 #define MAXBUF 128	// maximum escaped text string
 
@@ -966,9 +968,9 @@ int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho)
 * smashing currently unimplemented
 * FIXME: include process file if process !=0 
 */
-
 int db_def_archive(DB_TAB *sp, int smash, int process) 
 {
+    UNUSED(process);
     FILE *fp;
     char buf[MAXFILENAME];
     int err=0;
@@ -1535,6 +1537,7 @@ void digeststr(char *s) {
 }
 
 void digestopts(OPTS *opts, char *optstring) {
+    UNUSED(optstring);
     digestdouble(opts->font_size);
     digestint(opts->mirror);
     digestint(opts->font_num);
@@ -3041,6 +3044,9 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
 void do_oval(DB_DEFLIST *def, BOUNDS *bb, int mode)
 {
+    UNUSED(def);
+    UNUSED(bb);
+    UNUSED(mode);
     // NUM x1,y1,x2,y2,x3,y3;
 
     /* printf("# rendering oval (not implemented)\n"); */

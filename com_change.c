@@ -13,6 +13,8 @@
 #include "eprintf.h"
 #include "opt_parse.h"
 
+#define UNUSED(x) (void)(x)
+
 #define MAXBUF 256
 
 /* 
@@ -24,7 +26,7 @@
 
 int com_change(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,COM1,NUM2,OPT,NUM3,COM2,NUM4,END} state = START;
 
     TOKEN token;

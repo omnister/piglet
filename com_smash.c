@@ -8,6 +8,8 @@
 #include "rubber.h"
 #include "rlgetc.h"
 
+#define UNUSED(x) (void)(x)
+
 #define POINT  0
 #define REGION 1
 
@@ -89,6 +91,7 @@ void smashrep(DB_DEFLIST *p_best) {
 
 int com_smash(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,NUM1,NUM2,END} state = START;
 
     int done=0;

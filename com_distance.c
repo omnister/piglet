@@ -7,6 +7,8 @@
 #include "rubber.h"
 #include "rlgetc.h"
 
+#define UNUSED(x) (void)(x)
+
 #define MAXDBUF 20
 
 /*
@@ -22,6 +24,7 @@ void draw_dist();
 
 int com_distance(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,NUM1,NUM2,END} state = START;
 
     double x2,y2;

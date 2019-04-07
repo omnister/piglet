@@ -8,6 +8,8 @@
 #include "xwin.h" 	
 #include "rubber.h"
 
+#define UNUSED(x) (void)(x)
+
 /* 
     measure the area of a component in the current device.
     AREA <restrictor> { xysel } ... <EOC>
@@ -15,7 +17,7 @@
 
 int com_area(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,END} state = START;
 
     TOKEN token;

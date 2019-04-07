@@ -25,6 +25,8 @@
 #include "postscript.h"
 #include "readshpfont.h"
 
+#define UNUSED(x) (void)(x)
+
 int readin();
 
 /* The names of functions that actually do the manipulation. */
@@ -190,6 +192,7 @@ void sighandler(); 	/* catch signal */
 
 int main(int argc, char **argv)
 {
+    UNUSED(argc);
     LEXER *lp;		/* lexer struct for main cmd loop */
     int err=0;
     char buf[128];
@@ -598,6 +601,7 @@ int add_arc(LEXER *lp, int *layer)
 
 int add_oval(LEXER *lp, int *layer)
 {
+    UNUSED(layer);
     printf("in add_oval (unimplemented)\n");
     token_flush_EOL(lp);
     return(1);
@@ -607,6 +611,7 @@ int add_oval(LEXER *lp, int *layer)
 
 int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;
@@ -680,6 +685,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 
 int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char buf[128];
@@ -745,6 +751,7 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 
 int com_bye(LEXER *lp, char *arg)		/* terminate edit session */
 {
+    UNUSED(arg);
     /* The user wishes to quit using this program */
     /* two consecutive BYE requests will force an exit */
     /* Just set quit_now non-zero. */
@@ -775,6 +782,8 @@ int com_bye(LEXER *lp, char *arg)		/* terminate edit session */
 
 int com_date(LEXER *lp, char *arg)		/* print date and time to console */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     char buf[MAXFILENAME]; 
     time_t time_now;
 
@@ -790,6 +799,7 @@ int com_date(LEXER *lp, char *arg)		/* print date and time to console */
 
 int com_display(LEXER *lp, char *arg)	/* turn the display on or off */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     // char buf[128];
@@ -854,6 +864,7 @@ int com_display(LEXER *lp, char *arg)	/* turn the display on or off */
 
 int com_dump(LEXER *lp, char *arg)	/* dump graphics window to file or printer */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char cmd[256];
@@ -990,6 +1001,7 @@ int com_dump(LEXER *lp, char *arg)	/* dump graphics window to file or printer */
 
 int com_exit(LEXER *lp, char *arg)		/* leave an EDIT, PROCESS, SEARCH subsystem */
 {
+    UNUSED(arg);
     int debug=0;
     int editlevel;
     static int linenumber;	/* remember last request so that */
@@ -1034,6 +1046,7 @@ int com_exit(LEXER *lp, char *arg)		/* leave an EDIT, PROCESS, SEARCH subsystem 
 
 int com_files(LEXER *lp, char *arg)		/* purge named files */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     // char buf[128];
@@ -1070,6 +1083,7 @@ int com_files(LEXER *lp, char *arg)		/* purge named files */
 
 int com_fsize(LEXER *lp, char *arg)	/* Set the default font size for text and notes */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     int fsize;
@@ -1133,6 +1147,7 @@ int com_fsize(LEXER *lp, char *arg)	/* Set the default font size for text and no
 
 int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     // char buf[128];
@@ -1282,6 +1297,7 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
 
 int com_group(LEXER *lp, char *arg)	/* create a device from existing components */
 {
+    UNUSED(lp);
     printf("    com_group %s\n", arg);
     return (0);
 }
@@ -1290,6 +1306,7 @@ int com_group(LEXER *lp, char *arg)	/* create a device from existing components 
 
 int com_help(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;
@@ -1417,6 +1434,7 @@ int readin(		/* work routine for com_input */
 
 int com_input(LEXER *lp, char *arg)		/* take command input from a file */
 {
+    UNUSED(arg);
     TOKEN token;
     char buf[MAXFILENAME];
     char *word;
@@ -1470,12 +1488,15 @@ int com_input(LEXER *lp, char *arg)		/* take command input from a file */
 
 int com_interrupt(LEXER *lp, char *arg)	/* interrupt an ADD to issue another command */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_interrupt\n");
     return (0);
 }
 
 int com_layer(LEXER *lp, char *arg)		/* set a default layer number */
 {
+    UNUSED(arg);
     extern int def_layer;
 
     TOKEN token;
@@ -1534,6 +1555,7 @@ int com_layer(LEXER *lp, char *arg)		/* set a default layer number */
 
 int com_level(LEXER *lp, char *arg)	/* set the logical level of the current device */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     int level;
@@ -1592,7 +1614,7 @@ int com_level(LEXER *lp, char *arg)	/* set the logical level of the current devi
 
 int com_list(LEXER *lp, char *arg)	/* list information about the current environment */
 {
-
+    UNUSED(arg);
     if (lp->mode == EDI) {
 	if (currep != NULL) {
 	    db_list(currep);
@@ -1613,6 +1635,7 @@ int com_list(LEXER *lp, char *arg)	/* list information about the current environ
 
 int com_lock(LEXER *lp, char *arg)		/* set the default lock angle */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     double angle;
@@ -1673,6 +1696,7 @@ int com_lock(LEXER *lp, char *arg)		/* set the default lock angle */
 
 int com_eval(LEXER *lp, char *arg)		/* evaluate a MACRO */
 {
+    UNUSED(arg);
     TOKEN token;
     char *word;
     char buf[6];
@@ -1702,6 +1726,7 @@ int com_eval(LEXER *lp, char *arg)		/* evaluate a MACRO */
 
 int com_macro(LEXER *lp, char *arg)		/* enter the MACRO subsystem */
 {
+    UNUSED(arg);
     printf("    com_macro\n");
     if (lp->mode == MAIN) {
 	lp->mode = MAC;
@@ -1713,6 +1738,8 @@ int com_macro(LEXER *lp, char *arg)		/* enter the MACRO subsystem */
 
 int com_menu(LEXER *lp, char *arg)		/* change or save the current menu */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_menu\n");
     return (0);
 }
@@ -1722,6 +1749,7 @@ int com_menu(LEXER *lp, char *arg)		/* change or save the current menu */
 
 int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current device */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;
@@ -1861,6 +1889,7 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 
 int com_process(LEXER *lp, char *arg)	/* enter the PROCESS subsystem */
 {
+    UNUSED(arg);
     printf("    com_process\n");
     if (lp->mode == MAIN) {
 	lp->mode = PRO;
@@ -1872,6 +1901,7 @@ int com_process(LEXER *lp, char *arg)	/* enter the PROCESS subsystem */
 
 int com_retrieve(LEXER *lp, char *arg)	/* read commands from an ARCHIVE file */
 {
+    UNUSED(arg);
     TOKEN token;
     char buf[MAXFILENAME];
     char *word;
@@ -2029,6 +2059,7 @@ int com_save(LEXER *lp, char *arg)	/* save the current file or device to disk */
 
 int com_search(LEXER *lp, char *arg)		/* modify the search path */
 {
+    UNUSED(arg);
     printf("    com_search\n");
 
     if (lp->mode == MAIN) {
@@ -2046,12 +2077,16 @@ int com_search(LEXER *lp, char *arg)		/* modify the search path */
 
 int com_split(LEXER *lp, char *arg)		/* cut a component into two halves */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_split\n");
     return (0);
 }
 
 int com_step(LEXER *lp, char *arg)	/* copy a component in an array fashion */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_step\n");
     return (0);
 }
@@ -2061,6 +2096,8 @@ int com_step(LEXER *lp, char *arg)	/* copy a component in an array fashion */
 
 int com_time(LEXER *lp, char *arg)		/* print the system time to console */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     char buf[MAXFILENAME]; 
     static time_t time_old = 0;
     static time_t time_now = 0;
@@ -2079,12 +2116,15 @@ int com_time(LEXER *lp, char *arg)		/* print the system time to console */
 
 int com_trace(LEXER *lp, char *arg)		/* highlight named signals */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_trace\n");
     return (0);
 }
 
 int com_tslant(LEXER *lp, char *arg)	/* set the default font slant for italic text and notes */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     int slant;
@@ -2146,6 +2186,8 @@ int com_tslant(LEXER *lp, char *arg)	/* set the default font slant for italic te
 
 int old_com_units(LEXER *lp, char *arg)	/* set editor resolution and user unit type */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     // FIXME: currently the grid resolution is hardwired in com_grid() in the UNITS variable;
     // com_units should be able to set and query the value here
     
@@ -2155,6 +2197,7 @@ int old_com_units(LEXER *lp, char *arg)	/* set editor resolution and user unit t
 
 int com_units(LEXER *lp, char *arg)		/* set a default layer number */
 {
+    UNUSED(arg);
     extern int def_units;
 
     TOKEN token;
@@ -2213,6 +2256,8 @@ int com_units(LEXER *lp, char *arg)		/* set a default layer number */
 
 int com_version(LEXER *lp, char *arg)	/* identify the version number of program */
 {
+    UNUSED(lp);
+    UNUSED(arg);
     printf("    com_version: %s\n", VERSION);
     return (0);
 }

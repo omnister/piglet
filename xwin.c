@@ -26,6 +26,8 @@
 #include "path.h"
 #include "ev.h"
 
+#define UNUSED(x) (void)(x)
+
 extern void do_win();
 void xwin_window_parms_only();
 
@@ -1948,6 +1950,7 @@ int dump_window(
     unsigned int height,
     char *cmd
 ) {
+    UNUSED(gc);
     XImage *xi;
     int x, y;
     unsigned long pixel;

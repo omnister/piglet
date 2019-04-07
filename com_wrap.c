@@ -8,6 +8,8 @@
 #include "xwin.h" 	
 #include "rubber.h"
 
+#define UNUSED(x) (void)(x)
+
 static double x1, y1, x2, y2, x3, y3;
 void wrap_draw_box();
 STACK *stack;
@@ -21,7 +23,7 @@ static int instcounter=0;	/* used for generating uniq instance names */
 
 int com_wrap(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,NUM2,NUM3,END} state = START;
 
     int done=0;

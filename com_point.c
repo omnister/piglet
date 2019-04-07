@@ -3,6 +3,8 @@
 #include "token.h"
 #include "rlgetc.h"
 
+#define UNUSED(x) (void)(x)
+
 /*
  *
  * POI xypnt ...
@@ -15,6 +17,7 @@ static double x1, y1;
 
 int com_point(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,NUM1,END} state = START;
 
     int done=0;

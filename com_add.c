@@ -7,6 +7,8 @@
 #include "token.h"
 #include "xwin.h" 	
 
+#define UNUSED(x) (void)(x)
+
 /* 
     Add a component to the current device.
     This routine checks for <component[layer]> or <instance_name>
@@ -15,6 +17,7 @@
 
 int com_add(LEXER *lp, char *arg)		
 {
+    UNUSED(arg);
     TOKEN token;
     char *word;
     int done=0;

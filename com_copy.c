@@ -8,6 +8,8 @@
 #include "xwin.h" 	
 #include "rubber.h"
 
+#define UNUSED(x) (void)(x)
+
 #define POINT 0
 #define REGION 1
 
@@ -27,7 +29,7 @@ STACK *tmp;
 
 int com_copy(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,NUM2,NUM3,NUM4,END} state = START;
 
     TOKEN token;
