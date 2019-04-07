@@ -15,6 +15,7 @@
 unsigned char *glyphtab[258];		// pointers to byte arrays
 
 typedef enum {
+    PARSE2_UNUSED = -1, /* forces enum to be a signed integral type */
     EOL,
     LP,				// '(' left paren
     RP,				// ')' right paren

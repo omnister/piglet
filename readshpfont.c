@@ -34,6 +34,7 @@ int nfonts=0;
 FONT *fonttab[MAXFONTS];
 
 typedef enum {
+    READSHPFONT_UNUSED = -1, /* forces enum to be a signed integral type */
     EOL,
     LP,				// '(' left paren
     RP,				// ')' right paren
