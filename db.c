@@ -1,5 +1,6 @@
 #include <sys/stat.h>	/* for mkdir() */
 #include <sys/types.h>	/* for mkdir() */
+#include <stddef.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>	/* for strnlen... */
@@ -1517,7 +1518,7 @@ void digestdouble(double a) {
     extern int digestvalue;
     unsigned char *p;
     int debug=0;
-    int i;
+    size_t i;
 
     if (debug) printf("(%12.12g)", a);
     p = (unsigned char *) &a;

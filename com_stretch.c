@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
@@ -70,7 +71,7 @@ int com_stretch(LEXER *lp, char *arg)
     double *xselold,*yselold;
     double *xselfirst,*yselfirst;
     char instname[BUFSIZE];
-    int i;
+    size_t i;
 
     char *pinst = (char *) NULL;
     int mode=POINT;

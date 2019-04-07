@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -31,7 +32,7 @@ int com_delete(LEXER *lp, char *arg)
     TOKEN token;
     char *word;
     int valid_comp=0;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;

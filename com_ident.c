@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -44,7 +45,7 @@ int com_identify(LEXER *lp, char *arg)
     double area;
     DB_DEFLIST *p_prev = NULL;
     char *pinst = (char *) NULL;
-    int i;
+    size_t i;
     int debug=0;
     int mode=POINT;
     int done=0;

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -38,7 +39,7 @@ int com_change(LEXER *lp, char *arg)
     int retval;
     int valid_comp=0;
     double optval;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best = NULL;
     DB_TAB *p_tab;
     char instname[BUFSIZE];

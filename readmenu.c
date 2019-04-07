@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <stddef.h>
 #include <stdio.h>
 
 #include "readmenu.h"
@@ -117,7 +118,7 @@ int getcolor(
     char *s,  	/* a color string */
     int k	/* index of color */
 ) {
-    int i;
+    size_t i;
     int n=0;
     int c;
     for (i=0; i<=strlen(s); i++) {

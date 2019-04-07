@@ -231,7 +231,7 @@ int initX()
     if (top_width < menu_width*2) {
        top_width = menu_width*2;
     }
-	if (top_height < menu_height) {
+	if ((menu_height > 0) && (top_height < (unsigned int)menu_height)) {
        top_height = menu_height;
     }
 

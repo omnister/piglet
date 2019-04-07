@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -36,7 +37,7 @@ int com_move(LEXER *lp, char *arg)
     int debug=0;
     int done=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_new = NULL;
     int mode=POINT;

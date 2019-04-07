@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
@@ -22,7 +23,7 @@ int com_add(LEXER *lp, char *arg)
     char *word;
     int done=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     int layer;
 
     int comp;

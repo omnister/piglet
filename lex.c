@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
@@ -1312,7 +1313,7 @@ int com_help(LEXER *lp, char *arg)
     char *word;
     int debug=0;
     register int i;
-    int j;
+    size_t j;
     int printed = 0;
     int size;
     char cmd[128];
