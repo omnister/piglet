@@ -376,7 +376,7 @@ int initX()
     xwin_grid_pts(10.0, 10.0, 2.0, 2.0, 0.0, 0.0);
     xwin_grid_color(1);
     xwin_grid_state(G_ON);
-    xwin_display_set_state(G_ON);
+    xwin_display_set_state(D_ON);
     xwin_window_set(-100.0,-100.0, 100.0, 100.0);
 
     /* initialize unitytransform */
