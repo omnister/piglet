@@ -3382,7 +3382,7 @@ void show_list(DB_TAB *currep, int layer)
 
 int getbits(unsigned int x, unsigned int p, unsigned int n)	
 {
-    return((x >> (p+1-n)) & ~(~0 << n));
+    return((x >> (p+1-n)) & ~((unsigned int)~0 << n));
 }
 
 void show_init(DB_TAB *currep) { /* set everyone visible, but RO */
