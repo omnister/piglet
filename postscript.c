@@ -436,7 +436,7 @@ void ps_preamble(
 	fprintf(fp,"/tr {translate} bind def\n");
 
 	fprintf(fp,"%% start stipple patterns\n");
-	int i,j; char *ps;
+	int i,j; unsigned char *ps;
 	for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
 	    fprintf(fp,"/p%d {\n",i);
 	    fprintf(fp,".5 .5 scale 8 8 true  matrix {<");

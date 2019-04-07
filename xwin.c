@@ -86,7 +86,7 @@ static int moved=0;
 
 #define icon_bitmap_width 20
 #define icon_bitmap_height 20
-static char icon_bitmap_bits[] = {
+static unsigned char icon_bitmap_bits[] = {
     0x60, 0x00, 0x01, 0xb0, 0x00, 0x07, 0x0c, 0x03, 0x00, 0x04, 0x04, 0x00,
     0xc2, 0x18, 0x00, 0x03, 0x30, 0x00, 0x01, 0x60, 0x00, 0xf1, 0xdf, 0x00,
     0xc1, 0xf0, 0x01, 0x82, 0x01, 0x00, 0x02, 0x03, 0x00, 0x02, 0x0c, 0x00,
@@ -229,7 +229,7 @@ int initX()
     if (top_width < menu_width*2) {
        top_width = menu_width*2;
     }
-    if (top_height < menu_height) {
+	if (top_height < menu_height) {
        top_height = menu_height;
     }
 
@@ -294,7 +294,7 @@ int initX()
 
     /* Create pixmap of depth 1 (bitmap) for icon */
     icon_pixmap = XCreateBitmapFromData(dpy, win,
-        icon_bitmap_bits, icon_bitmap_width, icon_bitmap_height);
+        (const char *)icon_bitmap_bits, icon_bitmap_width, icon_bitmap_height);
     
     size_hints->flags = PPosition | PSize | PMinSize;
     size_hints->min_width =  300;
