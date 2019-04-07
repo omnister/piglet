@@ -2410,7 +2410,7 @@ void emit(
 	    R_to_V(&xp, &yp);
 
 	    bb->xmax += (double) pickcheck(xxold, yyold, x, y, xp, yp, 3.0);
-	} else if ((mode == D_RUBBER)) { /* xor rubber band drawing */
+	} else if (mode == D_RUBBER) { /* xor rubber band drawing */
 	    if (drawon) {
 		if (X && (nseg > 1)) {
 		    xwin_rubber_line((int)xxold,(int)yyold,(int)x,(int)y);
