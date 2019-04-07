@@ -567,7 +567,7 @@ void ps_end_line()
 
 void ps_flush() {
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
     } 
     in_line=0;
 }
@@ -588,7 +588,7 @@ void ps_start_line(double x1, double y1, int filled)
     if (debug) printf("ps_start_line:\n");
 
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
     } 
     in_line++;
 
@@ -716,7 +716,7 @@ void ps_postamble()
 
     if (debug) printf("ps_postamble:\n");
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
 	in_line=0;
     } 
     if (outputtype == POSTSCRIPT) {
