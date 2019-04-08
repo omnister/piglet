@@ -153,7 +153,7 @@ BOOLEAN EVinit() /* initialize symbol table from environment */
     char name[200];	/* FIXME: can overflow */
 
     for (i=0; i<HASHSIZE; i++) {
-       hashtab[HASHSIZE]=NULL;
+       hashtab[i]=NULL;
     }
 
     for (i=0; environ[i] != NULL; i++) {

@@ -15,7 +15,7 @@ extern Window win;
 
 Pixmap stipple[MAXSTIP];
 
-char stip_src[MAXSTIP][STIPW] = {
+unsigned char stip_src[MAXSTIP][STIPW] = {
 
     /* EQU :F1 solid fill */
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* solid fill */

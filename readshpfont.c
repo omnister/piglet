@@ -16,8 +16,10 @@
 #define MAXPUSH 4		// max number of pushed back tokens
 #define MAXBUF 256
 
+#define MAXGLYPHS 258
+
 // for now we just have one font table
-unsigned char *glyphtab[258];		// pointers to byte arrays
+unsigned char *glyphtab[MAXGLYPHS];		// pointers to byte arrays
 
 // -----------------------------------------
 // future: create a linked list of fonttables
@@ -27,13 +29,14 @@ unsigned char *glyphtab[258];		// pointers to byte arrays
 typedef struct font {
    char *fontname;
    char *fontpath;
-   unsigned char *glyphtab[258]; // pointers to byte arrays
+   unsigned char *glyphtab[MAXGLYPHS]; // pointers to byte arrays
 } FONT;
 
 int nfonts=0;
 FONT *fonttab[MAXFONTS];
 
 typedef enum {
+    READSHPFONT_UNUSED = -1, /* forces enum to be a signed integral type */
     EOL,
     LP,				// '(' left paren
     RP,				// ')' right paren
@@ -462,7 +465,6 @@ void shp_writechar(
 	     p3 = (signed char) (f->glyphtab[glyphnum][index++]);
 	     if (!skip) bulge_arc(pendown, xx, yy, scale, xf, \
 	     	(double) p1, (double) p2,(double) p3, bb, mode);
-	     int done;
 	     for (done=0; !done; ) {
 		 p1 = (signed char) (f->glyphtab[glyphnum][index++]);
 		 p2 = (signed char) (f->glyphtab[glyphnum][index++]);
@@ -532,7 +534,6 @@ void shp_writechar(
 
 void shp_fontinit() {
    int i;
-   //
    // do anything needed to initialize font structures
    for (i=0; i<MAXFONTS; i++) {
       fonttab[i]=NULL;
@@ -540,9 +541,13 @@ void shp_fontinit() {
 }
 
 void freefont(FONT *f) {
+   int i;
    if (f==NULL) return;
-   if (f->glyphtab != NULL) {
-      free(f->glyphtab);
+    
+   for (i=0; i<MAXGLYPHS; i++) {
+       if (f->glyphtab[i] != NULL) {
+	  free(f->glyphtab[i]);
+       }
    }
    if (f->fontpath != NULL) {
       free(f->fontpath);
@@ -563,7 +568,8 @@ FONT *newfont() {
 	exit(1);
     } 
     f->fontname = NULL;
-    for (i=0; i<258; i++) {
+    f->fontpath = NULL;
+    for (i=0; i<MAXGLYPHS; i++) {
 	f->glyphtab[i] = NULL;
     }
 
@@ -855,7 +861,7 @@ void shp_testfont(int id) {
 
     printf("back\n");
     printf("isotropic\n");
-    for (i=1; i<258; i++) {
+    for (i=1; i<MAXGLYPHS; i++) {
       if (f->glyphtab[i] != NULL) {
 	    shp_writechar((unsigned int) i, &xx, &yy, &xf, id, &bb, mode);
        }
