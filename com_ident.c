@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -6,6 +7,8 @@
 #include "token.h"
 #include "rubber.h"
 #include "rlgetc.h"
+
+#define UNUSED(x) (void)(x)
 
 #define POINT  0
 #define REGION 1
@@ -32,6 +35,7 @@ STACK *stack;
 
 int com_identify(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,NUM1,NUM2,END} state = START;
 
     TOKEN token;
@@ -41,7 +45,7 @@ int com_identify(LEXER *lp, char *arg)
     double area;
     DB_DEFLIST *p_prev = NULL;
     char *pinst = (char *) NULL;
-    int i;
+    size_t i;
     int debug=0;
     int mode=POINT;
     int done=0;

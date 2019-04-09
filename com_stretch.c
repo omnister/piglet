@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
@@ -8,6 +9,8 @@
 #include "rubber.h"
 #include "rlgetc.h"
 #include "lock.h"
+
+#define UNUSED(x) (void)(x)
 
 #define POINT  0
 #define REGION 1
@@ -48,6 +51,7 @@ DB_DEFLIST *p_best;
 
 int com_stretch(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,
           NUM1,	/* xysel, xyll: x1, yy1 */
 	  NUM2,	/* xyur:        x2, y2  */
@@ -67,7 +71,7 @@ int com_stretch(LEXER *lp, char *arg)
     double *xselold,*yselold;
     double *xselfirst,*yselfirst;
     char instname[BUFSIZE];
-    int i;
+    size_t i;
 
     char *pinst = (char *) NULL;
     int mode=POINT;

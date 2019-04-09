@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -8,6 +9,8 @@
 #include "xwin.h" 	
 #include "rubber.h"
 
+#define UNUSED(x) (void)(x)
+
 /* 
     measure the area of a component in the current device.
     AREA <restrictor> { xysel } ... <EOC>
@@ -15,7 +18,7 @@
 
 int com_area(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,END} state = START;
 
     TOKEN token;
@@ -23,7 +26,7 @@ int com_area(LEXER *lp, char *arg)
     int debug=0;
     int done=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_prev = NULL;
     double x1, y1;

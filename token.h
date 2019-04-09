@@ -1,6 +1,7 @@
 #define BUFSIZE 1024
 
 typedef enum {
+    TOKEN_UNUSED = -1, /* forces enum to be a signed integral type */
     IDENT, 	/* identifier */			
     CMD,	/* command (an ident found in commands[]) */
     QUOTE, 	/* quoted string */

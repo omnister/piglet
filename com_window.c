@@ -8,6 +8,8 @@
 #include "eprintf.h"
 #include "equate.h"
 
+#define UNUSED(x) (void)(x)
+
 static double x1, y1;
 int fit=0;		/* don't fit */
 int nest=9;		/* default nesting level */
@@ -20,6 +22,7 @@ int do_win();
 
 int com_window(LEXER *lp, char *arg)
 {
+    UNUSED(arg);
     enum {START,NUM1,COM1,NUM2,NUM3,COM2,NUM4,END} state = START;
 
     double scale=1.0;	/* default scale */
@@ -182,7 +185,7 @@ int com_window(LEXER *lp, char *arg)
 }
 
 int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale) {
-
+    UNUSED(lp);
     extern int fit, nest;
     double dx, dy, xmin, ymin, xmax, ymax, tmp;
     int debug=0;

@@ -8,10 +8,13 @@
 #include "xwin.h" 	
 #include "rubber.h"
 
+#define UNUSED(x) (void)(x)
+
 int com_purge(lp, arg)		/* remove device from memory and disk */
 LEXER *lp;
 char *arg;
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;

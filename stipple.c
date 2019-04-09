@@ -100,7 +100,7 @@ void init_stipples() {
     int i,j;
     unsigned char a;
     for (i=0; i<50; i++) {	/* deterministic stipples */
-	stipple[i] = XCreateBitmapFromData(dpy, win, stip_src[i], 
+	stipple[i] = XCreateBitmapFromData(dpy, win, (const char *)stip_src[i], 
 	    (unsigned int) STIPW, (unsigned int) STIPH);
     }
     for (; i<MAXSTIP; i++) {	/* make random stipples */
@@ -112,7 +112,7 @@ void init_stipples() {
 	    /* a &= (unsigned char) (drand48()*255.0); */
 	    stip_src[i][j] = (unsigned char) a;
 	}
-	stipple[i] = XCreateBitmapFromData(dpy, win, stip_src[i],
+	stipple[i] = XCreateBitmapFromData(dpy, win, (const char *)stip_src[i],
 	    (unsigned int) STIPW, (unsigned int) STIPH);
     }
 }
@@ -125,7 +125,7 @@ int get_stipple_index(int fill, int pen) {
    }
 }
 
-char *get_stipple_bits(int i) {
+unsigned char *get_stipple_bits(int i) {
 
    if (i >= MAXSTIP-1) {
       return NULL;

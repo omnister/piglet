@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -7,6 +8,8 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+
+#define UNUSED(x) (void)(x)
 
 static double x1, y1, x2, y2, x3, y3;
 void wrap_draw_box();
@@ -21,7 +24,7 @@ static int instcounter=0;	/* used for generating uniq instance names */
 
 int com_wrap(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,NUM2,NUM3,END} state = START;
 
     int done=0;
@@ -29,7 +32,7 @@ int com_wrap(LEXER *lp, char *arg)
     char *word;
     int debug=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_new;
     DB_TAB *newrep;

@@ -1,0 +1,25 @@
+# Default behavior, for when core.autocrlf is not explicitly set
+* text=auto
+
+# Source files
+*.1p           text
+*.c            text diff=cpp  linguist-language=C
+*.F            text           linguist-detectable=false
+*.h            text diff=cpp  linguist-language=C
+*.html         text diff=html
+*.P            text           linguist-detectable=false
+*.shp          text eol=crlf
+*_I            text
+.editorconfig  text
+.gitattributes text
+.gitignore     text
+Makefile       text
+
+# Binary files
+*.d     binary linguist-detectable=false
+*.swp   binary
+parse2  binary
+path    binary
+readshp binary
+selpnt  binary
+stack   binary

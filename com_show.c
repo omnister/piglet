@@ -7,6 +7,8 @@
 #include "token.h"
 #include "rlgetc.h"
 
+#define UNUSED(x) (void)(x)
+
 /*
 SHOW {+|-|#}[EACILN0PRT]<layer>
 
@@ -30,6 +32,7 @@ SHOW {+|-|#}[EACILN0PRT]<layer>
 
 int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -7,6 +8,8 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+
+#define UNUSED(x) (void)(x)
 
 #define POINT 0
 #define REGION 1
@@ -26,7 +29,7 @@ STACK *tmp;
 
 int com_move(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,NUM2,NUM3,NUM4,END} state = START;
 
     TOKEN token;
@@ -34,7 +37,7 @@ int com_move(LEXER *lp, char *arg)
     int debug=0;
     int done=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best;
     DB_DEFLIST *p_new = NULL;
     int mode=POINT;

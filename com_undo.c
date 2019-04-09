@@ -7,6 +7,8 @@
 #include "token.h"
 #include "xwin.h" 	
 
+#define UNUSED(x) (void)(x)
+
 //
 // This is piglet's undo/redo facility.
 //
@@ -43,6 +45,7 @@
 
 int com_undo(LEXER *lp, char *arg)		
 {
+    UNUSED(arg);
     DB_DEFLIST *a;
 
     /* check that we are editing a rep */
@@ -74,6 +77,7 @@ int com_undo(LEXER *lp, char *arg)
 
 int com_redo(LEXER *lp, char *arg)		
 {
+    UNUSED(arg);
     DB_DEFLIST *a;
 
     /* check that we are editing a rep */

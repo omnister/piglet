@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper */
@@ -7,6 +8,8 @@
 #include "token.h"
 #include "xwin.h" 	
 
+#define UNUSED(x) (void)(x)
+
 /* 
     Add a component to the current device.
     This routine checks for <component[layer]> or <instance_name>
@@ -15,11 +18,12 @@
 
 int com_add(LEXER *lp, char *arg)		
 {
+    UNUSED(arg);
     TOKEN token;
     char *word;
     int done=0;
     int valid_comp=0;
-    int i;
+    size_t i;
     int layer;
 
     int comp;

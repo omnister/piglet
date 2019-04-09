@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>		/* for strchr() */
 #include <ctype.h>		/* for toupper() */
@@ -13,6 +14,8 @@
 #include "eprintf.h"
 #include "opt_parse.h"
 
+#define UNUSED(x) (void)(x)
+
 #define MAXBUF 256
 
 /* 
@@ -24,7 +27,7 @@
 
 int com_change(LEXER *lp, char *arg)		
 {
-
+    UNUSED(arg);
     enum {START,NUM1,COM1,NUM2,OPT,NUM3,COM2,NUM4,END} state = START;
 
     TOKEN token;
@@ -36,7 +39,7 @@ int com_change(LEXER *lp, char *arg)
     int retval;
     int valid_comp=0;
     double optval;
-    int i;
+    size_t i;
     DB_DEFLIST *p_best = NULL;
     DB_TAB *p_tab;
     char instname[BUFSIZE];

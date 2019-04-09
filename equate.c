@@ -143,7 +143,7 @@ void equate_toggle_override(int layer) {
         printf("invalid layer %d\n", layer);
     }
 }
-int equate_get_override(layer) {	
+int equate_get_override(int layer) {
     if (layer < MAX_LAYER && layer >= 0) {
         return(equates[layer].flags.override);
     }

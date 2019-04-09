@@ -14,6 +14,7 @@
 #include "rlgetc.h"
 #include "ev.h"
 
+#define UNUSED(x) (void)(x)
 
 typedef void (*sighandler_t)(int);
 
@@ -56,6 +57,7 @@ int pig_system(char *s) {
 
 int com_echo(LEXER *lp, char *arg)	/* echo variables */
 {
+    UNUSED(arg);
     char *word;	
     TOKEN token;
     int debug=0;
@@ -72,6 +74,7 @@ int com_echo(LEXER *lp, char *arg)	/* echo variables */
 
 int com_define(LEXER *lp, char *arg)	/* set macro definition */
 {
+    UNUSED(arg);
     int debug = 0;
     char *word;
     char var[128];
@@ -111,6 +114,7 @@ int com_define(LEXER *lp, char *arg)	/* set macro definition */
 
 int com_set(LEXER *lp, char *arg)	/* set environment variables */
 {
+    UNUSED(arg);
     int debug = 0;
     char *word;
     char var[128];
@@ -175,6 +179,7 @@ int com_set(LEXER *lp, char *arg)	/* set environment variables */
 
 int com_shell(LEXER *lp, char *arg)		/* run a program from within the editor */
 {
+    UNUSED(arg);
     int debug = 0;
     // char *shell;
     char cmd[1024];

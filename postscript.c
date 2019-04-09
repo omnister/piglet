@@ -436,7 +436,7 @@ void ps_preamble(
 	fprintf(fp,"/tr {translate} bind def\n");
 
 	fprintf(fp,"%% start stipple patterns\n");
-	int i,j; char *ps;
+	int i,j; unsigned char *ps;
 	for (i=0;(ps=get_stipple_bits(i))!=NULL;i++) {
 	    fprintf(fp,"/p%d {\n",i);
 	    fprintf(fp,".5 .5 scale 8 8 true  matrix {<");
@@ -567,7 +567,7 @@ void ps_end_line()
 
 void ps_flush() {
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
     } 
     in_line=0;
 }
@@ -588,7 +588,7 @@ void ps_start_line(double x1, double y1, int filled)
     if (debug) printf("ps_start_line:\n");
 
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
     } 
     in_line++;
 
@@ -716,7 +716,7 @@ void ps_postamble()
 
     if (debug) printf("ps_postamble:\n");
     if (in_line) {
-    	ps_end_line(fp);
+    	ps_end_line();
 	in_line=0;
     } 
     if (outputtype == POSTSCRIPT) {

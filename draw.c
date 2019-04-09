@@ -11,6 +11,8 @@
 #include "ev.h"
 #include "readfont.h"
 
+#define UNUSED(x) (void)(x)
+
 #define FUZZBAND 0.01	/* how big the fuzz around lines is as */
                         /* a fraction of minimum window dimension */
 			/* for the purpose of picking objects */
@@ -2024,6 +2026,8 @@ int db_render(
 
 void startpoly(BOUNDS *bb, int mode)
 {
+    UNUSED(bb);
+    UNUSED(mode);
     filled_object = 1;		/* global for managing polygon filling */
     n_poly_points = 0;		/* number of points in filled polygon */
     // if (!X) {
@@ -2406,7 +2410,7 @@ void emit(
 	    R_to_V(&xp, &yp);
 
 	    bb->xmax += (double) pickcheck(xxold, yyold, x, y, xp, yp, 3.0);
-	} else if ((mode == D_RUBBER)) { /* xor rubber band drawing */
+	} else if (mode == D_RUBBER) { /* xor rubber band drawing */
 	    if (drawon) {
 		if (X && (nseg > 1)) {
 		    xwin_rubber_line((int)xxold,(int)yyold,(int)x,(int)y);
@@ -2570,6 +2574,8 @@ int pickcheck(
 
 void jump(BOUNDS *bb, int mode) 
 {
+    UNUSED(bb);
+    UNUSED(mode);
     nseg=0;  
     filled_object = 0;		/* automatically close polygon */
 }

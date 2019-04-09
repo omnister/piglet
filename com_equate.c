@@ -8,10 +8,13 @@
 #include "rlgetc.h"
 #include "equate.h"
 
+#define UNUSED(x) (void)(x)
+
 #define MAXBUF 128
 
 int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 {
+    UNUSED(arg);
     TOKEN token;
     int done=0;
     char *word;
