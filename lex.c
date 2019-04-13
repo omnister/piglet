@@ -221,6 +221,11 @@ int main(int argc, char **argv)
 	return(err);
     }
 
+    if (!EVinit()) {
+    	 printf("can't initialize environment\n");
+     	 exit(6);
+    }
+
     /* set default environment variables */
 
     EVset("PIG_PATH", PIG_PATH);		/* where piglet finds its files */
@@ -241,10 +246,6 @@ int main(int argc, char **argv)
 
     license();			/* print GPL notice */
 
-    if (!EVinit()) {
-    	 printf("can't initialize environment\n");
-     	 exit(6);
-    }
 
     pig_path=EVget("PIG_PATH");		// use default pig path
 
