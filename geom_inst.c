@@ -68,7 +68,7 @@ int add_inst(LEXER *lp, char *inst_name)
     double x1, y1;	// pick value
     double x2, y2;	// pick value
     double x3, y3;	// pick value
-    double xold, yold;	// previous pick value to suppress double pics
+    double xold=0.0, yold=0.0;	// previous pick value to suppress double pics
     int numpicks=0;	// number of picks
     int done=0;
     TOKEN token;

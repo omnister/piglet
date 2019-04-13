@@ -38,7 +38,7 @@ int com_move(LEXER *lp, char *arg)
     int done=0;
     int valid_comp=0;
     size_t i;
-    DB_DEFLIST *p_best;
+    DB_DEFLIST *p_best = NULL;
     DB_DEFLIST *p_new = NULL;
     int mode=POINT;
     char instname[BUFSIZE];

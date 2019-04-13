@@ -153,6 +153,7 @@ int getcolor(
 		n++;
 	    	break;
 	    default:
+		c=7;
 	    	break;
 	}
 	if (n==k) {

@@ -42,7 +42,7 @@ int add_poly(LEXER *lp, int *layer)
 
     int debug=0;
     int done=0;
-    int nsegs;
+    int nsegs=0;
     TOKEN token;
     char *word;
     static double xold, yold;

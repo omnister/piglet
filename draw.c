@@ -303,6 +303,7 @@ DB_DEFLIST *db_ident(
 	    layer = 0;
 	    break;
 	default:
+	    layer = 0;
 	    printf("error in db_ident switch\n");
 	    break;
 	}
@@ -486,6 +487,7 @@ SELPNT *db_ident2(
 	    layer = 0;
 	    break;
 	default:
+	    layer = 0;
 	    printf("error in db_ident switch\n");
 	    break;
 	}
@@ -780,6 +782,7 @@ SELPNT *db_ident_region2(
 	    layer = 0;
 	    break;
 	default:
+	    layer = 0;
 	    printf("error in db_ident switch\n");
 	    break;
 	}
@@ -1046,6 +1049,7 @@ STACK *db_ident_region(
 	    layer = 0;
 	    break;
 	default:
+	    layer = 0;
 	    printf("error in db_ident switch\n");
 	    break;
 	}
@@ -1122,7 +1126,7 @@ double db_area(DB_DEFLIST *p)	/* return the area of component p */
 {
 
     double area = 0.0;
-    double x,y, xstart, ystart, xold, yold, r2;
+    double x=0.0,y=0.0, xstart=0.0, ystart=0.0, xold, yold, r2;
     COORDS *coords;
     int i, count;
     int debug=0;

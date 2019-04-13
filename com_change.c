@@ -239,6 +239,7 @@ int com_change(LEXER *lp, char *arg)
 			    break;
 		    }
 		} else {	/* let opt_parse do the rest */
+		    retval=-1;
 		    if (p_best != NULL) {
 			switch (p_best->type) {
 			    case ARC:

@@ -243,7 +243,7 @@ void  bulge_arc(
 
 	    #define BULGERES 8
 
-	    double xx1, yy1, xx2, yy2;
+	    double xx1=0.0, yy1=0.0, xx2, yy2;
 	    double theta;
 	    int i;
 	    for (i=0; i<=BULGERES; i++) {
@@ -805,6 +805,8 @@ void shp_writestring(
             yoff = -height;
             break;
         default:
+	    xoff = 0.0;
+	    yoff = 0.0;
             printf("bad justification: %d in writestring()\n", jf);
             break;
     }

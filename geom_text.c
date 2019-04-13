@@ -43,7 +43,7 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
     int nargs=0;
     char *type;
     int numadd = 0;
-    double xold, yold;
+    double xold=0.0, yold=0.0;
 
     opt_set_defaults( &opts );
     opts.font_size = db_get_font_size(); 	/* get default from FSIze command */

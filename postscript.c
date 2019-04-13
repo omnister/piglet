@@ -188,7 +188,7 @@ void ps_preamble(
     double xdel, ydel;
     double s1, s2, scale;
     double xmax, ymax;
-    int landscape;
+    int landscape=0;
     double tmp;
     int debug=1;
 
@@ -228,6 +228,9 @@ void ps_preamble(
 	    printf("setting portrait\n");
 	    landscape=0;
 	}
+    } else {
+	xmax=pdx*1000.0;
+	ymax=pdx*1000.0;
     }
 
     s1 = xmax/xdel;

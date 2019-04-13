@@ -174,7 +174,7 @@ double unary(void)
 
 double primary(void)
 {
-    double val;
+    double val=0.0;
     int c;
 	int debug=0;
 

@@ -64,7 +64,7 @@ DB_TAB * db_edit_pop(int level)
     int debug=0;
 
     DB_TAB *sp;
-    DB_TAB *sp_best;
+    DB_TAB *sp_best=NULL;
     int maxlevel=0;
 
     if (debug) printf("db_edit_pop: called with level %d\n", level);
@@ -2333,8 +2333,8 @@ void do_arc(DB_DEFLIST *def, BOUNDS *bb, int mode)
     double q, r, x0, y0;
     int debug=0;
 
-    COORDS *cp;
-    DB_DEFLIST *dp;
+    COORDS *cp=NULL;
+    DB_DEFLIST *dp=NULL;
     struct db_line *lp;
 
     x1=def->u.a->x1;	/* #1 end point */
@@ -2581,7 +2581,7 @@ void do_circ_orig(DB_DEFLIST *def, BOUNDS *bb, int mode)
     int res;
 
     COORDS *cp;
-    DB_DEFLIST *dp;
+    DB_DEFLIST *dp=NULL;
     struct db_line *lp;
 
     if ((def->u.c->opts->rotation) != 0.0) {
@@ -2774,13 +2774,13 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 
     double x1,y1,x2,y2,x3,y3,dx,dy,a;
     double xa,ya,xb,yb,xc,yc,xd,yd;
-    double l12, l23;
+    double l12=0.0, l23=0.0;
     double xx, yy;
     double k,dxn,dyn;
     double width=0.0;
     double height=0.0;
     double ratio;
-    double d,x,aa;
+    double d,x,aa=0.0;
     int segment;
     int debug=0;	/* set to 1 for copious debug output */
 
@@ -2805,7 +2805,7 @@ void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode)
 	// final results are identical.
 	aa = (x-d/2.0)*sqrt(2.0)+(width/2.0);
 	if (debug) printf("aa=%g\n",aa);
-    }
+    } 
 
     dx = dy = dxn  = dyn = 0.0;
 
