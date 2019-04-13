@@ -221,6 +221,8 @@ int main(int argc, char **argv)
 	return(err);
     }
 
+    /* initialize environment variable symbol table */
+
     if (!EVinit()) {
     	 printf("can't initialize environment\n");
      	 exit(6);

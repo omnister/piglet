@@ -31,7 +31,7 @@
 #define INST_OPTS "MRSXYZ"
 #define NONAME_OPTS "MRX"
 
-#define TEXT_MODE -2		// special :N opts for NOTE and TEXT
+#define TEXT_MODE -2	/* special :N opts for NOTE and TEXT */
 #define NOTE_MODE -1	
 
 #define MAX_LAYER 1024
@@ -170,13 +170,13 @@ typedef struct db_tab {
 
     int show[MAX_LAYER];	/* each component has its own show set */
 
-    // working on proper logical nesting... need way to store:
-    // :B<min>,<max>
-    // :D<min>,<max>
-    // :S<min>,<max>
-    // :I<min>,<max>
-    int physical;	// 1 is physical nesting (WIN:N), 0 is logical (WIN:L)
-    int nestlevel;	// nestlevel used when displaying this cell
+    /* working on proper logical nesting... need way to store: */
+    /* :B<min>,<max> */
+    /* :D<min>,<max> */
+    /* :S<min>,<max> */
+    /* :I<min>,<max> */
+    int physical;	/* 1 is physical nest (WIN:N), 0 logical (WIN:L) */
+    int nestlevel;	/* nestlevel used when displaying this cell */
 
     /* grid settings for each cell are stored in this structure  */
     /* the grid in use at time of SAVE is put in the disk */
@@ -273,8 +273,8 @@ typedef struct db_inst {
     char *name; 	    /* was struct db_tab *def; */
     OPTS *opts;
     NUM x,y;
-    NUM colx,coly;		// column vector 
-    NUM rowx,rowy;		// row vector
+    NUM colx,coly;		/* column vector */
+    NUM rowx,rowy;		/* row vector */
 } DB_INST; 
 
 typedef struct db_line {
@@ -592,7 +592,7 @@ void db_free(DB_DEFLIST *dp);
 void db_fsck(DB_DEFLIST *dp);
 int readin();
 int loadrep();
-int aborted;	// used to abort drawing
+int aborted;	/* used to abort drawing */
 
 void escstring(char *dst, char *src);
 int pig_system(char *cmd);

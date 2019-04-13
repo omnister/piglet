@@ -22,7 +22,7 @@
 #define UNUSED(x) (void)(x)
 
 #define EPS 1e-6
-#define MAXBUF 128	// maximum escaped text string
+#define MAXBUF 128	/* maximum escaped text string */
 
 #define CELL 0		/* modes for db_def_print() */
 #define ARCHIVE 1
