@@ -465,7 +465,9 @@ void shp_writechar(
 	     p3 = (signed char) (f->glyphtab[glyphnum][index++]);
 	     if (!skip) bulge_arc(pendown, xx, yy, scale, xf, \
 	     	(double) p1, (double) p2,(double) p3, bb, mode);
-	     for (done=0; !done; ) {
+
+	     int finished;
+	     for (finished=0; !finished; ) {
 		 p1 = (signed char) (f->glyphtab[glyphnum][index++]);
 		 p2 = (signed char) (f->glyphtab[glyphnum][index++]);
 		 if (p1 != 0 || p2 != 0) {
@@ -473,7 +475,7 @@ void shp_writechar(
 		    if (!skip) bulge_arc(pendown, xx, yy, scale, xf, \
 			(double) p1, (double) p2,(double) p3, bb, mode);
 		 } else {
-		    done++;
+		    finished++;
 		 }
 	     }
 	     break;
