@@ -46,8 +46,7 @@ FONTS=shpfonts/*
 
 #CC=cc -pg -ggdb -Wall 		# profiling
 #CC=cc -p -O0 -ggdb -Wall	# valgrind
-#CC=cc -ggdb -Wall -Wpedantic -Wextra
-CC=cc -ggdb -Wall -Wextra
+CC=cc -ggdb -Wall -O3 -Wextra
 
 # we currently make pig.bin, and then run the binary under the
 # wrapper "pig" which catches and error backtrace with gdb
