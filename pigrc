@@ -5,7 +5,7 @@ $$
 SET PIG_PATH ".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";
 $$ SET PIG_RC "pigrc"   	      $$ I suppose if you wanted to
 
-SET PIG_GEOMETRY "700x440+10+30";     $$ set X11 geometry
+SET PIG_GEOMETRY "900x740+10+30";     $$ set X11 geometry
 SET PIG_X11MENU_FONT "10x20";	      $$ X11 font to use for menu
 SET PIG_SPLASH_REP "piglogo";         $$ startup logo file
 

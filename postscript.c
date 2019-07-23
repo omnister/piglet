@@ -540,8 +540,10 @@ void ps_end_line()
        }
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,
-       "\"\nstyle=\"fill:none;stroke:%s;stroke-width:%g;stroke-linejoin:round;\"/>\n",
-	pen_to_svg_color(this_pen),linewidth);
+       "\"\nfill=\"none\" stroke=\"%s\" stroke-width=\"%g\" stroke-linejoin=\"round\" %s/>\n",
+	pen_to_svg_color(this_pen),linewidth,
+	xwin_svg_dashes(this_line));
+
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");

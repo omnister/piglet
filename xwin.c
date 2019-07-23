@@ -1147,6 +1147,36 @@ const char * xwin_ps_dashes(int line)
     return NULL;
 }
 
+// any changes to this routine need to be harmonized with xwin_set_pen_line_fill() above
+const char * xwin_svg_dashes(int line)
+{
+    switch (line % 7) {
+    case 0:
+	return ("");
+	break;
+    case 1:
+	return ("stroke-dasharray=\"2\"");
+	break;
+    case 2:
+	return ("stroke-dasharray=\"7 5\"");
+	break;
+    case 3:
+	return ("stroke-dasharray=\"7 2 1 2\"");
+	break;
+    case 4:
+	return ("stroke-dasharray=\"7 2 3 2\"");
+	break;
+    case 5:
+	return ("stroke-dasharray=\"9 5\"");
+	break;
+    case 6:
+	return ("stroke-dasharray=\"4\"");
+	break;
+    }
+    return NULL;
+}
+
+
 
 int draw_grid(
     Window win,
