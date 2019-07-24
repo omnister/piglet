@@ -118,6 +118,9 @@ void init_stipples() {
 }
 
 int get_stipple_index(int fill, int pen) {
+   int debug=0;
+   if (debug) printf("fill %d, pen %d, index %d\n", fill, pen, (fill-1)*10+pen);
+   // fill 1, pen 0, index 0
    if (fill==0) {
       return(0);
    } else {
@@ -164,3 +167,4 @@ const char * get_hpgl_fill(int fill)
     }
     return NULL;
 }
+

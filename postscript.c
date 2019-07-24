@@ -523,6 +523,49 @@ void ps_comment(char *comment)
     }
 }
 
+const char *get_svg_fill_opacity(int fill)
+{
+    switch (fill%8) {
+       case 0:
+	return("0.0");
+	break;
+       case 1:
+	return("1.0");
+	break;
+       case 2:
+	return("0.9");
+	break;
+       case 3:
+	return("0.8");
+	break;
+       case 4:
+	return("0.6");
+	break;
+       case 5:
+	return("0.5");
+	break;
+       case 6:
+	return("0.4");
+	break;
+       case 7:
+	return("0.3");
+	break;
+       default:
+       case 8:
+	return("0.2");
+	break;
+    }
+}
+
+const char *get_svg_fill(int fill, int this_pen)
+{
+    if (fill%8 == 0) {
+        return ("none");
+    } else {
+	return pen_to_svg_color(this_pen);
+    }
+}
+
 
 void ps_end_line()
 {
@@ -539,11 +582,17 @@ void ps_end_line()
 	   fprintf(fp, "G37*\n");
        }
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
-       fprintf(fp,
-       "\"\nfill=\"none\" stroke=\"%s\" stroke-width=\"%g\" stroke-linejoin=\"round\" %s/>\n",
-	pen_to_svg_color(this_pen),linewidth,
-	xwin_svg_dashes(this_line));
-
+       fprintf(fp,"\"\n");
+       fprintf(fp, "stroke=\"%s\"\n", pen_to_svg_color(this_pen));
+       fprintf(fp, "stroke-width=\"%g\"\n", linewidth);
+       if (in_poly) {
+	   fprintf(fp, "fill=\"%s\"\n",get_svg_fill(this_fill,this_pen));
+	   fprintf(fp, "fill-opacity=\"%s\"\n",
+	       get_svg_fill_opacity(this_fill));
+       } else {
+	   fprintf(fp, "fill=\"none\"\n");
+       }
+       fprintf(fp, "stroke-linejoin=\"round\" %s/>\n", xwin_svg_dashes(this_line));
     } else if (outputtype == HPGL) {			// HPGL
        if (in_poly) {
 	   fprintf(fp, "PM2;\n");

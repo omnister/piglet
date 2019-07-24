@@ -1805,7 +1805,7 @@ int init_colors()
 	"cyan",
 	"magenta",
 	"yellow",
-	"white",
+	"black",
 	"#b0b0b0",
 	"#505050"
     };
