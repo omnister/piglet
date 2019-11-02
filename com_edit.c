@@ -26,7 +26,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
     int done=0;
     char *word;
     char *p;
-    char name[128];
+    char name[100];
     char buf[128];
     char buf2[128];
     int debug=0;

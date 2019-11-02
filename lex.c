@@ -640,6 +640,8 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 	        break;
 	    case CMD:		/* command */
 		token_unget(lp, token, word);
+		done++;		// could fall through but compiler complains
+		break;
 	    case EOC:		/* end of command */
 		done++;
 		break;
@@ -869,7 +871,7 @@ int com_dump(LEXER *lp, char *arg)	/* dump graphics window to file or printer */
     UNUSED(arg);
     TOKEN token;
     int done=0;
-    char cmd[256];
+    char cmd[300];
     char name[256]="";
     char *word;
     int debug=0;

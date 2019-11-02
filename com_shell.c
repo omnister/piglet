@@ -193,8 +193,8 @@ int com_shell(LEXER *lp, char *arg)		/* run a program from within the editor */
 
     cmd[0] = '\0';
     while((token=token_get(lp, &word)) != EOF  && token != EOL) {
-        strncat(cmd, word, 1024);
-        strncat(cmd, " ", 1024);
+        strncat(cmd, word, 1000);
+        strncat(cmd, " ", 1000);
     }
 
     // if (token == EOL) { token_unget(lp, token, word); }

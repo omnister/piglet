@@ -379,7 +379,7 @@ void db_purge(LEXER *lp, char *s)			/* remove all definitions for s */
     DB_TAB *sp;
     DB_DEFLIST *p;
     int debug=0;
-    char buf[MAXFILENAME];
+    char buf[MAXFILENAME-20];
     char buf2[MAXFILENAME];
     int flag=0;
 

@@ -33,7 +33,7 @@ int com_change(LEXER *lp, char *arg)
     TOKEN token;
     char *word;
     char buf[MAXBUF];
-    char buf2[MAXBUF];
+    char buf2[MAXBUF-20];
     int debug=0;
     int done=0;
     int retval;

@@ -132,7 +132,7 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 	if (pen != -1)          equate_set_pen(layer, pen);
 	if (mask_type != -1)    equate_set_masktype(layer, mask_type);
 	if (buf[0] != '\0')     equate_set_label(layer, buf);
-		                equate_set_fill(layer, fill);	
+	equate_set_fill(layer, fill);	
     }
 
     /* equate_print(); */
