@@ -2,7 +2,7 @@
 
 /* --------------------------------------------------------------------------
  *   PD_Piglet: an engineering graphical editor with hierarchy. 
- *   Copyright (C) 2002-2014  by Richard C. Walker.
+ *   Copyright (C) 2002-2020  by Richard C. Walker.
  *
  *   Author's email: walker AT omnisterra DOT com
  *   Piglet homepage: http://www.omnisterra.com/walker/linux/piglet/intro.htm
@@ -22,7 +22,7 @@
 void license() {
     printf("/* --------------------------------------------------------------------\n");
     printf("    PD_Piglet: an engineering graphical editor with hierarchy.\n");
-    printf("    Copyright (C) 2002-2014  by Richard C. Walker.\n");
+    printf("    Copyright (C) 2002-2020  by Richard C. Walker.\n");
     printf("\n");
     printf("    Author's email: walker AT omnisterra DOT com\n");
     printf("    Homepage: http://www.omnisterra.com/walker/linux/piglet/intro.htm\n");
