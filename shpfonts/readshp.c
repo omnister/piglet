@@ -82,7 +82,7 @@ void shpjump(int mode) {
    printf("jump\n");
 }
 
-int strtonum(char *str) {
+int str2num(char *str) {
     int i;
     int sign=1.0;
     int val;
@@ -624,7 +624,7 @@ int shp_loadfont(char *path)
 	    break;
 	case 1:		// get glyph num
 	    if (token == NUM) {
-		glyphnum = strtonum(tp);
+		glyphnum = str2num(tp);
 	    } else if (token == WORD) {
 		glyphnum = 0;
 	    } else {
@@ -639,7 +639,7 @@ int shp_loadfont(char *path)
 		fprintf(stderr, "parse error in state %d\n", state);
 		exit(1);
 	    }
-	    numbytes = strtonum(tp);
+	    numbytes = str2num(tp);
 	    if (debug) printf("got numbytes %d\n", numbytes);
 	    state = 3;
 	    break;
@@ -666,7 +666,7 @@ int shp_loadfont(char *path)
 	    break;
 	case 5:
 	    if (token == NUM) {
-	       bytecode[count]=strtonum(tp);
+	       bytecode[count]=str2num(tp);
 	       if (debug) printf("    %d %d %d\n", count, numbytes, bytecode[count]);
 	       count++; 
 	    } else if (token == EOL) {
