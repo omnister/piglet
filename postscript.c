@@ -270,10 +270,18 @@ void ps_preamble(
 	// set default pen width to be a fraction diagonal
 	ps_set_linewidth(sqrt(pow(fabs(urx-llx),2.0)+pow(fabs(ury-lly),2.0))/700.0);
 
+	// document size
 	if (outputtype == SVG) {
 	    fprintf(fp,"width=\"100%%\" height=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
 		llx, lly, urx-llx, ury-lly);
 	}
+
+	// fill patterns
+	if (outputtype == SVG) {
+	    fprintf(fp,"<defs>\n");
+	    fprintf(fp,"</defs>\n");
+	}
+
 	if (outputtype == WEB) {
 	    fprintf(fp,"width=\"100%%\" viewBox=\"%g %g %g %g\" preserveAspectRatio=\"xMinYMin meet\">\n", 
 		llx, lly, urx-llx, ury-lly);

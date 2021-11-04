@@ -1155,22 +1155,22 @@ const char * xwin_svg_dashes(int line)
 	return ("");
 	break;
     case 1:
-	return ("stroke-dasharray=\"2\"");
+	return ("stroke-dasharray=\"0.2%\"");
 	break;
     case 2:
-	return ("stroke-dasharray=\"7 5\"");
+	return ("stroke-dasharray=\"0.7% 0.5%\"");
 	break;
     case 3:
-	return ("stroke-dasharray=\"7 2 1 2\"");
+	return ("stroke-dasharray=\"0.7% 0.2% 0.1% 0.2%\"");
 	break;
     case 4:
-	return ("stroke-dasharray=\"7 2 3 2\"");
+	return ("stroke-dasharray=\"0.7% 0.2% 0.3% 0.2%\"");
 	break;
     case 5:
-	return ("stroke-dasharray=\"9 5\"");
+	return ("stroke-dasharray=\"0.9% 0.5%\"");
 	break;
     case 6:
-	return ("stroke-dasharray=\"4\"");
+	return ("stroke-dasharray=\"0.4%\"");
 	break;
     }
     return NULL;
