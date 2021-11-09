@@ -1526,7 +1526,7 @@ int db_plot(char *name, OMODE plottype, double dx,
 
     ps_set_file(PLOT_FD);
     ps_set_linewidth(pen);	// linewidth
-    ps_set_color(color);	// color==1, bw=0
+    ps_set_color(color);	// color==1, bw=0, grey=2
 
     /* void ps_preamble(fp,dev, prog, pdx, pdy, llx, lly, urx, ury) */
     // ps_preamble(currep->name, "piglet version 0.95h", 8.5, 11.0, 

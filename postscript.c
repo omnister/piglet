@@ -37,6 +37,7 @@ OMODE outputtype=POSTSCRIPT;	// 0=postscript, 1=gerber
 
 double bbllx, bblly, bburx, bbury; // bounding box in screen coords
 
+const char *get_svg_fill(int fill);
 
 void ps_set_color(int color) {
    if (debug) printf("ps_set_color: %d\n",color);
@@ -102,9 +103,9 @@ void ps_set_pen(int pen)
 {
     if (debug) printf("setting pen:%d\n", pen); 
 
-    if (!colorflag) {
-    	pen = 0;	// when !colorflag force to black
-    }
+    if (colorflag==0) { // bw
+    	pen = 0;	
+    } 
 
     if (pennum != pen) {
        newpen=1;
@@ -268,7 +269,10 @@ void ps_preamble(
 	// printf("<!-- llx:%g lly:%g urx:%g ury:%g -->\n", llx, lly, urx, ury );
 
 	// set default pen width to be a fraction diagonal
-	ps_set_linewidth(sqrt(pow(fabs(urx-llx),2.0)+pow(fabs(ury-lly),2.0))/700.0);
+	double diagonal; 
+	diagonal = sqrt(pow(fabs(urx-llx),2.0)+pow(fabs(ury-lly),2.0));
+
+	ps_set_linewidth(diagonal/700.0);
 
 	// document size
 	if (outputtype == SVG) {
@@ -278,7 +282,103 @@ void ps_preamble(
 
 	// fill patterns
 	if (outputtype == SVG) {
+
+	    // normalize stipples to drawing size
+
+
 	    fprintf(fp,"<defs>\n");
+		fprintf(fp,"  <!-- color filters for crosshatch fills -->\n");
+		fprintf(fp,"  <filter id=\"c0\"> <!-- white (black) -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(0));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c1\"> <!-- red -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(1));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c2\"> <!-- green -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(2));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c3\"> <!-- blue -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(3));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c4\"> <!-- cyan -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(4));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c5\"> <!-- magenta -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(5));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c6\"> <!-- yellow -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(6));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c7\"> <!-- black -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(7));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c8\"> <!-- grey1 -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(8));
+		fprintf(fp,"  </filter>\n");
+		fprintf(fp,"  <filter id=\"c9\"> <!-- grey2 -->\n");
+		fprintf(fp,"    <feColorMatrix type=\"matrix\"\n");
+		fprintf(fp,"    values=\"%s\"/>\n", get_svg_fill(9));
+		fprintf(fp,"  </filter>\n");
+
+		fprintf(fp, "  <pattern id=\"f0\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(45) scale(%.1g)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f1\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(45) scale(%.1g)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <polyline points=\" -.1, -.1 -.1, 1 1, 1 1, -1 -.1, -.1\" fill=\"white\"/>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f2\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(45) scale(%.1g)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f3\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(135) scale(%.1g) translate(0.0)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f4\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(0) scale(%.1g) translate(0.0)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f5\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(90) scale(%.1g) translate(0.0)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f6\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(0) scale(%.1g) translate(0.0)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\".2\" y2=\".2\"></line>\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\".2\" x2=\".2\" y2=\"0\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+		fprintf(fp, "  <pattern id=\"f7\" width=\".2\" height=\".2\" stroke=\"white\"\n");
+		fprintf(fp, "    stroke-linecap=\"square\" stroke-width=\"%.1g\"\n",linewidth);
+		fprintf(fp, "    patternTransform=\"rotate(45) scale(%.1g) translate(0.0)\"\n", diagonal/70.0);
+		fprintf(fp, "    patternUnits=\"userSpaceOnUse\">\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\"0\" x2=\".2\" y2=\".2\"></line>\n");
+		fprintf(fp, "    <line x1=\"0\" y1=\".2\" x2=\".2\" y2=\"0\"></line>\n");
+		fprintf(fp, "  </pattern>\n");
+
 	    fprintf(fp,"</defs>\n");
 	}
 
@@ -565,13 +665,78 @@ const char *get_svg_fill_opacity(int fill)
     }
 }
 
-const char *get_svg_fill(int fill, int this_pen)
+const char *get_svg_fill(int fill)
 {
-    if (fill%8 == 0) {
-        return ("none");
-    } else {
-	return pen_to_svg_color(this_pen);
+    if (colorflag == 1) {	// color mode
+	switch (fill % 10) {
+	case 0:
+	    return ("0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");	// black
+	    break;
+	case 1:
+	    return ("1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");	// red
+	    break;
+	case 2:
+	    return ("0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0");	// green
+	    break;
+	case 3:
+	    return ("0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0");	// blue
+	    break;
+	case 4:
+	    return ("0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0");	// cyan
+	    break;
+	case 5:
+	    return ("1 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0");	// magenta
+	    break;
+	case 6:
+	    return ("1 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0");	// yellow
+	    break;
+	case 7:
+	    return ("0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");	// black
+	    break;
+	case 8:
+	    return ("0.25 0 0 0 0  0 0.25 0 0 0  0 0 0.25 0 0  0 0 0 1 0");	// grey1
+	    break;
+	case 9:
+	    return ("0.50 0 0 0 0  0 0.50 0 0 0  0 0 0.50 0 0  0 0 0 1 0");	// grey2
+	    break;
+	}
+    } else if (colorflag == 0) {	// black
+	return ("0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");
+    } else {			// greyscale
+	switch (fill % 10) {
+	case 0:
+	    return ("0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");
+	    break;
+	case 1:
+	    return ("0.1 0 0 0 0  0 0.1 0 0 0  0 0 0.1 0 0  0 0 0 1 0");
+	    break;
+	case 2:
+	    return ("0.2 0 0 0 0  0 0.2 0 0 0  0 0 0.2 0 0  0 0 0 1 0");
+	    break;
+	case 3:
+	    return ("0.3 0 0 0 0  0 0.3 0 0 0  0 0 0.3 0 0  0 0 0 1 0");
+	    break;
+	case 4:
+	    return ("0.4 0 0 0 0  0 0.4 0 0 0  0 0 0.4 0 0  0 0 0 1 0");
+	    break;
+	case 5:
+	    return ("0.5 0 0 0 0  0 0.5 0 0 0  0 0 0.5 0 0  0 0 0 1 0");
+	    break;
+	case 6:
+	    return ("0.6 0 0 0 0  0 0.6 0 0 0  0 0 0.6 0 0  0 0 0 1 0");
+	    break;
+	case 7:
+	    return ("0.7 0 0 0 0  0 0.7 0 0 0  0 0 0.7 0 0  0 0 0 1 0");
+	    break;
+	case 8:
+	    return ("0.8 0 0 0 0  0 0.8 0 0 0  0 0 0.8 0 0  0 0 0 1 0");
+	    break;
+	case 9:
+	    return ("0.9 0 0 0 0  0 0.9 0 0 0  0 0 0.9 0 0  0 0 0 1 0");
+	    break;
+	}
     }
+    return ("0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0");
 }
 
 
@@ -592,9 +757,11 @@ void ps_end_line()
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,"\"\n");
        fprintf(fp, "stroke=\"%s\"\n", pen_to_svg_color(this_pen));
+       fprintf(fp, "filter=\"url(#c%d)\"\n", this_pen);
        fprintf(fp, "stroke-width=\"%g\"\n", linewidth);
        if (in_poly) {
-	   fprintf(fp, "fill=\"%s\"\n",get_svg_fill(this_fill,this_pen));
+	   // fprintf(fp, "fill=\"%s\"\n",get_svg_fill(this_fill,this_pen));
+	   fprintf(fp, "fill=\"url(#f%d)\"\n",this_fill);
 	   fprintf(fp, "fill-opacity=\"%s\"\n",
 	       get_svg_fill_opacity(this_fill));
        } else {
