@@ -15,8 +15,7 @@
 
 static COORDS *CP;
 
-DB_TAB dbtab; 
-DB_DEFLIST dbdeflist;
+// DB_TAB dbtab; 
 DB_LINE dbline;
 void draw_line(); 
 
@@ -31,7 +30,7 @@ void draw_line();
  *                       +-(:FILL)----+
  */
 
-OPTS opts;
+OPTS lopts;
 
 double x1=0.0;
 double yy1=0.0;
@@ -69,7 +68,7 @@ int add_line(LEXER *lp, int *layer)
     rl_setprompt("ADD_LINE> ");
 
     x2 = y2 = xold = yold = 0.0;
-    opt_set_defaults(&opts);
+    opt_set_defaults(&lopts);
 
     while (!done) {
 	token = token_look(lp, &word);
@@ -84,7 +83,7 @@ int add_line(LEXER *lp, int *layer)
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(lp,&word); 
-		    if (opt_parse(word, LINE_OPTS, &opts) == -1) {
+		    if (opt_parse(word, LINE_OPTS, &lopts) == -1) {
 		    	state = END;
 		    } else {
 			state = START;
@@ -155,7 +154,7 @@ int add_line(LEXER *lp, int *layer)
 			    if (debug) printf("got %d coords\n", coord_count(CP));
 			    if (coord_count(CP) > 1) {
 				cleanup(CP);	// clean up coords
-				db_add_line(currep, *layer, opt_copy(&opts), CP);
+				db_add_line(currep, *layer, opt_copy(&lopts), CP);
 			    }
 			    need_redraw++;
 			    rubber_clear_callback();
@@ -211,7 +210,7 @@ int add_line(LEXER *lp, int *layer)
 		if (token == EOC && nsegs >= 2) {
 			coord_drop(CP);  /* drop last coord */
 			cleanup(CP);	// clean up coords
-			db_add_line(currep, *layer, opt_copy(&opts), CP);
+			db_add_line(currep, *layer, opt_copy(&lopts), CP);
 			need_redraw++;
 		    	; /* add geom */
 		} else if (token == EOC || token == CMD || token == EOF) {
@@ -240,6 +239,7 @@ void draw_line(double x2, double y2, int count)
 
 	bb.init=0;
 
+	static DB_DEFLIST dbdeflist;
 
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */
@@ -255,15 +255,15 @@ void draw_line(double x2, double y2, int count)
 	// p2 + beta(lp->mousepoint) == mousepoint
 
 
-        dbtab.dbhead = &dbdeflist;
-        dbtab.next = NULL;
-	dbtab.name = "callback";
+        // dbtab.dbhead = &dbdeflist;
+        // dbtab.next = NULL;
+	// dbtab.name = "callback";
 
         dbdeflist.u.l = &dbline;
         dbdeflist.type = LINE;
 
         dbline.layer=1;
-        dbline.opts=&opts;
+        dbline.opts=&lopts;
         dbline.coords=CP;
 	
 	if (debug) {printf("in draw_line\n");}

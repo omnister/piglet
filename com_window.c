@@ -16,7 +16,6 @@ int nest=9;		/* default nesting level */
 int lastwin=0;		/* go back to last window */
 //int bounds=0;		/* default pick boundary display level */
 
-OPTS opts;
 void draw_bounds();
 int do_win();
 
@@ -36,6 +35,7 @@ int com_window(LEXER *lp, char *arg)
     int debug=0;
     double x2, y2;
     int layer;
+    OPTS opts;
 
     opt_set_defaults(&opts);
 

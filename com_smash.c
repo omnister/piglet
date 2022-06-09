@@ -37,7 +37,6 @@
  *
  */
 
-STACK *stack;
 static double x1, yy1;		/* y1 name conflicts with <math.h> */
 static double x2, y2;
 static double lastx1, lasty1;
@@ -104,6 +103,7 @@ int com_smash(LEXER *lp, char *arg)
     char *pinst = NULL;
     int mode = POINT;
     int ncoords=0;
+    STACK *stack;
     
     while (!done) {
 	token = token_look(lp,&word);

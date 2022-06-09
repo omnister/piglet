@@ -7,15 +7,14 @@
 #include <string.h>
 
 
-DB_TAB dbtab; 
-DB_DEFLIST dbdeflist;
+// DB_TAB dbtab; 
 DB_TEXT dbtext;
 
 static double x1, y1;
 char str[BUFSIZE];
 void draw_text(); 
 
-OPTS opts;
+OPTS topts;
 
 int add_annotation();
 
@@ -45,10 +44,10 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
     int numadd = 0;
     double xold=0.0, yold=0.0;
 
-    opt_set_defaults( &opts );
-    opts.font_size = db_get_font_size(); 	/* get default from FSIze command */
-    opts.slant = db_get_text_slant(); 		/* get default from TSLant command */
-    opts.font_num = mode;			/* default note mode=NOTE_MODE, text=TEXT_MODE */
+    opt_set_defaults( &topts );
+    topts.font_size = db_get_font_size(); 	/* get default from FSIze command */
+    topts.slant = db_get_text_slant(); 		/* get default from TSLant command */
+    topts.font_num = mode;			/* default note mode=NOTE_MODE, text=TEXT_MODE */
 
     str[0] = '\0';
 
@@ -79,9 +78,9 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
 		    if (nargs > 1) {
 			rubber_clear_callback();
 		    }
-		    if ((mode == TEXT_MODE) && opt_parse(word, TEXT_OPTS, &opts) == -1) {
+		    if ((mode == TEXT_MODE) && opt_parse(word, TEXT_OPTS, &topts) == -1) {
 			state = END;
-		    } else if ((mode == NOTE_MODE) && opt_parse(word, NOTE_OPTS, &opts) == -1) {
+		    } else if ((mode == NOTE_MODE) && opt_parse(word, NOTE_OPTS, &topts) == -1) {
 			state = END;
 		    } else {
 			state = START;
@@ -124,10 +123,10 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
 			    } else {
 				rubber_clear_callback();
 				if (mode == TEXT_MODE) {
-				    db_add_text(currep, *layer, opt_copy(&opts),
+				    db_add_text(currep, *layer, opt_copy(&topts),
 					strsave(str), x1, y1);
 				} else {
-				    db_add_note(currep, *layer, opt_copy(&opts),
+				    db_add_note(currep, *layer, opt_copy(&topts),
 					strsave(str), x1, y1);
 				}
 				rubber_set_callback(draw_text);
@@ -177,6 +176,7 @@ void draw_text(double x2, double y2, int count)
 	static double xold, yold;
 	int debug=0;
 	static BOUNDS bb;
+	static DB_DEFLIST dbdeflist;
 
 	bb.init=0;
 
@@ -185,15 +185,15 @@ void draw_text(double x2, double y2, int count)
 	/* DB_text dbtext; */
 
 
-        dbtab.dbhead = &dbdeflist;
-        dbtab.next = NULL;
-	dbtab.name = "callback";
+        // dbtab.dbhead = &dbdeflist;
+        // dbtab.next = NULL;
+	// dbtab.name = "callback";
 
         dbdeflist.u.t = &dbtext;
         dbdeflist.type = TEXT;
 
         dbtext.layer=1;
-        dbtext.opts=&opts;
+        dbtext.opts=&topts;
 	dbtext.text=str;
 	
 	if (debug) {printf("in draw_text\n");}

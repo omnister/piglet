@@ -11,8 +11,6 @@
 
 static COORDS *CP;
 
-DB_TAB dbtab; 
-DB_DEFLIST dbdeflist;
 DB_POLY dbpoly;
 void draw_poly(); 
 
@@ -31,7 +29,7 @@ enter a malformed geometry. */
  *                        +-":F"--------+
  */
 
-OPTS opts;
+OPTS popts;
 
 static double x1, y1;
 static double xx, yy;
@@ -49,7 +47,7 @@ int add_poly(LEXER *lp, int *layer)
 
     if (debug) printf("in add poly layer %d\n", *layer);
 
-    opt_set_defaults(&opts);
+    opt_set_defaults(&popts);
 
     if (debug) {printf("in geom_poly: layer %d\n",*layer);}
     rl_saveprompt();
@@ -68,7 +66,7 @@ int add_poly(LEXER *lp, int *layer)
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(lp, &word); 
-		    if (opt_parse(word, POLY_OPTS, &opts) == -1) {
+		    if (opt_parse(word, POLY_OPTS, &popts) == -1) {
 		    	state = END;
 		    } else {
 			state = START;
@@ -123,7 +121,7 @@ int add_poly(LEXER *lp, int *layer)
 		    	if (nsegs >= 3) {
 			    if (debug) printf("adding poly1 layer %d, nsegs=%d\n",
 				*layer, nsegs);
-			    db_add_poly(currep, *layer, opt_copy(&opts), CP);
+			    db_add_poly(currep, *layer, opt_copy(&popts), CP);
 		    	} else {
 			    printf("   POLY requires at least three points\n");
 			}
@@ -165,7 +163,7 @@ int add_poly(LEXER *lp, int *layer)
 		    	if (debug) coord_print(CP);
 			if (debug) printf("adding poly1 layer %d nsegs=%d\n",
 				*layer, nsegs);
-			db_add_poly(currep, *layer, opt_copy( & opts), CP);
+			db_add_poly(currep, *layer, opt_copy( & popts), CP);
 			need_redraw++;
 		    } else {
 			printf("   POLY requires at least three points\n");
@@ -199,21 +197,23 @@ void draw_poly(double x2, double y2, int count)
 
 	bb.init=0;
 
+	static DB_DEFLIST dbdeflist;
+
 
 	/* DB_TAB dbtab;  */
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_POLY dbpoly; */
 
 
-        dbtab.dbhead = &dbdeflist;
-        dbtab.next = NULL;
-	dbtab.name = "callback";
+        // dbtab.dbhead = &dbdeflist;
+        // dbtab.next = NULL;
+	// dbtab.name = "callback";
 
         dbdeflist.u.p = &dbpoly;
         dbdeflist.type = POLY;
 
         dbpoly.layer=1;
-        dbpoly.opts=&opts;
+        dbpoly.opts=&popts;
         dbpoly.coords=CP;
 	
 	if (debug) {printf("in draw_poly\n");}

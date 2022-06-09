@@ -19,7 +19,7 @@ static double lastx, lasty;
 static double xmin, ymin, xmax, ymax;
 void draw_mbox();
 void move_draw_box();
-STACK *stack;
+STACK *qstack;
 STACK *tmp;
 
 /* 
@@ -217,7 +217,7 @@ int com_move(LEXER *lp, char *arg)
 		    xmax=x2;
 		    ymin=y1;
 		    ymax=y2;
-		    stack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
+		    qstack=db_ident_region(currep, x1,y1, x2, y2, 1, my_layer, comp, pinst);
 		    state = NUM3;
 		} else {
 		    state = END;
@@ -293,7 +293,7 @@ int com_move(LEXER *lp, char *arg)
 			    db_move_component(p_best, x4-lastx, y4-lasty);
 			    currep->modified++;
 			} else {
-			    tmp = stack;
+			    tmp = qstack;
 			    while (tmp!=NULL) {
 				p_best = (DB_DEFLIST *) stack_walk(&tmp);
 				db_move_component(p_best, x4-lastx, y4-lasty);

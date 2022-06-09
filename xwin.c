@@ -45,7 +45,7 @@ extern Pixmap stipple[];
 
 /* globals for interacting with db.c */
 DB_TAB *currep = NULL;		/* keep track of current rep */
-XFORM  unity_transform;
+extern XFORM  unity_transform;
 /*XFORM  screen_transform; */
 /*XFORM  *xp = &screen_transform; */
 

@@ -29,6 +29,8 @@
 #define UNUSED(x) (void)(x)
 
 int readin();
+int aborted;     // used to abort drawing
+
 
 /* The names of functions that actually do the manipulation. */
 
@@ -1703,7 +1705,7 @@ int com_eval(LEXER *lp, char *arg)		/* evaluate a MACRO */
     UNUSED(arg);
     TOKEN token;
     char *word;
-    char buf[6];
+    char buf[20];
     char *s;
     int i;
     int debug=0;

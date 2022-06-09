@@ -91,7 +91,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	    } else if (token == QUOTE) {	// RCW
 		token_get(lp,&word);
 		if (nfiles == 0) {
-		    strncpy(name, word, 128);
+		    strncpy(name, word, 100);
 		    nfiles++;
 		} else {
 		    printf("EDIT: wrong number of args\n");
@@ -101,7 +101,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	    } else if (token == IDENT) {
 		token_get(lp,&word);
 		if (nfiles == 0) {
-		    strncpy(name, word, 128);
+		    strncpy(name, word, 64);
 		    nfiles++;
 		} else {
 		    printf("EDIT: wrong number of args\n");
@@ -125,7 +125,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 			// ymin=p_best->ymin;
 			// ymax=p_best->ymax;
 			printf("%s\n", p_best->u.i->name);
-			strncpy(name, p_best->u.i->name, 128);
+			strncpy(name, p_best->u.i->name, 64);
 			state = DOIT; 
 		    } else {
 			printf("nothing here to EDIT... try SHO command?\n");

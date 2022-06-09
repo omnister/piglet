@@ -40,7 +40,7 @@ static DB_TAB *HEAD = 0;
 XFORM unity_transform;
 XFORM *global_transform = &unity_transform;  /* global xform matrix */
 
-STACK *stack = NULL;
+STACK *bstack = NULL;
 
 void db_free_component(); 		/* recycle memory for component */
 int getbits();
@@ -48,6 +48,8 @@ int db_def_arch_recurse();
 int db_def_files_recurse(); 
 void db_contains_body(); 
 void db_def_print();
+
+int show[MAX_LAYER];
 
 /********************************************************/
 
@@ -678,7 +680,7 @@ int db_checkpoint(LEXER *lp) {
 	if (debug) printf("inside db_checkpoint currepcksum = %d, cknew = %d\n", currep->chksum, cknew);
 	if (currep->chksum != cknew && currep->modified) {
 	    strcpy(buf,"#");		    
-	    strncat(buf,currep->name, 128);		    
+	    strncat(buf,currep->name, 100);		    
 	    db_save(lp, currep, buf);
 	    currep->chksum = cknew;
 	    if (debug) printf("saved\n");
@@ -989,9 +991,9 @@ int db_def_archive(DB_TAB *sp, int smash, int process)
     }
 
     fprintf(fp,"$FILES\n%s\n",sp->name);	// create $FILES preamble
-    stack=NULL;
+    bstack=NULL;
     db_def_files_recurse(fp,sp);
-    while ((s=stack_pop(&stack))!=NULL) {
+    while ((s=stack_pop(&bstack))!=NULL) {
 	fprintf(fp, "%s\n",s);
     }
     fprintf(fp,";\n\n");
@@ -1040,7 +1042,7 @@ int db_def_files_recurse(FILE *fp, DB_TAB *sp)
 	    if (!(dp->flag) && !(dp->is_tmp_rep)) {	// do not archive tmp reps
 		db_def_files_recurse(fp, db_lookup(p->u.i->name)); 	/* recurse */
 		((db_lookup(p->u.i->name))->flag)++;	// prevent duplicates
-		stack_push(&stack, p->u.i->name);	// save for $FILES
+		stack_push(&bstack, p->u.i->name);	// save for $FILES
 	    }
 	}
     }

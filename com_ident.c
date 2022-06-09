@@ -31,7 +31,6 @@
 static double x1, y1;
 static double x2, y2;
 void ident_draw_box();
-STACK *stack;
 
 int com_identify(LEXER *lp, char *arg)
 {
@@ -52,6 +51,7 @@ int com_identify(LEXER *lp, char *arg)
     int my_layer=0;
     int comp=ALL;
     int valid_comp=0;
+    STACK *stack;
     
     while (!done) {
 	token = token_look(lp,&word);

@@ -38,7 +38,7 @@
 
 extern char *PIG_PATH;
 
-int show[MAX_LAYER];
+extern int show[MAX_LAYER];
 
 /*   definition of hierarchical editor data structures 
  *
@@ -592,7 +592,7 @@ void db_free(DB_DEFLIST *dp);
 void db_fsck(DB_DEFLIST *dp);
 int readin();
 int loadrep();
-int aborted;	// used to abort drawing
+extern int aborted;	// used to abort drawing
 
 void escstring(char *dst, char *src);
 int pig_system(char *cmd);

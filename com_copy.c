@@ -20,8 +20,6 @@ static int num_copies=0;
 static double xmin, ymin, xmax, ymax;
 void draw_cbox();
 void copy_draw_box();
-STACK *stack;
-STACK *tmp;
 
 /* 
     copy a component in the current device.
@@ -44,6 +42,8 @@ int com_copy(LEXER *lp, char *arg)
     int mode=POINT;
     char instname[BUFSIZE];
     char *pinst = (char *) NULL;
+    STACK *stack;
+    STACK *tmp;
 
     int my_layer=0; 	/* internal working layer */
 

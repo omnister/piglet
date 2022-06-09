@@ -19,7 +19,7 @@
 static double x1, y1;
 void draw_box();
 
-OPTS opts;
+OPTS ropts;
 
 int add_rect(LEXER *lp, int *layer)
 {
@@ -35,7 +35,7 @@ int add_rect(LEXER *lp, int *layer)
     rl_saveprompt();
     rl_setprompt("ADD_RECT> ");
 
-    opt_set_defaults(&opts);
+    opt_set_defaults(&ropts);
 
     while (!done) {
 	token = token_look(lp,&word);
@@ -48,7 +48,7 @@ int add_rect(LEXER *lp, int *layer)
 	    db_checkpoint(lp);
 	    if (token == OPT ) {
 		token_get(lp,&word); 
-		if (opt_parse(word, RECT_OPTS, &opts) == -1) {
+		if (opt_parse(word, RECT_OPTS, &ropts) == -1) {
 		    state = END;
 		} else {
 		    state = START;
@@ -93,7 +93,7 @@ int add_rect(LEXER *lp, int *layer)
 			printf("    Can't add a rectangle of zero width or height: %g %g %g %g\n", 
 			    x1, y1, x2, y2);
 		    } else {
-			db_add_rect(currep, *layer, opt_copy(&opts), x1, y1, x2, y2);
+			db_add_rect(currep, *layer, opt_copy(&ropts), x1, y1, x2, y2);
 		    }
 		    rubber_clear_callback();
 		    need_redraw++; 

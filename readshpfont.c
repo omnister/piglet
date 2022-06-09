@@ -57,7 +57,6 @@ typedef struct tokstruct {
 TOKSTRUCT pushback[MAXPUSH];
 int pushidx = 0;
 
-char buf[MAXTOK];
 int linenum = 0;
 // int debug = 0;
 
@@ -885,7 +884,7 @@ void shp_testfont(int id) {
 int test_main() {
    FONT *f;
    int i;
-   char buf[256];
+   char xbuf[256];
 
    shp_fontinit();
    shp_loadfont("/home/walker/shx/good/pan.shp",0);
@@ -902,9 +901,9 @@ int test_main() {
   
    for (i=0; i<nfonts; i++) {
       f = shp_id2font(i);
-      sprintf(buf, "%d: %s, This is a test\n", 
+      sprintf(xbuf, "%d: %s, This is a test\n", 
                i, f->fontname);
-      // shp_writestring(buf, 0.0, -2.0*(double)i, i, 0, 1.0, 1);
+      // shp_writestring(xbuf, 0.0, -2.0*(double)i, i, 0, 1.0, 1);
    }
    
    exit(1);
@@ -991,6 +990,7 @@ TOKEN shp_token_look(FILE *fp, char **word)
 TOKEN shp_token_get(FILE* fp, char **word)
 {
 
+    static char buf[MAXTOK];
     enum { NEUTRAL, INQUOTE, INWORD, INNUM, COMMENT } state = NEUTRAL;
     char *w;
     int c, d;

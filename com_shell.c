@@ -93,7 +93,7 @@ int com_define(LEXER *lp, char *arg)	/* set macro definition */
 	    strncpy(var,word, 128);
 	} else {
 	    if (debug) printf("concatenating val %s\n", word);
-            strncat(val,word, 128);
+            strncat(val,word, 100);
 	}
 	i++;
     }

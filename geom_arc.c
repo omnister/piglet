@@ -6,14 +6,13 @@
 #include "opt_parse.h"
 #include <math.h>
 
-DB_TAB dbtab; 
-DB_DEFLIST dbdeflist;
+// DB_TAB dbtab; 
 DB_ARC dbarc;
 void draw_arc(); 
 
-OPTS opts;
+OPTS aopts;
 
-double x1, yy1, x2, y2;
+double gx1, gy1, x2, y2;
 
 int add_arc(LEXER *lp, int *layer)
 {
@@ -31,7 +30,7 @@ int add_arc(LEXER *lp, int *layer)
     rl_saveprompt();
     rl_setprompt("ADD_ARC> ");
 
-    opt_set_defaults(&opts);
+    opt_set_defaults(&aopts);
 
     while (!done) {
 	token = token_look(lp, &word);
@@ -45,7 +44,7 @@ int add_arc(LEXER *lp, int *layer)
 		if (debug) printf("in start\n");
 		if (token == OPT ) {
 		    token_get(lp,&word); 
-		    if (opt_parse(word, ARC_OPTS, &opts) == -1) {
+		    if (opt_parse(word, ARC_OPTS, &aopts) == -1) {
 		    	state = END;
 		    } else {
 			state = START;
@@ -66,7 +65,7 @@ int add_arc(LEXER *lp, int *layer)
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1\n");
 		if (token == NUMBER) {
-		    if (getnum(lp, "ARC", &x1, &yy1)) {
+		    if (getnum(lp, "ARC", &gx1, &gy1)) {
 			state = NUM2;
 		    } else {
 			state = END;
@@ -102,7 +101,7 @@ int add_arc(LEXER *lp, int *layer)
 		if (debug) printf("in num3\n");
 		if (token == NUMBER) {
 		    if (getnum(lp, "ARC", &x3, &y3)) {
-			db_add_arc(currep, *layer, opt_copy(&opts), x1, yy1, x2, y2, x3, y3);
+			db_add_arc(currep, *layer, opt_copy(&aopts), gx1, gy1, x2, y2, x3, y3);
 			need_redraw++;
 			rubber_clear_callback();
 			state=START;
@@ -140,6 +139,7 @@ void draw_arc(double x3, double y3, int count)
 	static double x3old, y3old;
 	int debug=0;
 	BOUNDS bb;
+	static DB_DEFLIST dbdeflist;
 
 	bb.init=0;
 
@@ -147,17 +147,17 @@ void draw_arc(double x3, double y3, int count)
 	/* DB_DEFLIST dbdeflist; */
 	/* DB_ARC dbarc; */
 
-        dbtab.dbhead = &dbdeflist;
-        dbtab.next = NULL;
-	dbtab.name = "callback";
+        // dbtab.dbhead = &dbdeflist;
+        // dbtab.next = NULL;
+	// dbtab.name = "callback";
 
         dbdeflist.u.a = &dbarc;
         dbdeflist.type = ARC;
 
         dbarc.layer=1;
-        dbarc.opts=&opts;
-	dbarc.x1 = x1;
-	dbarc.y1 = yy1;
+        dbarc.opts=&aopts;
+	dbarc.x1 = gx1;
+	dbarc.y1 = gy1;
 	dbarc.x2 = x2;
 	dbarc.y2 = y2;
 	

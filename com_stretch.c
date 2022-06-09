@@ -15,6 +15,8 @@
 #define POINT  0
 #define REGION 1
 
+SELPNT *sselpnt;
+
 /*
  *
  * STR [[<component>[<layer>]] [:P] { <xysel> <xyref> <xyloc> }...
@@ -44,8 +46,6 @@ static double x3, y3;
 static double x4, y4;
 void stretch_draw_box();
 void stretch_draw_point();
-SELPNT *selpnt;
-SELPNT *tmp;
 
 DB_DEFLIST *p_best;
 
@@ -72,6 +72,8 @@ int com_stretch(LEXER *lp, char *arg)
     double *xselfirst,*yselfirst;
     char instname[BUFSIZE];
     size_t i;
+
+    SELPNT *tmp;
 
     char *pinst = (char *) NULL;
     int mode=POINT;
@@ -210,13 +212,13 @@ int com_stretch(LEXER *lp, char *arg)
 		if (getnum(lp, "STRETCH", &x2, &y2)) {
 		    rubber_clear_callback();
 		    state = NUM3;
-		    selpnt=db_ident_region2(currep, x1,yy1, x2, y2, 2, my_layer, comp, pinst);
+		    sselpnt=db_ident_region2(currep, x1,yy1, x2, y2, 2, my_layer, comp, pinst);
 
-		    if (selpnt == NULL) {
+		    if (sselpnt == NULL) {
 			printf("Nothing here to wrap.  Try \"SHO #E\"?\n");
 			state = END;
 		    } else { 
-			 tmp=selpnt;
+			 tmp=sselpnt;
 			 while (tmp!=NULL) {
 			    if (tmp->p != NULL) {
 				db_highlight(tmp->p);
@@ -268,8 +270,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    d = dist(*xmin-x3, *ymin-y3);
 			    if (d < dbest) { xsel = xmin; ysel = ymin; dbest = d; }
 
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 			    rubber_set_callback(stretch_draw_point);
 
 			    state = NUM4;
@@ -279,8 +281,8 @@ int com_stretch(LEXER *lp, char *arg)
 
 			    xsel = &(p_best->u.c->x2);
 			    ysel = &(p_best->u.c->y2);
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 			    rubber_set_callback(stretch_draw_point);
 
 			    state = NUM4;
@@ -290,8 +292,8 @@ int com_stretch(LEXER *lp, char *arg)
 
 			    xsel = &(p_best->u.i->x);
 			    ysel = &(p_best->u.i->y);
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 			    rubber_set_callback(stretch_draw_point);
 
 			    state = NUM4;
@@ -305,8 +307,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    distance = dist((*xsel)-x3, (*ysel)-y3);
 			    dbest = distance;
 			    coords = coords->next;
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 
 			    while(coords != NULL) {
 				xselold = xsel;
@@ -319,16 +321,16 @@ int com_stretch(LEXER *lp, char *arg)
 						 ((*ysel+*yselold)/2.0)-y3 );
 				if (distance < dbest) {
 				    dbest = distance;
-				    selpnt_clear(&selpnt);
-				    selpnt_save(&selpnt, xsel, ysel, NULL);
-				    selpnt_save(&selpnt, xselold, yselold, NULL);
+				    selpnt_clear(&sselpnt);
+				    selpnt_save(&sselpnt, xsel, ysel, NULL);
+				    selpnt_save(&sselpnt, xselold, yselold, NULL);
 				}
 
 				distance = dist(*xsel-x3, *ysel-y3);
 				if (distance < dbest) {
 				    dbest = distance;
-				    selpnt_clear(&selpnt);
-				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				    selpnt_clear(&sselpnt);
+				    selpnt_save(&sselpnt, xsel, ysel, NULL);
 				}
 				coords = coords->next;
 			    }
@@ -341,8 +343,8 @@ int com_stretch(LEXER *lp, char *arg)
 
 			    xsel = &(p_best->u.n->x);
 			    ysel = &(p_best->u.n->y);
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 			    rubber_set_callback(stretch_draw_point);
 
 			    state = NUM4;
@@ -357,8 +359,8 @@ int com_stretch(LEXER *lp, char *arg)
 			    distance = dist((*xsel)-x3, (*ysel)-y3);
 			    dbest = distance;
 			    coords = coords->next;
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 
 			    while(coords != NULL) {
 				xselold = xsel;
@@ -371,16 +373,16 @@ int com_stretch(LEXER *lp, char *arg)
 						 ((*ysel+*yselold)/2.0)-y3 );
 				if (distance < dbest) {
 				    dbest = distance;
-				    selpnt_clear(&selpnt);
-				    selpnt_save(&selpnt, xsel, ysel, NULL);
-				    selpnt_save(&selpnt, xselold, yselold, NULL);
+				    selpnt_clear(&sselpnt);
+				    selpnt_save(&sselpnt, xsel, ysel, NULL);
+				    selpnt_save(&sselpnt, xselold, yselold, NULL);
 				}
 
 				distance = dist(*xsel-x3, *ysel-y3);		/* next points */
 				if (distance < dbest) {
 				    dbest = distance;
-				    selpnt_clear(&selpnt);
-				    selpnt_save(&selpnt, xsel, ysel, NULL);
+				    selpnt_clear(&sselpnt);
+				    selpnt_save(&sselpnt, xsel, ysel, NULL);
 				}
 				coords = coords->next;
 			    }
@@ -389,9 +391,9 @@ int com_stretch(LEXER *lp, char *arg)
 					     ((*ysel+*yselfirst)/2.0)-y3 );
 			    if (distance < dbest) {
 				dbest = distance;
-				selpnt_clear(&selpnt);
-				selpnt_save(&selpnt, xsel, ysel, NULL);
-				selpnt_save(&selpnt, xselfirst, yselfirst, NULL);
+				selpnt_clear(&sselpnt);
+				selpnt_save(&sselpnt, xsel, ysel, NULL);
+				selpnt_save(&sselpnt, xselfirst, yselfirst, NULL);
 			    }
 
 
@@ -432,10 +434,10 @@ int com_stretch(LEXER *lp, char *arg)
 			    d = dist(((*xmin+*xmax)/2.0)-x3, *ymax-y3);
 			    if (d < dbest) { xsel = NULL, ysel = ymax; dbest = d; }
 			    
-			    selpnt_clear(&selpnt);
+			    selpnt_clear(&sselpnt);
 			    /* selpnt_save(xsel, ysel); */
 
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 
 			    rubber_set_callback(stretch_draw_point);
 
@@ -448,8 +450,8 @@ int com_stretch(LEXER *lp, char *arg)
 
 			    xsel = &(p_best->u.t->x);
 			    ysel = &(p_best->u.t->y);
-			    selpnt_clear(&selpnt);
-			    selpnt_save(&selpnt, xsel, ysel, NULL);
+			    selpnt_clear(&sselpnt);
+			    selpnt_save(&sselpnt, xsel, ysel, NULL);
 			    rubber_set_callback(stretch_draw_point);
 
 			    state = NUM4;
@@ -462,10 +464,10 @@ int com_stretch(LEXER *lp, char *arg)
 			    break;
 			}
 			/* p_prev=p_best; */
-			selpnt_save(&selpnt, NULL, NULL, p_best);
+			selpnt_save(&sselpnt, NULL, NULL, p_best);
 		    } else { 			/* mode == REGION */
 			 // db_highlight(p_best);  // RCW unhighlight
-			 if (selpnt) {
+			 if (sselpnt) {
 			    if (debug) {
 			       printf("setting rubber callback\n");
 			    }
@@ -552,7 +554,7 @@ void stretch_draw_point(double xx, double yy, int count)
 	lockpoint(&xx, &yy, currep->lock_angle);
 
         if (count == 0) {               /* first call */
-	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	    for (tmp = sselpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
 		   *(tmp->xsel) = tmp->xselorig + xx - x3;
 		}
@@ -564,7 +566,7 @@ void stretch_draw_point(double xx, double yy, int count)
 		}
 	    }
         } else if (count > 0) {         /* intermediate calls */
-	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	    for (tmp = sselpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
 		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
 		}
@@ -575,7 +577,7 @@ void stretch_draw_point(double xx, double yy, int count)
 		    db_highlight(tmp->p);
 		}
 	    }
-	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	    for (tmp = sselpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
 		   *(tmp->xsel) = tmp->xselorig + xx - x3;
 		}
@@ -587,7 +589,7 @@ void stretch_draw_point(double xx, double yy, int count)
 		}
 	    }
         } else {                        /* last call, cleanup */
-	    for (tmp = selpnt; tmp != NULL; tmp = tmp->next) {
+	    for (tmp = sselpnt; tmp != NULL; tmp = tmp->next) {
 	        if (tmp->xsel != NULL) {
 		   *(tmp->xsel) = tmp->xselorig + xxold - x3;
 		}
