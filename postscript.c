@@ -757,10 +757,10 @@ void ps_end_line()
     } else if (outputtype == SVG || outputtype == WEB) {			// SVG
        fprintf(fp,"\"\n");
        fprintf(fp, "stroke=\"%s\"\n", pen_to_svg_color(this_pen));
-       fprintf(fp, "filter=\"url(#c%d)\"\n", this_pen);
        fprintf(fp, "stroke-width=\"%g\"\n", linewidth);
        if (in_poly) {
 	   // fprintf(fp, "fill=\"%s\"\n",get_svg_fill(this_fill,this_pen));
+	   fprintf(fp, "filter=\"url(#c%d)\"\n", this_pen);
 	   fprintf(fp, "fill=\"url(#f%d)\"\n",this_fill);
 	   fprintf(fp, "fill-opacity=\"%s\"\n",
 	       get_svg_fill_opacity(this_fill));
