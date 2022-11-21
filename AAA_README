@@ -52,7 +52,8 @@ type a command at the text prompt, piglet searches for an internal command
 of that name.  If it doesn't find one to execute, then it looks through
 the $PATH variable to see if there is a UNIX command that can be executed.
 If so, it spawns a subshell and runs the UNIX command sending stdout to
-the terminal.  This is a handy facility for running the ls command.
+the terminal.  This is a handy facility for running the ls command.  I commonly 
+type "ls cells" to see what cells I've created.
 
 A few PIGLET commands terminate the current action with a double click
 on the same coordinate.  An example of this is the "ADD L<layer>" add
@@ -66,10 +67,11 @@ so you can either type "ADD R6 x1,y1 x2,y2;" or you can click the mouse
 on the menu to input "ADD" "R" "6" and then mouse the two coordinates. 
 
 Usually, it is only necessary to type on the keyboard for entering the
-names of cells, and for entering TEXT and NOTE strings.
+names of cells, and for entering TEXT and NOTE strings. Everything else
+can be done by menu clicks.
 
 All commands that change the drawing can be undone with the UNDO
-command.  Any command that is UNDO can be reapplied with the REDO
+command.  Any command that is UNDOne can be reapplied with the REDO
 command.  The depth of the UNDO command is limited only by the
 available memory.  This makes it safe to explore piglet's commands.
 If you make a mistake, just UNDO it!
