@@ -394,14 +394,14 @@ void ps_preamble(
 	// fprintf(fp,"<h1> %s </h1>\n", dev);
 	// fprintf(fp,"<!-- program %s -->\n", prog);
     } else if (outputtype == GERBER) {
-       fprintf(fp,"G4 Title: %s*\n", dev);
-       fprintf(fp,"G4 Creator: %s*\n", prog);
+       fprintf(fp,"G04 Title: %s*\n", dev);
+       fprintf(fp,"G04 Creator: %s*\n", prog);
        timep=time(&timep);
        ctime_r(&timep, buf);
        buf[strlen(buf)-1]='\0';
-       fprintf(fp,"G4 CreationDate: %s*\n", buf);
+       fprintf(fp,"G04 CreationDate: %s*\n", buf);
        gethostname(buf,MAXBUF);
-       fprintf(fp,"G4 For: %s@%s (%s)*\n", 
+       fprintf(fp,"G04 For: %s@%s (%s)*\n", 
        		getpwuid(getuid())->pw_name, buf, getpwuid(getuid())->pw_gecos );
        fprintf(fp,"G01*\n");	// linear interpolation
        // fprintf(fp,"G70*\n");	// inches
