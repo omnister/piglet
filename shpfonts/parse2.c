@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #define MAXTOK 128		// maximum string length of a token
 #define MAXPUSH 4		// max number of pushed back tokens

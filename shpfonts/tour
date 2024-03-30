@@ -1,4 +1,4 @@
-for file in prs*shp
+for file in arc*shp
 do
    echo $file
    parse2 < $file  | pd

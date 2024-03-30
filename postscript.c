@@ -404,7 +404,7 @@ void ps_preamble(
        fprintf(fp,"G4 For: %s@%s (%s)*\n", 
        		getpwuid(getuid())->pw_name, buf, getpwuid(getuid())->pw_gecos );
        fprintf(fp,"G01*\n");	// linear interpolation
-       fprintf(fp,"G70*\n");	// inches
+       // fprintf(fp,"G70*\n");	// inches
        fprintf(fp,"G90*\n");	// absolute
        fprintf(fp,"%%MOIN*%%\n");	// absolute
        fprintf(fp,"G04 Gerber Fmt 3.4, Leading zero omitted, Abs format*\n");
