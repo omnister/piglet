@@ -13,6 +13,7 @@
 #include "token.h"
 #include "rlgetc.h"
 #include "ev.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -64,7 +65,7 @@ int com_echo(LEXER *lp, char *arg)	/* echo variables */
 
     if (debug) printf("    com_echo\n");
 
-    while((token=token_get(lp, &word)) != EOF && token != EOL) {
+    while((token=token_get(lp, &word)) != EOF && token != TEOL) {
     	printf("%s ",word);
     }
     printf("\n");
@@ -87,7 +88,7 @@ int com_define(LEXER *lp, char *arg)	/* set macro definition */
 
     i=0;
     val[0]='\0';
-    while((token=token_get(lp, &word)) != EOF &&  token != EOL && token != EOC) {
+    while((token=token_get(lp, &word)) != EOF &&  token != TEOL && token != EOC) {
         if (i==0) {
 	    if (debug) printf("setting var %s\n", word);
 	    strncpy(var,word, 128);
@@ -156,7 +157,7 @@ int com_set(LEXER *lp, char *arg)	/* set environment variables */
 
     if (debug) printf("got var=%s, val=%s\n", var, val);
 
-    if ((token != EOF && token != EOL && token != EOC) || i>2) {
+    if ((token != EOF && token != TEOL && token != EOC) || i>2) {
        printf("SET: bad number of arguments\n");
     } else if (i==0) { 
 	if (n==0) {		/* default is to print all env variables */
@@ -192,12 +193,12 @@ int com_shell(LEXER *lp, char *arg)		/* run a program from within the editor */
     // }
 
     cmd[0] = '\0';
-    while((token=token_get(lp, &word)) != EOF  && token != EOL) {
+    while((token=token_get(lp, &word)) != EOF  && token != TEOL) {
         strncat(cmd, word, 1000);
         strncat(cmd, " ", 1000);
     }
 
-    // if (token == EOL) { token_unget(lp, token, word); }
+    // if (token == TEOL) { token_unget(lp, token, word); }
 
     pig_system(cmd);
 

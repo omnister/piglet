@@ -14,11 +14,12 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "ev.h"
+#include "draw.h"
 
-extern void do_win();		/* found in com_window */
-extern int readin();
-extern int com_show();
-extern int com_echo();
+int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale);
+int readin(char *filename, int editmode, int mode);
+int com_show(LEXER *lp, char *arg);
+int com_echo(LEXER *lp, char *arg);
 
 int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 {
@@ -82,7 +83,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -134,7 +135,7 @@ int com_edit(LEXER *lp, char *arg)		/* begin edit of an old or new device */
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("EDIT: cancelling EDIT\n");

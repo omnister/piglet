@@ -115,7 +115,7 @@ int com_equate(LEXER* lp, char *arg)	   /* define properties of each layer */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	        break;
 	    default:
 		printf("EQUATE: expected OPT, got %s %s\n", tok2str(token), word);

@@ -8,6 +8,7 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -20,7 +21,7 @@
 
 static double x1, y1;
 static double x2, y2;
-void delete_draw_box();
+void delete_draw_box(double x2, double y2, int count);
 SELPNT *selpnt;
 STACK *stack;
 
@@ -103,7 +104,7 @@ int com_delete(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -184,7 +185,7 @@ int com_delete(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token== EOL) {
+	    } else if (token== TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DEL: cancelling POINT\n");
@@ -215,7 +216,7 @@ int com_delete(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
                 token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("DELETE: cancelling POINT\n");

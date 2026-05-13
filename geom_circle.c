@@ -4,6 +4,7 @@
 #include "rubber.h"
 #include "rlgetc.h"
 #include "opt_parse.h"
+#include "draw.h"
 static double x1, y1;
 
 DB_TAB dbtab; 
@@ -12,7 +13,7 @@ DB_CIRC dbcirc;
 
 OPTS opts;
 
-void draw_circle();
+void draw_circle(double x2, double y2, int count);
 
 int add_circ(LEXER *lp, int *layer)
 {
@@ -52,7 +53,7 @@ int add_circ(LEXER *lp, int *layer)
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
@@ -70,7 +71,7 @@ int add_circ(LEXER *lp, int *layer)
 		    } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 
@@ -89,7 +90,7 @@ int add_circ(LEXER *lp, int *layer)
 		    } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); /* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    state = END; 

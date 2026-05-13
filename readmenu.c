@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define MAX 16
-int getcolor();
+int getcolor( char *s, int k);
 
 /*
 int testmain() {

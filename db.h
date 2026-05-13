@@ -1,13 +1,19 @@
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "stack.h"
 #include "paper.h"
+#include "token.h"
+#include "postscript.h"
 
-#define RES 5		/* number of decimals to allow */
+
+#define RES 5           /* number of decimals to allow */
 
 /* these definitions map bit fields in an int skipping every other */
 /* bit allowing circle visibility to be set with x|CIRC, and circle */
 /* modifiability with x|(CIRC*2) (eg: the next higher bit */
+
 
 #define ARC       1
 #define CIRC      4
@@ -31,39 +37,32 @@
 #define INST_OPTS "MRSXYZ"
 #define NONAME_OPTS "MRX"
 
-#define TEXT_MODE -2		// special :N opts for NOTE and TEXT
-#define NOTE_MODE -1	
+#define FILL_OFF 0
+#define FILL_ON 1
+#define FILL_TOGGLE 2
+extern void db_set_fill(int nest); 	   	/* set global fill level */
+extern void db_set_nest(int nest); 		/* set global display nest level */
+extern void db_set_physical(int physical); 	/* set global display 1=phys, 0=logical */
+extern int  physicalnest;
+
+#define MAXFILENAME 128
 
 #define MAX_LAYER 1024
 
-extern char *PIG_PATH;
+#define MIRROR_OFF 0
+#define MIRROR_X   1
+#define MIRROR_Y   2
+#define MIRROR_XY  3
 
-extern int show[MAX_LAYER];
+#define RES 5		/* number of decimals to allow */
 
-/*   definition of hierarchical editor data structures 
- *
- *   (this chain from HEAD is the cell definition symbol table)
- *
- *   all insertions are made at the tail to avoid reversing definition order
- *   everytime an archive is made and retrieved (a classic HP Piglet bug
- *   which made it very difficult to run a diff(1) on two versions of an
- *   archive file).
- *
- *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
- *                           |                |                  |
- *                           |               ...                ...
- *                           v
- *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->NULL
- *                                  |    |    |
- *                                  |    |    v
- *                                  |    v  [db_inst] (recursive call)
- *                                  v  [db_line]
- *                                [db_rect]
- *
- *   actually both db_tab and db_deflist chains are doubly-linked,
- *   but this is not shown here for simplicity...  
- *
- */
+#define TEXT_MODE -2		// special :N opts for NOTE and TEXT
+#define NOTE_MODE -1	
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "stack.h"
+#include "paper.h"
 
 /*
  *  OK, we use doubly-linked lists all over the place in piglet.
@@ -111,10 +110,91 @@ extern int show[MAX_LAYER];
  * Happy hacking!  RCW 01/12/07
  */
 
-#define MAXFILENAME 128
+/*   definition of hierarchical editor data structures 
+ *
+ *   (this chain from HEAD is the cell definition symbol table)
+ *
+ *   all insertions are made at the tail to avoid reversing definition order
+ *   everytime an archive is made and retrieved (a classic HP Piglet bug
+ *   which made it very difficult to run a diff(1) on two versions of an
+ *   archive file).
+ *
+ *   HEAD->[db_tab <inst_name0> ]->[<inst_name1>]->...[<inst_namek>]->NULL
+ *                           |                |                  |
+ *                           |               ...                ...
+ *                           v
+ *                       [db_deflist ]->[ ]->[ ]->...[db_deflist]->NULL
+ *                                  |    |    |
+ *                                  |    |    v
+ *                                  |    v  [db_inst] (recursive call)
+ *                                  v  [db_line]
+ *                                [db_rect]
+ *
+ *   actually both db_tab and db_deflist chains are doubly-linked,
+ *   but this is not shown here for simplicity...  
+ *
+ */
+
+typedef struct xform {
+     double r11;
+     double r12;
+     double r21;
+     double r22;
+     double dx;
+     double dy;
+} XFORM;
+
+
+/* matrix routines */
+XFORM *compose(XFORM *xf1, XFORM *xf2);
+void mat_rotate(XFORM *xp, double theta);
+void mat_scale(XFORM *xp, double sx, double sy);
+void mat_slant(XFORM *xp, double theta);
+void mat_print(XFORM *xa);
+
+typedef struct opt_list {
+    double font_size;       /* :F<font_size> */
+    double height;
+    int mirror;             /* :M<x,xy,y>    */
+    int font_num;           /* :N<font_number> */
+    int justification;      /* :J<justification> */
+    int stepflag;	    /* true if rows/cols valid */
+    int rows;		    /* :S<rows>,<cols> */
+    int cols;		
+    double rotation;        /* :R<rotation,resolution> */
+    double width;           /* :W<width> */
+    double scale; 	    /* :X<scale> */
+    double aspect_ratio;    /* :Y<aspect_ratio> */
+    double slant;           /* :Z<slant> */
+    char *sname;	    /* signal name */
+    char *cname;	    /* signal name */
+    int bezier;
+} OPTS;
 
 /* typedef NUM int; */
 typedef double NUM;
+
+typedef struct db_arc {
+    int layer;
+    OPTS *opts;
+    NUM x1,y1,x2,y2,x3,y3;
+} DB_ARC; 
+
+typedef struct db_circ {
+    int layer;
+    OPTS *opts;
+    NUM x1,y1,x2,y2;
+} DB_CIRC; 
+            
+extern char *strsave( char *string );
+
+typedef struct db_inst {
+    char *name; 	    /* was struct db_tab *def; */
+    OPTS *opts;
+    NUM x,y;
+    NUM colx,coly;		// column vector 
+    NUM rowx,rowy;		// row vector
+} DB_INST; 
 
 typedef struct coord_pair {
     NUM x,y;
@@ -126,15 +206,6 @@ typedef struct coord_list {
     struct coord_list *prev;
 } COORDS;
 
-typedef struct xform {
-     double r11;
-     double r12;
-     double r21;
-     double r22;
-     double dx;
-     double dy;
-} XFORM; 
-
 COORDS *coord_new(NUM x, NUM y);
 COORDS *coord_copy(XFORM *xp, COORDS *CP);
 COORDS *coord_append(COORDS *CP, NUM x, NUM y);
@@ -145,6 +216,62 @@ int  coord_count(COORDS *CP);
 int  coord_get(COORDS *CP, int n, NUM *px, NUM *py);
 int  coord_edit(COORDS *CP, int n, NUM x, NUM y); 
 
+typedef struct db_line {
+    int layer;
+    OPTS *opts;
+    COORDS *coords;
+} DB_LINE; 
+
+typedef struct db_note {
+    int layer;
+    OPTS *opts;
+    char *text;
+    NUM x,y;
+} DB_NOTE; 
+
+typedef struct db_oval {
+    int layer;
+    OPTS *opts;
+    NUM x1,y1,x2,y2,x3,y3;
+} DB_OVAL; 
+
+typedef struct db_poly {
+    int layer;
+    OPTS *opts;
+    COORDS *coords;
+} DB_POLY; 
+
+typedef struct db_rect {
+    int layer;
+    OPTS *opts;
+    NUM x1,y1,x2,y2;
+} DB_RECT; 
+
+typedef struct db_text {
+    int layer;
+    OPTS *opts;
+    char *text;
+    NUM x,y;
+} DB_TEXT; 
+
+typedef struct db_deflist {
+    int type;
+    union {
+        DB_ARC  *a;  /* arc definition */
+        DB_CIRC *c;  /* circle definition */
+        DB_INST *i;  /* instance call */
+        DB_LINE *l;  /* line definition */
+        DB_NOTE *n;  /* note definition */
+        DB_OVAL *o;  /* oval definition */
+        DB_POLY *p;  /* polygon definition */
+        DB_RECT *r;  /* rectangle definition */
+        DB_TEXT *t;  /* text definition */
+    } u;
+    NUM xmin, ymin, xmax, ymax; /* wrapper bounds for screening extents */
+    struct db_deflist *next;    /* to link to another */
+    struct db_deflist *prev;    /* and to the previous */
+} DB_DEFLIST;
+
 typedef struct bounds {
     double xmin;
     double ymin;
@@ -153,7 +280,21 @@ typedef struct bounds {
     int init;	/* 0 = non-initialized */
 } BOUNDS;
 
-/********************************************************/
+/* routines for expanding db entries into vectors */
+void do_arc(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_circ(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_line(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_note(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_oval(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_poly(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_rect(DB_DEFLIST *def, BOUNDS *bb, int mode);
+void do_text(DB_DEFLIST *def, BOUNDS *bb, int mode);
+
+/* these definitions map bit fields in an int skipping every other */
+/* bit allowing circle visibility to be set with x|CIRC, and circle */
+/* modifiability with x|(CIRC*2) (eg: the next higher bit */
+
+DB_DEFLIST *db_copy_component(DB_DEFLIST *p, DB_DEFLIST *pinstdef); 
 
 typedef struct db_tab {
     char *name;			/* cell name */
@@ -217,33 +358,66 @@ typedef struct db_tab {
     struct db_tab *prev;    	/* link to previous */
 } DB_TAB;
 
-/********************************************************/
+typedef struct selpnt {
+    DB_DEFLIST *p;
+    double *xsel;         /* pointers to coordinates in component */
+    double *ysel;
+    double xselorig;      /* original values prior to any applied offset */
+    double yselorig;
+    struct selpnt *next;
+    struct selpnt *prev;
+} SELPNT;
 
-typedef struct opt_list {
-    double font_size;       /* :F<font_size> */
-    double height;
-    int mirror;             /* :M<x,xy,y>    */
-    int font_num;           /* :N<font_number> */
-    int justification;      /* :J<justification> */
-    int stepflag;	    /* true if rows/cols valid */
-    int rows;		    /* :S<rows>,<cols> */
-    int cols;		
-    double rotation;        /* :R<rotation,resolution> */
-    double width;           /* :W<width> */
-    double scale; 	    /* :X<scale> */
-    double aspect_ratio;    /* :Y<aspect_ratio> */
-    double slant;           /* :Z<slant> */
-    char *sname;	    /* signal name */
-    char *cname;	    /* signal name */
-    int bezier;
-} OPTS;
 
-extern void    db_set_font_size(double size);
-extern double  db_get_font_size();
-extern void    db_set_text_slant(double slant);
-extern double  db_get_text_slant();
+DB_DEFLIST *db_ident(
+		DB_TAB *cell,
+		NUM x,
+		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
 
-extern OPTS *opt_create();
+SELPNT  *db_ident2(
+		DB_TAB *cell,
+		NUM x,
+		NUM y,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+SELPNT *db_ident_region2(
+		DB_TAB *cell,
+		NUM xx1,
+		NUM yy1,
+		NUM xx2,
+		NUM yy2,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+STACK *db_ident_region(
+		DB_TAB *cell,
+		NUM xx1,
+		NUM yy1,
+		NUM xx2,
+		NUM yy2,
+		int mode,
+		int pick_layer,
+		int comp,
+		char *name
+	    );
+
+extern DB_TAB *db_lookup( char *cellname );
+extern DB_TAB *db_install( char *cellname ); 
+extern DB_TAB *db_edit_pop( int level ); 
+
+extern OPTS *opt_create(void);
 extern void opt_set_defaults( OPTS *opts  );
 extern OPTS *opt_copy( OPTS *opts);
 extern void append_opt( char *s );
@@ -252,95 +426,16 @@ extern OPTS *opt_alloc( char *s );
 extern OPTS *first_opt, *last_opt; 
 extern int  is_ortho(OPTS *opts);	
 
-#define MIRROR_OFF 0
-#define MIRROR_X   1
-#define MIRROR_Y   2
-#define MIRROR_XY  3
+extern SELPNT *selpnt_new(double *x,double *y, DB_DEFLIST *pdef);
+extern void selpnt_clear(SELPNT **selhead);
+extern void selpnt_print(SELPNT **selhead);
+extern void selpnt_save(SELPNT **selhead, double *x, double *y, DB_DEFLIST *pdef);
 
-typedef struct db_arc {
-    int layer;
-    OPTS *opts;
-    NUM x1,y1,x2,y2,x3,y3;
-} DB_ARC; 
+extern char *PIG_PATH;
 
-typedef struct db_circ {
-    int layer;
-    OPTS *opts;
-    NUM x1,y1,x2,y2;
-} DB_CIRC; 
-
-typedef struct db_inst {
-    char *name; 	    /* was struct db_tab *def; */
-    OPTS *opts;
-    NUM x,y;
-    NUM colx,coly;		// column vector 
-    NUM rowx,rowy;		// row vector
-} DB_INST; 
-
-typedef struct db_line {
-    int layer;
-    OPTS *opts;
-    COORDS *coords;
-} DB_LINE; 
-
-typedef struct db_oval {
-    int layer;
-    OPTS *opts;
-    NUM x1,y1,x2,y2,x3,y3;
-} DB_OVAL; 
-
-typedef struct db_poly {
-    int layer;
-    OPTS *opts;
-    COORDS *coords;
-} DB_POLY; 
-
-typedef struct db_rect {
-    int layer;
-    OPTS *opts;
-    NUM x1,y1,x2,y2;
-} DB_RECT; 
-
-typedef struct db_note {
-    int layer;
-    OPTS *opts;
-    char *text;
-    NUM x,y;
-} DB_NOTE; 
-
-
-typedef struct db_text {
-    int layer;
-    OPTS *opts;
-    char *text;
-    NUM x,y;
-} DB_TEXT; 
-
-/********************************************************/
-
-typedef struct db_deflist {
-    int type;
-    union {
-        DB_ARC  *a;  /* arc definition */
-        DB_CIRC *c;  /* circle definition */
-        DB_INST *i;  /* instance call */
-        DB_LINE *l;  /* line definition */
-        DB_NOTE *n;  /* note definition */
-        DB_OVAL *o;  /* oval definition */
-        DB_POLY *p;  /* polygon definition */
-        DB_RECT *r;  /* rectangle definition */
-        DB_TEXT *t;  /* text definition */
-    } u;
-    NUM xmin, ymin, xmax, ymax; /* wrapper bounds for screening extents */
-    struct db_deflist *next;    /* to link to another */
-    struct db_deflist *prev;    /* and to the previous */
-} DB_DEFLIST;
-            
-extern char *strsave( char *string );
-
-extern DB_TAB *db_lookup( char *cellname );
-extern DB_TAB *db_install( char *cellname ); 
-extern DB_TAB *db_edit_pop( int level ); 
+extern double db_area(
+		DB_DEFLIST *component
+	    );
 
 extern int db_add_arc(  
 		DB_TAB *cell,
@@ -357,13 +452,6 @@ extern int db_add_circ(
 		OPTS *opts,
 		NUM x1, NUM y1,
 		NUM x2, NUM y2
-	    );
-
-extern struct db_inst * db_add_inst(
-		DB_TAB *cell, 
-		DB_TAB *subcell, 
-		OPTS *opts,
-		NUM x, NUM y
 	    );
 
 extern int db_add_line(
@@ -413,111 +501,15 @@ extern int db_add_text(
 		NUM x, NUM y      
 	    );
 
-extern int db_save(
-	/*	LEXER *lp,
-		DB_TAB *sp,
-		char *name */
-	    );
-
-extern void db_def_print(
-		FILE *fp,
-		DB_TAB *dp,
-		int mode
-	    );
-
 extern int db_def_archive(
 		DB_TAB *sp,
 		int smash,	/* if !==0, smash the archive */
 		int process	/* if !==0, include process file in archive */
 	    );
 
-extern void printdef(
-		FILE *fp, 
-		DB_DEFLIST *p, 
-		DB_DEFLIST *pinstdef
-	    );
-
-#define FILL_OFF 0
-#define FILL_ON 1
-#define FILL_TOGGLE 2
-extern void db_set_fill(int nest); 	   	/* set global fill level */
-extern void db_set_nest(int nest); 		/* set global display nest level */
-extern void db_set_physical(int physical); 	/* set global display 1=phys, 0=logical */
-extern int  physicalnest;
-
-extern void db_set_bounds(int bounds); 		/* set global display bounds level */
-
-void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
-// void db_unlink_component(DB_TAB *cell, struct db_deflist dp)
-
-
-typedef struct selpnt {
-    DB_DEFLIST *p;
-    double *xsel;         /* pointers to coordinates in component */
-    double *ysel;
-    double xselorig;      /* original values prior to any applied offset */
-    double yselorig;
-    struct selpnt *next;
-    struct selpnt *prev;
-} SELPNT;
-
-extern SELPNT *selpnt_new(double *x,double *y, DB_DEFLIST *pdef);
-extern void selpnt_clear(SELPNT **selhead);
-extern void selpnt_print(SELPNT **selhead);
-extern void selpnt_save(SELPNT **selhead, double *x, double *y, DB_DEFLIST *pdef);
-
-DB_DEFLIST *db_ident(
-		DB_TAB *cell,
-		NUM x,
-		NUM y,
-		int mode,
-		int pick_layer,
-		int comp,
-		char *name
-	    );
-
-SELPNT  *db_ident2(
-		DB_TAB *cell,
-		NUM x,
-		NUM y,
-		int mode,
-		int pick_layer,
-		int comp,
-		char *name
-	    );
-
-SELPNT *db_ident_region2(
-		DB_TAB *cell,
-		NUM xx1,
-		NUM yy1,
-		NUM xx2,
-		NUM yy2,
-		int mode,
-		int pick_layer,
-		int comp,
-		char *name
-	    );
-
-STACK *db_ident_region(
-		DB_TAB *cell,
-		NUM xx1,
-		NUM yy1,
-		NUM xx2,
-		NUM yy2,
-		int mode,
-		int pick_layer,
-		int comp,
-		char *name
-	    );
-
-extern double db_area(
-		DB_DEFLIST *component
-	    );
-
 extern int db_list(
 		DB_TAB *cell
 	    );
-
 
 extern int db_render(
 		DB_TAB *cell,
@@ -526,29 +518,53 @@ extern int db_render(
 		int mode
 	    );
 
-DB_DEFLIST *db_copy_component();
+extern int db_save(LEXER *lp, DB_TAB *sp, char *name);
 
-extern void db_move_component();
-extern void db_set_layer();
-extern int  db_list_unsaved();
-extern int  db_remove_autosavefiles();
-extern void db_drawbounds();
-extern int  db_contains();
-extern void db_notate();
-extern void db_highlight();
-extern void db_print_opts();
-extern void db_insert_component();
-extern void db_purge();
+extern int show[MAX_LAYER];
+
+extern struct db_inst * db_add_inst(
+		DB_TAB *cell, 
+		DB_TAB *subcell, 
+		OPTS *opts,
+		NUM x, NUM y
+	    );
+
+extern void    db_set_font_size(double size);
+extern double  db_get_font_size();
+extern void    db_set_text_slant(double slant);
+extern double  db_get_text_slant();
+
+extern void db_def_print(
+		FILE *fp,
+		DB_TAB *dp,
+		int mode
+	    );
+
+extern void db_move_component(struct db_deflist *p, double dx, double dy);
+extern void db_set_layer(struct db_deflist *p, int new_layer);
+extern int  db_list_unsaved(void);
+extern int  db_remove_autosavefiles(void);
+extern void db_drawbounds( double xmin, double ymin, double xmax, double ymax, int mode);
+extern int db_contains(char *name1, char *name2);
+extern void db_notate(DB_DEFLIST *p);
+extern void db_highlight(DB_DEFLIST *p);
+extern void db_print_opts(FILE *fp, OPTS *popt, char *validopts);
+extern void db_insert_component(DB_TAB *cell, struct db_deflist *dp); 
+extern void db_purge(LEXER *lp, char *s);
 extern void db_unlink_cell(DB_TAB *sp);
-extern int  db_exists();
-extern void db_list_db();
+extern int db_exists(char *name);
+extern void db_list_db(void);
 extern double  dist(double x, double y);
-extern int ask( /* LEXER *lp, char *msg */ ); 
+extern int ask(LEXER *lp, char *s);
 
-extern int db_plot();			/* plot the device to a file */
+extern void db_set_bounds(int bounds); 		/* set global display bounds level */
 
-extern void draw( NUM x, NUM y, BOUNDS *bb, int MODE);
-extern void jump(BOUNDS *bb, int MODE);
+
+extern void printdef(
+		FILE *fp, 
+		DB_DEFLIST *p, 
+		DB_DEFLIST *pinstdef
+	    );
 
 extern void show_set_visible(DB_TAB *currep, int comp, int layer, int state);
 extern void show_set_modify(DB_TAB *currep, int comp, int layer, int state);
@@ -556,43 +572,37 @@ extern int  show_check_modifiable(DB_TAB *currep, int comp, int layer);
 extern int  show_check_visible(DB_TAB *currep, int comp, int layer);
 extern void show_init(DB_TAB *currep);
 
-/********************************************************/
-/* support routines */
-double max(), min();
+int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho);
+int db_cksum(DB_DEFLIST *cell);
+DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head);
+int db_checkpoint(LEXER *lp);
+void db_free(DB_DEFLIST *dp);
+void db_fsck(DB_DEFLIST *dp);
+int readin( char *filename, int editmode, int mode);
+int loadrep(char *inst_name);
+extern int aborted;	// used to abort drawing
 
-/* matrix routines */
-XFORM *compose();
-void mat_rotate();
-void mat_scale();
-void mat_slant();
-void mat_print();
+int db_plot(char *name, OMODE plottype, double dx, double dy, int color, double pen);
 
-/* primitives for outputting autoplot,X primitives */
-void draw();
-void jump();
-void set_layer();
-void set_line();
-void startpoly();
-void endpoly();
 
-/* routines for expanding db entries into vectors */
-void do_arc(),  do_circ(), do_line(), do_note();
-void do_oval(), do_poly(), do_rect(), do_text();
+
+
+typedef struct xform {
+     double r11;
+     double r12;
+     double r21;
+     double r22;
+     double dx;
+     double dy;
+} XFORM; 
+
+void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
+// void db_unlink_component(DB_TAB *cell, struct db_deflist dp)
+
+void escstring(char *dst, char *src);
+int pig_system(char *cmd);
+void license();		/* from license.h */
 
 void xform_point(XFORM *xp, double *xx, double *yy); 
 XFORM *matrix_from_opts(OPTS *opts);
 
-void license();		/* from license.h */
-
-int db_arc_smash(DB_TAB *cell, XFORM *xform, int ortho);
-int db_cksum(DB_DEFLIST *cell);
-DB_DEFLIST *db_copy_deflist(DB_DEFLIST *head);
-int db_checkpoint();
-void db_free(DB_DEFLIST *dp);
-void db_fsck(DB_DEFLIST *dp);
-int readin();
-int loadrep();
-extern int aborted;	// used to abort drawing
-
-void escstring(char *dst, char *src);
-int pig_system(char *cmd);

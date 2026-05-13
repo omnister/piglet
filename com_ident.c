@@ -7,6 +7,7 @@
 #include "token.h"
 #include "rubber.h"
 #include "rlgetc.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -30,7 +31,7 @@
 
 static double x1, y1;
 static double x2, y2;
-void ident_draw_box();
+void ident_draw_box(double x2, double y2, int count);
 
 int com_identify(LEXER *lp, char *arg)
 {
@@ -83,7 +84,7 @@ int com_identify(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -170,7 +171,7 @@ int com_identify(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");
@@ -201,7 +202,7 @@ int com_identify(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("IDENT: cancelling POINT\n");

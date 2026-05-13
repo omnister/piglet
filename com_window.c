@@ -7,6 +7,7 @@
 #include "rlgetc.h"
 #include "eprintf.h"
 #include "equate.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -16,8 +17,8 @@ int nest=9;		/* default nesting level */
 int lastwin=0;		/* go back to last window */
 //int bounds=0;		/* default pick boundary display level */
 
-void draw_bounds();
-int do_win();
+void draw_bounds(double x2, double y2, int count);
+int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale);
 
 int com_window(LEXER *lp, char *arg)
 {
@@ -96,7 +97,7 @@ int com_window(LEXER *lp, char *arg)
 		break;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp, &word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD || token == IDENT) {
@@ -120,7 +121,7 @@ int com_window(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD || token == IDENT) {
 		printf("WIN: cancelling WIN\n");
@@ -152,7 +153,7 @@ int com_window(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp, &word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD || token == IDENT) {
 		if (debug) printf("WIN: doing pan\n");

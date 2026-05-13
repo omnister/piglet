@@ -3,6 +3,7 @@
 #include "token.h"
 #include "rubber.h"
 #include "rlgetc.h"
+#include "draw.h"
 #include "opt_parse.h"
 
 /*
@@ -17,7 +18,7 @@
  */
 
 static double x1, y1;
-void draw_box();
+void draw_box(double x2, double y2, int count);
 
 OPTS ropts;
 
@@ -55,7 +56,7 @@ int add_rect(LEXER *lp, int *layer)
 		}
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL || token == EOC) {
+	    } else if (token == TEOL || token == EOC) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOF) {
@@ -73,7 +74,7 @@ int add_rect(LEXER *lp, int *layer)
 		} else {
 		    state = END;	
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("   cancelling ADD RECT\n");
@@ -100,7 +101,7 @@ int add_rect(LEXER *lp, int *layer)
 		} else {
 		    state = END; 
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("ADD RECT: cancelling ADD RECT\n");

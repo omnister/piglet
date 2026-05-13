@@ -794,7 +794,7 @@ void ps_end_line()
     in_line=0;
 }
 
-void ps_flush() {
+void ps_flush(void) {
     if (in_line) {
     	ps_end_line();
     } 
@@ -938,7 +938,7 @@ void ps_continue_line(double x1, double y1)
     in_line++;
 }
 
-void ps_postamble()
+void ps_postamble(void)
 {
     // time_t timep;
     // char buf[MAXBUF];

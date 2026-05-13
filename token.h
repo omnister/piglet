@@ -1,3 +1,5 @@
+#pragma once
+
 #define BUFSIZE 1024
 
 typedef enum {
@@ -7,7 +9,7 @@ typedef enum {
     QUOTE, 	/* quoted string */
     NUMBER, 	/* number */
     OPT,	/* option */
-    EOL,	/* newline or carriage return */
+    TEOL,	/* newline or carriage return */
     EOC,	/* end of command */
     BACK,	/* backup "^" */
     COMMA,	/* comma */

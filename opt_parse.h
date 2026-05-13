@@ -1,2 +1,2 @@
 
-extern int opt_parse();
+int opt_parse( char *optstring, char *validopts, OPTS *popt);

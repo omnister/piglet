@@ -10,6 +10,7 @@
 #include "equate.h"
 #include "ev.h"
 #include "readfont.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -36,11 +37,11 @@ int n_poly_points = 0;		/* number of points in filled polygon */
 XPoint Poly[MAXPOLY];
 
 			
-void clipl();   	  /* polygon clipping pipeline: clip left side */
-void clipr();   	  /* clip right side */
-void clipt();		  /* clip top */
-void clipb();		  /* clip bottom */
-void clip_setwindow();	  /* set clipping window */
+void clipl( int init, double x, double y, BOUNDS *bb, int mode); 	// clip left
+void clipr( int init, double x, double y, BOUNDS *bb, int mode); 	// clip right
+void clipt( int init, double x, double y, BOUNDS *bb, int mode);	// clip top
+void clipb( int init, double x, double y, BOUNDS *bb, int mode);	// clip bottom	
+void clip_setwindow(double x1, double y1, double x2, double y2);  // set clipping window
 
 static double xmin;
 static double xmax;
@@ -48,8 +49,8 @@ static double ymin;
 static double ymax;
 
 
-int pickcheck();
-void emit();
+int pickcheck( double x1, double y1, double x2, double y2, double x3, double y3, double eps);
+void emit(int init, double x, double y, BOUNDS *bb, int mode);
 static int debug = 0;
 
 /****************************************************/
@@ -2045,7 +2046,7 @@ void endpoly(BOUNDS *bb, int mode)
     filled_object = 0;			/* global for managing polygon filling */
     if (X) {
         if (n_poly_points >=3) {
-	    xwin_fill_poly(&Poly, n_poly_points); /* call XFillPolygon w/saved pts */
+	    xwin_fill_poly(&Poly[0], n_poly_points); /* call XFillPolygon w/saved pts */
 	}
     } else {
 	// ps_end_poly();

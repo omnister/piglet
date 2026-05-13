@@ -5,6 +5,8 @@
 #include "readfont.h"
 #include "readshpfont.h"
 #include "db.h"
+#include "draw.h"
+
 #define MAXPOINT 20000
 
 /* 
@@ -36,9 +38,9 @@ and <pound>:
 */
 
 
-int getxy();
-int eatwhite();
-int getint();
+int getxy(FILE *fp, int *px, int *py);
+int eatwhite(FILE *fp);
+int getint(FILE *fp, int *pi);
 
     /* int getc(FILE *stream); */
     /* int ungetc(int c, FILE *stream); */

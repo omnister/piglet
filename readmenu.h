@@ -14,5 +14,5 @@ typedef struct menuentry {
     Window pane;
 } MENUENTRY;
 
-int loadmenu();
+int loadmenu( MENUENTRY m[], int maxcell, char *s, int *lw, int *mr);
 

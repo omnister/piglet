@@ -8,11 +8,12 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
 static double x1, y1, x2, y2, x3, y3;
-void wrap_draw_box();
+void wrap_draw_box(double x3, double y3, int count);
 STACK *zstack;
 char ybuf[MAXFILENAME];
 static int instcounter=0;	/* used for generating uniq instance names */
@@ -99,7 +100,7 @@ int com_wrap(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -171,7 +172,7 @@ int com_wrap(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WRAP: cancelling POINT\n");
@@ -191,7 +192,7 @@ int com_wrap(LEXER *lp, char *arg)
 	    	} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
                 token_get(lp,&word);     /* just ignore it */
             } else if (token == EOC || token == CMD) {
                 printf("IDENT: cancelling POINT\n");
@@ -277,7 +278,7 @@ int com_wrap(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("WRAP: cancelling POINT\n");

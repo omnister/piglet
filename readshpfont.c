@@ -11,6 +11,7 @@
 
 #include "db.h"
 #include "readshpfont.h"
+#include "draw.h"
 
 #define MAXTOK 128		// maximum string length of a token
 #define MAXPUSH 4		// max number of pushed back tokens
@@ -44,13 +45,13 @@ typedef enum {
     SP,				// space
     VAL,			// numerical value
     WORD,
-    QUOTE,
-    COMMA,
-    UNKNOWN
-} TOKEN;
+    SQUOTE,
+    SCOMMA,
+    SUNKNOWN
+} STOKEN;
 
 typedef struct tokstruct {
-   TOKEN tok;
+   STOKEN tok;
    char *word;
 } TOKSTRUCT;
 
@@ -61,11 +62,11 @@ int linenum = 0;
 // int debug = 0;
 
 // forward references
-TOKEN shp_token_get(FILE *fp, char **word);
-static char *tok2str(TOKEN t);
+STOKEN shp_token_get(FILE *fp, char **word);
+static char *stok2str(STOKEN t);
 char *estrdup(const char *s);
 void shp_eatwhite(FILE *fp);
-int shp_token_unget(TOKEN token, char *word);
+int shp_token_unget(STOKEN token, char *word);
 
 FONT *shp_id2font(int id) {
     if (fonttab[id]!=NULL) {
@@ -533,7 +534,7 @@ void shp_writechar(
     }
 }
 
-void shp_fontinit() {
+void shp_fontinit(void) {
    int i;
    // do anything needed to initialize font structures
    for (i=0; i<MAXFONTS; i++) {
@@ -608,7 +609,7 @@ FONT *newfont() {
 int shp_loadfont(char *path, int position)
 {
     char *tp;
-    TOKEN token;
+    STOKEN token;
     int state = 0;
     FILE *fp;
     FONT *f;
@@ -639,7 +640,7 @@ int shp_loadfont(char *path, int position)
     f = newfont();
 
     while ((token = shp_token_get(fp, &tp)) != EOF) {
-	if (debug) printf("%s: <%s>\n", tok2str(token), tp);
+	if (debug) printf("%s: <%s>\n", stok2str(token), tp);
 	switch (state) {
 	case 0:		// start of record
 	    if (token == EOL) {
@@ -650,7 +651,7 @@ int shp_loadfont(char *path, int position)
 		state = 1;
 	    } else {
 		fprintf(stderr, "parse error in state %d, tok=%s, glyphnum=%d\n", 
-		state, tok2str(token), glyphnum);
+		state, stok2str(token), glyphnum);
 		exit(1);
 	    }
 	    break;
@@ -910,7 +911,7 @@ int test_main() {
 }
 
 
-int shp_token_unget(TOKEN token, char *word)
+int shp_token_unget(STOKEN token, char *word)
 {
     int debug = 0;
 
@@ -934,14 +935,14 @@ int shp_token_unget(TOKEN token, char *word)
 void shp_eatwhite(FILE *fp)
 {
     char *tp;
-    TOKEN token;
+    STOKEN token;
     int debug = 0;
 
     if (debug) printf("in eatwhite\n");
 
     while ((token = shp_token_get(fp, &tp)) != EOF) {
 	if (debug)
-	    printf("in eatwhite - %s: <%s>\n", tok2str(token), tp);
+	    printf("in eatwhite - %s: <%s>\n", stok2str(token), tp);
 	if (token != SP && token != EOL) {
 	    shp_token_unget(token, tp);
 	    return;
@@ -950,7 +951,7 @@ void shp_eatwhite(FILE *fp)
 }
 
 
-static char *tok2str(TOKEN t)
+static char *stok2str(STOKEN t)
 {
     switch (t) {
     case EOL:
@@ -967,27 +968,27 @@ static char *tok2str(TOKEN t)
 	return ("NUMVAL");
     case WORD:
 	return ("WORD");
-    case QUOTE:
+    case SQUOTE:
 	return ("QUOTE");
-    case COMMA:
+    case SCOMMA:
 	return ("COMMA");
-    case UNKNOWN:
+    case SUNKNOWN:
     default:
 	return ("UNK");
     }
 }
 
 // lookahead to next token
-TOKEN shp_token_look(FILE *fp, char **word)
+STOKEN shp_token_look(FILE *fp, char **word)
 {
-    TOKEN token;
+    STOKEN token;
     token = shp_token_get(fp, word);
     shp_token_unget(token, *word);
     return token;
 }
 
 // consume next token
-TOKEN shp_token_get(FILE* fp, char **word)
+STOKEN shp_token_get(FILE* fp, char **word)
 {
 
     static char buf[MAXTOK];
@@ -1032,7 +1033,7 @@ TOKEN shp_token_get(FILE* fp, char **word)
 	    case ',':
 		// *w++ = c;
 		// *w = '\0';
-		// return (COMMA);
+		// return (SCOMMA);
 		continue;
 	    case '"':
 		state = INQUOTE;
@@ -1105,7 +1106,7 @@ TOKEN shp_token_get(FILE* fp, char **word)
 		continue;
 	    case '"':
 		*w = '\0';
-		return (QUOTE);
+		return (SQUOTE);
 	    default:
 		*w++ = c;
 		continue;
@@ -1124,7 +1125,7 @@ TOKEN shp_token_get(FILE* fp, char **word)
 	    }
 	default:
 	    fprintf(stderr, "bad case in lexer\n");
-	    return (UNKNOWN);
+	    return (SUNKNOWN);
 	    break;
 	}			// switch state
     }				// while loop

@@ -81,7 +81,7 @@ int com_area(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -170,7 +170,7 @@ int com_area(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("AREA: cancelling POINT\n");

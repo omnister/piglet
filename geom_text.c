@@ -4,6 +4,7 @@
 #include "rubber.h"
 #include "opt_parse.h"
 #include "rlgetc.h"
+#include "draw.h"
 #include <string.h>
 
 
@@ -12,11 +13,11 @@ DB_TEXT dbtext;
 
 static double x1, y1;
 char str[BUFSIZE];
-void draw_text(); 
+void draw_text(double x2, double y2, int count);
 
 OPTS topts;
 
-int add_annotation();
+int add_annotation(LEXER *lp, int *layer, int mode);
 
 /* [:Mmirror] [:Rrot] [:Yyxratio] [:Zslant] [:Fsize] "string" xy EOC" */
 
@@ -28,10 +29,8 @@ void add_text(LEXER *lp, int *layer) {
     add_annotation(lp, layer, TEXT_MODE);
 }
 
-int add_annotation(lp, layer, mode)
-LEXER *lp;
-int *layer;
-int mode;	// NOTE_MODE for note, TEXT_MODE for text
+// NOTE_MODE for note, TEXT_MODE for text
+int add_annotation(LEXER *lp, int *layer, int mode)
 {
     enum {START,NUM1,END} state = START;
 
@@ -101,7 +100,7 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
 		    strncpy(str,word,BUFSIZE);
 		    rubber_set_callback(draw_text);
 		    state = START;
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
@@ -139,7 +138,7 @@ int mode;	// NOTE_MODE for note, TEXT_MODE for text
 		    } else {
 		  	state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC || token == CMD) {
 		    printf(" cancelling ADD %s\n", type);

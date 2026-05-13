@@ -28,27 +28,70 @@
 
 #define UNUSED(x) (void)(x)
 
-int readin();
+int readin( char *filename, int editmode, int mode);
 int aborted;     // used to abort drawing
 
 
 /* The names of functions that actually do the manipulation. */
 
-int com_add(), com_archive(), com_area(), com_background();
-int com_bye(), com_change(), com_copy(), com_date(), com_define();
-int com_delete(), com_display(), com_distance(), com_dump(); 
-int com_echo(), com_edit(), com_equate(), com_eval(), com_exit(), com_files();
-int com_fsize(), com_grid(), com_group(), com_help();
-int com_identify(), com_input(), com_interrupt(), com_layer();
-int com_level(), com_list(), com_lock(), com_macro(), com_menu();
-int com_move(), com_plot(), com_point(), com_process();
-int com_purge(), com_redo(), com_retrieve(), com_save(), com_search();
-int com_set(), com_shell(), com_show(), com_smash();
-int com_split(), com_step(), com_stretch(), com_time(), com_trace();
-int com_tslant(), com_undo(), com_units(), com_version(), com_window();
-int com_wrap();
+int com_add(LEXER *lp, char *arg);		
+int com_archive(LEXER *lp, char *arg);
+int com_area(LEXER *lp, char *arg);
+int com_background(LEXER *lp, char *arg);
+int com_bye(LEXER *lp, char *arg);
+int com_change(LEXER *lp, char *arg);
+int com_copy(LEXER *lp, char *arg);
+int com_date(LEXER *lp, char *arg);
+int com_define(LEXER *lp, char *arg);
+int com_delete(LEXER *lp, char *arg);
+int com_display(LEXER *lp, char *arg);
+int com_distance(LEXER *lp, char *arg);
+int com_dump(LEXER *lp, char *arg);
+int com_echo(LEXER *lp, char *arg);
+int com_edit(LEXER *lp, char *arg);
+int com_equate(LEXER *lp, char *arg);
+int com_eval(LEXER *lp, char *arg);
+int com_exit(LEXER *lp, char *arg);
+int com_files(LEXER *lp, char *arg);
+int com_fsize(LEXER *lp, char *arg);
+int com_grid(LEXER *lp, char *arg);
+int com_group(LEXER *lp, char *arg);
+int com_help(LEXER *lp, char *arg);
+int com_identify(LEXER *lp, char *arg);
+int com_input(LEXER *lp, char *arg);
+int com_interrupt(LEXER *lp, char *arg);
+int com_layer(LEXER *lp, char *arg);
+int com_level(LEXER *lp, char *arg);
+int com_list(LEXER *lp, char *arg);
+int com_lock(LEXER *lp, char *arg);
+int com_macro(LEXER *lp, char *arg);
+int com_menu(LEXER *lp, char *arg);
+int com_move(LEXER *lp, char *arg);
+int com_plot(LEXER *lp, char *arg);
+int com_point(LEXER *lp, char *arg);
+int com_process(LEXER *lp, char *arg);
+int com_purge(LEXER *lp, char *arg);
+int com_redo(LEXER *lp, char *arg);
+int com_retrieve(LEXER *lp, char *arg);
+int com_save(LEXER *lp, char *arg);
+int com_search(LEXER *lp, char *arg);
+int com_set(LEXER *lp, char *arg);
+int com_shell(LEXER *lp, char *arg);
+int com_show(LEXER *lp, char *arg);
+int com_smash(LEXER *lp, char *arg);
+int com_split(LEXER *lp, char *arg);
+int com_step(LEXER *lp, char *arg);
+int com_stretch(LEXER *lp, char *arg);
+int com_time(LEXER *lp, char *arg);
+int com_trace(LEXER *lp, char *arg);
+int com_tslant(LEXER *lp, char *arg);
+int com_undo(LEXER *lp, char *arg);
+int com_units(LEXER *lp, char *arg);
+int com_version(LEXER *lp, char *arg);
+int com_window(LEXER *lp, char *arg);
+int com_wrap(LEXER *lp, char *arg);
 
-typedef int (*funcptr)();	// pointer to a function returning an int
+typedef int (*funcptr)(LEXER *lp, char *arg);	// pointer to a function returning an int
 
 typedef struct {
     char *name;			/* User printable name of the function. */
@@ -191,7 +234,7 @@ static int def_units=1000;	// default maximum division of the grid
 
 #include <signal.h>
 #define MAXSIGNAL 31	/* biggest signal under linux */
-void sighandler(); 	/* catch signal */
+void sighandler(int x);	/* catch signal */
 
 int main(int argc, char **argv)
 {
@@ -369,7 +412,7 @@ void parse(LEXER *lp)
     char *path;
     // int retcode;
     COMMAND *command;
-    COMMAND * find_command();
+    COMMAND * find_command(char *name);
     int state = 0;
     double x1, y1;
 
@@ -433,7 +476,7 @@ void parse(LEXER *lp)
 			    rl_restoreprompt();
 			}
 			break;
-		    case EOL:
+		    case TEOL:
 		    case END:
 		    case COMMA:
 			break;
@@ -651,7 +694,7 @@ int com_archive(LEXER *lp, char *arg)   /* create archive file of currep */
 	    case IDENT: 	/* identifier */
 	    case QUOTE: 	/* quoted string */
 	    case END:		/* end of file */
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 		break;
 	    default:
@@ -713,7 +756,7 @@ int com_background(LEXER *lp, char *arg)	/* use device for background overlay */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case NUMBER: 	/* number */
 	    case COMMA:		/* comma */
@@ -831,7 +874,7 @@ int com_display(LEXER *lp, char *arg)	/* turn the display on or off */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;
 	    case COMMA:		/* comma */
 	    case QUOTE: 	/* quoted string */
@@ -884,7 +927,6 @@ int com_dump(LEXER *lp, char *arg)	/* dump graphics window to file or printer */
     int fit=0;				/* fit the device to the window before plotting */
     int rev=0;				/* reverse video flag */
 
-    extern void do_win();               /* found in com_window */
     if (currep == NULL || currep->name == NULL) {
     	printf("not editing a file, nothing here to dump\n");
 	return(2);
@@ -940,7 +982,7 @@ int com_dump(LEXER *lp, char *arg)	/* dump graphics window to file or printer */
 		    return(-1);
 		}
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    	strcpy(name,word);
@@ -1070,7 +1112,7 @@ int com_files(LEXER *lp, char *arg)		/* purge named files */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 	    	break;	/* ignore */
 	    case NUMBER: 	/* number */
@@ -1114,7 +1156,7 @@ int com_fsize(LEXER *lp, char *arg)	/* Set the default font size for text and no
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
@@ -1232,7 +1274,7 @@ int com_grid(LEXER *lp, char *arg)		/* change or redraw grid */
 
 		pts[npts++] = tmp;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case EOC:		/* end of command */
 		done++;
 		break;
@@ -1350,7 +1392,7 @@ int com_help(LEXER *lp, char *arg)
 		    }
 		} 
 	    	break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case EOC:		/* end of command */
 		done++;
 		break;
@@ -1474,7 +1516,7 @@ int com_input(LEXER *lp, char *arg)		/* take command input from a file */
 	    case OPT:		/* option */
 	    case END:		/* end of file */
 	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 	    	break;
 	    case EOC:		/* end of command */
@@ -1533,7 +1575,7 @@ int com_layer(LEXER *lp, char *arg)		/* set a default layer number */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
@@ -1586,7 +1628,7 @@ int com_level(LEXER *lp, char *arg)	/* set the logical level of the current devi
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
@@ -1670,7 +1712,7 @@ int com_lock(LEXER *lp, char *arg)		/* set the default lock angle */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
@@ -1718,7 +1760,7 @@ int com_eval(LEXER *lp, char *arg)		/* evaluate a MACRO */
     }
 
     i=1;
-    while((token=token_get(lp, &word)) != EOF && token != EOL) {
+    while((token=token_get(lp, &word)) != EOF && token != TEOL) {
 	sprintf(buf,"ARG%d",i);
 	EVset(buf, word);	// save arguments as $ARG1, $ARG2...
 	i++;
@@ -1765,7 +1807,6 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
     int fit=0;
     int color=1;
     int plottype=0;
-    extern void do_win();                /* found in com_window */
     double px=8.0;
     double py=11.0;
     double tx, ty;
@@ -1857,7 +1898,7 @@ int com_plot(LEXER *lp, char *arg)		/* make a postcript plot of the current devi
 	    case IDENT: 	/* identifier */
 		strcpy(name,word);
 	    	break;	
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case EOC:		/* end of command */
 		done++;
@@ -1942,7 +1983,7 @@ int com_retrieve(LEXER *lp, char *arg)	/* read commands from an ARCHIVE file */
 	    case OPT:		/* option */
 	    case END:		/* end of file */
 	    case NUMBER: 	/* number */
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    case COMMA:		/* comma */
 	    	break;
 	    case EOC:		/* end of command */
@@ -1993,7 +2034,7 @@ int com_save(LEXER *lp, char *arg)	/* save the current file or device to disk */
 	    case COMMA:		/* comma */
 		printf("SAVE: expected IDENT: got %s\n", tok2str(token));
 	    	break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case EOC:		/* end of command */
 		done++;
@@ -2155,7 +2196,7 @@ int com_tslant(LEXER *lp, char *arg)	/* set the default font slant for italic te
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */
@@ -2234,7 +2275,7 @@ int com_units(LEXER *lp, char *arg)		/* set a default layer number */
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	    	break;	/* ignore */
 	    case IDENT: 	/* identifier */
 	    case COMMA:		/* comma */

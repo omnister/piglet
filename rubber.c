@@ -37,18 +37,18 @@ call with count=-1.
 #include <stdio.h>
 #include "rubber.h"
 
-typedef int Function ();
+typedef void RubberCallback(double x,double y, int init);
 
 static int count=0;
-Function * rubber_callback = NULL;
+RubberCallback * rubber_callback = NULL;
 
-void rubber_set_callback(Function *func) 
+void rubber_set_callback(RubberCallback *func) 
 {
     count=0;
     rubber_callback = func;
 }
 
-void rubber_clear_callback() 
+void rubber_clear_callback(void) 
 {
     /* let callback do final erase */
     if (rubber_callback != NULL) {
@@ -56,7 +56,7 @@ void rubber_clear_callback()
     }
 
     /* clear the callback function */
-    rubber_callback = (Function *) NULL;
+    rubber_callback = (RubberCallback *) NULL;
 
     count=0;
 }

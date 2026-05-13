@@ -3,12 +3,13 @@
 #include "xwin.h"
 #include "rubber.h"
 #include "rlgetc.h"
+#include "draw.h"
 #include "opt_parse.h"
 #include <math.h>
 
 // DB_TAB dbtab; 
 DB_ARC dbarc;
-void draw_arc(); 
+void draw_arc(double x3, double y3, int count);
 
 OPTS aopts;
 
@@ -51,7 +52,7 @@ int add_arc(LEXER *lp, int *layer)
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
@@ -70,7 +71,7 @@ int add_arc(LEXER *lp, int *layer)
 		    } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -88,7 +89,7 @@ int add_arc(LEXER *lp, int *layer)
 		    } else {
 		        state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -108,7 +109,7 @@ int add_arc(LEXER *lp, int *layer)
 	            } else {
 			state=END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); /* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 

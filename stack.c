@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include "stack.h"
 
-/* private functions */
-STACK *stack_new();
-int stack_print();
 
 STACK *stack_new()
 {
@@ -18,6 +15,10 @@ STACK *stack_new()
     tmp->count = 0;
     return(tmp);
 }
+
+/* private functions */
+STACK *stack_new();
+int stack_print(STACK **stack);
 
 int stack_depth(STACK **stack)
 {

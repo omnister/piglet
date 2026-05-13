@@ -7,12 +7,11 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
-int com_purge(lp, arg)		/* remove device from memory and disk */
-LEXER *lp;
-char *arg;
+int com_purge(LEXER *lp, char *arg)		/* remove device from memory and disk */
 {
     UNUSED(arg);
     TOKEN token;

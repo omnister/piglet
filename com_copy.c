@@ -8,6 +8,7 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -18,8 +19,8 @@ static double x1, y1, x2, y2, x3, y3, x4, y4;
 static double lastx, lasty;
 static int num_copies=0;
 static double xmin, ymin, xmax, ymax;
-void draw_cbox();
-void copy_draw_box();
+void draw_cbox(double x, double y, int count);
+void copy_draw_box(double x2, double y2, int count);
 
 /* 
     copy a component in the current device.
@@ -110,7 +111,7 @@ int com_copy(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == CMD || token == EOC) {
@@ -194,7 +195,7 @@ int com_copy(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		} 
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("COPY: cancelling POINT\n");
@@ -227,7 +228,7 @@ int com_copy(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		} 
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word);     /* just ignore it */
 	    } else if (token == EOC) {
 		rubber_clear_callback();
@@ -251,7 +252,7 @@ int com_copy(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("COPY: cancelling POINT\n");
@@ -310,7 +311,7 @@ int com_copy(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("COPY: cancelling POINT\n");

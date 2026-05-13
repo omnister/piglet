@@ -11,13 +11,13 @@
 #include "db.h"		/* hierarchical database routines */
 #include "eprintf.h"	/* error reporting functions */
 #include "rlgetc.h"
-#include "token.h"
 #include "xwin.h"       /* for snapxy() */
 #include "readfont.h"	/* for writestring() */
 #include "rubber.h"
 #include "rlgetc.h"
 #include "ev.h"
 #include "postscript.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -42,14 +42,13 @@ XFORM *global_transform = &unity_transform;  /* global xform matrix */
 
 STACK *bstack = NULL;
 
-void db_free_component(); 		/* recycle memory for component */
-int getbits();
-int db_def_arch_recurse();
-int db_def_files_recurse(); 
-void db_contains_body(); 
-void db_def_print();
-
-int show[MAX_LAYER];
+void db_free_component(DB_DEFLIST *p);
+int getbits(unsigned int x, unsigned int p, unsigned int n);	
+int db_def_archive(DB_TAB *sp, int smash, int process);
+int db_def_files_recurse(FILE *fp, DB_TAB *sp);
+void db_contains_body(DB_TAB *sp, char *name, int *retval);
+void db_def_print(FILE *fp, DB_TAB *dp, int mode);
+int db_def_arch_recurse(FILE *fp, DB_TAB *sp, int smash); 
 
 /********************************************************/
 
@@ -254,7 +253,7 @@ int ask(LEXER *lp, char *s) /* ask a y/n question */
 	    	     printf("please answer by typing \"yes\" or \"no\": ");
 		} 
 		break;
-	    case EOL:
+	    case TEOL:
 	    case EOC:
 	    	break; 
 	    default:		/* command */
@@ -265,7 +264,7 @@ int ask(LEXER *lp, char *s) /* ask a y/n question */
     return(-1);
 }
 
-void db_list_db() 			/* print names of all cells in memory */
+void db_list_db(void) 			/* print names of all cells in memory */
 {
     DB_TAB *sp;
     int i=0;
@@ -1071,7 +1070,7 @@ int db_def_arch_recurse(FILE *fp, DB_TAB *sp, int smash)
 // then db_remove_autosaved() files will be called to remove
 // all edits in progress...
 
-int db_list_unsaved()
+int db_list_unsaved(void)
 {
     DB_TAB *dp;
     int numunsaved=0;
@@ -1093,7 +1092,7 @@ int db_list_unsaved()
 // const char * make_autosavefilename( char *repname );
 //
 
-int db_remove_autosavefiles()
+int db_remove_autosavefiles(void)
 {
     DB_TAB *dp;
     int numremoved=0;
@@ -2121,7 +2120,7 @@ void db_set_font_size(double size) { /* set default from FSIze command */
     font_size = size;
 }
 
-double db_get_font_size() { 	 /* get default from FSIze command */
+double db_get_font_size(void) { 	 /* get default from FSIze command */
     char *p;
 
     if ((p=EVget("PIG_FONT_SIZE")) != NULL) {
@@ -2197,7 +2196,7 @@ void opt_set_defaults(OPTS *opts)
     opts->sname= (char *) NULL;   /* signal name */
 }
 
-OPTS *opt_create()
+OPTS *opt_create(void)
 {
     OPTS *tmp;
     tmp = (OPTS *) emalloc(sizeof(OPTS));
@@ -2207,12 +2206,9 @@ OPTS *opt_create()
     return(tmp);
 }     
 
-void db_print_opts(fp, popt, validopts) /* print options */
-FILE *fp;
-OPTS *popt;
+void db_print_opts(FILE *fp, OPTS *popt, char *validopts) /* print options */
 /* validopts is a string which sets which options are printed out */
 /* an example for a line is "W", text uses "MNRYZF" */
-char *validopts;
 {
     char *p;
 

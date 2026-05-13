@@ -8,6 +8,7 @@
 #include "token.h"
 #include "xwin.h" 	
 #include "rubber.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -17,8 +18,8 @@
 static double x1, y1, x2, y2, x3, y3, x4, y4;
 static double lastx, lasty;
 static double xmin, ymin, xmax, ymax;
-void draw_mbox();
-void move_draw_box();
+void draw_mbox(double x, double y, int count);
+void move_draw_box(double x2, double y2, int count);
 STACK *qstack;
 STACK *tmp;
 
@@ -110,7 +111,7 @@ int com_move(LEXER *lp, char *arg)
                 state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 	    	rubber_clear_callback();
 		token_get(lp,&word); 
 		state = START;
@@ -195,7 +196,7 @@ int com_move(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		} 
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		printf("MOVE: cancelling POINT\n");
@@ -222,7 +223,7 @@ int com_move(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		} 
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word);     /* just ignore it */
 	    } else if (token == EOC) {
 		rubber_clear_callback();
@@ -249,7 +250,7 @@ int com_move(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 		if (mode==POINT) db_highlight(p_best);	/* unhighlight */
@@ -310,7 +311,7 @@ int com_move(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC) {
 	    	rubber_clear_callback();

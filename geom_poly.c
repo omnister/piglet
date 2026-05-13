@@ -4,6 +4,7 @@
 #include "rubber.h"
 #include "rlgetc.h"
 #include "opt_parse.h"
+#include "draw.h"
 #include <string.h>
 
 #define NORM 0		/* drawing modes */
@@ -12,7 +13,7 @@
 static COORDS *CP;
 
 DB_POLY dbpoly;
-void draw_poly(); 
+void draw_poly(double x2, double y2, int count);
 
 /* FIXME: this code should be a bit more robust.  It should
 automatically cull any colinear points as they are entered, should
@@ -73,7 +74,7 @@ int add_poly(LEXER *lp, int *layer)
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC || token == CMD) {
@@ -86,7 +87,7 @@ int add_poly(LEXER *lp, int *layer)
 		break;
 	    case NUM1:		/* get pair of xy coordinates */
 		if (debug) printf("in num1, nsegs=%d\n", nsegs);
-		if (token == EOL) {
+		if (token == TEOL) {
 		    token_get(lp, &word); 	/* just ignore it */
 		} else if (token == EOC) {
 		    state = END; 

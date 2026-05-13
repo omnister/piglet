@@ -24,7 +24,6 @@
 // limitations on number of ENV variables (RCW).
 
 extern char **environ;
-void *malloc(), *realloc();
 BOOLEAN assign(char **p, char *s);
 
 static struct varslot {
@@ -147,7 +146,7 @@ char *EVget(char *name) /* get value of variable */
     return(vp->defn);
 }
 
-BOOLEAN EVinit() /* initialize symbol table from environment */
+BOOLEAN EVinit(void) /* initialize symbol table from environment */
 {
     int i, namelen;
     char name[200];	/* FIXME: can overflow */
@@ -167,7 +166,7 @@ BOOLEAN EVinit() /* initialize symbol table from environment */
     return(TRUE);
 }
 
-BOOLEAN EVupdate() /* build environment from symbol table */
+BOOLEAN EVupdate(void) /* build environment from symbol table */
 {
     int i, envi, nvlen;
     struct varslot *vp;

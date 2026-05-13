@@ -138,7 +138,7 @@ int com_show(LEXER *lp, char *arg)		/* define which kinds of things to display *
 	    case EOC:		/* end of command */
 		done++;
 		break;
-	    case EOL:		/* newline or carriage return */
+	    case TEOL:		/* newline or carriage return */
 	        break;
 	    default:
 		printf("SHOW: expected OPT, got %s %s\n", tok2str(token), word);

@@ -1,3 +1,5 @@
+#pragma once
+
 //
 // To use this library, first call ps_set_file() with a file descriptor to write to
 //
@@ -20,19 +22,19 @@ extern void ps_set_linewidth(double width);	// linewidth for ps
 extern void ps_set_color(int color);		// 1==color 0=bw
 
 extern void ps_set_pagesize(double x, double y);  // set pagesize
-extern void ps_preamble();			// output standard header
+void ps_preamble(char *dev, char *prog, double pdx, double pdy, double llx, double lly, double urx, double ury);
 
-extern void ps_set_layer();			// set layer 
-extern void ps_set_line();			// change line type
-extern void ps_set_pen();			// change pen color
-extern void ps_set_fill();			// change fill pattern
+void ps_set_layer(int layernumber);
+void ps_set_line(int line);
+void ps_set_pen(int pen); 
+void ps_set_fill(int fill);
 extern void ps_comment(char *comment);		// print an inline comment
 
 extern void ps_link(int nest, char *name, double xmin, double ymin, double xmax, double ymax);
-extern void ps_flush();
+extern void ps_flush(void);
 
 
-extern void ps_start_line();			// start a new line
-extern void ps_continue_line();			// continue a line
-extern void ps_postamble();			// wrap it up
+void ps_start_line(double x1, double y1, int filled);   // start a new line
+void ps_continue_line(double x1, double y1); // continut a line
+extern void ps_postamble(void);			// wrap it up
 

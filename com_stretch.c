@@ -9,6 +9,7 @@
 #include "rubber.h"
 #include "rlgetc.h"
 #include "lock.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -44,8 +45,8 @@ static double x1, yy1;
 static double x2, y2;
 static double x3, y3;
 static double x4, y4;
-void stretch_draw_box();
-void stretch_draw_point();
+void stretch_draw_box(double x3, double y3, int count);
+void stretch_draw_point(double xx, double yy, int count);
 
 DB_DEFLIST *p_best;
 
@@ -113,7 +114,7 @@ int com_stretch(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -195,7 +196,7 @@ int com_stretch(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("recognized EOC 2\n");
@@ -229,7 +230,7 @@ int com_stretch(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("recognized EOC 3\n");
@@ -481,7 +482,7 @@ int com_stretch(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("recognized EOC 4\n");
@@ -505,7 +506,7 @@ int com_stretch(LEXER *lp, char *arg)
 	        } else {
 		    state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		if (debug) printf("recognized EOC 5\n");

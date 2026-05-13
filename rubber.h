@@ -7,6 +7,9 @@
 #define D_PICK   3	/* screen points for pick checking */
 #define D_READIN 4	/* do bounding box but no displaying */
 
-extern void rubber_set_callback();	/* register callback function */
-extern void rubber_clear_callback();	/* withdraw callback function */
-extern void rubber_draw();		/* execute callback function */
+typedef void RubberCallback(double x,double y, int init);
+
+void rubber_set_callback(RubberCallback *func);
+extern void rubber_clear_callback(void);	/* withdraw callback function */
+void rubber_draw(double x,double y, int init);
+

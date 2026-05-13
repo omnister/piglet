@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "path.h"
 
-char *home();
+char *home(char *name);
 
 /*
 char *PIG_PATH=".:./.pigrc:~/.pigrc:/usr/local/lib/piglet:/usr/lib/piglet";

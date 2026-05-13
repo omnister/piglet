@@ -28,18 +28,18 @@
 
 #define UNUSED(x) (void)(x)
 
-extern void do_win();
-void xwin_window_parms_only();
+int do_win(LEXER *lp, int n, double x1, double y1, double x2, double y2, double scale);
+void xwin_window_parms_only( double x1, double y1, double x2, double y2);
 
 #define MAX_MENU 256
 
-void load_font();
-int init_colors();
-void xwin_doXevent();
-void getGC();
-int draw_grid();
-void paint_pane(); 
-int dump_window(); 
+void load_font(XFontStruct **font_info);
+int init_colors(void);
+void xwin_doXevent(char **s);
+void getGC( Window win, GC *gc, XFontStruct *font_info);
+int draw_grid( Window win, GC gc, double dx, double dy,	double sx, double sy, double xorig, double yorig);
+void paint_pane( Window window, MENUENTRY menutab[], GC ngc, GC rgc, int mode);
+int dump_window( Window window, GC gc, unsigned int width, unsigned int height, char *cmd);
 int xwin_display_state();
 extern Pixmap stipple[];
 
@@ -107,8 +107,6 @@ static unsigned char icon_bitmap_bits[] = {
 #define FD_ZERO(p)      bzero((char *)(p), sizeof(*(p)))
 #endif /* !FD_SET */
 
-extern char *getwd();
-
 Display *dpy; int scr;
 
 extern int errno;
@@ -137,7 +135,7 @@ XFontStruct *font_info;
 unsigned long colors[MAX_COLORS];    /* will hold pixel values for colors */
 #define MAX_LINETYPE 7
 
-int initX()
+int initX(void)
 {
     int x,y;
     unsigned int border_width = 4;
@@ -582,12 +580,13 @@ void dosplash() {
 }
 
 
-int procXevent()
+int procXevent(FILE *unused)
 {
     /* readline select stuff */
     int nf, nfds, cn, in; 
     int i;
     char nestindicator;
+    (void) unused;	// unused parameter 
 
     struct timeval *timer = (struct timeval *) 0;	/* select blocks indefinitely */
     //struct timeval timer;
@@ -666,8 +665,7 @@ int procXevent()
     }
 }
 
-void xwin_doXevent(s)
-char **s;
+void xwin_doXevent(char **s)
 {
     static int button_down=0;
     XEvent xe;
@@ -1527,7 +1525,7 @@ void xwin_grid_color(int color)
 
 }
 
-int xwin_display_state()
+int xwin_display_state(void)
 {
     extern DISPLAYSTATE display_state;
 
@@ -1793,7 +1791,7 @@ static char *visual_class[] = {
     "DirectColor"
 };
 
-int init_colors() 
+int init_colors(void) 
 {
     int default_depth;
     // Visual *default_visual;
@@ -1923,7 +1921,7 @@ void paint_pane(
         strlen(menutab[win].text)); 
 }
 
-void xwin_raise_window()
+void xwin_raise_window(void)
 {
    XRaiseWindow(dpy, topwin);
    // XMapRaised(dpy, topwin);

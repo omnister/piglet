@@ -78,7 +78,7 @@ int token_flush_EOL(LEXER *lp)
 {
     char *word;
     TOKEN token;
-    while ((token=token_get(lp, &word) != EOL) && (token != EOF)) {
+    while ((token=token_get(lp, &word) != TEOL) && (token != EOF)) {
 	;
     }
     return(0);
@@ -107,7 +107,7 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 
     w=lp->word;
     if (lp->parse) {	/* raw mode */
-	*w++ = (char) procXevent();
+	*w++ = (char) procXevent(NULL);
 	*w = '\0';
 	return(RAW);	/* simply bypass readline */
     }
@@ -124,9 +124,9 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    case '\r':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning EOL: %s \n", lp->word);
+			if (debug) printf("returning TEOL: %s \n", lp->word);
 			lp->line++;
-			return(EOL);
+			return(TEOL);
 		    case ',':
 			*w++ = c;
 			*w = '\0';
@@ -339,9 +339,9 @@ TOKEN token_get(LEXER *lp, char **word) /* collect and classify token */
 		    case '\r':
 			*w++ = c;
 			*w = '\0';
-			if (debug) printf("returning EOL: %s \n", lp->word);
+			if (debug) printf("returning TEOL: %s \n", lp->word);
 			lp->line++;
-			return(EOL);
+			return(TEOL);
 		    default:
 			continue;
 		}
@@ -362,7 +362,7 @@ char *tok2str(TOKEN token)
 	case QUOTE: return("QUOTE"); 	 break;
 	case NUMBER: return("NUMBER"); 	 break;
 	case OPT: return("OPT"); 	 break;
-	case EOL: return("EOL"); 	 break;
+	case TEOL: return("TEOL"); 	 break;
 	case EOC: return("EOC"); 	 break;
 	case COMMA: return("COMMA"); 	 break;
 	case BACK:  return("BACK");	 break;
@@ -391,7 +391,7 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 	case 0:
 	    if (token == NUMBER) {
 		state = 1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else {
 	    	return(0);
@@ -403,7 +403,7 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 		token_get(lp,&word);
 		sscanf(word, "%lf", px);	/* scan it in */
 		state = 2;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = 4;	
@@ -414,7 +414,7 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 	    break;
 	case 2:		
 	    if (debug) printf("in COM1\n");
-	    if (token == EOL) {
+	    if (token == TEOL) {
 		token_get(lp,&word); /* just ignore it */
 	    } else if (token == COMMA) {
 		token_get(lp,&word);
@@ -432,7 +432,7 @@ int getnum(LEXER *lp, char *cmd, double *px, double *py)
 		token_get(lp,&word);
 		sscanf(word, "%lf", py);	/* scan it in */
 		return(1);
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		state = 4;

@@ -159,7 +159,7 @@ int com_add(LEXER *lp, char *arg)
 	} else if (token == CMD) { /* return control back to top */
 	    token_unget(lp, token, word);
 	    done++;
-	} else if (token == EOL) {
+	} else if (token == TEOL) {
 	    ; /* ignore */
 	} else if (token == EOC) {
 	    done++;

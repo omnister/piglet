@@ -4,6 +4,7 @@
 #include "rubber.h"
 #include "opt_parse.h"
 #include "rlgetc.h"
+#include "draw.h"
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,7 +14,7 @@
 
 
 static double bb_xmin, bb_ymin, bb_xmax, bb_ymax;
-void draw_inst_bb();
+void draw_inst_bb(double x, double y, int count);
 
 int loadrep(char *inst_name)
 {
@@ -42,7 +43,7 @@ int loadrep(char *inst_name)
 	    }
 
 	    currep =  db_install(inst_name);  		/* create blank stub */
-	    readin(buf, 1, EDI, NULL);
+	    readin(buf, 1, EDI);
 	    currep->modified = 0;
 
     	    bb.init=0;
@@ -135,7 +136,7 @@ int add_inst(LEXER *lp, char *inst_name)
 			/* an option may have scaled the bounding box */
 			/* clear callback, recompute and then restart */
 
-			rubber_clear_callback(draw_inst_bb);
+			rubber_clear_callback();
 
 			xp = matrix_from_opts(&opts);
 			bb_xmin = bb_xmax = bb_ymin = bb_ymax = 0.0;
@@ -191,7 +192,7 @@ int add_inst(LEXER *lp, char *inst_name)
 		    } else {
 			state = NUM1;	
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word); 	/* just eat it up */
 		    state = START;
 		} else if (token == EOC  || token == CMD) {
@@ -217,7 +218,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	            } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
@@ -235,7 +236,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	            } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
@@ -252,7 +253,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	            } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 
@@ -276,7 +277,7 @@ int add_inst(LEXER *lp, char *inst_name)
 	            } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp, &word);
 		} else if (token == EOC  || token == CMD) {
 		    state = END; 

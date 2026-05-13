@@ -7,8 +7,6 @@
 #include "xwin.h"
 #include "token.h"
 
-extern char *getwd();
-extern char *xmalloc();
 char * stripwhite();
 static char *lineread = (char *) NULL;
 double getdouble();
@@ -22,7 +20,7 @@ char	*infile;    /* input file name */
 FILE	*fin;	    /* input file pointer */
 char	**gargv;    /* global argument list */
 int	gargc;
-char    *rl_gets();
+char * rl_gets (char *prompt);
 
 #define MAXHIST 1024
 #define HISTORY ".pighist"

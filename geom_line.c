@@ -11,13 +11,14 @@
 #include "rlgetc.h"
 #include "opt_parse.h"
 #include "lock.h"
+#include "draw.h"
 #include "ev.h"
 
 static COORDS *CP;
 
 // DB_TAB dbtab; 
 DB_LINE dbline;
-void draw_line(); 
+void draw_line(double x2, double y2, int count);
 
 /*
  *
@@ -90,7 +91,7 @@ int add_line(LEXER *lp, int *layer)
 		    }
 		} else if (token == NUMBER) {
 		    state = NUM1;
-		} else if (token == EOL || token == EOC) {
+		} else if (token == TEOL || token == EOC) {
 		    token_get(lp,&word); 	/* just eat it up */
 		    state = START;
 		} else if (token == CMD || token==EOF) {
@@ -121,7 +122,7 @@ int add_line(LEXER *lp, int *layer)
 		    } else {
 			state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == EOC || CMD) {
 		    state = END; 
@@ -180,7 +181,7 @@ int add_line(LEXER *lp, int *layer)
 		    } else {
 		        state = END;
 		    }
-		} else if (token == EOL) {
+		} else if (token == TEOL) {
 		    token_get(lp,&word); 	/* just ignore it */
 		} else if (token == BACK) {
 		    token_get(lp,&word); 	/* eat it */

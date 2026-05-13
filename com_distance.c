@@ -6,6 +6,7 @@
 #include "token.h"
 #include "rubber.h"
 #include "rlgetc.h"
+#include "draw.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -20,7 +21,7 @@
  */
 
 static double x1, yy1; 	/* cant call it "y1" because of math lib */
-void draw_dist(); 
+void draw_dist(double x2, double y2, int count);
 
 int com_distance(LEXER *lp, char *arg)
 {
@@ -47,7 +48,7 @@ int com_distance(LEXER *lp, char *arg)
 		state = START;
 	    } else if (token == NUMBER) {
 		state = NUM1;
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just eat it up */
 		state = START;
 	    } else if (token == EOC || token == CMD) {
@@ -65,7 +66,7 @@ int com_distance(LEXER *lp, char *arg)
 		} else {
 		    state = END;
 		}
-	    } else if (token == EOL) {	
+	    } else if (token == TEOL) {	
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");
@@ -87,7 +88,7 @@ int com_distance(LEXER *lp, char *arg)
 		} else {
 		   state = END;
 		}
-	    } else if (token == EOL) {
+	    } else if (token == TEOL) {
 		token_get(lp,&word); 	/* just ignore it */
 	    } else if (token == EOC || token == CMD) {
 		printf("DISTANCE: cancelling DISTANCE\n");
