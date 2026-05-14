@@ -1,0 +1,4 @@
+# generate location data from splitout gerber layers 81,82
+
+g2loc < .gone/tmp.gb81  > locs.top2
+g2loc < .gone/tmp.gb82  > locs.bot2

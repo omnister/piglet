@@ -1,0 +1,223 @@
+#!/bin/bash
+
+# Piglet support scripts
+# gbs: split a merged piglet gerber output file into 
+# separated form suitable for submission to a PCB fab house
+
+# Your artwork should be in units of "mm".  Scale by
+# :x0.0254 if originally drawn in mils.
+
+##########################################
+# EDITED TO ELIMINATE SOME LAYERS!!!
+##########################################
+
+# edit to be your tapeout "top" level artwork name.  
+PIGTOP="launchtest"
+PIGTOP="gndboardx29"
+
+# edit to be your gerber "top" level artwork name.  
+GERBERTOP=$PIGTOP
+
+# run piglet and make gerber
+(
+cat <<!
+   edi $PIGTOP
+   win :n9;
+   plot :tg;
+   exit;
+   bye;
+!
+) | pig
+
+# generate individual gerber files from 
+# interleaved piglet output
+
+cat $PIGTOP.gb  | awk '
+   BEGIN {
+      # special layer to save preamble
+      layer = "_pre"
+      ofile = "tmp.gb" layer
+      if (!(ofile in LAYER)) {
+	  purge(ofile)
+      }
+      LAYER[ofile]++
+   }
+   /^%MOIN/ {
+      # change piglets output to mm
+      sub("MOIN","MOMM");
+      print $0 >> ofile
+   }
+   /^G04 LAYER/ {
+      layer = $3+0
+      ofile = "tmp.gb" layer
+      if (!(ofile in LAYER)) {
+	  purge(ofile)
+      }
+      LAYER[ofile]++
+      next;
+   }
+   // {
+      print $0 >> ofile
+      next;
+   }
+   END {
+      for (l in LAYER) {
+         print l, "\t" LAYER[l], "geometries"
+      }
+   }
+   function purge(name) {
+      command = "rm -f " name 
+      system(command)
+   }
+
+'
+
+# edit these lines to match your layer definitions.
+
+# advanced circuits 4pcb.com preferred layer names:
+#
+TOPCOP="gtl"
+BOTCOP="gbl"
+TOPMSK="gtm"
+BOTMSK="gbm"
+TOPSLK="gto"
+BOTSLK="gbo"
+NCDRL="drl"
+EDGES="gbr"
+
+rm $GERBERTOP*.g[tb][lmor]
+rm $GERBERTOP*.drl
+
+
+# uncomment the layes that you will be using
+
+if [ -f "tmp.gb71" ] 
+then 
+    cat tmp.gb_pre tmp.gb71 tmp.gb999 > $GERBERTOP-F_paste.gbr
+fi
+
+#if [ -f "tmp.gb4" ] 
+#then
+#    #cat tmp.gb_pre tmp.gb4  tmp.gb999 > $GERBERTOP-F_SilkS.gbr
+#    cat tmp.gb_pre tmp.gb4  tmp.gb999 > $GERBERTOP-F_SilkS.$TOPSLK
+#fi 
+
+#if [ -f "tmp.gb5" ] 
+#then
+#    #cat tmp.gb_pre tmp.gb5  tmp.gb999 > $GERBERTOP-F_Mask.gbr
+#    cat tmp.gb_pre tmp.gb5  tmp.gb999 > $GERBERTOP-F_Mask.$TOPMSK
+#fi
+
+#if [ -f "tmp.gb6" ] 
+#then
+#    #cat tmp.gb_pre tmp.gb6  tmp.gb999 > $GERBERTOP-B_Mask.gbr
+#    cat tmp.gb_pre tmp.gb6  tmp.gb999 > $GERBERTOP-B_Mask.$BOTMSK
+#fi
+
+#if [ -f "tmp.gb55" ] 
+#then
+#    cat tmp.gb_pre tmp.gb55  tmp.gb999 > $GERBERTOP-B_POS_Mask.$BOTMSK
+#    #cat tmp.gb_pre tmp.gb55  tmp.gb999 > $GERBERTOP-F_POS_Mask.$BOTMSK
+#fi
+
+if [ -f "tmp.gb66" ] 
+then
+    #cat tmp.gb_pre tmp.gb55  tmp.gb999 > $GERBERTOP-B_POS_Mask.$BOTMSK
+    cat tmp.gb_pre tmp.gb66  tmp.gb999 > $GERBERTOP-F_POS_Mask.$BOTMSK
+fi
+
+
+if [ -f "tmp.gb31" ] 
+then
+    #cat tmp.gb_pre tmp.gb31 tmp.gb999 > $GERBERTOP-F_Cu1.gbr
+    cat tmp.gb_pre tmp.gb31 tmp.gb999 > $GERBERTOP-F_Cu1.$TOPCOP
+fi
+
+#if [ -f "tmp.gb24" ] 
+#then
+#    cat tmp.gb_pre tmp.gb24 tmp.gb999 > $GERBERTOP-In2_Cu.gbr
+#fi
+#
+#if [ -f "tmp.gb23" ] 
+#then
+#    cat tmp.gb_pre tmp.gb23 tmp.gb999 > $GERBERTOP-In3_Cu.gbr
+#fi
+
+if [ -f "tmp.gb22" ] 
+then
+    #cat tmp.gb_pre tmp.gb22 tmp.gb999 > $GERBERTOP-B_Cu4.gbr
+    cat tmp.gb_pre tmp.gb22 tmp.gb999 > $GERBERTOP-B_Cu4.$BOTCOP
+fi
+
+#if [ -f "tmp.gb44" ] 
+#then
+#    #cat tmp.gb_pre tmp.gb44 tmp.gb999 > $GERBERTOP-B_SilkS.gbr
+#    cat tmp.gb_pre tmp.gb44 tmp.gb999 > $GERBERTOP-B_SilkS.$BOTSLK
+#fi
+
+if [ -f "tmp.gb72" ] 
+then
+    cat tmp.gb_pre tmp.gb72 tmp.gb999 > $GERBERTOP-B_paste.gbr
+fi
+
+if [ -f "tmp.gb86" ] 
+then
+    #cat tmp.gb_pre tmp.gb86 tmp.gb999 > $GERBERTOP-Edge_Cuts.gbr
+    cat tmp.gb_pre tmp.gb86 tmp.gb999 > $GERBERTOP-Edge_Cuts.$EDGES
+fi
+
+if [ -f "tmp.gb16" ] 
+then
+    g2drill tmp.gb16 > $GERBERTOP-Drill_via_14.drl
+fi
+
+if [ -f "tmp.gb26" ] 
+then
+    g2drill tmp.gb26 > $GERBERTOP-Drill_via_34.drl
+fi
+
+if [ -f "tmp.gb36" ] 
+then
+    g2drill tmp.gb36 > $GERBERTOP-Drill_via_23.drl
+fi
+
+if [ -f "tmp.gb46" ] 
+then
+    g2drill tmp.gb46 > $GERBERTOP-Drill_via_12.drl
+fi
+
+if [ -f "tmp.gb15" ]
+then
+    g2drill tmp.gb15 > $GERBERTOP-Drill_pad_14.drl
+fi
+
+if [ -f "tmp.gb25" ]
+then
+    g2drill tmp.gb25 > $GERBERTOP-Drill_pad_34.drl
+fi
+
+if [ -f "tmp.gb35" ]
+then
+    g2drill tmp.gb35 > $GERBERTOP-Drill_pad_23.drl
+fi
+
+if [ -f "tmp.gb45" ]
+then
+    g2drill tmp.gb45 > $GERBERTOP-Drill_pad_12.drl
+fi
+
+if [ -f "tmp.gb100" ]
+then
+    cat tmp.gb_pre tmp.gb100  tmp.gb999 > $GERBERTOP-Keepout.gbr
+fi
+
+# do not add to an existing zip file!
+rm $GERBERTOP.zip
+
+zip $GERBERTOP README $GERBERTOP*.g[tb][lmor] $GERBERTOP*.drl
+
+mkdir .gone 2>/dev/null
+mv tmp.gb* .gone
+
+
+exit 1

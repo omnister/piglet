@@ -1,0 +1,36 @@
+exit 1
+
+# This is a layer file that I've used for 4 layer boards with 
+# blind vias.  
+
+   LAYER 71	// F_paste
+   LAYER 4	// F_SilkS
+   LAYER 5	// F_Mask
+   LAYER 31	// F_Cu_1
+   LAYER 24	// Inner_Cu_2
+   LAYER 23	// Inner_Cu_3
+   LAYER 22	// B_Cu_4
+   LAYER 6	// B_mask
+   LAYER 44	// B_SilkS
+   LAYER 72	// B_paste
+
+   LAYER 10	// top notes
+   LAYER 20	// bot notes
+
+   LAYER 45	// PAD drill 12
+   LAYER 35	// PAD drill 23
+   LAYER 25	// PAD drill 34
+   LAYER 15	// PAD drill 14
+
+   LAYER 46	// VIA drill 12
+   LAYER 36	// VIA drill 23
+   LAYER 26	// VIA drill 34
+   LAYER 16	// VIA drill 14
+
+   LAYER 81	// comp center top
+   LAYER 82	// comp center bot
+
+   LAYER 80	// drc advice
+   LAYER 86	// Edge_Cuts
+
+   LAYER 100	// keepout

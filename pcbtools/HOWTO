@@ -1,0 +1,37 @@
+
+This directory has code to allow piglet to produce gerbers for PCB fabrication.
+
+The basic idea is to draw your layers directly using the "layers" file for each
+of the features of your pcb: top,bottom, drill holes, etc.  The layer definitions
+in the layers file are arbitrary and you can change them.  However the rest of the 
+scripts in this directory assume that they are used as is.
+
+FILES:
+
+gbs     ; the gerber converter script.  Edit this file to put the name of
+        ; your project in the definition for $PIGTOP.  When you run this program
+        ; it will run piglet in the background, plot all the files to a combined
+        ; gerber output, split the file into individual gerbers and create a zip
+        ; file for sending to the PCB shop.  Towards the bottom of the file, you'll
+        ; need to comment out or uncomment the layers that you want to be included
+
+g2loc   ; takes a split out gerber files for the component layers and outputs
+        ; coordinates for pick and place
+
+dolocs  ; calls g2loc for top and bottom component layers to produce a combined
+        ; pick and place file
+
+g2drill ; processes the drill layers an produces a gerber drill file.  Drill hits
+        ; are made by including a square rectangle in the design on every hole.  The
+        ; center of the square is the drill location and the width is the drill diameter
+
+layers      ; a list of layers and their meanings 
+
+MENUDATA_V  ; a custom menu for PCB design
+
+NOTEDATA.F  ; some appropriate fonts
+
+PROCDATA.P  ; a process file to make useful fill and colors consistent with the layers file
+
+README      ; an example README to include to the PCB fab shop.  Edit this file to match
+            ; your design and it will be included in the output zip file when you run gbs

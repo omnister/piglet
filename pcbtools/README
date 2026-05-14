@@ -1,0 +1,38 @@
+
+Board size:				46x70mm (1.799" X 2.750")
+GERBER units:				mm
+ITAR:					NO
+Surface finish:				ENIG (Immersion Gold)
+Number of layers:			2
+minimum outer trace width/space:	5/5mil
+minimum inner trace width/space:	5/5mil
+inner copper weight:			2.0 oz
+outer copper weight:			2.0 oz
+all holes larger than:			0.007"
+material:				Rogers RO4350B
+thickness:				0.060"
+
+Rick Walker
+rick.walker@agilent.com
+(650) 468-8632
+
+Files in this zip:
+
+top_mm13-B_Cu4.gbl		; bottom copper
+top_mm13-B_paste.gbr		; back side solder paste
+top_mm13-B_POS_Mask.gbm		; bottom positive solder mask
+top_mm13-Drill_via_14.drl	; via drill
+top_mm13-Edge_Cuts.gbr		; edge cuts
+top_mm13-F_Cu1.gtl		; top copper
+top_mm13-F_paste.gbr 		; front solder paste
+top_mm13-F_POS_Mask.gbm 	; front solder mask
+
+top_mm13_top.pdf		; top view with component names
+top_mm13_bot.pdf		; bot view with component names
+top_mm13_all.pdf		; complete view with component names
+
+top_mm13.xlsx			; spreadsheet with coordinates and rotations
+bom13.xlsx			; bill of materials
+
+README				; This file
+
