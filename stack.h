@@ -1,3 +1,4 @@
+#pragma once
 
 typedef struct stack {
     char *saved;

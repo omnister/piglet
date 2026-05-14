@@ -584,18 +584,6 @@ extern int aborted;	// used to abort drawing
 
 int db_plot(char *name, OMODE plottype, double dx, double dy, int color, double pen);
 
-
-
-
-typedef struct xform {
-     double r11;
-     double r12;
-     double r21;
-     double r22;
-     double dx;
-     double dy;
-} XFORM; 
-
 void db_unlink_component(DB_TAB *cell, DB_DEFLIST *p);
 // void db_unlink_component(DB_TAB *cell, struct db_deflist dp)
 
