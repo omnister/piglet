@@ -2,29 +2,49 @@
 // RCW: 08/31/2012 (lexer for kicad)
 // RCW: 11/14/2013 (modified for .shp)
 
+// https://help.autodesk.com/view/ACD/2020/ENU/?guid=GUID-0A8E12A1-F4AB-44AD-8A9B-2140E0D5FD23
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
+#include <stdint.h>
 
 #define MAXTOK 128		// maximum string length of a token
 #define MAXPUSH 4		// max number of pushed back tokens
 #define MAXBUF 256
 
-// for now we just have one font table
-unsigned char *glyphtab[258];		// pointers to byte arrays
-
-// -----------------------------------------
-// future: create a linked list of fonttables
-
 #define MAXFONTS 128
+
+typedef struct glyph {
+    int glyphno;
+    int size;
+    int offset;
+} GLYPH;
+
+uint16_t get16(FILE *fp, uint16_t *x, int *offset) {
+    if (fread(x, sizeof(uint16_t), 1, fp)!=0) {
+        *offset += sizeof(uint16_t);
+    } else {
+        exit(1);
+    }
+}
+
+uint8_t get8(FILE *fp, uint8_t *x, int *offset) {
+    if (fread(x, sizeof(uint8_t), 1, fp)!=0) {
+        *offset += sizeof(uint8_t);
+    } else {
+        exit(1);
+    }
+}
+
 
 typedef struct font {
    char *fontname;
    char *fontpath;
    unsigned char *glyphtab[258]; // pointers to byte arrays
-   struct font *next;  
 } FONT;
 
 int nfonts=0;
@@ -64,7 +84,6 @@ void eatwhite(FILE *fp);
 int token_unget(TOKEN token, char *word);
 
 
-
 FONT *shp_id2font(int id) {
     if (id < nfonts && (fonttab[id]!=NULL)) {
        return(fonttab[id]);
@@ -86,24 +105,33 @@ int strtonum(char *str) {
     int i;
     int sign=1.0;
     int val;
+    unsigned char c;
 
     i=0;
     if (str[i]=='-') {
-	sign=-1.0;
-	i++;
+        sign=-1.0;
+        i++;
     }
 
     if (str[i]=='0') {
-	val = sign*(int) strtol(str+i, NULL, 16);
+        // handle bizarre shp format where
+        // you can have a hex number with a minus sign
+        // -042 -> 194
+        val = sign*(int) strtol(str+i, NULL, 16);
+        if (sign<0) {                                   // signed hex
+            val=(128-val);
+        } 
     } else {
-	val = sign*(int) strtol(str+i, NULL, 10);
+        val = sign*(int) strtol(str+i, NULL, 10);
     }
 
-    // fprintf(stderr, "str2num called with <%s>, ret=%d\n", str, val);
-
+    c = (unsigned char) (val);
+    val = c;
     return (val);
 }
 
+// given x, y, move by that amount scaled
+// and update the xloc,yloc by reference to the new position
 void advance(
 	int pendown, 
 	double *xloc, 
@@ -245,6 +273,16 @@ void  bulge_arc(
 	}
 }
 
+char *checkprintable(unsigned char c) {
+    static char buf[64];
+    if(isprint(c)) {
+	sprintf(buf,"%c", c);
+    } else {
+	sprintf(buf,"%02x", c);
+    }
+    return(buf);
+}
+
 void shp_writechar(
     unsigned int glyphnum, 
     double *xx, double *yy, 
@@ -259,7 +297,6 @@ void shp_writechar(
     int x,y;
     int r,o;
     int done=0;
-    int debug=0;
     int p1, p2, p3, p4, p5;
     int skip=0;		// skip next instruction
 
@@ -270,6 +307,12 @@ void shp_writechar(
     double stheta;
     double dtheta;
     double xx1, yy1, xx2, yy2;
+    int debug=0;
+    int cmdcnt[15];
+
+    for (i=0; i<15; i++) {
+	cmdcnt[i]=0;
+    }
 
     FONT *f;
     f = shp_id2font(id);
@@ -278,54 +321,66 @@ void shp_writechar(
     shpdraw(*xx, *yy, mode);
 
     while(!done) {
+	if (f->glyphtab[glyphnum] == NULL) {
+	    return;
+	}
 	c = f->glyphtab[glyphnum][index++];
-	if (debug) fprintf(stderr,"c=%d\n", c);
 	if (skip > 0) skip--;
 	switch (c) {
-	   case 0:		// end of shape def
+	   case 0:		// end of shape def (terminated by 0)
+	     cmdcnt[c]++;
 	     if (!skip) done++;
 	     break;
 	   case 1:		// pendown
+	     cmdcnt[c]++;
 	     if (!skip) pendown++;
 	     break;
 	   case 2:		// penup
+	     cmdcnt[c]++;
 	     if (!skip) pendown=0;
 	     break;
-	   case 3:		// divide_by(c)
+	   case 3:		// divide_by(c)  (not reset at end of glyph) (c is unsigned 1-255)
+	     cmdcnt[c]++;
 	     c = f->glyphtab[glyphnum][index++];
 	     scale /= (double)(c);
 	     break;
-	   case 4:		// multiply_by(c)
+	   case 4:		// multiply_by(c)  (not reset at end of glyph) (c is unsigned 1-255)
+	     cmdcnt[c]++;
 	     c = f->glyphtab[glyphnum][index++];
 	     scale *= (double)(c);
 	     break;
-	   case 5:		// push
+	   case 5:		// push	(only 4 positions deep)
+	     cmdcnt[c]++;
 	     if (!skip) push(xx, yy);
 	     break;
-	   case 6:		// pop
+	   case 6:		// pop	(only 4 positions deep)
+	     cmdcnt[c]++;
 	     if (!pendown) {
 		shpjump(mode);
 	     }
 	     if (!skip) pop(xx, yy);
 	     break;
-	   case 7:		// draw subshape(c)
+	   case 7:		// draw subshape(c) (c is unsigned 1-255)
+	     cmdcnt[c]++;
 	     c = f->glyphtab[glyphnum][index++];
 	     // fprintf(stderr, "subshape not implemented!\n");
 	     // draw_subshape((unsigned) c);
 	     if (f->glyphtab[c] != NULL) {
-		 if (!skip) shp_writechar((unsigned int) c, xx, yy, id, scale, 1);
+		 if (!skip) shp_writechar((unsigned int) c, xx, yy, id, scale, 1); // recurse)
 	     } else {
 	         fprintf(stderr, "called null subshape!\n");
 	     }
 	     break;
-	   case 8:		// x,y displacement
+	   case 8:		// move by a displacement of x,y  (x,y are signed -128 to 127)
+	     cmdcnt[c]++;
 	     x = (signed char) (f->glyphtab[glyphnum][index++]);
 	     y = (signed char) (f->glyphtab[glyphnum][index++]);
 	     // fprintf(stderr,"got %g %g\n", (double) x, (double) y);
 	     // printf("pen 8\n");
 	     if (!skip) advance(pendown, xx, yy, scale, (double) x,(double) y, mode);
 	     break;
-	   case 9:		// multi x,y displacement
+	   case 9:		// multi x,y displacement (terminated by 0,0) (x,y are signed -128 to 127)
+	     cmdcnt[c]++;
 	     x = (signed char) (f->glyphtab[glyphnum][index++]);
 	     y = (signed char) (f->glyphtab[glyphnum][index++]);
 	     if (!skip) advance(pendown, xx, yy, scale, (double) x, (double) y, mode);
@@ -336,23 +391,30 @@ void shp_writechar(
 		 if (!skip) advance(pendown, xx, yy, scale, (double) x,(double) y, mode);
 	     }
 	     break; 
-	   case 10: // octant_arc(x,y);
+
+	   case 10: // octant_arc <radius> <octant number> (radius is unsigned 1-255, octant is two nibbles)
+	     cmdcnt[c]++;
+
+	     // octant number starts at east and proceeds counterclockwise if positive
+	     // clockwise if negative, 45 degree per increment
+
 	     r = (unsigned char) (f->glyphtab[glyphnum][index++]);
-	     o = (signed char) (f->glyphtab[glyphnum][index++]);
+	     o = (unsigned char) (f->glyphtab[glyphnum][index++]);
 
-	     cw = (o>=0);		// positive is clockwise
-
-	     if (o < 0) {
-	        o*=-1;
+	     cw = (o&0x80);		// positive is clockwise
+	     if (cw) {
+		//o = (o-128)&0xff;	// convert from 2s complement
+		// o = -o;
 	     }
 
-	     octant = ((o&0xf0)>>4);	// 0->e, 1->ne...
-	     numoct = ((o&0x0f));	// number of actants
+	     octant = ((o&0x70)>>4);	// starting octant 0->e, 1->ne...
+	     numoct = ((o&0x07));	// number of octants
+	     if (numoct == 0) numoct=8;
 
 	     double stheta = 2.0*M_PI*(((double) octant)/8.0);
 	     double dtheta = 2.0*M_PI*(((double) numoct)/8.0);
 
-	     if (!cw) {
+	     if (cw) {
 	     	dtheta *= -1.0;
 	     }
 		
@@ -378,7 +440,9 @@ void shp_writechar(
 	     // r:%d\n", cw, o, octant, numoct,r);
 
 	     break;
+
 	   case 11: // fractional_arc(p1,p2,p3,p4,p5);
+	     cmdcnt[c]++;
 	     p1 = (unsigned char) (f->glyphtab[glyphnum][index++]);
 	     p2 = (unsigned char) (f->glyphtab[glyphnum][index++]);
 	     p3 = (unsigned char) (f->glyphtab[glyphnum][index++]);
@@ -438,15 +502,18 @@ void shp_writechar(
 	     // fprintf(stderr, "fractional_arc not implemented!\n");
 	     break;
 	   case 12: // bulge_arc(p1,p2,p3);
-	     p1 = (signed char) (f->glyphtab[glyphnum][index++]);
-	     p2 = (signed char) (f->glyphtab[glyphnum][index++]);
-	     p3 = (signed char) (f->glyphtab[glyphnum][index++]);
+	     cmdcnt[c]++;
+	     p1 = (signed char) (f->glyphtab[glyphnum][index++]); // x
+	     p2 = (signed char) (f->glyphtab[glyphnum][index++]); // y
+	     p3 = (signed char) (f->glyphtab[glyphnum][index++]); // bulge
+
 	     // bulge_arc(p1,p2,p3);
 	     // printf("pen 12\n");
 	     if (!skip) bulge_arc(pendown, xx, yy, scale, \
 		(double) p1, (double) p2,(double) p3, mode);
 	     break;
 	   case 13: // multiple_bulge_arc(p1,p2,p3);
+	     cmdcnt[c]++;
 	     p1 = (signed char) (f->glyphtab[glyphnum][index++]);
 	     p2 = (signed char) (f->glyphtab[glyphnum][index++]);
 	     p3 = (signed char) (f->glyphtab[glyphnum][index++]);
@@ -466,10 +533,11 @@ void shp_writechar(
 	     }
 	     break;
 	   case 14: // skip next instruction unless vertical mode
+	     cmdcnt[c]++;
 	     skip=2;
 	     break;
 	   default:
-	     if (c>=15) {
+	     if (c>=15) {		// length nibble and dir nibble
 		 double dx;
 		 double dy;
 		 double length;
@@ -518,6 +586,12 @@ void shp_writechar(
 	     break;
 	}
     }
+
+    printf("# char = %x (%s): ", glyphnum, checkprintable(glyphnum));
+    for (i=0; i<15; i++) {
+	printf("%4d ", cmdcnt[i]);
+    }
+    printf("\n");
 }
 
 void shp_fontinit() {
@@ -538,11 +612,11 @@ FONT *newfont() {
 	fprintf(stderr, "malloc of FONT structure failed\n");
 	exit(1);
     } 
+    f->fontpath = NULL;
     f->fontname = NULL;
-    for (i=0; i<258; i++) {
+    for (i=0; i<MAXFONTS; i++) {
 	f->glyphtab[i] = NULL;
     }
-    f->next = NULL;
 
     return(f);
 }
@@ -590,7 +664,8 @@ int shp_loadfont(char *path)
     char bytecode[2000];
     char *t;
     int i;
-    int debug=0;
+    int c;
+    int debug=1;
 
     if((fp=fopen(path,"r")) == NULL) {
         fprintf(stderr, "loadfont(): can't open %s\n", path);
@@ -607,7 +682,7 @@ int shp_loadfont(char *path)
     f = newfont();
 
     while ((token = token_get(fp, &tp)) != EOF) {
-	if (debug) printf("%s: <%s>\n", tok2str(token), tp);
+	if (debug) printf("#p state:%d %s: <%s>\n", state, tok2str(token), tp);
 	switch (state) {
 	case 0:		// start of record
 	    if (token == EOL) {
@@ -617,14 +692,15 @@ int shp_loadfont(char *path)
 	    } else if (token == STAR) {
 		state = 1;
 	    } else {
-		fprintf(stderr, "parse error in state %d, tok=%s, glyphnum=%d\n", 
-		state, tok2str(token), glyphnum);
+		fprintf(stderr, "parse error in state %d, tok=%s, glyphnum=%d <%s>\n", 
+		state, tok2str(token), glyphnum, tp);
 		exit(1);
 	    }
 	    break;
 	case 1:		// get glyph num
 	    if (token == NUM) {
-		glyphnum = strtonum(tp);
+		glyphnum = strtonum(tp);	
+		printf("# got glyphnum %d %s\n" ,glyphnum, tp);
 	    } else if (token == WORD) {
 		glyphnum = 0;
 	    } else {
@@ -639,8 +715,9 @@ int shp_loadfont(char *path)
 		fprintf(stderr, "parse error in state %d\n", state);
 		exit(1);
 	    }
-	    numbytes = strtonum(tp);
-	    if (debug) printf("got numbytes %d\n", numbytes);
+	    // numbytes = strtonum(tp);
+	    numbytes = atoi(tp);
+	    if (debug) printf("#got numbytes %d (%s)\n", numbytes, tp);
 	    state = 3;
 	    break;
 	case 3:		// get glyphname
@@ -666,8 +743,9 @@ int shp_loadfont(char *path)
 	    break;
 	case 5:
 	    if (token == NUM) {
+	       c = strtonum(tp);
 	       bytecode[count]=strtonum(tp);
-	       if (debug) printf("    %d %d %d\n", count, numbytes, bytecode[count]);
+	       if (debug) printf("bytecode[%d]=%d %d\n", count, bytecode[count], numbytes);
 	       count++; 
 	    } else if (token == EOL) {
 	       ;
@@ -702,8 +780,105 @@ int shp_loadfont(char *path)
     return(nfonts-1);
 }
 
+int shx_loadfont(char *path)
+{
+    FILE *fp;
+    uint16_t x;
+    uint16_t y;
+    int8_t a;
+    int8_t b;
+    int offset=0;
+    int i,j,n;
+    int xx=0;
+    int yy=0;
+    char buf[128];
+    int count=0;
+    int size=0;
+    int numglyphs;
+    uint8_t *glyphdat;
+    GLYPH *glyphtab;
+    int glyphindex=0;
+    FONT *f;
+    int debug=0;
 
-shp_writestring(
+    if((fp=fopen(path,"r")) == NULL) {
+        fprintf(stderr, "loadfont(): can't open %s\n", path);
+        return(-1);
+    } else {
+        // fprintf(stderr,"loading %s\n",path);
+    }
+
+    f=newfont();
+
+    for (i=0; i<22; i++) {
+        get8(fp,&a,&offset);
+        buf[i]=a;
+    }
+    buf[i++]='\0';
+    if (debug) printf("%s\n", buf);
+
+    get16(fp,&x,&offset);
+    get16(fp,&y,&offset);
+    if (debug) printf("#%d %.4x %.4x\n", offset, x, y);
+    get16(fp,&x,&offset);
+    if (debug) printf("#%d maxglyphno=%.4x (%d)\n", offset, x, x);
+    get16(fp,&y,&offset);
+    count = y;
+    if (debug) printf("#%d number of glyphs=%.4x (%d)\n", offset, y, y);
+    numglyphs=y;
+
+    if (debug) printf("#glyph0 is the name of the font\n");
+
+    // create a table of numglyph GLYPH structures
+    glyphtab = (GLYPH *) malloc(sizeof(GLYPH) * numglyphs);
+
+    for (i=0; i<count; i++) {
+        get16(fp,&x,&offset);
+        get16(fp,&y,&offset);
+        if (debug) printf("#%d glyphno=%.4x size=%d offset=%d\n", offset, x, y, size);
+        glyphtab[glyphindex].glyphno = x;
+        glyphtab[glyphindex].size = y;
+        glyphtab[glyphindex].offset = size;
+        glyphindex++;
+        size+=y;
+    }
+
+    if (debug) printf("remaining size of glyph table is %d\n", size);
+
+    glyphdat = (unsigned char *) malloc(sizeof(unsigned char) * size);
+
+    for (i=0; i<size; i++) {            // probably zero terminated
+        get8(fp,&a,&offset);
+        glyphdat[i]=a;
+    }
+
+    // now we have definitions in memory
+
+    unsigned char *cc;
+    // debug =1;
+    for (i=0; i<glyphindex; i++) {
+        if (debug) printf("## glyph %d (%c), size %d, offset %d: ", glyphtab[i].glyphno, glyphtab[i].glyphno, glyphtab[i].size, glyphtab[i].offset);
+        cc=malloc(sizeof(unsigned char)*glyphtab[i].size);
+	// need to seek past name\0 string in def
+	n = strlen((const char *) &glyphdat[glyphtab[i].offset])+1;
+	for (j=n; j<glyphtab[i].size; j++) {
+	    cc[j-n]=glyphdat[j+glyphtab[i].offset];
+	    if (debug) printf("%3d ", glyphdat[j+glyphtab[i].offset]);
+	}
+	if (debug) printf("\n");
+	f->glyphtab[glyphtab[i].glyphno]=cc;
+    }
+
+    f->fontpath=estrdup(path);
+    f->fontname=estrdup(path);	 // FIXME
+    // f->fontname=estrdup(fontname);
+
+    fonttab[nfonts++]=f;
+    return(nfonts-1);
+}
+
+
+void shp_writestring(
     char *s, 
     double xx, 
     double yy, 
@@ -798,7 +973,7 @@ shp_writestring(
     }
 }
 
-shp_testfont(int id) {
+void shp_testfont(int id) {
     int i;
     double xx=0.0;
     double yy=0.0;
@@ -825,32 +1000,78 @@ shp_testfont(int id) {
     }
 }
 
-int main() {
+/*
+typedef struct font {
+   char *fontname;
+   char *fontpath;
+   unsigned char *glyphtab[258]; // pointers to byte arrays
+} FONT;
+
+int nfonts=0;
+FONT *fonttab[MAXFONTS];
+*/
+
+void dumpfont(int n) {
+    int i,j;
+
+    for (i=0; i<258; i++) {
+	if (fonttab[n]->glyphtab[i] != NULL) {
+	    printf("%d: %s\n", i, fonttab[n]->glyphtab[i]);
+	}
+    }
+}
+
+int main(int argc, char *argv[]) {
    FONT *f;
    int fontid;
    int i;
    char buf[256];
 
    shp_fontinit();
-   shp_loadfont("/home/walker/shx/good/pan.shp");
-   shp_loadfont("/home/walker/shx/good/opt.shp");
-   shp_loadfont("/home/walker/shx/good/helvo.shp");
-   shp_loadfont("/home/walker/shx/good/scripts.shp");
-   shp_loadfont("/home/walker/shx/good/arctext.shp");
-   shp_loadfont("/home/walker/shx/good/handlet.shp");
-   shp_loadfont("/home/walker/shx/good/dim.shp");
-   shp_loadfont("/home/walker/shx/good/gothicen.shp");
-   shp_loadfont("/home/walker/shx/good/reverse.shp");
-   shp_loadfont("/home/walker/shx/good/complex.shp");
-   shp_loadfont("/home/walker/shx/good/hcomx.shp");
-  
+
+   if (argc < 2) {
+        printf("no file!\n");
+        exit(1);
+   }
+
+   if (strcasestr(argv[1],"shx")!=NULL) {
+       shx_loadfont(argv[1]);
+   } else if (strcasestr(argv[1],"shp")!=NULL) {
+       shp_loadfont(argv[1]);
+   } else {
+       printf("filetype unknown\n");
+       exit(2);
+   }
+
+   /*
    for (i=0; i<nfonts; i++) {
       f = shp_id2font(i);
-      sprintf(buf, "%d: %s, This is a test\n", 
-               i, f->fontname);
+      //sprintf(buf, "%d: %s, AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789\n", i, f->fontname);
+      // sprintf(buf, "AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789\n");
+      sprintf(buf, "AaBbCcDdEFghiJjOo\n" );
+      //sprintf(buf, "s\n" );
+      // sprintf(buf, "%d: %s,SsP\n", i, f->fontname);
       shp_writestring(buf, 0.0, -2.0*(double)i, i, 0, 1.0, 1);
    }
-   
+   */
+
+    double xx=0.0;
+    double yy=0.0;
+    int id=0;
+    double scale=1.0;
+    int mode=1;
+
+    printf("back\n");
+    printf("isotropic\n");
+    for (i=1; i<258; i++) {
+       shp_writechar((unsigned int) i, &xx, &yy, id, scale, mode);
+       if ((i%32)==0) {
+	  shp_writechar((unsigned int) 10, &xx, &yy, id, scale, mode);
+          xx=0.0;
+	  // yy-=200.0;
+       } 
+    }
+
    exit(1);
 }
 

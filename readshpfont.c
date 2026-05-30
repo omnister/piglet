@@ -2,6 +2,8 @@
 // RCW: 08/31/2012 (lexer for kicad)
 // RCW: 11/14/2013 (modified for .shp)
 
+// https://help.autodesk.com/view/ACD/2020/ENU/?guid=GUID-06832147-16BE-4A66-A6D0-3ADF98DC8228
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
