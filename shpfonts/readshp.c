@@ -30,6 +30,7 @@ uint16_t get16(FILE *fp, uint16_t *x, int *offset) {
     } else {
         exit(1);
     }
+    return *x;
 }
 
 uint8_t get8(FILE *fp, uint8_t *x, int *offset) {
@@ -38,6 +39,7 @@ uint8_t get8(FILE *fp, uint8_t *x, int *offset) {
     } else {
         exit(1);
     }
+    return *x;
 }
 
 
@@ -93,11 +95,11 @@ FONT *shp_id2font(int id) {
     }
 }
 
-void shpdraw(double x, double y, int mode) {
+void shpdraw(double x, double y) {
    printf("%g %g\n", x, y);
 }
 
-void shpjump(int mode) {
+void shpjump(void) {
    printf("jump\n");
 }
 
@@ -142,11 +144,12 @@ void advance(
 	int mode
 ) {
    int debug=0;
+   (void) mode;
    
    if (debug)fprintf(stderr,"advance called with xloc: %g, yloc: %g, scale: %g, x:%g, y%g\n", *xloc, *yloc, scale, x, y);
  
    if (!pendown) {
-     shpjump(mode);
+     shpjump();
    } else {
      ;
    }
@@ -154,7 +157,7 @@ void advance(
    *xloc += scale*x;
    *yloc += scale*y;
 
-   shpdraw(*xloc, *yloc, mode);
+   shpdraw(*xloc, *yloc);
 }
 
 // -------------------------------------
@@ -202,7 +205,8 @@ void  bulge_arc(
 	int mode
 ) {
 
-	double xs, xe, ys, ye, xm, ym, dx, dy, xb, yb;
+	double xe, ye;
+	double dx, dy;
 	double alpha;
 	double beta;
 	double len;
@@ -304,8 +308,8 @@ void shp_writechar(
     int octant;
     int numoct; 
     int cw;
-    double stheta;
-    double dtheta;
+    // double stheta;
+    // double dtheta;
     double xx1, yy1, xx2, yy2;
     int debug=0;
     int cmdcnt[15];
@@ -317,8 +321,8 @@ void shp_writechar(
     FONT *f;
     f = shp_id2font(id);
 
-    shpjump(mode);
-    shpdraw(*xx, *yy, mode);
+    shpjump();
+    shpdraw(*xx, *yy);
 
     while(!done) {
 	if (f->glyphtab[glyphnum] == NULL) {
@@ -356,7 +360,7 @@ void shp_writechar(
 	   case 6:		// pop	(only 4 positions deep)
 	     cmdcnt[c]++;
 	     if (!pendown) {
-		shpjump(mode);
+		shpjump();
 	     }
 	     if (!skip) pop(xx, yy);
 	     break;
@@ -463,7 +467,7 @@ void shp_writechar(
  	     if (debug) fprintf(stderr,"frac: p1:%d, p2:%d, p3:%d, p4:%d, p5:%02x\n",
 	         p1, p2, p3, p4, p5&0xff);
 
-	     double radius;
+	     // double radius;
 
 	     r = 256*p3 + p4;
 
@@ -662,9 +666,9 @@ int shp_loadfont(char *path)
     int count=0;
     char fontname[128];
     char bytecode[2000];
-    char *t;
+    unsigned char *t;
     int i;
-    int c;
+    // int c;
     int debug=1;
 
     if((fp=fopen(path,"r")) == NULL) {
@@ -743,7 +747,6 @@ int shp_loadfont(char *path)
 	    break;
 	case 5:
 	    if (token == NUM) {
-	       c = strtonum(tp);
 	       bytecode[count]=strtonum(tp);
 	       if (debug) printf("bytecode[%d]=%d %d\n", count, bytecode[count], numbytes);
 	       count++; 
@@ -757,7 +760,7 @@ int shp_loadfont(char *path)
 	    }
 	    if (count==numbytes) {
 	        state=0;
-	        t = (char *) malloc(numbytes);
+	        t = (unsigned char *) malloc(numbytes);
 		if (t == NULL) {
 		    fprintf(stderr, "malloc failed\n");
 		    exit(1);
@@ -785,12 +788,12 @@ int shx_loadfont(char *path)
     FILE *fp;
     uint16_t x;
     uint16_t y;
-    int8_t a;
-    int8_t b;
+    uint8_t a;
+    // int8_t b;
     int offset=0;
     int i,j,n;
-    int xx=0;
-    int yy=0;
+    // int xx=0;
+    // int yy=0;
     char buf[128];
     int count=0;
     int size=0;
@@ -887,9 +890,10 @@ void shp_writestring(
     double scale,
     int mode		// drawing mode
 ) {
-    int c;
+    // int c;
     double xoff, yoff;
     double width, height;
+    (void) mode;
 
     FONT *f;
     f = shp_id2font(id);
@@ -967,7 +971,7 @@ void shp_writestring(
 	     		(double) f->glyphtab[0][1];
 	  }
 	  xx=xoff;
-       } else if (f->glyphtab[*s] != NULL) {
+       } else if (f->glyphtab[(unsigned char) *s] != NULL) {
 	    shp_writechar((unsigned int) *s, &xx, &yy, id, scale, 1);
        }
     }
@@ -1012,7 +1016,7 @@ FONT *fonttab[MAXFONTS];
 */
 
 void dumpfont(int n) {
-    int i,j;
+    int i;
 
     for (i=0; i<258; i++) {
 	if (fonttab[n]->glyphtab[i] != NULL) {
@@ -1022,10 +1026,10 @@ void dumpfont(int n) {
 }
 
 int main(int argc, char *argv[]) {
-   FONT *f;
-   int fontid;
+   // FONT *f;
+   // int fontid;
    int i;
-   char buf[256];
+   // char buf[256];
 
    shp_fontinit();
 
@@ -1171,7 +1175,7 @@ TOKEN token_get(FILE* fp, char **word)
 	if (pushback[pushidx].word != NULL) {
 	    free(pushback[pushidx].word);
 	}
-	pushback[pushidx].word == (char *) NULL;
+	pushback[pushidx].word = (char *) NULL;
 	return (pushback[pushidx].tok);
     }
 
