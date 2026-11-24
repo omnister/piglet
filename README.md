@@ -1,3 +1,5 @@
+## Piglet - Personal Integrated Graphic Layout/Editor Terminal
+
 Piglet is a Piglet is a 2-D engineering drawing editor that supports
 hierarchical object description.  It is inspired by Hewlett-Packard's
 proprietary HP PIGLET (Personal Interactive Graphic Layout EdiTor),
@@ -28,3 +30,9 @@ Piglet is small and lean, fitting on an old fashioned floppy (without
 the huge directory of SHP fonts).  It is written in C and Xlib is a good
 readable/hackable example of a well-thought out professional graphics
 editor circa 1986. 
+
+![an example image](images/H20921R1.png)
+
+--
+
+Rick Walker
